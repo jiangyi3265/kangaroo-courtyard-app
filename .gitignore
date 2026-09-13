@@ -1,0 +1,75 @@
+# Dependencies and build output
+node_modules/
+dist/
+unpackage/
+target/
+build/
+coverage/
+.vite/
+.gradle/
+# Editors and OS
+.idea/
+.vscode/
+.hbuilderx/
+.settings/
+.classpath
+.project
+*.iml
+*.ipr
+*.iws
+.DS_Store
+Thumbs.db
+# Logs, caches, local artifacts
+*.log
+logs/
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.orig
+*.pid
+__pycache__/
+*.pyc
+.cache/
+.tmp/
+tmp/
+temp/
+artifacts/
+.qa/
+.impeccable/
+playwright-report/
+test-results/
+# Local environment and credentials
+.env
+.env.*
+*.local
+*.local.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+id_rsa*
+id_ed25519*
+.npmrc
+.netrc
+.pypirc
+settings.xml
+credentials.json
+credentials*.json
+service-account*.json
+secrets/
+secrets.*
+*.dump
+*.sql.gz
+*.sqlite
+*.sqlite3
+*.db
+# Preserve package manager lockfiles
+# Machine-specific app identifiers and authoring instructions
+/manifest.json
+/project.private.config.json
+/CODEX-PROMPT.md
