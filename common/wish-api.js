@@ -1,0 +1,10 @@
+import { get, post } from './request.js'
+export const wishList = params => get('/app/wishes', params)
+export const wishDetail = id => get('/app/wishes/' + id)
+export const wishQuote = body => post('/app/wishes/quote', body)
+export const wishPublish = body => post('/app/wishes', body)
+export const wishAccept = id => post('/app/wishes/' + id + '/accept', {})
+export const wishAction = (id, action, body = {}) => post('/app/wishes/' + id + '/actions/' + action, body)
+export const wishMessages = (id, before = 0) => get('/app/wishes/' + id + '/messages', { before })
+export const wishSend = (id, body) => post('/app/wishes/' + id + '/messages', body)
+export const wishCredentials = () => get('/app/wishes/credentials')

@@ -1,0 +1,40 @@
+.msg-page { --k-bg:#FCF9F5; background:linear-gradient(180deg,#FCF9F5,#FAF8F4); }
+.msg-page :deep(.k-navbar__title) { font-family:var(--k-sans); font-size:17px; font-weight:600; }
+.read-all { font-size:12px; }
+.entries { margin:8px 16px 0; padding:14px 0; background:var(--k-paper); border:1px solid rgba(160,120,80,.07); border-radius:16px; box-shadow:0 3px 12px rgba(120,84,48,.03); }
+.entry { min-height:64px; font-size:13px; font-weight:500; gap:7px; }
+.tile { width:40px; height:40px; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(255,255,255,.3); }
+.tile.t-indigo { background:#527598; }.tile.t-green { background:#4E806D; }.tile.t-red { background:#CA715B; }.tile.t-ochre { background:#9B7443; }
+.categories { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; margin:16px 16px 0; }
+.category { position:relative; display:flex; align-items:center; justify-content:center; gap:5px; width:100%; min-height:42px; margin:0; padding:0 3px; border:1px solid #E9E2D8; border-radius:10px; background:#F7F3ED; color:var(--k-ink2); font:500 12px/1.4 var(--k-sans); }
+.category::after { border:0; }
+.category--active { background:#8A623E; border-color:#8A623E; color:#FFFCF7; }
+.category__dot { position:absolute; top:5px; right:5px; width:5px; height:5px; border-radius:50%; background:var(--k-alert); }
+.category--active .category__dot { background:#FFEBCE; }
+.category:focus-visible { outline:2px solid #456D98; outline-offset:2px; }
+.list-loading { margin:0 16px; color:var(--k-muted); font-size:12px; text-align:center; }
+.list-loading view { height:70px; margin-bottom:7px; border-radius:12px; background:#F1EEE8; }
+.sec { display:flex; align-items:center; gap:7px; padding:20px 16px 9px; font-family:var(--k-sans); font-size:13px; line-height:1.4; font-weight:400; color:var(--k-ink2); }
+.sec__count { display:flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:var(--k-alert); color:var(--k-paper); font:500 10px/1 var(--k-sans); }
+.manage-messages { margin:-10px -6px -10px auto; padding:10px 6px; background:transparent; color:#8A623E; font:500 12px/22px var(--k-sans); }
+.manage-messages::after,.message-delete::after { border:0; }
+.retention-tip { display:block; margin:0 16px 10px; color:var(--k-muted); font-size:11px; line-height:16px; }
+.message-delete { display:flex; align-items:center; justify-content:center; flex:0 0 36px; width:36px; height:44px; margin:0 -4px 0 0; padding:0; background:transparent; }
+.list { border:0; border-radius:0; box-shadow:none; background:transparent; overflow:visible; }
+.msg-page--user .list { margin-left:16px; margin-right:16px; }
+.row { height:auto; min-height:70px; padding:11px 10px; gap:10px; border:1px solid rgba(91,96,103,.06); border-radius:12px; background:#F2F2F1; }
+.row + .row { margin-top:7px; }.row + .row::before { display:none; }
+.row--unread { background:#FBF0DE; border-color:rgba(188,146,94,.17); }
+.ava { width:38px; height:38px; border-radius:12px; box-shadow:none; }.ava--ini { background:#477C86; border-radius:50%; font-size:16px; font-weight:500; }
+.ava.t-indigo { background:#E4EBF1; }.ava.t-green { background:#E1EBE0; }.ava.t-red { background:#F3E4D5; }.ava.t-ochre { background:#F4E7CF; }
+.row__head { flex-wrap:wrap; gap:3px 5px; }.row__title { font-size:14px; line-height:20px; color:var(--k-ink); font-weight:500; }
+.tag { padding:0 4px; font-size:10px; line-height:15px; }
+.row--unread .row__title { font-weight:600; }.row__desc { margin-top:3px; font-size:13px; line-height:19px; }.row__side { flex:0 0 35px; gap:6px; font-size:11px; white-space:nowrap; }
+.unread-label { display:flex; align-items:center; gap:5px; color:var(--k-alert); font-size:10px; }.row__side .dot { width:5px; height:5px; box-shadow:none; }
+.empty { margin-top:24px; border-radius:20px; border:1px solid var(--k-line); box-shadow:none; background:var(--k-paper); }.empty__copy { font-size:14px; line-height:1.6; }
+.help { display:flex; align-items:center; justify-content:center; gap:7px; margin-top:24px; padding:18px 16px; font-size:12px; }
+@media(max-width:359px) { .entries,.categories { margin-left:12px; margin-right:12px; }.categories { gap:5px; }.category { gap:4px; }.list,.msg-page--user .list { margin-left:12px; margin-right:12px; }.sec { padding-left:12px; padding-right:12px; }.row { gap:8px; } }
+/* 10-31 主人：消息要表明来源。名字下面一个浅棕小标签（平潭海岛体验官 / 社区私信 / 活动群），再下面最后一条消息。#7A5230 在 #F1E2CE 上 5.37:1 */
+.row__source { display:inline-block; max-width:100%; margin-top:3px; padding:0 6px; border-radius:4px; background:#F1E2CE; color:#7A5230; font-size:11px; line-height:18px; vertical-align:top; }
+.ava { position:relative; overflow:hidden; }
+.ava__img { position:absolute; left:0; top:0; width:100%; height:100%; border-radius:50%; background-size:cover; background-position:center; }

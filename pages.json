@@ -1,97 +1,923 @@
 {
   "pages": [
-    { "path": "pages/auth/login", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/auth/identity", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/auth/onboarding", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/home/index", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/home/city", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/home/assistant", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/messages/index", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/messages/reminders", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/system/states", "style": { "navigationStyle": "custom" } }
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationStyle": "custom",
+        "enableShareAppMessage": true,
+        "enableShareTimeline": true
+      }
+    },
+    {
+      "path": "pages/auth/login",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/auth/identity",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/auth/onboarding",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/auth/legal",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/home/city",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/home/city-picker",
+      "style": {
+        "navigationStyle": "custom",
+        "disableScroll": true
+      }
+    },
+    {
+      "path": "pages/system/picker",
+      "style": {
+        "navigationStyle": "custom",
+        "disableScroll": true
+      }
+    },
+    {
+      "path": "pages/home/assistant",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/messages/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/messages/reminders",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    }
   ],
   "subPackages": [
+    { "root": "pages/camp", "pages": [
+      { "path": "index", "style": { "navigationStyle": "custom" } },
+      { "path": "handbook", "style": { "navigationStyle": "custom" } }
+    ] },
+    {
+      "root": "pages/search",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/undercover",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "room",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "rules",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "tools",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/wish",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "filter",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "detail",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "publish",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "order",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "mine",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "rules",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "credential",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/werewolf",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "room",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "invite",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "game",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "result",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "rules",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/governance",
+      "pages": [
+        {
+          "path": "badges",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "mediation",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "jury",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "merchant-cases",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
     {
       "root": "pages/jobs",
       "pages": [
-        { "path": "list", "style": { "navigationStyle": "custom" } },
-        { "path": "filter", "style": { "navigationStyle": "custom" } },
-        { "path": "detail", "style": { "navigationStyle": "custom" } },
-        { "path": "team", "style": { "navigationStyle": "custom" } },
-        { "path": "apply", "style": { "navigationStyle": "custom" } },
-        { "path": "progress", "style": { "navigationStyle": "custom" } },
-        { "path": "interview", "style": { "navigationStyle": "custom" } },
-        { "path": "contract", "style": { "navigationStyle": "custom" } }
+        {
+          "path": "list",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "filter",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "detail",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "reviews",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "team",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "companions",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "apply",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "progress",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "interview",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "notices",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "contract",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "deliver",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "itinerary",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
       ]
     },
     {
       "root": "pages/stays",
       "pages": [
-        { "path": "list", "style": { "navigationStyle": "custom" } },
-        { "path": "detail", "style": { "navigationStyle": "custom" } },
-        { "path": "booking", "style": { "navigationStyle": "custom" } },
-        { "path": "pay", "style": { "navigationStyle": "custom" } },
-        { "path": "order", "style": { "navigationStyle": "custom" } },
-        { "path": "shop", "style": { "navigationStyle": "custom" } }
+        {
+          "path": "list",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "detail",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "past-activities",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "booking",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "pay",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "order",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "travel",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "shop",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "reviews",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "diary",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
       ]
     },
     {
       "root": "pages/community",
       "pages": [
-        { "path": "index", "style": { "navigationStyle": "custom" } },
-        { "path": "publish", "style": { "navigationStyle": "custom" } },
-        { "path": "activity", "style": { "navigationStyle": "custom" } },
-        { "path": "activity-mine", "style": { "navigationStyle": "custom" } },
-        { "path": "trip", "style": { "navigationStyle": "custom" } },
-        { "path": "chat", "style": { "navigationStyle": "custom" } }
+        {
+          "path": "consent",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "publish",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "mine",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "activity",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "activity-mine",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "activity-checkin",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "trip",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "chat",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "user",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "link",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "published",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
       ]
     },
     {
       "root": "pages/profile",
       "pages": [
-        { "path": "index", "style": { "navigationStyle": "custom" } },
-        { "path": "resume", "style": { "navigationStyle": "custom" } },
-        { "path": "opportunities", "style": { "navigationStyle": "custom" } },
-        { "path": "orders", "style": { "navigationStyle": "custom" } },
-        { "path": "review", "style": { "navigationStyle": "custom" } }
+        {
+          "path": "drafts",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "point-mall",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "member-wallet",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "benefits",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "invite",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "resume",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "opportunities",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "orders",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "review",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "stay-comment",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "follows",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "income",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "merchant",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "team-reports",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "subscriptions",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "subscription-message",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
       ]
     },
     {
       "root": "pages/staff",
       "pages": [
-        { "path": "index", "style": { "navigationStyle": "custom" } },
-        { "path": "applications", "style": { "navigationStyle": "custom" } },
-        { "path": "interviews", "style": { "navigationStyle": "custom" } },
-        { "path": "rooms", "style": { "navigationStyle": "custom" } },
-        { "path": "jobs", "style": { "navigationStyle": "custom" } },
-        { "path": "dispatch", "style": { "navigationStyle": "custom" } },
-        { "path": "activities", "style": { "navigationStyle": "custom" } },
-        { "path": "reviews", "style": { "navigationStyle": "custom" } },
-        { "path": "insurance", "style": { "navigationStyle": "custom" } },
-        { "path": "talents", "style": { "navigationStyle": "custom" } },
-        { "path": "online-jobs", "style": { "navigationStyle": "custom" } },
-        { "path": "vlog", "style": { "navigationStyle": "custom" } },
-        { "path": "business", "style": { "navigationStyle": "custom" } }
+        {
+          "path": "operations",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "platform-tasks",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "applications",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "interviews",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "rooms",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "jobs",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "dispatch",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "activities",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "activity-members",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "reviews",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "insurance",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "insurance-account",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "publication-fees",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "settlements",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "stay-orders",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "talents",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "online-jobs",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "vlog",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "business",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "daily",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "volunteers",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "intake",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "service",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "service-activities",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "online-daily",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "city",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "city-finance",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "reimburse",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "merchant-request",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "room-types",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "applicant-export",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
       ]
     },
     {
       "root": "pages/manage",
       "pages": [
-        { "path": "weekly", "style": { "navigationStyle": "custom" } },
-        { "path": "tasks", "style": { "navigationStyle": "custom" } },
-        { "path": "daily", "style": { "navigationStyle": "custom" } },
-        { "path": "dashboard", "style": { "navigationStyle": "custom" } },
-        { "path": "wallet", "style": { "navigationStyle": "custom" } },
-        { "path": "honor", "style": { "navigationStyle": "custom" } }
+        {
+          "path": "weekly",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "tasks",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "daily",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "dashboard",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "wallet",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "honor",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/notice",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "inbox",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "support",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "states",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/party",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true
+          }
+        }
       ]
     }
   ],
+  "preloadRule": {
+    "pages/messages/index": {
+      "network": "all",
+      "packages": [
+        "pages/notice"
+      ]
+    }
+  },
   "globalStyle": {
     "navigationStyle": "custom",
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "袋鼠小院",
-    "navigationBarBackgroundColor": "#FAF7F1",
-    "backgroundColor": "#FAF7F1",
+    "navigationBarTitleText": "袋鼠全球青年",
+    "navigationBarBackgroundColor": "#FCF9F3",
+    "backgroundColor": "#FCF9F3",
     "backgroundTextStyle": "dark"
   },
   "uniIdRouter": {}

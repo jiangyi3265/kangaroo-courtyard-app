@@ -1,0 +1,171 @@
+/* 参考图：首张大图配白色内容面，后续双列和横向卡片延续同一层级。 */
+.community .search { min-height: 52px; padding: 4px 5px 4px 16px; border-radius: 999px; background: var(--k-paper); box-shadow: var(--k-sh1); border: 0; }
+.community .search__input { font-size: 14px; }
+.community .search__btn { width: 42px; height: 42px; min-width: 42px; padding: 0; border-radius: 50%; background: var(--k-red); display: flex; align-items: center; justify-content: center; }
+.community .ftabs { border-bottom: 0; margin-top: 6px; }
+.community .ftab { font-weight: 500; }
+.community .ftab.on { color: var(--k-red-deep); font-weight: 700; }
+.community .ftab.on::after { height: 3px; width: 20px; border-radius: 999px; }
+.community .fsort { font-size: 12px; gap: 3px; }
+.community .feed { padding-top: 4px; }
+.community .blk { margin-top: 14px; padding-bottom: 0; border-bottom: 0; }
+.community .blk:first-child { margin-top: 4px; }
+.community .card.fc, .community .card.fc-col, .community .card.fc-act { background: var(--k-paper); border-radius: 16px; overflow: hidden; box-shadow: var(--k-sh1); border: 0; }
+.community .fc__media { height: 0; padding-top: 43%; border-radius: 16px 16px 0 0; }
+.community .fc__panel { display: flex; flex-direction: column; padding: 11px 12px 3px; }
+.community .fc--hero .fc__panel { position: relative; z-index: 1; margin-top: -14px; border-radius: 16px 16px 0 0; background: var(--k-paper); }
+.community .fc--lead .fc__panel { background: var(--k-paper); border-radius: 0; }
+.community .fc__who { order: -1; margin: 0 0 5px; min-height: 36px; gap: 8px; }
+.community .fc__avatar { width: 32px; height: 32px; }
+.community .fc__name { font-size: 13px; font-weight: 600; color: var(--k-ink); }
+.community .fc__submeta { gap: 5px; }
+.community .fc__verified { color: var(--k-green); background: var(--k-green-soft); padding: 2px 5px; border-radius: 999px; font-size: 10px; gap: 2px; }
+.community .fc .follow { height: 36px; min-width: 60px; padding: 0 10px; border: 1px solid var(--k-red-line); border-radius: 999px; font-size: 13px; }
+.community .fc .follow.on { border-color: var(--k-line); }
+.community .fc__body { gap: 12px; }
+.community .fc__title, .community .fc--hero .fc__title, .community .fc--lead .fc__title { font-family: var(--k-sans); font-size: 16px; line-height: 1.45; letter-spacing: 0; }
+.community .fc__text { font-size: 14px; line-height: 1.55; margin-top: 5px; }
+.community .fc__copy>.kicker { display: none; }
+.community .fc__actions { margin-top: 4px; gap: 18px; }
+.community .fc__act { min-height: 44px; font-size: 12px; }
+.community .fc--thumb .fc__panel { padding: 12px 12px 3px; }
+.community .fc--thumb .fc__thumb { width: 82px; height: 72px; border-radius: 12px; }
+.community .fc--thumb .fc__who { margin-bottom: 8px; }
+.community .fc--thumb .fc__title { font-size: 16px; }
+.community .fc-pair { gap: 10px; }
+.community .fc-col__media { padding-top: 60%; border-radius: 16px 16px 0 0; }
+.community .fc-col__body { padding: 10px 9px 4px; }
+.community .fc-col__title { font-size: 14px; line-height: 1.5; }
+.community .fc-col__cover { padding: 14px 12px 0; }
+.community .fc-col__who { flex: 1 1 55%; min-height: 32px; gap: 4px; }
+.community .fc-col__foot { padding-top: 4px; gap: 0 5px; font-size: 11px; }
+.community .fc-col__stat { flex: 0 0 auto; min-height: 44px; min-width: 34px; gap: 3px; }
+.community .fc-act__img { border-radius: 16px 16px 0 0; height: 108px; }
+.community .fc-act__copy { padding: 12px; }
+.community .fc__band { padding: 14px 14px 0; }
+@media(max-width:359px) {
+ .community .search { padding-left: 12px; }
+ .community .search__input { font-size: 13px; }
+ .community .fc__media { height: 0; padding-top: 43%; }
+ .community .fc__panel { padding: 10px 10px 3px; }
+ .community .fc__name { max-width: 8em; }
+ .community .fc__actions { gap: 12px; }
+ .community .fc__act { font-size: 12px; gap: 4px; }
+ .community .fc--thumb .fc__thumb { width: 70px; height: 72px; }
+ .community .fc-col__who { flex-basis: 100%; }
+ .community .fc-act__img { height: 84px; }
+}
+/* 首图比例按参考图校准，卡片底部不再继承旧信息流的额外留白。 */
+.community .card.fc { padding-bottom: 0; }
+.community .fc-pair { padding-bottom: 0; border-bottom: 0; }
+.community .blk { margin-top: 10px; }
+.community .fc__name-row { gap: 5px; }
+.community .fc__submeta { margin-top: 1px; }
+.community .fc-col__avatar { width: 20px; height: 20px; }
+.community .fc-col__stat--cmt { margin-left: auto; }
+
+/* 原稿校准：白色叠片、橙金检索与多照片杂志排版。 */
+.community {
+  --k-bg:#F8F8F5;
+  --k-paper:#FFFEFC;
+  --k-paper2:#F1EEE8;
+  --k-ink:#302922;
+  --k-ink2:#554B42;
+  background:linear-gradient(130deg,#FFF7EC 0,#F8F9F5 300px,#F7F8F7 650px);
+}
+.community .brand { padding-left:7px;gap:5px; }
+.community .brand__name { font-size:20px;font-weight:700;letter-spacing:0; }
+.community .brand__logo { width:23px;height:27px; }
+.community .brand__city { margin-left:4px;font-size:14px;font-weight:600; }
+.community .search { height:44px;min-height:44px;margin-top:10px;padding:3px 3px 3px 15px;box-shadow:0 5px 14px rgba(126,93,54,.1);border:1px solid rgba(225,211,191,.22); }
+.community .search__input { font-size:14px;letter-spacing:.1px; }
+.community .search__btn { position:relative;width:36px;height:36px;min-width:36px;background:linear-gradient(135deg,#F3B45D,#E58931);box-shadow:inset 0 1px 1px rgba(255,255,255,.55); }
+.community .search__btn::before { content:'';position:absolute;inset:-4px; }
+.community .ftabs { height:55px;margin-top:2px;gap:10px; }
+.community .ftab { font-size:14px;font-weight:600;color:#40372F; }
+.community .ftab.on { color:#BF813D; }
+.community .ftab.on::after { width:23px;height:3px;background:#D39448;bottom:1px; }
+.community .fsort { min-height:44px;font-size:12px;gap:3px;color:#70665C; }
+@media(max-width:375px) {
+ .community .fsort__label { display:none; }
+}
+.community .feed { padding-top:4px; }
+.community .card.fc,.community .card.fc-col,.community .card.fc-act { background:#FFFEFC;border-radius:22px;box-shadow:0 5px 13px rgba(72,58,40,.085),0 1px 2px rgba(72,58,40,.03); }
+.community .fc__media { padding-top:40%;border-radius:22px 22px 0 0; }
+.community .fc--hero .fc__panel { margin-top:-22px;border-radius:22px 22px 0 0;background:#FFFEFC;padding:10px 14px 2px; }
+.community .fc__panel { padding:10px 14px 2px; }
+.community .fc__who { min-height:36px;margin-bottom:4px;gap:9px; }
+.community .fc__avatar { width:32px;height:32px;background:#F6EAD9; }
+.community .fc__name { font-size:14px;font-weight:650; }
+.community .fc__date { font-size:11px;line-height:15px;color:#6B6259; }
+.community .fc__name-row { gap:7px; }
+.community .fc__verified { padding:2px 7px;background:#DDF0E5;color:#376C55;font-size:10px;line-height:16px; }
+.community .fc .follow { position:relative;height:34px;min-width:58px;padding:0 13px;border-color:#C69C63;font-size:13px;color:#A16F32;background:transparent; }
+.community .fc .follow::before { content:'';position:absolute;inset:-5px 0; }
+.community .fc__title,.community .fc--hero .fc__title,.community .fc--lead .fc__title { font-size:17px;line-height:1.4;font-weight:650;letter-spacing:.1px; }
+.community .fc__text { font-size:14px;line-height:1.5;margin-top:4px;color:#4C423A; }
+.community .fc__actions { justify-content:flex-end;gap:19px;margin-top:2px; }
+.community .fc__act { min-height:44px;font-size:13px;gap:5px; }
+.community .fc__act--share { margin-left:0; }
+.community .fc__actions .fc__act:first-child { margin-right:auto; }
+.community .fc-pair { gap:10px;align-items:stretch; }
+.community .blk { margin-top:12px; }
+.community .fc-col__media { padding-top:57%;border-radius:20px 20px 0 0; }
+.community .fc-col__gallery { position:absolute;inset:0;display:flex;gap:5px;overflow:hidden; }
+.community .fc-col__gallery .fc-col__img { position:static;display:block;flex:1;min-width:0;width:100%;height:100%; }
+.community .fc-col__media--pair .fc-col__img { width:calc(50% - 2.5px);border-radius:12px; }
+.community .fc-col__body { padding:10px 11px 5px; }
+.community .fc-col__title { font-size:15px;line-height:1.45;font-weight:650; }
+.community .fc-col__who { flex:1 0 100%;min-height:31px;gap:5px; }
+.community .fc-col__name { font-size:12px;color:#4C423A; }
+.community .fc-col__avatar { width:24px;height:24px; }
+.community .fc-col__foot { gap:0 8px; }
+.community .fc-col__stat { min-height:35px;font-size:12px; }
+.community .fc-col__stat--cmt { margin-left:auto; }
+.community .fc-act__img { height:119px;border-radius:20px 20px 0 0; }
+.community .fc-act__copy { padding:10px 11px 14px;gap:5px; }
+.community .fc-act__title { font-size:15px;font-weight:650; }
+.community .fc-act__tag { border-radius:999px;background:rgba(255,251,243,.94);color:#886036; }
+/* 当前信息流统一通栏卡：作者、正文、关联、互动顺序一致；有图时放右侧。 */
+.community .feed-card { --feed-thumb-width:92px;--feed-thumb-height:86px; }
+.community .feed-card .fc__panel { display:flex;flex-direction:column;padding:12px 12px 5px; }
+.community .feed-card .fc__who { margin:0 0 8px; }
+.community .feed-card .fc__body { display:flex;align-items:flex-start;gap:12px; }
+.community .feed-card .fc__thumb { flex:0 0 var(--feed-thumb-width);width:var(--feed-thumb-width);height:var(--feed-thumb-height);border-radius:12px; }
+.community .feed-card .fc__title,.community .feed-card .fc-act__title { font-size:16px;line-height:1.45;font-weight:650;letter-spacing:0; }
+.community .feed-card .fc__text { display:-webkit-box;-webkit-line-clamp:2; }
+.community .feed-card .fc__excerpt { margin-top:4px; }
+.community .feed-card .follow { display:flex; }
+.community .feed-card .fc__date { display:block; }
+.community .feed-card .fc__actions { justify-content:flex-start;gap:24px; }
+.community .feed-card .fc__actions .fc__act:first-child { margin-right:0; }
+.community .feed-card .fc__act { min-height:48px; }
+.community .feed-card .fc__act--share { margin-left:auto; }
+.community .feed-card .fc__act--share text { display:inline; }
+.community .feed-card.fc-act--wide { flex-direction:row;align-items:flex-start;gap:12px;min-height:0;padding:12px; }
+.community .feed-card.fc-act--wide .fc-act__copy { flex:1;min-width:0;padding:0;gap:5px; }
+.community .feed-card.fc-act--wide .fc-act__img { display:block;flex:0 0 var(--feed-thumb-width);width:var(--feed-thumb-width);height:var(--feed-thumb-height);border-radius:12px; }
+.community .feed-card.fc-act--wide .fc-act__tag { position:static;align-self:flex-start;height:auto;min-height:20px;margin:0;padding:0;background:transparent;color:var(--k-green);font-size:12px;line-height:20px; }
+.community .feed-card .fc-act__meta { white-space:normal;overflow-wrap:anywhere;font-size:14px;line-height:1.5; }
+@media(max-width:359px) {
+ .community .brand__name { font-size:16px;letter-spacing:0; }
+ .community .brand__city { font-size:12px;margin-left:1px; }
+ .community .brand__logo { width:20px; }
+ .community .search__input { font-size:13px; }
+ .community .ftabs { gap:7px; }
+ .community .ftab { font-size:13px; }
+ .community .fc__name { font-size:14px; }
+ .community .fc__verified { font-size:9px;padding:2px 4px; }
+ .community .fc__who { gap:7px; }
+ .community .fc__avatar { width:30px;height:30px; }
+ .community .fc__title,.community .fc--hero .fc__title { font-size:17px; }
+ .community .fc__text { font-size:14px; }
+ .community .fc__actions { gap:12px; }
+ .community .fc__act { font-size:12px; }
+ .community .fc-col__body { padding:8px 9px 4px; }
+ .community .fc-col__title { font-size:14px; }
+ .community .fc-act__img { height:96px; }
+ .community .feed-card { --feed-thumb-width:70px;--feed-thumb-height:76px; }
+ .community .feed-card .fc__body,.community .feed-card.fc-act--wide { gap:8px; }
+ .community .feed-card .fc__actions { gap:16px; }
+}

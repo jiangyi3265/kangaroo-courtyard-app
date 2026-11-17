@@ -1,0 +1,108 @@
+/* Information density follows the supplied merchant detail reference. */
+.detail-page { --k-bg: #FCF8F2; background: #FCF8F2; }
+.sp-hero { height: 160px; margin: 6px 10px 0; padding: 2px; border-radius: 10px; box-shadow: 0 2px 6px rgba(91,61,32,.08); }
+.sp-hero--trio { height: 174px; }
+.sp-hero__img { border-radius: 7px; }
+.sp-hero__badge { left: 8px; top: 8px; }
+.sp-hero__tr { right: 8px; top: 8px; gap: 4px; }
+.sp-hero__check, .sp-hero__fav { min-height: 28px; height: auto; padding: 2px 7px; font-size: 11px; }
+.sp-body { padding: 0 12px 20px; }
+.sp-heading { margin-top: 12px; display: flex; align-items: flex-start; gap: 8px; }
+.sp-heading .sp-title, .sp-heading .sp-pthead { flex: 1; min-width: 0; margin-top: 0; }
+.sp-heading .sp-title { min-height: 38px; }
+.sp-heading .sp-pthead { flex-wrap: wrap; }
+.sp-heading__favorite { flex: 0 0 40px; height: 40px; display: flex; align-items: center; justify-content: center; position: relative; }
+.sp-heading__favorite::before { content: ''; position: absolute; inset: 4px; border: 1px solid #B99A7A; border-radius: 50%; }
+.sp-heading__favorite.on { background: #F5E8D8; border-radius: 50%; }
+.sp-title__text { font-size: 25px; font-weight: 700; line-height: 1.35; letter-spacing: -.3px; color: #533926; }
+.sp-tags { font-size: 12px; font-weight: 600; padding: 3px 8px; background: #F1DFC9; }
+.sp-tags__item--sep { border-left-width: 1px; }
+.sp-card { margin-top: 10px; padding: 12px; border-radius: 8px; border-color: #D4C1AD; background: #FFFEFC; box-shadow: none; }
+.sp-card--tint { background: #F4EDE3; border-color: #E3D4C2; }
+.sp-card--warm { background: #F5E7D5; border-color: #DFC6A8; }
+.sp-h, .sp-sub { font-size: 17px; line-height: 1.4; color: #634731; }
+.sp-tab { height: 28px; padding: 0 12px; border-radius: 5px; background: #A58058; box-shadow: none; font-size: 16px; letter-spacing: 0; }
+.sp-bullet { font-size: 13px; line-height: 1.7; color: #5C4B3B; gap: 5px; }
+.sp-bullet__dot { color: #B28A5E; }
+.sp-bullet__k { font-weight: 600; color: #64482F; }
+.sp-loc__addr { font-size: 13px; line-height: 1.65; }
+.sp-map { width: 86px; height: 64px; border-radius: 6px; border: 0; }
+.sp-trip { padding: 7px 9px 9px; background: #F5F1EB; border: 0; border-radius: 6px; }
+.sp-trip .sp-bullet { font-size: 13px; line-height: 1.75; }
+.sp-note { font-size: 11px; line-height: 1.6; color: #817363; }
+.sp-location__toggle { min-height: 32px; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 5px; color: #805936; font-size: 12px; font-weight: 500; }
+.sp-location__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 5px; }
+.sp-location__head .sp-sub, .sp-location__head .sp-location__toggle { margin-top: 0; }
+.sp-location--collapsed .sp-loc__addr, .sp-location--collapsed .sp-trip .sp-bullet__text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.sp-video__cover { padding-bottom: 38%; border-radius: 8px; box-shadow: 0 0 0 1px #D4C1AD; }
+.sp-video__cap { font-size: 12px; line-height: 1.5; font-weight: 500; }
+.sp-video__chip { background: #B78A5E; font-size: 11px; box-shadow: none; }
+.sp-stat__k, .sp-recruit__k { font-size: 13px; }
+.sp-stat__v, .sp-recruit__v { font-size: 17px; color: #64482F; }
+.sp-work__time { flex: 0 0 110px; box-sizing: border-box; margin: -12px -12px -12px 0; padding: 13px 8px; }
+.sp-work__time--full { flex-basis: auto; margin: 0; padding: 0; }
+.sp-work__hours { font-size: 18px; font-weight: 700; white-space: nowrap; }
+.sp-work__rest { font-size: 15px; font-weight: 600; }
+.sp-perk { border: 0; border-radius: 5px; min-height: 26px; font-size: 14px; background: #FFF9F0; }
+.sp-welfare__bar { height: 36px; margin: -12px -12px 8px; padding: 0 14px; background: #B08B64; font-size: 18px; }
+.sp-welfare--pt { padding-top: 12px; }
+.sp-welfare--pt .sp-perk { font-size: 17px; padding: 7px 3px; }
+.sp-mgr__avatar { width: 60px; height: 60px; border-width: 2px; box-shadow: 0 1px 5px rgba(91,61,32,.08); }
+.sp-mgr__line, .sp-mgr__quote { font-size: 13px; line-height: 1.7; }
+.sp-mgr__rating { border-radius: 6px; font-size: 12px; background: #F7E5CE; }
+.sp-fac__item { min-height: 58px; background: #F3F1F2; border-radius: 6px; }
+.sp-fac__label { font-size: 12px; font-weight: 500; }
+.sp-fac--row .sp-fac__label { font-size: 10px; }
+.sp-rv__text { font-size: 13px; line-height: 1.65; }
+.sp-rv { padding: 7px 6px; }
+.sp-fbk__head, .sp-rv__top { flex-wrap: wrap; }
+.sp-daily--pair .sp-daily__cell { height: 104px; }
+.sp-assure__panel { border: 0; padding: 3px 8px 8px; border-radius: 5px; }
+.sp-assure .sp-bullet { flex-wrap: wrap; }
+.sp-link { min-height: 28px; line-height: 26px; margin-left: auto; }
+.store-card { padding: 12px; border-radius: 8px; border-color: #D4C1AD; box-shadow: none; }
+.store-card__name { font-size: 16px; line-height: 1.5; }
+.store-card__meta, .store-card__sub { font-size: 11px; line-height: 1.6; }
+.store-card__follow :deep(.k-button) { min-height: 34px; }
+.overview-title { font-size: 24px; }
+.plain-card__list { font-size: 14px; line-height: 1.85; }
+.detail-page .k-bottom :deep(.k-button.is-primary) { background: #805936; box-shadow: 0 3px 9px rgba(95,58,27,.12); }
+/* 上一条和 detail.vue 里灰底的优先级相同又排在后面，会把灰底盖掉：加载中、读取失败时成了棕底灰字，看不出点不了 */
+.detail-page .k-bottom :deep(.k-button.is-primary.is-disabled) { background: #ECE5DC; color: #A39A92; box-shadow: none; }
+.detail-training { margin-top: 12px; border: 1px solid #E5CFAD; border-radius: 12px; box-shadow: 0 3px 9px rgba(95,58,27,.05); }
+.detail-training__label { font-size: 12px; }
+.detail-training__title { font-size: 18px; line-height: 1.5; }
+.detail-training__meta { font-size: 12px; line-height: 1.5; }
+@media(max-width:359px) {
+ .sp-hero { height: 140px; }
+ .sp-hero--trio { height: 153px; }
+ .sp-title__text { font-size: 23px; }
+ .sp-hero__check { display: none; }
+ .sp-pair { gap: 6px; }
+ .sp-pair .sp-card { padding: 10px 8px; }
+ .sp-stat__v, .sp-recruit__v { font-size: 14px; }
+ .sp-stat__k, .sp-recruit__k { font-size: 12px; }
+ .sp-work__time { flex-basis: 94px; }
+ .sp-work__hours { font-size: 16px; }
+ .sp-fac--row { grid-template-columns: repeat(3, minmax(0,1fr)); }
+ .sp-fac--row .sp-fac__label { font-size: 12px; }
+}
+
+.sp-half .sp-bullet__k { display: block; }
+.sp-fbk__head .sp-h { flex: 0 0 auto; white-space: nowrap; }
+.sp-fbk__head { gap: 4px; }
+
+/* 兼职与全职共用 10-25 参考版式，纸纹和底部按钮保持一致。 */
+.detail-page--parttime {
+ --k-bg: #FCF9F4;
+ background: #FCF9F4;
+ background-image: linear-gradient(rgba(252,249,244,.78), rgba(252,249,244,.78)), var(--detail-weave);
+ background-size: 164px 164px;
+ .overview { padding-bottom: calc(80px + var(--k-safe-bottom)); }
+ .k-bottom { background: #FFFCF8; border-top: 1px solid #E7DDD0; }
+ .team-button { flex: 0 0 44%; }
+ .apply-button { flex: 1; min-width: 0; }
+ .k-bottom :deep(.k-button) { height: 48px; font-size: 17px; border-radius: 20px; }
+ .k-bottom :deep(.k-button.is-outline) { border-color: #BDA58A; color: #4E4033; background: #FFFEFC; }
+ .k-bottom :deep(.k-button.is-primary.is-disabled) { color: #A9A6A1; background: #EFEEEC; box-shadow: none; }
+}

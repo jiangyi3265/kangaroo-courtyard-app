@@ -1,0 +1,11 @@
+KG Detail Medium is a renamed subset of Noto Sans SC (weight 500).
+Upstream: https://github.com/google/fonts/tree/main/ofl/notosanssc
+Source: NotoSansSC[wght].ttf, retrieved 2026-10-24.
+License: SIL Open Font License 1.1; see noto-sans-sc-OFL.txt in this directory.
+
+Build with fontTools: instantiate wght=500, retain the Unicode coverage of
+kg-sans-bold.woff2, subset, rename family/full/PostScript names to
+KG Detail Medium / KGDetail-Medium, and save flavor=woff2.
+H5 uses @font-face; the mini-program loads the same file from the deployed
+HTTPS origin as KG Detail, with platform fonts retained as a loading fallback.
+The static/h5 assets remain excluded from the mini-program package.

@@ -1,0 +1,5 @@
+/* Use the same supplied font files in H5 and wx.loadFontFace, so line breaks agree. */
+/* #ifdef H5 */
+@font-face { font-family: 'KG Detail'; font-style: normal; font-weight: 400 600; font-display: swap; src: url('/static/h5/fonts/kg-detail-medium.woff2') format('woff2'); }
+@font-face { font-family: 'KG Detail'; font-style: normal; font-weight: 700 800; font-display: swap; src: url('/static/h5/fonts/kg-sans-bold.woff2') format('woff2'); }
+/* #endif */

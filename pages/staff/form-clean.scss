@@ -1,0 +1,171 @@
+// 填写页的共用样式（2026-10-31，R7）：招募换工 / 兼职 / 全职（jobs.vue）、创建活动（activities.vue）、新增房源（rooms.vue）、发布线上任务（online-jobs.vue）。
+// 主人原话：「看起来很乱……这里使用的有年龄大的，需要看起来更干净成熟一些」。设计说明、逐页字段顺序和效果图见 forms-design.md。
+//
+// 用法：在页面的 <style scoped lang="scss"> 里写 @import './form-clean.scss';（和 publish-form.scss 一样）。
+// 放在 staff 分包目录：编译时并进各自页面的 wxss，不进 common，也不算进主包。
+//
+// 这几条别破：
+//   1. 颜色只用 styles/theme.scss 的 --k-* 变量；整页只有一种强调色 --k-red-deep（白字 5.62:1，比 --k-red 的 4.62:1 稳）；提醒红 --k-alert 只给报错。
+//   2. 不用渐变，不加装饰图标（只留 chevron-right / down / up、plus、minus、x、check、play 这些有功能的）；只有底部弹层有阴影。
+//   3. 字段名、输入内容、取值 16px，选项 15px，说明 14px，字数 13px，不再往下写。
+//   4. 能点的地方高度不低于 44px。唯一例外是照片右上角的 ×（36px）：点照片本身也能删，它只是快捷入口。
+//   5. wxss 限制：不用 * / 属性 / 标签选择器，冒号前面要带类名（冒号开头的子选择器会让整个小程序上传失败，见 scripts/wxss-selector.test.mjs）。圆角只用 8 / 12 / 16 / 50%。
+
+$fc-gutter: 16px; // 左右留白
+$fc-row-h: 56px; // 一行字段（左名字、右取值）的最小高度
+$fc-ctl-h: 48px; // 输入框、金额框、主按钮
+$fc-tap-h: 44px; // 最小点击高度：分段选项、步进器、时间按钮
+
+// placeholder-class 编译后不带 data-v，写在 scoped 里匹配不上（线上的 .pub-ph 看编译结果就是这样），所以这一条要 :global。
+// 不用 --k-light（白底 2.77:1，年纪大的人看不清）；和已填内容靠深浅区分：内容 --k-ink 12.57:1，占位 --k-muted 5.35:1
+:global(.fc-ph) { color: var(--k-muted); font-size: 16px; font-weight: 400; }
+
+// ---------------- 页面与分组 ----------------
+// 底部留白按「操作条 + 报错那一行」算（8 + 36 + 48 + 8 + 8），报错时最后一行也不被盖住
+.fc-form { padding-bottom: calc(108px + var(--k-safe-bottom)); background: var(--k-bg); }
+// 一组一块白底，组与组之间隔一条奶白；标题和它下面的字段在同一块里，一眼看出是一组
+.fc-block { margin-top: 10px; background: var(--k-paper); border-top: 1px solid var(--k-line); border-bottom: 1px solid var(--k-line); }
+.fc-group__title { display: block; padding: 16px $fc-gutter 6px; font-family: var(--k-serif); font-size: 18px; font-weight: 700; line-height: 26px; color: var(--k-ink); }
+
+// ---------------- 字段：两种版式 ----------------
+// .fc-field 名字在上、控件在下：输入框、大段文字、分段选项、照片
+// .fc-row   名字在左、取值在右：点开选（底部弹层 / 日历 / 地图）、步进器、开关。整行都能点
+.fc-field, .fc-row { position: relative; box-sizing: border-box; }
+.fc-field { padding: 14px $fc-gutter 16px; }
+.fc-row { display: flex; align-items: center; gap: 8px; min-height: $fc-row-h; padding: 8px $fc-gutter; }
+.fc-field::after, .fc-row::after { content: ''; position: absolute; left: $fc-gutter; right: 0; bottom: 0; height: 1px; background: var(--k-line); }
+.fc-field:last-child::after, .fc-row:last-child::after { display: none; }
+
+.fc-label { display: flex; align-items: baseline; gap: 8px; min-height: 24px; margin-bottom: 10px; }
+.fc-label--sub { margin-top: 14px; }
+.fc-label--sub .fc-label__t { font-size: 15px; font-weight: 400; color: var(--k-ink2); }
+.fc-label__t, .fc-row__k { font-size: 16px; font-weight: 500; line-height: 24px; color: var(--k-ink); }
+.fc-row__k { flex-shrink: 0; }
+.fc-req { flex-shrink: 0; font-size: 13px; line-height: 20px; color: var(--k-red-deep); }
+.fc-count { margin-left: auto; flex-shrink: 0; font-size: 13px; line-height: 20px; color: var(--k-muted); }
+// 名字右边的文字按钮（按模板帮我写）：字小，点击区撑到 44px，不把这一行撑高
+.fc-act { margin: -10px 0 -10px auto; flex-shrink: 0; align-self: center; min-height: $fc-tap-h; display: flex; align-items: center; font-size: 15px; font-weight: 500; color: var(--k-red-deep); }
+
+.fc-row__v { flex: 1; min-width: 0; text-align: right; font-size: 16px; line-height: 22px; color: var(--k-ink); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.fc-row__v--empty { color: var(--k-muted); }
+.fc-row__v--plain { color: var(--k-ink2); } // 只读的值（来源类型）
+.fc-row__v--full { display: block; } // 不截断（活动地点：写了就要看得全）
+.fc-row__copy { flex: 1; min-width: 0; }
+.fc-row__copy--fit { flex: 0 0 auto; } // 右边的取值也要地方时，左边只占自己那么宽（地图选点、主理人、截止时间）
+.fc-row__copy .fc-row__k { display: block; }
+// 名字后面还要跟「必填」时（工作地点）：名字和必填排一行，按基线对齐
+.fc-row__head { display: flex; align-items: baseline; gap: 8px; }
+.fc-row__copy .fc-note, .fc-row__copy .fc-err { margin-top: 4px; }
+.fc-row__sub { display: block; font-size: 14px; line-height: 20px; color: var(--k-muted); }
+// 取值很长的一行（工作地点）：名字一行、取值一行，都靠左，箭头在右边
+.fc-row__long { display: block; font-size: 16px; line-height: 24px; color: var(--k-ink2); overflow-wrap: anywhere; }
+.fc-row__long--empty { color: var(--k-muted); }
+
+.fc-note { display: block; margin-top: 8px; font-size: 14px; line-height: 22px; color: var(--k-muted); }
+.fc-foot { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.fc-foot .fc-note { margin-top: 0; flex: 1; min-width: 0; }
+.fc-foot .fc-count { margin-left: 0; line-height: 22px; }
+.fc-foot--end { justify-content: flex-end; } // 框下只有字数
+.fc-err { display: block; margin-top: 8px; font-size: 14px; line-height: 22px; color: var(--k-alert); }
+// 白块外面的说明（分组后面那一句、整页最后一段）：不加框、不加图标
+.fc-footnote { display: block; padding: 10px $fc-gutter 0; font-size: 14px; line-height: 22px; color: var(--k-muted); }
+// 确实要先看到的话（驳回原因、上线中哪些能直接改）
+.fc-notice { display: block; margin: 12px $fc-gutter 0; padding: 12px; border-radius: 12px; background: var(--k-paper2); font-size: 14px; line-height: 22px; color: var(--k-ink2); }
+.fc-notice--alert { background: var(--k-alert-soft); color: var(--k-alert); }
+// 房源向导：只写真实的步数，不再画五个点
+.fc-steps { display: flex; align-items: baseline; gap: 8px; padding: 12px $fc-gutter 0; font-size: 14px; line-height: 22px; color: var(--k-muted); }
+.fc-steps__t { font-weight: 600; color: var(--k-ink); }
+
+// ---------------- 输入 ----------------
+.fc-input { display: block; box-sizing: border-box; width: 100%; height: $fc-ctl-h; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); font-size: 16px; color: var(--k-ink); }
+// 小程序 textarea 是原生层：不在输入时换成同样外观的 view（--idle），点了才换回 textarea，和原来一样
+.fc-area { display: block; box-sizing: border-box; width: 100%; height: 120px; padding: 11px 12px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); font-size: 16px; line-height: 26px; color: var(--k-ink); }
+.fc-area--short { height: 88px; }
+.fc-area--idle { height: auto; min-height: 120px; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fc-area--short.fc-area--idle { height: auto; min-height: 88px; }
+.fc-money { display: flex; align-items: center; gap: 6px; box-sizing: border-box; height: $fc-ctl-h; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); }
+.fc-money__sign { flex-shrink: 0; font-size: 16px; color: var(--k-ink2); }
+.fc-money__input { flex: 1; min-width: 0; height: 46px; font-size: 16px; color: var(--k-ink); }
+.fc-money__unit { flex-shrink: 0; font-size: 15px; color: var(--k-muted); }
+.fc-money-row { display: flex; align-items: stretch; gap: 8px; }
+.fc-money-row .fc-money { flex: 1; min-width: 0; }
+.fc-money-row .fc-seg { flex: 0 0 152px; }
+.fc-num { margin-left: auto; flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+.fc-num__input { box-sizing: border-box; width: 76px; height: $fc-tap-h; padding: 0 10px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); text-align: center; font-size: 16px; color: var(--k-ink); }
+.fc-num__unit { font-size: 16px; color: var(--k-ink2); }
+.fc-input--err, .fc-area--err, .fc-money--err, .fc-num__input--err { border-color: var(--k-alert); background: var(--k-alert-soft); }
+.fc-row--err .fc-row__k, .fc-row--err .fc-row__v, .fc-row--err .fc-row__long { color: var(--k-alert); }
+.fc-gap { margin-top: 10px; }
+
+// ---------------- 四个以内的选项：一排平的奶油色方块。未选中不描边，选中整块实心 ----------------
+// 奶油色 = 能点（步进器、时间按钮、上传格子都是这个底），棕色实心 = 选中。不用一整条轨道：两个选项都没选时，轨道看着像一个按钮
+.fc-seg { display: grid; gap: 8px; }
+.fc-seg--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fc-seg--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fc-seg--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.fc-seg__item { min-height: $fc-tap-h; padding: 0 2px; border-radius: 12px; background: var(--k-paper2); display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 20px; color: var(--k-ink2); white-space: nowrap; }
+.fc-seg__item.on { background: var(--k-red-deep); color: var(--k-paper); font-weight: 600; }
+
+// ---------------- 步进器、开关 ----------------
+.fc-stepper { margin-left: auto; flex-shrink: 0; height: $fc-tap-h; border-radius: 12px; background: var(--k-paper2); display: flex; align-items: center; }
+.fc-stepper__btn { width: $fc-tap-h; height: $fc-tap-h; display: flex; align-items: center; justify-content: center; color: var(--k-ink); }
+.fc-stepper__btn.off { color: var(--k-light); }
+.fc-stepper__num { min-width: 56px; text-align: center; font-size: 16px; font-weight: 600; color: var(--k-ink); }
+.fc-switch { margin-left: auto; flex-shrink: 0; position: relative; width: 52px; height: 32px; border-radius: 16px; background: var(--k-light); transition: background-color .2s; }
+.fc-switch__dot { position: absolute; left: 3px; top: 3px; width: 26px; height: 26px; border-radius: 50%; background: var(--k-paper); transition: transform .2s cubic-bezier(.25, 1, .5, 1); }
+.fc-switch.on { background: var(--k-red-deep); }
+.fc-switch.on .fc-switch__dot { transform: translateX(20px); }
+// 开关打开后多出来的内容（奖金规则、补贴金额）：接在开关那一行下面，不另起一块
+.fc-row--open::after { display: none; }
+.fc-sub { position: relative; padding: 0 $fc-gutter 16px; }
+.fc-sub::after { content: ''; position: absolute; left: $fc-gutter; right: 0; bottom: 0; height: 1px; background: var(--k-line); }
+.fc-sub:last-child::after { display: none; }
+.fc-sub .fc-note { margin-top: 0; }
+.fc-sub .fc-foot { margin-top: 0; align-items: center; }
+
+// ---------------- 照片、视频 ----------------
+.fc-photos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.fc-photo { position: relative; height: 0; padding-bottom: 100%; border-radius: 8px; overflow: hidden; background: var(--k-paper2); }
+.fc-photo__img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.fc-photo__tag { position: absolute; left: 0; bottom: 0; padding: 1px 6px; border-top-right-radius: 8px; background: rgba(58, 50, 43, .72); color: var(--k-paper); font-size: 13px; line-height: 18px; }
+.fc-photo__del { position: absolute; top: 0; right: 0; width: 36px; height: 36px; padding: 4px; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: flex-end; }
+.fc-photo__x { width: 22px; height: 22px; border-radius: 50%; background: rgba(58, 50, 43, .72); display: flex; align-items: center; justify-content: center; }
+.fc-photo__add { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; line-height: 18px; color: var(--k-ink2); }
+.fc-photo__play { position: absolute; left: 50%; top: 50%; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%; background: rgba(58, 50, 43, .72); display: flex; align-items: center; justify-content: center; }
+// 活动封面：横图，一格
+.fc-cover-row { display: flex; align-items: center; gap: 12px; }
+.fc-cover { position: relative; flex-shrink: 0; width: 142px; height: 80px; border-radius: 8px; overflow: hidden; background: var(--k-paper2); }
+.fc-cover-row .fc-note { margin-top: 0; flex: 1; min-width: 0; }
+
+// ---------------- 活动的开始 / 结束时间：一行两个按钮（日期、时刻） ----------------
+.fc-when { margin-left: auto; min-width: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.fc-pick { min-height: $fc-tap-h; padding: 0 12px; border-radius: 12px; background: var(--k-paper2); display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--k-ink); white-space: nowrap; }
+.fc-pick__t { white-space: nowrap; } // 网页版的 text 自带换行规则，要写在字上；窄屏放不下时整个按钮折行，字不拆开
+
+// ---------------- 房源标签 ----------------
+.fc-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.fc-tag { min-height: $fc-tap-h; padding: 0 12px; border-radius: 12px; background: var(--k-paper2); display: flex; align-items: center; gap: 6px; font-size: 15px; color: var(--k-ink); }
+.fc-tag--add { color: var(--k-red-deep); font-weight: 500; }
+// 标签上的 ×：图标小，点击区撑到整个标签那么高，不把标签撑宽
+.fc-tag__x { width: 36px; height: $fc-tap-h; margin: 0 -12px 0 -6px; display: flex; align-items: center; justify-content: center; }
+
+// ---------------- 更多选填（折叠） ----------------
+.fc-more { position: relative; display: flex; align-items: center; gap: 8px; box-sizing: border-box; min-height: 64px; padding: 10px $fc-gutter; background: var(--k-paper); }
+.fc-more--open::after { content: ''; position: absolute; left: $fc-gutter; right: 0; bottom: 0; height: 1px; background: var(--k-line); }
+.fc-more__copy { flex: 1; min-width: 0; }
+.fc-more__t { display: block; font-size: 16px; font-weight: 600; line-height: 24px; color: var(--k-ink); }
+.fc-more__n { font-weight: 400; color: var(--k-muted); }
+.fc-more__sum { display: block; font-size: 14px; line-height: 20px; color: var(--k-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.fc-more__sum--err { color: var(--k-alert); }
+.fc-more__act { flex-shrink: 0; display: flex; align-items: center; gap: 2px; font-size: 15px; color: var(--k-red-deep); }
+
+// 底部弹层的样式在 components/fc-sheet.vue 里：只有那个组件用，scoped 也不跨组件，页面不用多带这一段
+
+// ---------------- 底部操作条：只放按钮，不写流程字（确认框和提交成功页会说） ----------------
+// 商家在填写屏看到的客服方块（components/fc-kefu.vue）排在提交按钮左边；员工看不到它，提交按钮自己占满
+.fc-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 43; box-sizing: border-box; padding: 8px $fc-gutter calc(8px + var(--k-safe-bottom)); background: var(--k-paper); border-top: 1px solid var(--k-line); }
+.fc-bar__err { display: flex; align-items: center; justify-content: center; min-height: $fc-tap-h; margin-top: -8px; font-size: 14px; color: var(--k-alert); }
+.fc-bar__btns { display: flex; gap: 12px; }
+.fc-btn { flex: 1; min-width: 0; height: $fc-ctl-h; border-radius: 12px; background: var(--k-red-deep); color: var(--k-paper); display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; }
+.fc-btn--ghost { flex: 0 0 38%; background: var(--k-paper2); color: var(--k-ink); }
+.fc-btn--off { background: var(--k-paper2); color: var(--k-muted); }

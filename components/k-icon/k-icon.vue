@@ -1,5 +1,5 @@
 <template>
-  <image class="k-icon" :src="src" :style="{ width: px, height: px }" mode="aspectFit" />
+  <image class="k-icon" :src="src" :style="{ width: px, height: px }" mode="aspectFit" @click="emit('click', $event)" />
 </template>
 
 <script setup>
@@ -9,10 +9,14 @@ import icons from '@/common/icons.js'
 defineOptions({ options: { virtualHost: true, styleIsolation: 'apply-shared' } })
 
 const TONES = {
-  ink: '#241B17', muted: '#6B635C', light: '#9A8E84', line: '#D9D3C7',
-  red: '#A94734', green: '#4F7A66', ochre: '#C99043', indigo: '#40576B',
-  paper: '#FBF7F0', white: '#FFFFFF'
+  // 和 styles/theme.scss 的 --k-* 保持一致（图标画在 SVG 里，读不到 CSS 变量）；red 是暖棕主色，alert 是提醒红
+  ink: '#3A322B', ink2: '#5A5149', muted: '#6F6A65', light: '#A39A92', line: '#DDD5C9',
+  red: '#9A6B3F', alert: '#C04437', green: '#4A6E3A', ochre: '#C99043', indigo: '#40576B',
+  paper: '#FFFFFF', white: '#FFFFFF'
 }
+
+// 小程序里 virtualHost 组件接不到父级写在组件上的原生 @click，这里显式转发一次
+const emit = defineEmits(['click'])
 
 const props = defineProps({
   name: { type: String, default: 'circle' },       // lucide 图标名，见 common/icons.js

@@ -1,0 +1,810 @@
+{
+  "schemaVersion": 1,
+  "scope": "Reviewed routed extension components, exact mapping; not inferred at runtime from getRouters",
+  "reviewedAgainst": "V7–V31 menu migrations, frontend wrappers and Java registrations",
+  "prior53Retained": [
+    "accountdel",
+    "activity",
+    "actsignup",
+    "appeal",
+    "arrival",
+    "cert",
+    "chatconv",
+    "city",
+    "commission",
+    "contractsign",
+    "dailyentry",
+    "dispatch",
+    "giftclaim",
+    "giftoption",
+    "guideapply",
+    "honoraward",
+    "honordef",
+    "insapply",
+    "insplan",
+    "jobshare",
+    "jobsub",
+    "milestone",
+    "onlinesettle",
+    "onlinesubmit",
+    "onlinetask",
+    "payee",
+    "payorder",
+    "post",
+    "postcomment",
+    "report",
+    "resumeforward",
+    "review",
+    "roomtype",
+    "sensword",
+    "shoporder",
+    "shopservice",
+    "staffop",
+    "stay",
+    "staycal",
+    "stayorder",
+    "staypromo",
+    "stayqual",
+    "stayvlog",
+    "sublog",
+    "substpl",
+    "talentinvite",
+    "task",
+    "taskassignee",
+    "ticket",
+    "tripplan",
+    "walletentry",
+    "weeklyreport",
+    "withdraw"
+  ],
+  "addedSincePrior53": [
+    "faq",
+    "homepick",
+    "memberbenefit",
+    "memberlevel",
+    "onlinereview",
+    "volunteerreview",
+    "appnotice",
+    "staydiary",
+    "merchantapply",
+    "merchantrequest",
+    "staycomment",
+    "supportchat",
+    "jobopt"
+  ],
+  "entries": [
+    {
+      "component": "kangaroo/ext/jobopt/index",
+      "kind": "ext-crud",
+      "entity": "jobopt",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/core/KgJobRequirementOptions.java",
+      "table": "sys_dict_data",
+      "pkColumn": "dict_code",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V67__job_requirement_options.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/accountdel/index",
+      "kind": "ext-crud",
+      "entity": "accountdel",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_account_deletion",
+      "pkColumn": "id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V14__account_ext.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/activity/index",
+      "kind": "ext-crud",
+      "entity": "activity",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/community/KgCommunityModule.java",
+      "table": "kg_activity",
+      "pkColumn": "activity_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V10__ext_community.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/actsignup/index",
+      "kind": "ext-crud",
+      "entity": "actsignup",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/community/KgCommunityModule.java",
+      "table": "kg_activity_signup",
+      "pkColumn": "signup_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V10__ext_community.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/appeal/index",
+      "kind": "ext-crud",
+      "entity": "appeal",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_appeal",
+      "pkColumn": "appeal_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/appnotice/index",
+      "kind": "ext-crud",
+      "entity": "appnotice",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgNoticeModule.java",
+      "table": "kg_app_notice",
+      "pkColumn": "notice_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V37__points_notice_follow.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/arrival/index",
+      "kind": "ext-crud",
+      "entity": "arrival",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_app_arrival",
+      "pkColumn": "app_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V11__ext_user.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/cert/index",
+      "kind": "ext-crud",
+      "entity": "cert",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_cert",
+      "pkColumn": "cert_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V11__ext_user.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/chatconv/index",
+      "kind": "ext-crud",
+      "entity": "chatconv",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/community/KgCommunityModule.java",
+      "table": "kg_chat_conv",
+      "pkColumn": "conv_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V10__ext_community.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/city/index",
+      "kind": "ext-crud",
+      "entity": "city",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_city",
+      "pkColumn": "city_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V11__ext_user.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/commission/index",
+      "kind": "ext-crud",
+      "entity": "commission",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_commission_rule",
+      "pkColumn": "rule_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/contractsign/index",
+      "kind": "ext-crud",
+      "entity": "contractsign",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_contract_sign",
+      "pkColumn": "sign_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V11__ext_user.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/dailyentry/index",
+      "kind": "ext-crud",
+      "entity": "dailyentry",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_daily_entry",
+      "pkColumn": "entry_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/dispatch/index",
+      "kind": "ext-crud",
+      "entity": "dispatch",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffOpsModule.java",
+      "table": "kg_dispatch_log",
+      "pkColumn": "log_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V16__restore_staffops_menu.sql",
+        "RuoYi-Vue/sql/kangaroo/V8__ext_staff_core.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/faq/index",
+      "kind": "ext-crud",
+      "entity": "faq",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_support_faq",
+      "pkColumn": "faq_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V26__operations_completion.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/giftclaim/index",
+      "kind": "ext-crud",
+      "entity": "giftclaim",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_gift_claim",
+      "pkColumn": "claim_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/giftoption/index",
+      "kind": "ext-crud",
+      "entity": "giftoption",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_gift_option",
+      "pkColumn": "gift_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/guideapply/index",
+      "kind": "ext-crud",
+      "entity": "guideapply",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_guide_apply",
+      "pkColumn": "apply_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V11__ext_user.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/homepick/index",
+      "kind": "ext-crud",
+      "entity": "homepick",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgHomeMemberModule.java",
+      "table": "kg_home_pick",
+      "pkColumn": "pick_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V29__home_membership_ops.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/honoraward/index",
+      "kind": "ext-crud",
+      "entity": "honoraward",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_honor_award",
+      "pkColumn": "award_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/honordef/index",
+      "kind": "ext-crud",
+      "entity": "honordef",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_honor_def",
+      "pkColumn": "honor_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/insapply/index",
+      "kind": "ext-crud",
+      "entity": "insapply",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffOpsModule.java",
+      "table": "kg_insurance_apply",
+      "pkColumn": "apply_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V16__restore_staffops_menu.sql",
+        "RuoYi-Vue/sql/kangaroo/V8__ext_staff_core.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/insplan/index",
+      "kind": "ext-crud",
+      "entity": "insplan",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffOpsModule.java",
+      "table": "kg_insurance_plan",
+      "pkColumn": "plan_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V16__restore_staffops_menu.sql",
+        "RuoYi-Vue/sql/kangaroo/V8__ext_staff_core.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/jobshare/index",
+      "kind": "ext-crud",
+      "entity": "jobshare",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffOpsModule.java",
+      "table": "kg_job_share",
+      "pkColumn": "share_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V16__restore_staffops_menu.sql",
+        "RuoYi-Vue/sql/kangaroo/V8__ext_staff_core.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/jobsub/index",
+      "kind": "ext-crud",
+      "entity": "jobsub",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_job_subscribe",
+      "pkColumn": "sub_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V11__ext_user.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/memberbenefit/index",
+      "kind": "ext-crud",
+      "entity": "memberbenefit",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgHomeMemberModule.java",
+      "table": "kg_member_benefit",
+      "pkColumn": "benefit_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V29__home_membership_ops.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/memberlevel/index",
+      "kind": "ext-crud",
+      "entity": "memberlevel",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgHomeMemberModule.java",
+      "table": "kg_member_level",
+      "pkColumn": "level_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V29__home_membership_ops.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/milestone/index",
+      "kind": "ext-crud",
+      "entity": "milestone",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_growth_milestone",
+      "pkColumn": "milestone_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/onlinereview/index",
+      "kind": "application-list",
+      "entity": "application",
+      "jobType": "online",
+      "registry": "RuoYi-Vue3/src/views/kangaroo/application/index.vue",
+      "table": "kg_application",
+      "pkColumn": "app_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V31__online_review_exports.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/onlinesettle/index",
+      "kind": "ext-crud",
+      "entity": "onlinesettle",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffExtModule.java",
+      "table": "kg_online_settlement",
+      "pkColumn": "settle_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V13__ext_staff.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/onlinesubmit/index",
+      "kind": "ext-crud",
+      "entity": "onlinesubmit",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffExtModule.java",
+      "table": "kg_online_submission",
+      "pkColumn": "submission_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V13__ext_staff.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/onlinetask/index",
+      "kind": "ext-crud",
+      "entity": "onlinetask",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffExtModule.java",
+      "table": "kg_online_task",
+      "pkColumn": "job_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V13__ext_staff.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/payee/index",
+      "kind": "ext-crud",
+      "entity": "payee",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_wallet_payee",
+      "pkColumn": "payee_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/payorder/index",
+      "kind": "ext-crud",
+      "entity": "payorder",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/core/KgCoreModule.java",
+      "table": "kg_pay_order",
+      "pkColumn": "pay_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V7__ext_core.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/post/index",
+      "kind": "ext-crud",
+      "entity": "post",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/community/KgCommunityModule.java",
+      "table": "kg_post",
+      "pkColumn": "post_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V10__ext_community.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/postcomment/index",
+      "kind": "ext-crud",
+      "entity": "postcomment",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/community/KgCommunityModule.java",
+      "table": "kg_post_comment",
+      "pkColumn": "comment_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V10__ext_community.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/report/index",
+      "kind": "ext-crud",
+      "entity": "report",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/core/KgCoreModule.java",
+      "table": "kg_report",
+      "pkColumn": "report_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V7__ext_core.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/resumeforward/index",
+      "kind": "ext-crud",
+      "entity": "resumeforward",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_resume_forward",
+      "pkColumn": "forward_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V14__account_ext.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/review/index",
+      "kind": "ext-crud",
+      "entity": "review",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/core/KgCoreModule.java",
+      "table": "kg_review",
+      "pkColumn": "review_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V7__ext_core.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/roomtype/index",
+      "kind": "ext-crud",
+      "entity": "roomtype",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_stay_room_type",
+      "pkColumn": "room_type_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V9__ext_stays.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/sensword/index",
+      "kind": "ext-crud",
+      "entity": "sensword",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/community/KgCommunityModule.java",
+      "table": "kg_sensitive_word",
+      "pkColumn": "word_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V10__ext_community.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/shoporder/index",
+      "kind": "ext-crud",
+      "entity": "shoporder",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_shop_order",
+      "pkColumn": "order_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V9__ext_stays.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/shopservice/index",
+      "kind": "ext-crud",
+      "entity": "shopservice",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_shop_service",
+      "pkColumn": "service_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V9__ext_stays.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/staffop/index",
+      "kind": "ext-crud",
+      "entity": "staffop",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffOpsModule.java",
+      "table": "kg_staff_op_log",
+      "pkColumn": "log_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V16__restore_staffops_menu.sql",
+        "RuoYi-Vue/sql/kangaroo/V8__ext_staff_core.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/stay/index",
+      "kind": "ext-crud",
+      "entity": "stay",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_stay",
+      "pkColumn": "stay_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V9__ext_stays.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/staycal/index",
+      "kind": "ext-crud",
+      "entity": "staycal",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_stay_calendar",
+      "pkColumn": "cal_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V9__ext_stays.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/stayorder/index",
+      "kind": "ext-crud",
+      "entity": "stayorder",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_stay_order",
+      "pkColumn": "order_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V9__ext_stays.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/staypromo/index",
+      "kind": "ext-crud",
+      "entity": "staypromo",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_stay_promo",
+      "pkColumn": "promo_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V9__ext_stays.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/stayqual/index",
+      "kind": "ext-crud",
+      "entity": "stayqual",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_stay_qualification",
+      "pkColumn": "qual_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V9__ext_stays.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/stayvlog/index",
+      "kind": "ext-crud",
+      "entity": "stayvlog",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_stay_vlog",
+      "pkColumn": "vlog_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V9__ext_stays.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/staydiary/index",
+      "kind": "ext-crud",
+      "entity": "staydiary",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_stay_diary",
+      "pkColumn": "diary_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V53__stay_media.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/sublog/index",
+      "kind": "ext-crud",
+      "entity": "sublog",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_subscribe_log",
+      "pkColumn": "log_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V15__subscribe_msg.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/substpl/index",
+      "kind": "ext-crud",
+      "entity": "substpl",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_subscribe_template",
+      "pkColumn": "tpl_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V15__subscribe_msg.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/talentinvite/index",
+      "kind": "ext-crud",
+      "entity": "talentinvite",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffExtModule.java",
+      "table": "kg_talent_invite",
+      "pkColumn": "invite_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V13__ext_staff.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/task/index",
+      "kind": "ext-crud",
+      "entity": "task",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_task",
+      "pkColumn": "task_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/taskassignee/index",
+      "kind": "ext-crud",
+      "entity": "taskassignee",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_task_assignee",
+      "pkColumn": "id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/ticket/index",
+      "kind": "ext-crud",
+      "entity": "ticket",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_support_ticket",
+      "pkColumn": "ticket_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V11__ext_user.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/tripplan/index",
+      "kind": "ext-crud",
+      "entity": "tripplan",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/community/KgCommunityModule.java",
+      "table": "kg_trip_plan",
+      "pkColumn": "plan_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V10__ext_community.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/volunteerreview/index",
+      "kind": "application-list",
+      "entity": "application",
+      "jobType": "volunteer",
+      "registry": "RuoYi-Vue3/src/views/kangaroo/application/index.vue",
+      "table": "kg_application",
+      "pkColumn": "app_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V31__online_review_exports.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/walletentry/index",
+      "kind": "ext-crud",
+      "entity": "walletentry",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_wallet_entry",
+      "pkColumn": "entry_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/weeklyreport/index",
+      "kind": "ext-crud",
+      "entity": "weeklyreport",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_weekly_report",
+      "pkColumn": "report_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/withdraw/index",
+      "kind": "ext-crud",
+      "entity": "withdraw",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/manage/KgManageModule.java",
+      "table": "kg_wallet_withdraw",
+      "pkColumn": "withdraw_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V12__ext_manage.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/merchantapply/index",
+      "kind": "ext-crud",
+      "entity": "merchantapply",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgMerchantModule.java",
+      "table": "kg_merchant_apply",
+      "pkColumn": "apply_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V56__merchant_apply.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/merchantrequest/index",
+      "kind": "ext-crud",
+      "entity": "merchantrequest",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgMerchantRequestModule.java",
+      "table": "kg_merchant_request",
+      "pkColumn": "request_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V63__merchant_roles.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/staycomment/index",
+      "kind": "ext-crud",
+      "entity": "staycomment",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/stay/KgStayModule.java",
+      "table": "kg_stay_comment",
+      "pkColumn": "comment_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V65__stay_comment.sql"
+      ]
+    },
+    {
+      "component": "kangaroo/ext/supportchat/index",
+      "kind": "ext-crud",
+      "entity": "supportchat",
+      "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/user/KgUserModule.java",
+      "table": "kg_support_chat",
+      "pkColumn": "chat_id",
+      "menuMigrations": [
+        "RuoYi-Vue/sql/kangaroo/V72__support_chat.sql"
+      ]
+    }
+  ]
+}

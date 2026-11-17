@@ -1,0 +1,12 @@
+// 旅居分包局部视觉：参考稿中的奶油底、深棕文字和轻描边。
+@mixin stays-surface {
+ --k-bg: #FBF6F0;
+ --k-paper2: #F6EEE4;
+ --k-ink: #342A24;
+ --k-ink2: #625448;
+ --k-red: #A77542;
+ --k-red-deep: #80522E;
+ --k-green: #208258;
+ background: linear-gradient(180deg, #F5E8DA 0, #FBF5EE 360px, #FCFAF6 720px);
+ color: var(--k-ink);
+}

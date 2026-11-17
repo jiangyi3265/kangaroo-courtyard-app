@@ -1,0 +1,48 @@
+/* Reference sheet: compact summary; media occupies the body column instead of stretching across the card. */
+@import './reference-font.scss';
+.stay-reviews { --k-sans: 'KG Detail', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-family: var(--k-sans); background-image: var(--stay-paper), linear-gradient(160deg,#FAEADB 0,#FBF9F6 330px,#F6F6F6 650px); background-size: 96px 96px,100% 100%; }
+.stay-reviews :deep(.k-topbar) { background-image: var(--stay-paper); background-size: 96px 96px; }
+.sr-body { padding-top: 0; padding-left: 10px; padding-right: 10px; }
+.sum { padding: 10px 14px; }
+.sum__top { align-items: center; }
+.sum__score { flex: 1.3; align-items: flex-start; }
+.sum__stat { flex: 1; }
+.sum__num,.sum__big { font-size: 28px; }
+.sum__percent { font-size: 14px; margin-left: 1px; letter-spacing: 0; }
+.sum__score-side { flex-direction: row; flex-wrap: wrap; gap: 3px; }
+.sum__cap { font-size: 11px; }
+.sum__stars :deep(.k-icon) { width: 9px !important; height: 9px !important; }
+.sum__div { height: 35px; margin-top: 0; }
+.sum__dims { margin-top: 12px; padding-top: 10px; }
+.sum__dim-label { font-size: 13px; font-weight: 700; }
+.sum__dim-num { font-size: 14px; }
+.mention { margin-top: 15px; }
+.mention__title { font-size: 17px; }
+.mention__chips { margin-top: 8px; gap: 6px 9px; }
+.mention__chip { min-height: 23px; padding: 0 12px; font-size: 12px; font-weight: 500; }
+.bar { margin-top: 8px; }
+.bar__tab { min-height: 25px; padding: 0 12px; }
+.bar__filter { min-height: 25px; }
+.rv { margin-top: 6px; padding: 10px 13px 11px; }
+.rv__avatar { width: 28px; height: 28px; }
+.rv__head { gap: 8px; align-items: flex-start; }
+.rv__who>.rv__line:first-child { padding-right: 66px; gap: 5px; }
+.rv__who>.rv__line:last-child { top: 3px; }
+.rv__date { margin-left: 0; }
+.rv__room { padding: 1px 6px; font-size: 10px; }
+.rv__text { margin: 3px 0 0 36px; }
+.rv__para { font-size: 13px; line-height: 1.55; font-weight: 700; }
+.rv__pics { width: 400rpx; max-width: calc(100% - 36px); margin: 7px 0 0 36px; }
+.rv__cell { border-radius: 6px; }
+.rv__video { width: 320rpx; max-width: calc(100% - 36px); height: 170rpx; padding-bottom: 0; margin: 8px 0 0 36px; }
+.rv__video-play { width: 28px; height: 28px; margin: -14px 0 0 -14px; border: 0; background: transparent; }
+.rv__video-tag { font-size: 9px; bottom: 5px; left: 5px; padding: 2px 4px; }
+.rv__chips { margin: 7px 0 0 36px; }
+.rv__chip { font-size: 11px; line-height: 1.3; padding: 2px 6px; border: 1px solid #E8E5E1; background: #FAF9F7; }
+@media(max-width:359px) {
+ .sum__num,.sum__big { font-size: 26px; }
+ .sum__cap { font-size: 10px; }
+ .rv__who>.rv__line:first-child { padding-right: 58px; }
+ .rv__text,.rv__pics,.rv__video,.rv__chips { margin-left: 0; }
+ .rv__pics,.rv__video { max-width: 100%; }
+}

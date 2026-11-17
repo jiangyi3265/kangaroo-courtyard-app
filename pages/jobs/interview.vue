@@ -1,59 +1,674 @@
 <template>
+  <!-- #ifdef MP-WEIXIN -->
+  <page-meta :page-style="aiOpen ? 'overflow: hidden' : ''" />
+  <!-- page-meta 必须是页面第一个节点：AI袋鼠弹层开着时锁住页面滚动（网页版由弹层自己锁 body） -->
+  <!-- #endif -->
   <view class="k-page interview-page" :class="{ 'video-page': s === 2 }">
-    <k-topbar :title="titles[s - 1]" back :dark="s === 2" :bg="s === 2 ? '#121815' : ''" @back="back" />
+    <k-topbar :title="titles[s - 1]" back :dark="s === 2" :bg="s === 2 ? '#121815' : ''" custom-back @back="onBack" />
+
+    <view v-if="s === 4 && appId && detail" class="interview-messages">
+      <application-messages :app-id="appId" :store-name="detail.storeName || ''" @navigate="leave" />
+    </view>
+
+    <view v-if="s !== 2 && s !== 4 && detail && detail.jobType !== 'online'" class="interview-flow">
+      <view class="interview-flow__head"><text>报名流程</text><text v-if="flowCurrent" class="interview-flow__stage">{{ flowCurrent > FLOW_STEPS.length ? '流程已完成' : '第 ' + flowCurrent + ' / ' + FLOW_STEPS.length + ' 步' }}</text></view>
+      <job-flow-steps :current="flowCurrent" :arrival-enabled="canOpenArrival" compact @arrival="openArrival" />
+      <text class="interview-flow__hint">{{ flowTip }}</text>
+    </view>
 
     <view v-if="s === 1" class="lobby k-pad-safe">
-      <view class="countdown"><text>面试将于</text><view><text>00:14:32</text><text> 后开始</text></view><text>开始时间：2025-09-05（周五）14:00</text></view>
+      <view class="countdown"><text>面试将于</text><view><text>{{ countdownText }}</text><text>{{ countdownSuffix }}</text></view><text>{{ lobbyHint }}</text></view>
       <text class="section-title">面试岗位</text>
-      <view class="job"><image src="/static/media/interview-cafe.jpg" mode="aspectFill" /><view><text class="job__title">古城咖啡馆驻店伙伴</text><view><k-icon name="map-pin" :size="17" color="muted" /><text>大理古城 · 苍山路 88 号</text></view><view><k-icon name="briefcase-business" :size="17" color="muted" /><text>120 元/天 · 月结</text></view><k-chip tone="green"><k-icon name="shield-check" :size="15" color="green" /><text>安心商家</text></k-chip></view></view>
+      <view class="job"><image v-if="jobCover" :src="jobCover" mode="aspectFill" /><view><text class="job__title">{{ displayWording(jobTitle) }}</text><view v-if="jobAddress"><k-icon name="map-pin" :size="17" color="muted" /><text>{{ jobAddress }}</text></view><view v-if="jobSalary"><k-icon name="briefcase-business" :size="17" color="muted" /><text>{{ jobSalary }}</text></view><k-chip v-if="jobSafe" tone="green"><k-icon name="shield-check" :size="15" color="green" /><text>安心商家</text></k-chip></view></view>
+      <!-- 认出腾讯会议号：一键拉起腾讯会议小程序 + 复制会议号；认不出的旧文字（链接等）照旧显示原文，用下方按钮复制。
+           2026-11-03 主人：会议号、密码、入会链接各占一行，点哪行复制哪行；只有腾讯会议链接时「进入」改为复制链接 -->
+      <view v-if="tm" class="card meeting-card"><text class="tm-title">腾讯会议</text><view v-if="tm.code" class="tm-row" @click="copyText(tm.code)"><text>会议号</text><text class="tm-code">{{ tmCode }}</text><text class="tm-copy">复制</text></view><view v-if="tm.pwd" class="tm-row" @click="copyText(tm.pwd)"><text>密码</text><text class="tm-code">{{ tm.pwd }}</text><text class="tm-copy">复制</text></view><view v-if="tm.link" class="tm-row" @click="copyText(tm.link)"><text>链接</text><text class="tm-link">{{ tm.link }}</text><text class="tm-copy">复制</text></view><text v-if="tm.note" class="tm-note">{{ tm.note }}</text><view class="tm-actions"><k-button block icon="video" label="进入腾讯会议" @click="joinMeeting" /><k-button block type="outline" size="md" :label="tm.code ? '复制会议号' : '复制入会链接'" @click="copyCode" /></view><text class="tm-hint">{{ tm.code ? '首次进入需按腾讯会议提示授权手机号' : '复制链接后，用手机浏览器打开，或打开腾讯会议 App 加入' }}</text></view>
+      <view v-else class="card meeting-card"><text>{{ meetingInfo || '主理人尚未填写会议信息，请通过消息联系门店安排。' }}</text><text class="tm-hint">{{ meetingInfo ? '这段会议信息里没认出腾讯会议号，请复制后按其中方式入会。' :'面试通过腾讯会议进行，主理人填好会议号后这里可一键进入。' }}</text></view>
+      <view v-if="appId" class="meeting-help">
+        <text class="meeting-help__title">在等候室一直进不去？</text>
+        <text class="tm-hint">请与主理人核对会议号。显示“主持人即将邀请您入会”时，需要主持人在腾讯会议的“管理成员 → 等候中”准入。</text>
+        <text v-if="meetingRefreshError" class="meeting-help__error">{{ meetingRefreshError }}</text>
+        <view class="meeting-help__actions"><k-button type="outline" size="md" :disabled="meetingRefreshing" :label="meetingRefreshing ? '正在刷新…' : '刷新会议信息'" @click="refreshMeetingInfo(true)" /><k-button type="outline" size="md" label="联系主理人" @click="contactStore" /></view>
+      </view>
       <text class="section-title">设备检测</text>
-      <view class="device card"><view v-for="item in devices" :key="item.label"><k-icon :name="item.icon" :size="28" color="ink" /><text>{{ item.label }}</text><view><text>已检测通过</text><k-icon name="circle-check" :size="20" color="green" /></view></view></view>
+      <view class="device card"><view v-for="item in devices" :key="item.label"><k-icon :name="item.icon" :size="28" color="ink" /><text>{{ item.label }}</text><view><text>未检测</text><k-icon name="circle-help" :size="20" color="muted" /></view></view></view>
       <text class="section-title">面试准备清单</text>
-      <view class="checklist card"><view v-for="item in checklist" :key="item.label"><k-icon :name="item.icon" :size="19" color="muted" /><text>{{ item.label }}</text><view><text>已完成</text><k-icon name="circle-check" :size="18" color="green" /></view></view></view>
-      <view class="lobby-actions"><k-button block @click="s = 2">进入视频面试</k-button><k-button block type="outline" @click="toast('改期申请已提交')">申请改期</k-button></view><view class="help"><k-icon name="headphones" :size="18" color="muted" /><text>如需帮助，可联系平台客服</text></view>
+      <view class="checklist card"><view v-for="item in checklist" :key="item.label"><k-icon :name="item.icon" :size="19" color="muted" /><text>{{ item.label }}</text><view><text>请自行确认</text><k-icon name="circle-minus" :size="18" color="muted" /></view></view></view>
+      <view class="lobby-actions"><k-button v-if="!tm || canFeedback" block :disabled="!canEnterVideo" :label="enterVideoText" @click="enterVideo" /><k-button block type="outline" :label="rescheduleText" @click="reschedule" /></view>
+      <!-- 2026-11-03 主人：简化 —— 申请改期：可选时段做成页面内胶囊，点一个底部出「确认改到 …」按钮（原来弹底部菜单选时段、再弹一个确认框）；
+           没有时段时页面内写明并给「联系当地主理人」；撤回报名从菜单里拿出来，单独一行文字钮（撤回是危险操作，仍保留一次确认） -->
+      <view v-if="slotPanel" class="card slot-panel">
+        <view class="slot-panel__head"><text class="slot-panel__title">申请改期</text><view class="slot-panel__close" hover-class="k-press" @click="closeSlots"><k-icon name="x" :size="18" color="muted" :stroke="2" /></view></view>
+        <text v-if="slotsLoading" class="slot-panel__hint">正在读取可选时段…</text>
+        <template v-else-if="slots.length">
+          <text class="slot-panel__hint">选一个门店还开放的时段，你还可以改期 {{ rescheduleLeft }} 次</text>
+          <view class="slot-pills"><view v-for="x in slots" :key="x.slotId" class="slot-pill" :class="{ on: slotPick === x.slotId }" hover-class="k-press-s" @click="slotPick = x.slotId"><text>{{ fmtSlot(x.startTime) }}</text></view></view>
+          <view v-if="slotPick" class="slot-panel__confirm"><text class="slot-panel__hint">原时段会放回可约池，门店会收到通知</text><k-button block :disabled="rescheduling" :label="rescheduling ? '提交中…' : '确认改到 ' + fmtSlot(pickedSlot.startTime)" @click="confirmReschedule" /></view>
+        </template>
+        <template v-else>
+          <text class="slot-panel__hint">门店还没有放出其他面试时段，可以直接联系当地主理人协商时间</text>
+          <k-button block type="outline" label="联系当地主理人" @click="contactStore" />
+        </template>
+      </view>
+      <view v-if="canWithdraw" class="withdraw-link" hover-class="k-press" @click="withdraw"><text>撤回报名</text></view>
+      <view class="help" @click="openHelp"><k-icon name="headphones" :size="18" color="muted" /><text>如需帮助，可联系当地主理人或平台客服</text></view>
+      <!-- 安全负责人、分享给亲友（2026-10-31）：约完面试后进度页会转到这一页，这里也要找得到。第 2 屏是视频示意、第 3 屏是问卷，不放 -->
+      <safety-share v-if="appId && detail" compact :app-id="appId" :status="status" @ready="onTrip" />
     </view>
 
     <view v-else-if="s === 2" class="video-body">
-      <view class="safe-tip"><k-icon name="shield-check" :size="19" color="ochre" /><text>安全提示：请文明沟通，注意个人隐私保护</text></view><text class="video-time">00:18:27</text>
-      <view class="video-panel"><image src="/static/media/interview-boss.jpg" mode="aspectFill" /><view class="video-name"><image src="/static/media/interview-boss-avatar.jpg" mode="aspectFill" /><text>小鹿老板（面试官）</text></view></view>
-      <view class="video-panel me-panel"><image src="/static/media/interview-me.jpg" mode="aspectFill" /><view class="video-name"><image src="/static/media/jobs-team-a1.jpg" mode="aspectFill" /><text>我（应聘者）</text><k-icon name="chart-no-axes-column-increasing" :size="17" color="green" /></view><view class="camera-flip"><k-icon name="camera" :size="24" color="ink" /></view></view>
-      <view class="video-controls"><view v-for="(item,i) in controls" :key="item.label" @click="i === 3 ? s = 3 : toast(item.label)"><view :class="{ light: i === 2, end: i === 3 }"><k-icon :name="item.icon" :size="29" :color="i === 2 ? 'ink' : 'white'" /></view><text>{{ item.label }}</text></view></view>
+      <view class="safe-tip"><k-icon name="shield-check" :size="19" color="ochre" /><text>视频通话未接入，本屏为流程示意</text></view><text class="video-time">{{ videoTimeText }}</text>
+      <view class="video-panel"><image src="/static/media/cover-empty.png" mode="aspectFill" /><view class="video-name"><image src="/static/media/profile-avatar.jpg" mode="aspectFill" /><text>面试官（画面未接入）</text></view></view>
+      <view class="video-panel me-panel"><image src="/static/media/cover-empty.png" mode="aspectFill" /><view class="video-name"><image src="/static/media/profile-avatar.jpg" mode="aspectFill" /><text>我（画面未接入）</text><k-icon name="chart-no-axes-column-increasing" :size="17" color="green" /></view><view class="camera-flip"><k-icon name="camera" :size="24" color="ink" /></view></view>
+      <view class="video-controls"><view v-for="(item,i) in controls" :key="item.label" @click="onControl(i)"><view :class="{ light: i === 2, end: i === 3 }"><k-icon :name="item.icon" :size="29" :color="i === 2 ? 'ink' : 'white'" /></view><text>{{ item.label }}</text></view></view>
     </view>
 
     <view v-else-if="s === 3" class="confirm-body k-pad-bottom">
-      <view class="success-banner"><k-icon name="circle-check" :size="29" color="green" /><view><text>面试已结束，感谢您的时间！</text><text>请确认以下信息，帮助我们更好地为您匹配合适的岗位</text></view></view>
-      <view v-for="(group,gi) in confirmGroups" :key="group.title" class="confirm-group"><view class="confirm-title"><text>{{ gi + 1 }}</text><text>{{ group.title }}</text></view><text class="confirm-question">{{ group.question }}</text><view class="choice-card"><view v-for="(item,i) in group.choices" :key="item"><view class="choice-radio" :class="{ active: i === 0 }"><view /></view><text>{{ item }}</text></view></view></view>
-      <view class="note-group"><view class="confirm-title"><text>4</text><text>备注（选填）</text></view><view class="note-box"><text>如有其他想了解或需要说明的内容，可在此备注...</text><text>0/200</text></view></view>
-      <k-bottom><k-button type="outline" @click="toast('已选择不合适')">不合适</k-button><k-button type="outline" @click="toast('已保存考虑')">还想考虑</k-button><k-button @click="s = 4">愿意前往</k-button></k-bottom>
+      <view class="success-banner"><k-icon name="circle-check" :size="29" color="green" /><view><text>{{ confirmTitle }}</text><text>{{ confirmDesc }}</text></view></view>
+      <view v-for="(group,gi) in confirmGroups" :key="group.title" class="confirm-group"><view class="confirm-title"><text>{{ gi + 1 }}</text><text>{{ group.title }}</text></view><text class="confirm-question">{{ group.question }}</text><view class="choice-card"><view v-for="(item,i) in group.choices" :key="item" @click="pick(gi, i)"><view class="choice-radio" :class="{ active: picks[gi] === i }"><view /></view><text>{{ item }}</text></view></view></view>
+      <!-- 2026-11-03 主人：简化 —— 备注直接在框里写（原来点一下弹系统输入框）；不打字时用普通块显示，免得原生 textarea 盖住底部按钮 -->
+      <view class="note-group"><view class="confirm-title"><text>4</text><text>备注（选填）</text></view><view class="note-box"><textarea v-if="editingNote" v-model="note" class="note-box__area" maxlength="200" :placeholder="noteHint" placeholder-class="k-placeholder" :focus="true" auto-focus @blur="note = $event.detail.value.trim().slice(0, 200); editingNote = false" /><view v-else class="note-box__idle" @click="editingNote = true"><text :class="{ 'k-placeholder': !note }">{{ note || noteHint }}</text></view><text>{{ note.length }}/200</text></view></view>
+      <!-- 三个按钮各占一份等宽（k-button 是虚拟节点组件，宽度放外层 view 上） --><k-bottom><view class="k-flex1"><k-button block type="outline" :disabled="submitting" label="不合适" @click="submitIntent('reject')" /></view><view class="k-flex1"><k-button block type="outline" :disabled="submitting" label="还想考虑" @click="submitIntent('pending')" /></view><view class="k-flex1"><k-button block :disabled="submitting" label="愿意前往" @click="submitIntent('accept')" /></view></k-bottom>
     </view>
 
     <view v-else class="progress-body k-pad-safe">
-      <view class="success-banner"><k-icon name="circle-check" :size="29" color="green" /><view><text>您已确认意向，等待商家确认中</text><text>感谢您的耐心等待，通常在 24 小时内完成</text></view></view>
-      <view class="confirm-cards"><view><text>您（应聘者）</text><view><k-icon name="circle-check" :size="25" color="green" /><text>已确认</text></view><text>2025-09-05 14:25</text></view><view><text>商家（小鹿老板）</text><view><k-icon name="hourglass" :size="27" color="ochre" /><text>待确认</text></view><text>预计 24 小时内</text></view></view>
-      <view class="steps-block"><text class="section-title">双向确认进度（共 6 步）</text><view class="steps"><view v-for="(item,i) in steps" :key="item"><view class="step-dot" :class="{ done: i < 3 }"><k-icon v-if="i === 0" name="check" :size="14" color="white" /><text v-else>{{ i + 1 }}</text></view><text>{{ item }}</text><view v-if="i < 5" class="step-line" :class="{ done: i < 2 }" /></view></view></view>
-      <view class="deadline card"><text class="section-title">关键时间</text><view><k-icon name="calendar-clock" :size="21" color="ink" /><text>商家确认截止时间</text><text>2025-09-06 14:25</text><k-icon name="clock-3" :size="18" color="muted" /></view><text>逾期未确认，系统将自动终止本次申请</text></view>
-      <text class="section-title notice-title">消息提醒</text><view class="notice card"><view><image src="/static/media/interview-boss-avatar.jpg" mode="aspectFill" /><view><view><text>小鹿老板</text><k-chip tone="green"><text>商家</text></k-chip></view><text>已查看您的确认信息，正在评估中</text></view><text>14:28</text></view><view><image src="/static/media/interview-bot.jpg" mode="aspectFill" /><view><view><text>袋鼠小院小助手</text><k-chip tone="green"><text>系统</text></k-chip></view><text>双方确认通过后，即可签署责任书</text></view><text>14:20</text></view></view>
-      <view class="next card"><text class="section-title">下一步</text><text>双方都确认通过后，将解锁签署责任书</text><k-button block disabled icon="lock-keyhole">签署责任书（待解锁）</k-button><view><text>了解责任书内容</text><k-icon name="chevron-right" :size="18" color="indigo" /></view></view><view class="help"><k-icon name="headphones" :size="18" color="muted" /><text>如有疑问，可联系平台客服</text></view>
+      <view class="success-banner"><k-icon name="circle-check" :size="29" color="green" /><view><text>{{ progressTitle }}</text><text>{{ progressDesc }}</text></view></view>
+      <view class="steps-block"><text class="section-title">报名进度（共 {{ FLOW_STEPS.length }} 步）</text><job-flow-steps :current="flowCurrent" :arrival-enabled="canOpenArrival" compact @arrival="openArrival" /><text class="interview-flow__hint">{{ flowTip }}</text></view>
+      <view class="confirm-cards"><view><text>您（应聘者）</text><view><k-icon :name="mineIcon" :size="25" color="green" /><text>{{ mineStatus }}</text></view><text>{{ mineTime }}</text></view><view><text>{{ storeCardName }}</text><view><k-icon :name="storeIcon" :size="27" color="ochre" /><text>{{ storeStatus }}</text></view><text>{{ storeTime }}</text></view></view>
+      <k-application-dates v-if="appId && detail" :app-id="appId" @navigate="leave" @updated="loadDetail" />
+      <view class="next card"><text class="section-title">下一步</text><text>{{ contractHint }}</text><k-button block :disabled="!canOpenContract" icon="lock-keyhole" @click="openContract">{{ signBtnText }}</k-button></view>
     </view>
+    <!-- 「联系客服」：AI袋鼠在本页底部弹出，不跳页 -->
+    <k-ai-sheet :show="aiOpen" ctx="profile" @close="closeAi" />
   </view>
 </template>
 
 <script setup>
-import { useScreen, back, toast } from '@/common/screen.js'
-const s = useScreen(4)
+import { displayWording } from '@/common/display-wording.js'
+import { serverTs, sheet, modal } from '@/common/ui.js'
+// ---------------------------------------------------------------------------
+// 本页接入情况（改一次就要同步改一次这段注释）：
+//
+// 已接后端（需要带 ?appId=，消息深链与进度页都会带）：
+//   · 报名/面试详情      apiApplicationDetail(appId)
+//   · 面试结果落库        apiFinishInterview(appId, { durationSeconds, 三组单选, feedbackNote })
+//   · 面试后表态          apiConfirmIntent(appId, 'reject' | 'pending' | 'accept')
+//   · 改期 / 撤回报名      apiRescheduleInterview / apiWithdrawApplication（候场页「申请改期」展开页面内时段面板、「撤回报名」文字钮，只对已约面试的报名开放）
+//   · s=4 的双向确认进度、商家确认截止时间，全部来自上面的详情接口
+//   · 会议信息（interview.meetingInfo）认得出腾讯会议号时，候场页一键拉起腾讯会议小程序（common/meeting.js），
+//     认不出的旧文字照旧显示原文 + 复制
+//   · 面试之前的状态、已撤回、线上任务不归本页，一律 redirectTo 回审核进度页（见 PROGRESS_PAGE）
+//
+// 仍未接入（页面上必须说明，不能装成已完成）：
+//   · 视频通话本身 —— s=2 的两路画面、面试官姓名、静音/摄像头/扬声器都是静态示意
+//   · s=1 的设备检测 —— 从没做过任何摄像头/麦克风检测，所以只能写"未检测"
+//   · s=3 的备注 —— 2026-11-03 起是框里直接写的 textarea（不打字时用普通块显示），随问卷一起提交
+//   · s=4 的责任书签署 —— 保险承担方、法律主体、实名认证（INTEGRATION.md 9.2 第 2/4/10 条）
+//     都还没拍板，按钮保持 disabled
+//
+// 没有 appId 时是设计稿走查（?s=1..4 直达）：这条路径上一个请求都不发，
+// 状态位一律留空或写明"设计稿走查"，不会显示任何像真实履约的内容。
+// ---------------------------------------------------------------------------
+import { absUrl } from '@/common/upload.js'
+import { ref, computed, onUnmounted } from 'vue'
+import { onShareAppMessage, onShow, onHide } from '@dcloudio/uni-app'
+import { useScreen, back, go, replace, toast } from '@/common/screen.js'
+import R from '@/common/routes.js'
+import { apiApplicationDetail, apiJobDetail, apiFinishInterview, apiConfirmIntent, apiInterviewSlots, apiRescheduleInterview, apiWithdrawApplication } from '@/common/api.js'
+import { parseTencentMeeting, groupCode, openTencentMeeting } from '@/common/meeting.js'
+import { experience } from '@/common/experience.js'
+import SafetyShare from './components/safety-share.vue'
+import JobFlowSteps from './components/job-flow-steps.vue'
+import ApplicationMessages from './components/application-messages.vue'
+import { FLOW_STEPS, flowStepOf, flowHint } from './apply-flow.js'
+import { jobShareFallback, tripShareMessage } from './trip-share.js'
+const aiOpen = ref(false)
+
+/** 没有对应后端接口的功能，统一回一句"未开放"，不能报"已提交/已保存" */
+const notOpen = (what) => toast((what || '该功能') + '暂未开放')
 const titles = ['面试候场','视频面试中','面试后确认','双向确认进度']
 const devices = [{ icon:'camera',label:'摄像头' },{ icon:'mic',label:'麦克风' }]
 const checklist = [{ icon:'thumbs-up',label:'选择安静明亮的环境' },{ icon:'wifi',label:'保证网络稳定（建议 Wi-Fi）' },{ icon:'camera-off',label:'关闭其他占用摄像头的应用' },{ icon:'user-round',label:'提前准备好个人介绍' }]
 const controls = [{ icon:'mic',label:'静音' },{ icon:'video-off',label:'关闭摄像头' },{ icon:'volume-2',label:'扬声器' },{ icon:'phone-call',label:'结束面试' }]
 const confirmGroups = [{ title:'岗位理解',question:'您对岗位的理解是否清晰？',choices:['理解清晰，符合预期','基本理解，部分需进一步沟通','不太清晰'] },{ title:'食宿条件确认',question:'您对商家提供的食宿条件是否满意？',choices:['满意，能够接受','基本满意，有一些顾虑','不满意，无法接受'] },{ title:'到岗日期确认',question:'您能否按约定时间到岗？',choices:['可以，按时到岗','可能调整，需要沟通','无法按时到岗'] }]
-const steps = ['面试邀约','视频面试','用户确认','商家确认','签署责任书','入职准备']
+/** 设计稿第 1 屏的岗位卡片内容，只在"没有 appId 的设计走查"里用 */
+const DESIGN_JOB = { cover:'/static/media/interview-cafe.jpg', title:'古城咖啡馆驻店伙伴', address:'大理古城 · 苍山路 88 号', salary:'120 元/天 · 月结' }
+
+// ---------------------------------------------------------------------------
+// 取数
+// ---------------------------------------------------------------------------
+const appId = ref(null)
+const detail = ref(null)
+const job = ref(null)
+const explicitScreen = ref(false)
+// 分享给亲友：读到行程发行程卡片，没读到（已结束）右上角转发发岗位详情
+const trip = ref(null)
+const onTrip = (value) => { trip.value = value }
+onShareAppMessage(() => tripShareMessage(trip.value, jobShareFallback(detail.value?.jobId, detail.value?.jobTitle)))
+// idle 没有 appId 不取数 / loading 取数中 / ready 拿到真实报名 / failed 请求失败或未登录
+const loadState = ref('idle')
+const loadError = ref('')
+
+// 设计走查路径：显式带了 ?s= 又没有 appId，只有它能摆设计稿内容。
+// 其余"没有真实报名"的情况（取数失败 / 未登录 / 压根没带 appId）都不能落到设计稿内容上，
+// 否则用户会对着一份并不存在的面试点"愿意前往"
+const designMode = computed(() => explicitScreen.value && !appId.value)
+const status = computed(() => detail.value?.status || '')
+// 和报名页、审核进度页共用七步流程，按真实状态高亮，不把候场当作已完成面试。
+const flowCurrent = computed(() => flowStepOf(status.value))
+const flowTip = computed(() => flowHint(status.value) || detail.value?.statusLabel || '当前进度以报名状态为准')
+
+/** 真实报名进本页时落在哪一屏。设计稿 4 屏只覆盖面试及之后的状态 */
+const SCREEN_BY_STATUS = {
+  interview_booked: 1,
+  interview_done: 3,
+  user_confirmed: 4, store_confirmed: 4, contract_signed: 4, onboarded: 4, terminated: 4
+}
+// 面试之前的状态（待审核 / 待约面试 / 未通过）和已撤回的报名不归本页，转回审核进度页。
+// 之前这些状态不在上表里，页面就停在第 1 屏候场：撤回之后倒计时照走，「申请改期」点下去被后端拒绝。
+// 线上任务没有面试，无论什么状态都转回进度页（那边给交付入口）
+const PROGRESS_PAGE = ['submitted', 'review_passed', 'review_rejected', 'withdrawn']
+
+const loadJob = async () => {
+  const jobId = detail.value?.jobId
+  if (!jobId) return
+  try {
+    const res = await apiJobDetail(jobId)
+    job.value = res?.data || null
+  } catch (e) {
+    // 岗位下架后详情接口会直接报错。候场页的岗位卡片是次要信息，
+    // 取不到就留空，绝不能退回 DESIGN_JOB —— 那会把别人的岗位显示成用户报名的岗位
+    job.value = null
+  }
+}
+
+const loadDetail = async () => {
+  if (!appId.value) return
+  loadState.value = 'loading'
+  try {
+    const res = await apiApplicationDetail(appId.value)
+    detail.value = res?.data || null
+    loadState.value = detail.value ? 'ready' : 'failed'
+    loadError.value = detail.value ? '' : '没有找到这条报名记录'
+    if (!detail.value) { s.value = 1; return }
+    if (detail.value.jobType === 'online' || PROGRESS_PAGE.indexOf(status.value) >= 0) {
+      // redirectTo 替换本页：返回键回到消息 / 订单，而不是回到一个已经不适用的候场页
+      replace(`${R.jobProgress}?appId=${appId.value}`)
+      return
+    }
+    // 有真实报名时屏号只认真实 status：?s= 在这条路径上是设计走查残留，
+    // 拿它盖掉真实状态会让 interview_booked 的报名显示成"已双向确认"。
+    // 不认识的新状态落第 4 屏：那一屏只陈述状态，没有候场页的改期 / 撤回操作
+    s.value = SCREEN_BY_STATUS[status.value] || 4
+    landing = s.value
+    if (interviewStartTs.value) startTick()
+    loadJob()
+  } catch (e) {
+    loadState.value = 'failed'
+    loadError.value = e?.message || '面试信息加载失败'
+    toast(loadError.value)
+    // 退回第 1 屏：另外三屏对着空数据只会说与事实不符的话
+    if (!detail.value) s.value = 1
+  }
+}
+
+const s = useScreen(4, {
+  onLoad: (q) => {
+    appId.value = q?.appId || null
+    explicitScreen.value = !!q?.s
+    if (appId.value) s.value = 1
+    landing = s.value
+    loadDetail()
+  }
+})
+// 候场页点「填写反馈」进第 3 屏后，之前左上角返回直接离开本页（问卷还没交），现在先回到进页时状态对应的那一屏
+let landing = 0
+const onBack = () => { if (landing && s.value !== landing) s.value = landing; else back() }
+// 从本页去签约 / 会话 / 客服再回来时，之前一直显示离开前的状态（签完责任书回来按钮还是「签署责任书」）。
+// 只在状态真的变了时才按新状态重新分流，没变就只换数据，不打断正在填的问卷
+let awayToPage = false
+const leave = (url) => { awayToPage = true; go(url) }
+const meetingRefreshing = ref(false)
+const meetingRefreshError = ref('')
+async function refreshMeetingInfo(manual = false) {
+  if (!appId.value || meetingRefreshing.value) return
+  const requestedApp = appId.value
+  meetingRefreshing.value = true
+  meetingRefreshError.value = ''
+  try {
+    const d = (await apiApplicationDetail(requestedApp))?.data
+    if (requestedApp !== appId.value) return
+    if (!d) throw new Error('未读取到本次面试，请重新刷新')
+    if (d.status !== status.value) await loadDetail()
+    else detail.value = d
+    if (manual) toast('已更新本次会议信息')
+  } catch (e) {
+    if (requestedApp === appId.value) meetingRefreshError.value = '刷新失败，请重试并与主理人核对会议号'
+  } finally { meetingRefreshing.value = false }
+}
+// 外部腾讯会议和切后台同样触发刷新，避免继续使用主理人已更换的会议号。
+onHide(() => { awayToPage = true })
+onShow(async () => {
+  if (!awayToPage || !appId.value) return
+  awayToPage = false
+  await refreshMeetingInfo()
+})
+// 之前两屏底部「联系平台客服」只是一行字，点了没反应；已约面试后审核进度页会转到本页，本页又没有联系门店的入口，
+// 页面却让用户"通过消息联系门店安排"。现在点这一行可选联系主理人（报名会话）或平台客服
+const openHelp = async () => {
+  const id = appId.value || detail.value?.appId
+  const i = id ? await sheet(['联系当地主理人', '联系平台客服']) : 1
+  if (i === 0) leave(R.chat + '?appId=' + id)
+  else if (i === 1) aiOpen.value = true
+}
+// 平台客服是本页底部弹出的 AI袋鼠；点了回答里的按钮跳走的，回来时和别的离开一样刷新一次进度
+const closeAi = (why) => { aiOpen.value = false; if (why === 'nav') awayToPage = true }
+
+// ---------------------------------------------------------------------------
+// 时间
+// ---------------------------------------------------------------------------
+// 后端统一输出 'yyyy-MM-dd HH:mm:ss'。手工切分而不是交给 new Date() 解析：
+// iOS 与部分小程序 WebView 不接受带空格的日期串，会得到 Invalid Date
+const parseTime = (v) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(v || ''))
+  return m ? { y: +m[1], mo: +m[2], d: +m[3], hh: m[4], mm: m[5] } : null
+}
+const formatDateTime = (v) => {
+  const t = parseTime(v)
+  return t ? `${t.y}年${t.mo}月${t.d}日 ${t.hh}:${t.mm}` : ''
+}
+// 服务端时间是北京时间（不带时区）：必须按 +08:00 解析，按设备本地时区算的话，境外或改了时区的手机倒计时整体偏移
+const toTs = (v) => serverTs(v) || 0
+const pad2 = (n) => (n < 10 ? '0' + n : '' + n)
+const hms = (sec) => {
+  const x = Math.max(0, Math.floor(sec))
+  return `${pad2(Math.floor(x / 3600))}:${pad2(Math.floor((x % 3600) / 60))}:${pad2(x % 60)}`
+}
+
+// 倒计时与通话计时都靠这一个秒表，只有真的需要走字时才启动
+const now = ref(Date.now())
+let timer = null
+const startTick = () => {
+  if (!timer) timer = setInterval(() => { now.value = Date.now() }, 1000)
+}
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+  timer = null
+})
+
+const interviewStartTs = computed(() => toTs(detail.value?.interview?.startTime))
+const countdownText = computed(() => {
+  // 没有真实面试时间就保持设计稿的占位符，不能算出一个看着像真的数字
+  if (!interviewStartTs.value) return '--:--:--'
+  return hms((interviewStartTs.value - now.value) / 1000)
+})
+const countdownSuffix = computed(() => (interviewStartTs.value && interviewStartTs.value <= now.value ? ' 面试时间已到' : ' 后开始'))
+const lobbyHint = computed(() => {
+  if (loadState.value === 'loading') return '正在读取面试信息…'
+  if (loadState.value === 'failed') return loadError.value || '面试信息加载失败'
+  if (detail.value) return interviewStartTs.value ? (tm.value ? '请按预约时间进入腾讯会议参加面试' : '请按预约时间参加面试，会议信息见下方') : '尚未预约面试时间'
+  return designMode.value ? '设计稿走查，未读取真实面试时间' : '请从消息通知进入才能看到真实面试'
+})
+
+// ---------------------------------------------------------------------------
+// 第 1 屏：面试岗位。真实报名走 apiJobDetail，拿不到就只留报名里带的岗位名
+// ---------------------------------------------------------------------------
+// 岗位封面只用真实岗位自己的图。取不到就不挂图 —— 拿设计稿那张咖啡馆照片兜底，
+// 等于给用户看了一个别的岗位
+const jobCover = computed(() => absUrl(job.value?.cover) || (designMode.value && !detail.value ? DESIGN_JOB.cover : ''))
+const jobTitle = computed(() => {
+  if (job.value) return job.value.title || ''
+  if (detail.value) return detail.value.jobTitle || ''
+  return designMode.value ? DESIGN_JOB.title : ''
+})
+const jobAddress = computed(() => {
+  if (job.value) return [job.value.city, job.value.address].filter(Boolean).join(' · ')
+  if (detail.value) return detail.value.storeName || ''
+  return designMode.value ? DESIGN_JOB.address : ''
+})
+const jobSalary = computed(() => {
+  if (job.value) return job.value.salaryText || ''
+  if (detail.value) return ''
+  return designMode.value ? DESIGN_JOB.salary : ''
+})
+// 安心商家是认证结果，没读到认证位就不挂这个章。
+// 极性是 '0' 已认证 / '1' 未认证（kg_store.safe_cert 的注释，见 V1__kangaroo_core.sql）。
+// 这里原本写的是 === '1'，正好判反：未认证的门店反而挂上了绿色认证章。
+// detail.vue 里有一条注释说"之前 s=1 与 s=2 各判一次极性，s=2 判反了"——
+// 同一个坑在这一页又踩了第三次，所以 scripts 里补了一条静态断言守住它。
+const jobSafe = computed(() => {
+  if (job.value) {
+    const cert = job.value.safeCert === undefined || job.value.safeCert === null ? job.value.store?.safeCert : job.value.safeCert
+    return String(cert) === '0'
+  }
+  return !detail.value && designMode.value
+})
+
+// ---------------------------------------------------------------------------
+// 第 2 屏：视频通话没有后端，这里唯一真实的只有"在通话屏停留了多久"，
+// 它就是 finish-interview 的 durationSeconds
+// ---------------------------------------------------------------------------
+const videoStartedAt = ref(0)
+const videoEndedAt = ref(0)
+const videoSeconds = computed(() => {
+  if (!videoStartedAt.value) return 0
+  return Math.max(0, Math.floor(((videoEndedAt.value || now.value) - videoStartedAt.value) / 1000))
+})
+const videoTimeText = computed(() => hms(videoSeconds.value))
+// 没有真实报名（取数失败）或者压根没约上面试时，这条路只会走到"尚未预约面试"的报错，
+// 不如直接禁用，别让用户先走一遍假的通话屏
+// 面试改在会议里进行后，这个按钮只剩"复制会议信息"，第 2、3 屏再也进不去，
+// 用户自己的面试问卷（finish-interview）就交不上了。后端只在 interview_booked 且预约开始时间已到时收问卷，
+// 这里按同一条件把"填写反馈"放回来；会议信息仍然随时可复制
+const canFeedback = computed(() => status.value === 'interview_booked' && interviewStartTs.value > 0 && interviewStartTs.value <= now.value)
+// 面试走腾讯会议：认出会议号时入会 / 复制会议号都放在上方会议卡片里，随时一键可用（不因面试开始就藏进二级菜单）；
+// 认不出的旧文字（链接等）照旧走下面这个按钮复制整段
+const meetingInfo = computed(() => detail.value?.interview?.meetingInfo || '')
+const tm = computed(() => parseTencentMeeting(meetingInfo.value))
+const tmCode = computed(() => (tm.value ? groupCode(tm.value.code) : ''))
+// 昵称只用来在会议里显示名字，取不到就不带，由腾讯会议自己处理
+const joinMeeting = () => {
+  if (meetingRefreshing.value) return toast('正在刷新会议信息，请稍后')
+  if (!tm.value) return toast('会议信息尚未填写，请联系主理人')
+  return openTencentMeeting({ code: tm.value.code, pwd: tm.value.pwd, link: tm.value.link, nickname: experience.account?.nickname })
+}
+// 只有入会链接（没有会议号）时复制链接
+const copyCode = () => uni.setClipboardData({ data: tm.value.code || tm.value.link })
+// 微信复制后自己会提示「内容已复制」
+const copyText = (data) => uni.setClipboardData({ data })
+const canEnterVideo = computed(() => designMode.value || !!meetingInfo.value || canFeedback.value)
+// 认出腾讯会议号时这个按钮只剩填写反馈（只在面试开始后显示）
+const enterVideoText = computed(() => (tm.value ? '面试已结束，填写反馈' : canFeedback.value ? '会议信息 / 填写反馈' : '复制会议信息'))
+const copyMeeting = () => uni.setClipboardData({ data: meetingInfo.value })
+// 通话不在小程序里，没有可计的通话时长：videoStartedAt 留 0，提交时 durationSeconds 为 null
+// 候场页很长，按钮在底部：之前切到问卷屏还停在原来的滚动位置，小屏手机上第 1 题和说明都在屏幕外，
+// 用户没看到第 1 题就点了「愿意前往」，问卷只能交这一次。切屏后回到顶部
+const toTop = () => uni.pageScrollTo({ scrollTop: 0, duration: 0, fail: () => {} })
+const openFeedback = () => { videoStartedAt.value = 0; videoEndedAt.value = 0; s.value = 3; toTop() }
+const enterVideo = () => {
+  if (!designMode.value) {
+    const meeting = meetingInfo.value
+    if (tm.value) { if (canFeedback.value) openFeedback(); return }
+    if (!canFeedback.value) { if (meeting) copyMeeting(); return }
+    if (!meeting) return openFeedback()
+    return uni.showActionSheet({ itemList: ['复制会议信息', '面试已结束，填写反馈'], success: ({ tapIndex }) => (tapIndex === 0 ? copyMeeting() : openFeedback()) })
+  }
+  if (!canEnterVideo.value) return toast('预约面试时间尚未开始')
+  videoStartedAt.value = Date.now()
+  videoEndedAt.value = 0
+  now.value = Date.now()
+  s.value = 2
+  startTick()
+}
+const onControl = (i) => {
+  if (i !== 3) return notOpen('视频面试功能')
+  // 结束通话本身没有后端。面试结果（时长 + 三组单选）只能随
+  // interview_booked -> interview_done 这一次流转写入，而这一步只允许发生一次，
+  // 所以这里不抢先调 finish-interview，先把计时停住、带用户去填问卷，
+  // 由第 3 屏的表态按钮一次性提交（否则问卷答案后端没有地方收）
+  videoEndedAt.value = Date.now()
+  s.value = 3
+  toTop()
+}
+
+// ---------------------------------------------------------------------------
+// 第 3 屏：面试后问卷 + 表态
+// ---------------------------------------------------------------------------
+// 默认一个都不选：写死选中第一项等于替用户答了题
+const picks = ref([-1, -1, -1])
+const pick = (gi, i) => { picks.value[gi] = i }
+const choiceOf = (gi) => {
+  const i = picks.value[gi]
+  return i >= 0 ? confirmGroups[gi].choices[i] : null
+}
+// 问卷随"面试结束"这一次流转落库；门店先点了「标记结束」（面试已完成）而自己还没交过问卷的，也还能补交这一次（服务端同一口径）
+const canSubmitQuestionnaire = computed(() => status.value === 'interview_booked'
+  || (status.value === 'interview_done' && !!detail.value?.interview && detail.value.interview.feedbackSubmitted === false))
+const confirmTitle = computed(() => {
+  if (detail.value) return '面试后确认'
+  return designMode.value ? '面试后确认（设计稿走查）' : '暂无可确认的面试'
+})
+const confirmDesc = computed(() => {
+  if (canSubmitQuestionnaire.value) return '选择意向时会一并提交以上问卷'
+  if (status.value === 'interview_done') return '面试结果已提交，以下选择不会再回传'
+  if (detail.value) return '本次报名已进入下一步，这里不再接受提交'
+  return designMode.value ? '设计稿走查，这里的选择不会提交' : '请从消息通知进入才能提交面试意向'
+})
+// 2026-11-03 主人：简化 —— 备注直接在框里写（原来点一下弹系统输入框）；提交时随问卷一起回传
+const note = ref('')
+const noteHint = '点这里写备注（选填，200 字以内）'
+const editingNote = ref(false)
+
+// ---------------------------------------------------------------------------
+// 申请改期：换一个门店还开放的面试时段。
+// 服务端的约束（开始前 2 小时内不能改、最多 2 次、时段必须仍空着）由它自己把关，
+// 这里只负责把可选时段列出来并把选择发过去；改完门店会收到通知。
+// ---------------------------------------------------------------------------
+const rescheduling = ref(false)
+const fmtSlot = (v) => {
+  const d = new Date(String(v).indexOf('T') > 0 ? v : String(v).replace(/-/g, '/'))
+  if (isNaN(d.getTime())) return String(v)
+  const pad = (n) => (n < 10 ? '0' + n : '' + n)
+  return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + pad(d.getHours()) + ':' + pad(d.getMinutes())
+}
+// 已约面试的报名只有候场页这一个入口（审核进度页会把它转过来），撤回报名也得放在这里，
+// 否则 interview_booked → withdrawn 这条后端允许的流转在小程序里就没有地方发起了。
+// 2026-11-03 主人：简化 —— 之前「申请改期 / 撤回报名」一个按钮弹菜单二选一；现在「申请改期」直接打开时段面板，撤回报名是下面单独一行文字钮
+const canWithdraw = computed(() => status.value === 'interview_booked')
+const rescheduleText = computed(() => (slotPanel.value ? '收起时段' : '申请改期'))
+const withdraw = () => uni.showModal({
+  title: '撤回报名',
+  content: '撤回后需重新提交报名，确定撤回吗？',
+  confirmColor: '#C04437', // 撤回是危险操作，用提醒红（= --k-alert）
+  success: async (r) => {
+    if (!r.confirm) return
+    try {
+      const res = await apiWithdrawApplication(appId.value)
+      toast(res?.msg || '已撤回报名')
+      // 撤回后按服务端的新状态重新分流（withdrawn 会转回审核进度页的终态屏）
+      await loadDetail()
+    } catch (e) {
+      toast(e?.message || '撤回失败，请重试')
+    }
+  }
+})
+// 2026-11-03 主人：简化 —— 原来：点「申请改期 / 撤回报名」弹菜单 → 弹时段菜单（超过 6 个还分页）→ 弹确认框（3 个弹窗）；
+// 现在：点「申请改期」在页面里展开时段面板（胶囊），点一个时段底部出「确认改到 …」按钮，点了直接提交（0 个弹窗）。
+// 服务端的约束（开始前 2 小时内不能改、最多 2 次、时段必须仍空着）照旧由它自己把关
+const slotPanel = ref(false)
+const slots = ref([])
+const slotsLoading = ref(false)
+const slotPick = ref(0)
+const pickedSlot = computed(() => slots.value.find(x => x.slotId === slotPick.value) || {})
+const rescheduleLeft = computed(() => {
+  const used = detail.value?.interview?.rescheduleCount || 0
+  const limit = detail.value?.interview?.rescheduleLimit || 2
+  return Math.max(0, limit - used)
+})
+const closeSlots = () => { slotPanel.value = false; slotPick.value = 0 }
+// 没有可选时段时：进这条报名的门店会话找当地主理人
+const contactStore = () => leave(R.chat + '?appId=' + (appId.value || detail.value?.appId))
+const reschedule = () => (slotPanel.value ? closeSlots() : doReschedule())
+const doReschedule = async () => {
+  if (!appId.value) {
+    toast(designMode.value ? '设计稿走查，没有可改期的面试' : '没有可改期的面试')
+    return
+  }
+  // 只有已约面试的报名能改期：撤回 / 终止 / 面试已结束之后点下去必定被后端拒绝，不让用户去试
+  if (status.value !== 'interview_booked') {
+    toast(detail.value ? '当前状态不能改期' : (loadError.value || '面试信息加载失败'))
+    return
+  }
+  if (slotsLoading.value) return
+  slotPanel.value = true
+  slotPick.value = 0
+  slotsLoading.value = true
+  try {
+    const res = await apiInterviewSlots(appId.value)
+    slots.value = (res.data || []).filter(x => x.slotId)
+  } catch (e) {
+    slotPanel.value = false
+    toast((e && e.message) || '时段加载失败')
+  } finally {
+    slotsLoading.value = false
+  }
+}
+const confirmReschedule = async () => {
+  const slot = pickedSlot.value
+  if (!slot.slotId || rescheduling.value) return
+  rescheduling.value = true
+  try {
+    await apiRescheduleInterview(appId.value, slot.slotId, '')
+    toast('面试已改期')
+    closeSlots()
+    await loadDetail()
+  } catch (e) {
+    toast((e && e.message) || '改期失败')
+  } finally {
+    rescheduling.value = false
+  }
+}
+
+const submitting = ref(false)
+const INTENT_MSG = { accept: '已确认愿意前往', pending: '已记录：还想考虑', reject: '已提交：不合适' }
+const submitIntent = async (intent) => {
+  if (!appId.value) {
+    // 设计走查只保留"翻到下一屏看设计"的行为，不发请求也不报成功
+    if (designMode.value && intent === 'accept') { s.value = 4; return }
+    return toast(designMode.value ? '设计稿走查，未提交任何选择' : '没有可确认的面试')
+  }
+  if (submitting.value) return
+  // 问卷只能随这一次表态落库：选「愿意前往 / 还想考虑」时还有题没答，先问一句（选「不合适」不拦）
+  const unanswered = confirmGroups.filter((g, i) => picks.value[i] < 0).map(g => g.title)
+  if (canSubmitQuestionnaire.value && intent !== 'reject' && unanswered.length) {
+    const r = await modal('还有题没答', '「' + unanswered.join('」「') + '」还没选。问卷只能随这次一起提交，之后改不了，门店会据此安排录用。', { confirmText: '直接提交', cancelText: '去填写' })
+    if (!r.confirm) { toTop(); return }
+  }
+  submitting.value = true
+  try {
+    if (canSubmitQuestionnaire.value) {
+      await apiFinishInterview(appId.value, {
+        durationSeconds: videoStartedAt.value ? videoSeconds.value : null,
+        understandJob: choiceOf(0),
+        acceptBoard: choiceOf(1),
+        confirmArrival: choiceOf(2),
+        feedbackNote: note.value
+      })
+    }
+    await apiConfirmIntent(appId.value, intent)
+    toast(INTENT_MSG[intent] || '已提交')
+    // 停在哪一屏由服务端的新状态决定，不自己猜
+    await loadDetail()
+  } catch (e) {
+    toast(e?.message || '提交失败，请重试')
+  } finally {
+    submitting.value = false
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 第 4 屏：双向确认。全部读真实 status / confirmDeadline / 流转日志
+// ---------------------------------------------------------------------------
+const DONE_AFTER = ['user_confirmed', 'store_confirmed', 'contract_signed', 'onboarded']
+const canOpenArrival = computed(() => !!detail.value && detail.value.jobType !== 'online' && ['contract_signed', 'onboarded', 'completed'].includes(status.value))
+const openArrival = () => { if (canOpenArrival.value) go(R.jobContract + '?appId=' + appId.value + '&s=5') }
+
+const progressTitle = computed(() => {
+  if (detail.value) return detail.value.statusLabel || '双向确认进度'
+  return designMode.value ? '双向确认流程示意' : '暂无可显示的进度'
+})
+const progressDesc = computed(() => {
+  if (detail.value) return '以下进度来自本次报名'
+  return designMode.value ? '设计稿走查，未接入真实报名' : '请从消息通知里的进度入口进入'
+})
+
+const logTime = (toStatus) => {
+  const rows = detail.value?.logs || []
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (rows[i].toStatus === toStatus) return formatDateTime(rows[i].createTime)
+  }
+  return ''
+}
+const mineStatus = computed(() => {
+  if (!detail.value) return '暂无状态'
+  if (status.value === 'terminated') return detail.value.userIntent === 'reject' ? '已婉拒' : '已终止'
+  if (DONE_AFTER.indexOf(status.value) >= 0) return '已确认前往'
+  if (detail.value.userIntent === 'pending') return '还想考虑'
+  if (status.value === 'interview_done') return '待确认'
+  return detail.value.statusLabel || '暂无状态'
+})
+const mineIcon = computed(() => (DONE_AFTER.indexOf(status.value) >= 0 ? 'circle-check' : 'hourglass'))
+const mineTime = computed(() => (detail.value ? logTime('user_confirmed') : ''))
+// 商家名可能很长，卡片只有半屏宽，真实数据下不把名字塞进标题
+const storeCardName = computed(() => (detail.value ? '商家' : designMode.value ? '商家（小鹿老板）' : '商家'))
+const storeStatus = computed(() => {
+  if (!detail.value) return '暂无状态'
+  if (['store_confirmed', 'contract_signed', 'onboarded'].indexOf(status.value) >= 0) return '已确认录用'
+  if (status.value === 'user_confirmed') return '待确认'
+  if (status.value === 'terminated') return '已终止'
+  return '暂无状态'
+})
+const storeIcon = computed(() => (['store_confirmed', 'contract_signed', 'onboarded'].indexOf(status.value) >= 0 ? 'circle-check' : 'hourglass'))
+const storeTime = computed(() => (detail.value ? formatDateTime(detail.value.storeConfirmTime) : ''))
+
+// 责任书签署早已接通（进 /pages/jobs/contract：阅读条款 → 签署留证 → 到店信息），商家确认录用后才可签
+// 没有真实报名（设计走查 / 直接打开页面）时保持设计稿里「锁住」的样子：按钮禁用，不能因为没数据就变成可点
+const canOpenContract = computed(() => !!detail.value && (status.value === 'store_confirmed' || status.value === 'contract_signed' || status.value === 'onboarded'))
+const signBtnText = computed(() => (status.value === 'store_confirmed' ? '签署责任书' : (status.value === 'contract_signed' || status.value === 'onboarded' ? '查看责任书' : '商家确认录用后可签署')))
+const contractHint = computed(() => (status.value === 'store_confirmed' ? '阅读并签署责任书后，继续订票与到店准备' : canOpenContract.value ? '查看责任书后，继续订票与到店准备' : '商家确认录用后，可以阅读并签署责任书'))
+const openContract = () => {
+  if (!detail.value) return toast('请从报名进度进入')
+  if (!canOpenContract.value) return toast('商家确认录用后才可以签署')
+  leave(R.jobContract + '?appId=' + (appId.value || detail.value.appId) + '&view=terms')
+}
 </script>
 
 <style scoped lang="scss">
-.interview-page { font-family: var(--k-serif); }.video-page { min-height: 100vh; color: white; background: #121815; }.lobby,.confirm-body,.progress-body { padding: 10px 16px 18px; }.countdown,.card,.success-banner,.confirm-cards>view,.confirm-group .choice-card,.note-box { border: 1px solid var(--k-line); border-radius: 12px; background: rgba(253,251,247,.78); }
-.countdown { height: 68px; display: grid; grid-template-columns: 86px 1fr; align-items: center; padding: 10px 14px; }.countdown>text:first-child { grid-row: 1/3; font-size: 16px; font-weight: 700; }.countdown>view text:first-child { color: var(--k-red); font: 700 24px/1 Georgia,serif; }.countdown>view text:last-child { font-size: 16px; }.countdown>text:last-child { color: var(--k-muted); font-size: 12px; }.section-title { display: block; margin: 12px 4px 7px; font-size: 17px; font-weight: 700; }.job { height: 116px; padding: 9px; border: 1px solid var(--k-line); border-radius: 12px; display: flex; }.job>image { width: 100px; height: 96px; border-radius: 9px; }.job>view { padding: 3px 0 0 12px; }.job__title { display: block; font-size: 17px; font-weight: 700; margin-bottom: 7px; }.job>view>view { display: flex; align-items: center; gap: 5px; color: var(--k-muted); font-size: 12px; margin: 5px 0; }.device,.checklist { padding: 0 12px; }.device>view,.checklist>view { display: flex; align-items: center; gap: 13px; border-bottom: 1px solid var(--k-line); }.device>view:last-child,.checklist>view:last-child { border-bottom: 0; }.device>view { height: 50px; font-size: 15px; }.checklist>view { height: 35px; font-size: 12px; }.device>view>view,.checklist>view>view { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--k-green); }.lobby-actions { margin-top: 14px; display: grid; gap: 8px; }.help { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--k-muted); font-size: 12px; }
-.video-body { background: #121815; }.safe-tip { height: 38px; margin: 0 16px; padding: 0 12px; border: 1px solid #6E5C3A; border-radius: 10px; background: #322A1E; display: flex; align-items: center; gap: 9px; color: #F1E5CD; font-size: 12px; }.video-time { display: flex; height: 35px; align-items: center; justify-content: center; font: 18px Georgia,serif; }.video-panel { position: relative; height: 225px; margin: 0 12px 5px; overflow: hidden; border-radius: 11px; border: 1px solid rgba(255,255,255,.35); }.video-panel>image { width: 100%; height: 225px; }.me-panel { height: 238px; }.me-panel>image { width: 100%; height: 238px; }.video-name { position: absolute; left: 8px; bottom: 8px; height: 31px; padding: 0 10px 0 4px; border-radius: 16px; background: rgba(20,20,18,.68); display: flex; align-items: center; gap: 6px; font-size: 12px; }.video-name image { width: 25px; height: 25px; border-radius: 50%; }.camera-flip { position: absolute; right: 10px; bottom: 10px; width: 47px; height: 47px; border-radius: 50%; background: rgba(255,255,255,.92); display: flex; align-items: center; justify-content: center; }.video-controls { height: 129px; display: flex; align-items: center; justify-content: space-around; background: #0E1311; }.video-controls>view { width: 25%; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; }.video-controls>view>view { width: 52px; height: 52px; border: 1px solid #85908B; border-radius: 50%; display: flex; align-items: center; justify-content: center; }.video-controls>view>view.light { background: white; }.video-controls>view>view.end { background: var(--k-red); border-color: var(--k-red); }
+.meeting-help { padding: 0 2px 16px; border-bottom: 1px solid var(--k-line); margin: 0 0 18px; }
+.meeting-help__title { display: block; font-size: 14px; font-weight: 600; }
+.meeting-help .tm-hint { display: block; margin: 8px 0 12px; line-height: 1.7; }
+.meeting-help__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.meeting-help__error { display: block; font-size: 13px; line-height: 1.6; color: var(--k-alert); margin-bottom: 10px; }
+.interview-messages { padding: 0 16px 12px; }
+.interview-flow { margin: 8px 16px 0; padding: 12px 8px; border: 1px solid var(--k-line); border-radius: 16px; background: var(--k-paper); }
+.interview-flow__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 6px 14px; font-size: 14px; font-weight: 650; }
+.interview-flow__stage { padding: 3px 8px; border-radius: 6px; color: var(--k-red-deep); background: var(--k-paper2); font-size: 11px; font-weight: 500; }
+.interview-flow__hint { display: block; margin: 12px 6px 0; padding-top: 10px; border-top: 1px solid var(--k-line); font-size: 12px; line-height: 1.6; color: var(--k-ink2); overflow-wrap: anywhere; }
+.interview-page { font-family: var(--k-sans); }.video-page { min-height: 100vh; color: white; background: #121815; }.lobby,.confirm-body,.progress-body { padding: 10px 16px 18px; }.countdown,.card,.success-banner,.confirm-cards>view,.confirm-group .choice-card,.note-box { border: 1px solid var(--k-line); border-radius: 12px; background: rgba(253,251,247,.78); }
+.countdown { height: 68px; display: grid; grid-template-columns: 86px 1fr; align-items: center; padding: 10px 14px; }.countdown>text:first-child { grid-row: 1/3; font-size: 16px; font-weight: 700; }.countdown>view text:first-child { color: var(--k-red); font: 700 24px/1 var(--k-sans); }.countdown>view text:last-child { font-size: 16px; }.countdown>text:last-child { color: var(--k-muted); font-size: 12px; }.section-title { display: block; margin: 12px 4px 7px; font-size: 17px; font-weight: 700; }.job { height: 116px; padding: 9px; border: 1px solid var(--k-line); border-radius: 12px; display: flex; }.job>image { width: 100px; height: 96px; border-radius: 9px; }.job>view { padding: 3px 0 0 12px; }.job__title { display: block; font-size: 17px; font-weight: 700; margin-bottom: 7px; }.job>view>view { display: flex; align-items: center; gap: 5px; color: var(--k-muted); font-size: 12px; margin: 5px 0; }.device,.checklist { padding: 0 12px; }.device>view,.checklist>view { display: flex; align-items: center; gap: 13px; border-bottom: 1px solid var(--k-line); }.device>view:last-child,.checklist>view:last-child { border-bottom: 0; }.device>view { height: 50px; font-size: 15px; }.checklist>view { height: 35px; font-size: 12px; }.device>view>view,.checklist>view>view { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--k-green); }.lobby-actions { margin-top: 14px; display: grid; gap: 8px; }.help { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--k-muted); font-size: 12px; }
+.video-body { background: #121815; }.safe-tip { height: 38px; margin: 0 16px; padding: 0 12px; border: 1px solid #6E5C3A; border-radius: 10px; background: #322A1E; display: flex; align-items: center; gap: 9px; color: #F1E5CD; font-size: 12px; }.video-time { display: flex; height: 35px; align-items: center; justify-content: center; font: 18px var(--k-sans); }.video-panel { position: relative; height: 225px; margin: 0 12px 5px; overflow: hidden; border-radius: 11px; border: 1px solid rgba(255,255,255,.35); }.video-panel>image { width: 100%; height: 225px; }.me-panel { height: 238px; }.me-panel>image { width: 100%; height: 238px; }.video-name { position: absolute; left: 8px; bottom: 8px; height: 31px; padding: 0 10px 0 4px; border-radius: 16px; background: rgba(20,20,18,.68); display: flex; align-items: center; gap: 6px; font-size: 12px; }.video-name image { width: 25px; height: 25px; border-radius: 50%; }.camera-flip { position: absolute; right: 10px; bottom: 10px; width: 47px; height: 47px; border-radius: 50%; background: rgba(255,255,255,.92); display: flex; align-items: center; justify-content: center; }.video-controls { height: 129px; display: flex; align-items: center; justify-content: space-around; background: #0E1311; }.video-controls>view { width: 25%; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; }.video-controls>view>view { width: 52px; height: 52px; border: 1px solid #85908B; border-radius: 50%; display: flex; align-items: center; justify-content: center; }.video-controls>view>view.light { background: white; }.video-controls>view>view.end { background: var(--k-red); border-color: var(--k-red); }
 .confirm-body { padding-bottom: calc(82px + var(--k-safe-bottom)); }.success-banner { padding: 12px; display: flex; align-items: center; gap: 10px; background: var(--k-green-soft); }.success-banner>view { display: flex; flex-direction: column; gap: 4px; }.success-banner>view text:first-child { color: var(--k-green); font-size: 15px; font-weight: 700; }.success-banner>view text:last-child { color: var(--k-muted); font-size: 11px; }.confirm-group { margin-top: 12px; }.confirm-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; }.confirm-title>text:first-child { width: 24px; height: 24px; border-radius: 50%; background: var(--k-red); color: white; display: flex; align-items: center; justify-content: center; }.confirm-question { display: block; margin: 7px 8px; color: var(--k-muted); font-size: 12px; }.choice-card { padding: 6px 12px; }.choice-card>view { height: 30px; display: flex; align-items: center; gap: 10px; font-size: 13px; }.choice-radio { width: 18px; height: 18px; border: 1.5px solid var(--k-line2); border-radius: 50%; display: flex; align-items: center; justify-content: center; }.choice-radio.active { border-color: var(--k-green); }.choice-radio.active>view { width: 9px; height: 9px; border-radius: 50%; background: var(--k-green); }.note-group { margin-top: 12px; }.note-box { height: 72px; margin-top: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; color: var(--k-light); font-size: 11px; }.note-box text:last-child { align-self: flex-end; }.confirm-body :global(.k-bottom__inner) { grid-template-columns: repeat(3,1fr); }
-.progress-body { padding-bottom: 20px; }.confirm-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }.confirm-cards>view { height: 95px; padding: 11px 13px; display: flex; flex-direction: column; }.confirm-cards>view>view { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 16px; font-weight: 700; color: var(--k-green); }.confirm-cards>view:nth-child(2)>view { color: var(--k-ochre); }.confirm-cards>view>text:last-child { margin-top: auto; color: var(--k-muted); font-size: 11px; }.steps-block { margin-top: 16px; }.steps { display: flex; align-items: flex-start; }.steps>view { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; color: var(--k-muted); font-size: 10px; }.step-dot { width: 23px; height: 23px; border: 1px solid var(--k-line2); border-radius: 50%; background: var(--k-paper); display: flex; align-items: center; justify-content: center; z-index: 2; }.step-dot.done { background: var(--k-green); border-color: var(--k-green); color: white; }.step-line { position: absolute; left: 63%; top: 11px; width: 75%; height: 2px; background: var(--k-line2); }.step-line.done { background: var(--k-green); }.deadline { margin-top: 14px; padding: 9px 12px; }.deadline>.section-title { margin: 0 0 6px; }.deadline>view { display: flex; align-items: center; gap: 7px; font-size: 12px; }.deadline>view text:nth-of-type(2) { margin-left: auto; color: var(--k-red); }.deadline>text:last-child { display: block; margin-top: 6px; color: var(--k-muted); font-size: 11px; }.notice-title { margin-top: 14px; }.notice { padding: 0 10px; }.notice>view { min-height: 56px; display: flex; align-items: center; border-bottom: 1px solid var(--k-line); }.notice>view:last-child { border-bottom: 0; }.notice image { width: 36px; height: 36px; border-radius: 50%; margin-right: 8px; }.notice>view>view { flex: 1; }.notice>view>view>view { display: flex; align-items: center; gap: 5px; font-weight: 700; }.notice>view>view>text { display: block; color: var(--k-muted); font-size: 11px; }.notice>view>text { color: var(--k-muted); font-size: 10px; }.next { margin-top: 12px; padding: 10px 12px; }.next>.section-title { margin: 0; }.next>text { display: block; margin: 4px 0 8px; color: var(--k-muted); font-size: 11px; }.next>view { margin-top: 8px; display: flex; justify-content: center; align-items: center; color: var(--k-indigo); }
+.progress-body { padding-bottom: calc(20px + var(--k-safe-bottom)); }.confirm-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }.confirm-cards>view { height: 95px; padding: 11px 13px; display: flex; flex-direction: column; }.confirm-cards>view>view { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 16px; font-weight: 700; color: var(--k-green); }.confirm-cards>view:nth-child(2)>view { color: var(--k-ochre); }.confirm-cards>view>text:last-child { margin-top: auto; color: var(--k-muted); font-size: 11px; }.steps-block { margin-top: 16px; }.steps { display: flex; align-items: flex-start; }.steps>view { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; color: var(--k-muted); font-size: 10px; }.step-dot { width: 23px; height: 23px; border: 1px solid var(--k-line2); border-radius: 50%; background: var(--k-paper); display: flex; align-items: center; justify-content: center; z-index: 2; }.step-dot.done { background: var(--k-green); border-color: var(--k-green); color: white; }.step-line { position: absolute; left: 63%; top: 11px; width: 75%; height: 2px; background: var(--k-line2); }.step-line.done { background: var(--k-green); }.deadline { margin-top: 14px; padding: 9px 12px; }.deadline>.section-title { margin: 0 0 6px; }.deadline>view { display: flex; align-items: center; gap: 7px; font-size: 12px; }.deadline>view text:nth-of-type(2) { margin-left: auto; color: var(--k-red); }.deadline>text:last-child { display: block; margin-top: 6px; color: var(--k-muted); font-size: 11px; }.notice-title { margin-top: 14px; }.notice { padding: 0 10px; }.notice>view { min-height: 56px; display: flex; align-items: center; border-bottom: 1px solid var(--k-line); }.notice>view:last-child { border-bottom: 0; }.notice image { width: 36px; height: 36px; border-radius: 50%; margin-right: 8px; }.notice>view>view { flex: 1; }.notice>view>view>view { display: flex; align-items: center; gap: 5px; font-weight: 700; }.notice>view>view>text { display: block; color: var(--k-muted); font-size: 11px; }.notice>view>text { color: var(--k-muted); font-size: 10px; }.next { margin-top: 12px; padding: 10px 12px; }.next>.section-title { margin: 0; }.next>text { display: block; margin: 4px 0 8px; color: var(--k-muted); font-size: 11px; }.next>view { margin-top: 8px; display: flex; justify-content: center; align-items: center; color: var(--k-indigo); }
+/* 候场页底部没有固定栏，但要让出 iPhone 底部横条；岗位名 / 地址太长时一行省略，卡片是固定高度 */
+.lobby { padding-bottom: calc(18px + var(--k-safe-bottom)); }
+.job>view { flex: 1; min-width: 0; }
+.job__title, .job>view>view>text { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.job>view>view>text { min-width: 0; }
+/* 会议卡片：会议号、密码用大号数字，方便对着手输；入会按钮放在号码正下方 */
+.meeting-card { margin-top: 12px; padding: 14px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tm-title { display: block; font-size: 15px; font-weight: 700; }
+.tm-row { display: flex; align-items: baseline; gap: 12px; margin-top: 4px; color: var(--k-muted); font-size: 13px; }
+.tm-copy { margin-left: auto; flex-shrink: 0; color: var(--k-red); }
+.tm-link { flex: 1; min-width: 0; color: var(--k-ink); overflow-wrap: anywhere; }
+.tm-code { color: var(--k-ink); font: 700 22px/1.3 var(--k-sans); letter-spacing: 1px; }
+.tm-note { display: block; margin-top: 6px; overflow-wrap: anywhere; }
+.tm-actions { margin-top: 12px; display: grid; gap: 8px; }
+.tm-hint { display: block; margin-top: 8px; color: var(--k-muted); font-size: 12px; }
 .video-panel { height: 252px; }.video-panel>image { height: 252px; }.me-panel { height: 273px; }.me-panel>image { height: 273px; }.video-controls { height: 140px; }
+/* 2026-11-03 主人：简化 —— 改期时段面板（页面内胶囊 + 底部确认钮）、撤回报名文字钮、备注输入框 */
+.slot-panel { margin-top: 10px; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.slot-panel__head { display: flex; align-items: center; justify-content: space-between; }
+.slot-panel__title { font-size: 16px; font-weight: 700; }
+.slot-panel__close { width: 44px; height: 44px; margin: -12px -14px -12px 0; display: flex; align-items: center; justify-content: center; }
+.slot-panel__hint { font-size: 13px; line-height: 1.6; color: var(--k-muted); }
+.slot-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.slot-pill { min-height: 44px; padding: 0 14px; border: 1px solid var(--k-line2); border-radius: 999px; background: var(--k-paper); font-size: 14px; display: flex; align-items: center; }
+.slot-pill.on { border-color: #C9935F; background: #F6EBDD; color: #8A5A30; font-weight: 600; }
+.slot-panel__confirm { display: flex; flex-direction: column; gap: 8px; }
+.withdraw-link { min-height: 44px; margin-top: 4px; display: flex; align-items: center; justify-content: center; color: var(--k-alert); font-size: 14px; }
+.note-box { height: auto; min-height: 72px; color: var(--k-ink); }
+.note-box__area, .note-box__idle { width: 100%; min-height: 48px; font-size: 13px; line-height: 1.6; color: var(--k-ink); }
+.note-box__idle { white-space: pre-wrap; word-break: break-all; }
+.note-box>text:last-child { margin-top: 6px; color: var(--k-light); }
+@import "flow-premium.scss";
 </style>

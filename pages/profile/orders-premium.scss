@@ -1,0 +1,12 @@
+.orders { --k-bg:#FCF9F5; background:linear-gradient(180deg,#FCF9F5,#F8F7F4); }
+.list { padding:14px 16px calc(100px + var(--k-safe-bottom)); }
+.subs { display:flex; gap:0; padding:3px; background:#F1EEEA; border-radius:16px; margin-bottom:12px; }.subs__item { flex:1; height:36px; border-radius:13px; background:transparent; font-size:14px; }.subs__item.on { background:#F8E8D1; box-shadow:none; color:var(--k-red-deep); }
+.jump { min-height:36px; margin-bottom:0; border:0; border-radius:12px; background:transparent; box-shadow:none; padding:0 2px; }.jump__text { font-size:12px; }
+.oc { padding:15px 13px 13px; margin-top:14px; border:1px solid rgba(160,120,80,.07); border-radius:18px; box-shadow:0 5px 16px rgba(120,84,48,.045); }
+.oc__head { display:flex; align-items:center; gap:8px; margin-bottom:13px; }.oc__ic { width:21px; height:22px; border:0; }.oc__type { font-size:14px; font-weight:600; }.oc__dot { display:none; }
+.oc__status { margin-left:auto; padding:3px 11px; border-radius:999px; font-size:12px; background:var(--k-paper2); }.oc__status.is-green { background:#E6EFE8; color:#2F6E50; }.oc__status.is-red { background:var(--k-alert-soft); color:var(--k-alert); }.oc__status.is-ochre { background:#FAECD7; color:var(--k-red-deep); }
+.oc__body { display:flex; align-items:flex-start; gap:13px; }.oc__left { width:110px; flex:none; }.oc__img { width:110px; height:110px; border-radius:12px; }.oc__right { flex:1; min-width:0; }.oc__title { display:block; font-size:16px; line-height:1.4; font-weight:700; }
+.oc__meta { margin-top:7px; font-size:13px; line-height:1.5; }.oc__meta--row { flex-direction:column; align-items:flex-start; gap:8px; }.oc__price { margin-left:0; font-family:var(--k-sans); font-size:23px; line-height:1.2; font-weight:600; color:var(--k-red-deep); }.oc__unit { font-size:12px; font-weight:400; }
+.oc__btns { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px; margin-top:14px; }.oc__btn { min-width:106px; height:38px; padding:0 17px; border-radius:999px; font-size:14px; }.oc__btn.is-primary { box-shadow:none; }
+.empty { border:0; box-shadow:none; background:transparent; padding:48px 16px; }
+@media(max-width:359px) { .oc__left,.oc__img { width:88px; }.oc__img { height:104px; }.oc__body { gap:11px; }.oc__title { font-size:15px; }.oc__price { font-size:21px; margin-left:0; }.oc__meta--row text { white-space:normal; }.oc__btn { min-width:94px; } }

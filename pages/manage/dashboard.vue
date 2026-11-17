@@ -1,6 +1,6 @@
 <template>
   <view class="k-page dash">
-    <k-topbar :title="titles[s - 1]" back @back="onBack">
+    <k-topbar :title="titles[s - 1]" back custom-back @back="onBack">
       <view v-if="s === 1" class="ptabs">
         <view v-for="t in periods" :key="t" class="ptabs__item" :class="{ active: period === t }" @click="period = t"><text>{{ t }}</text></view>
       </view>
@@ -9,19 +9,19 @@
     <!-- 1 核心指标 -->
     <view v-if="s === 1" class="k-body k-pad-tab">
       <view class="k-between">
-        <view class="k-row k-gap6"><text class="k-title">核心指标</text><k-icon name="info" :size="16" color="ink" :stroke="1.5" /></view>
+        <view class="k-row k-gap6" @click="explainMetrics"><text class="k-title">核心指标</text><k-icon name="info" :size="16" color="ink" :stroke="1.5" /></view>
         <text class="k-meta">与上周期对比</text>
       </view>
       <view class="k-between k-mt4">
-        <text class="k-meta">8月23日 - 8月29日</text>
-        <text class="k-tiny">与8月16日 - 8月22日对比</text>
+        <text class="k-meta">{{ ov.range }}</text>
+        <text class="k-tiny">{{ ov.compare }}</text>
       </view>
       <view class="k-grid-2 k-mt14">
         <view v-for="m in metrics" :key="m.label" class="metric">
           <text class="k-small k-muted">{{ m.label }}</text>
           <text class="metric__value num" :style="{ color: m.color }">{{ m.value }}</text>
-          <view class="k-row k-gap2 metric__delta"><k-icon name="arrow-up" :size="15" color="green" :stroke="2" /><text>{{ m.delta }}</text></view>
-          <view class="spark" :style="{ width: '144px', height: '36px' }">
+          <view class="k-row k-gap2 metric__delta"><k-icon v-if="m.dir" :name="m.dir > 0 ? 'arrow-up' : 'arrow-down'" :color="m.dir > 0 ? 'green' : 'alert'" :size="15" :stroke="2" /><text :class="{ 'k-alert': m.dir < 0, 'k-muted': !m.dir }">{{ m.delta }}</text></view>
+          <view class="spark" :style="{ width: sparkW + 'px', height: '36px' }">
             <view v-for="(p, i) in m.chart.pts" :key="'a' + i" class="spark__area" :style="{ left: p[0] + 'px', top: p[1] + 'px', width: m.chart.step + 'px', height: (36 - p[1]) + 'px', background: m.soft }" />
             <view v-for="(g, i) in m.chart.segs" :key="'s' + i" class="spark__seg" :style="{ left: g.x + 'px', top: g.y + 'px', width: g.len + 'px', transform: 'rotate(' + g.ang + 'deg)', background: m.line }" />
           </view>
@@ -30,36 +30,38 @@
       <view class="metric metric--wide k-mt10">
         <view class="k-col">
           <text class="k-small k-muted">好评率</text>
-          <text class="metric__value num">96%</text>
-          <view class="k-row k-gap2 metric__delta"><k-icon name="arrow-up" :size="15" color="green" :stroke="2" /><text>2.8%</text></view>
+          <text class="metric__value num">{{ good.value }}</text>
+          <view class="k-row k-gap2 metric__delta"><k-icon v-if="good.dir" :name="good.dir > 0 ? 'arrow-up' : 'arrow-down'" :color="good.dir > 0 ? 'green' : 'alert'" :size="15" :stroke="2" /><text :class="{ 'k-alert': good.dir < 0, 'k-muted': !good.dir }">{{ good.delta }}</text></view>
         </view>
         <view class="spark" :style="{ width: '190px', height: '48px' }">
-          <view v-for="(p, i) in wide.pts" :key="'a' + i" class="spark__area" :style="{ left: p[0] + 'px', top: p[1] + 'px', width: wide.step + 'px', height: (48 - p[1]) + 'px', background: '#E7EFE7' }" />
-          <view v-for="(g, i) in wide.segs" :key="'s' + i" class="spark__seg" :style="{ left: g.x + 'px', top: g.y + 'px', width: g.len + 'px', transform: 'rotate(' + g.ang + 'deg)', background: '#4F7A66' }" />
+          <view v-for="(p, i) in wide.pts" :key="'a' + i" class="spark__area" :style="{ left: p[0] + 'px', top: p[1] + 'px', width: wide.step + 'px', height: (48 - p[1]) + 'px', background: '#E4EDDA' }" />
+          <view v-for="(g, i) in wide.segs" :key="'s' + i" class="spark__seg" :style="{ left: g.x + 'px', top: g.y + 'px', width: g.len + 'px', transform: 'rotate(' + g.ang + 'deg)', background: '#4A6E3A' }" />
         </view>
       </view>
-      <text class="k-tiny k-mt14 note">指标说明：* 以上数据为所选时间段内所有门店汇总</text>
+      <!-- 之前第 1 屏没有任何去往业务趋势 / 门店排名 / 评价统计的入口：从业务中心、工作台进来只能看核心指标，门店排名谁都打不开 -->
+      <view class="links k-mt10"><view v-for="l in links" :key="l.s" class="links__item" @click="s = l.s"><text>{{ l.label }}</text><k-icon name="chevron-right" :size="14" color="ink" :stroke="1.7" /></view></view>
+      <text class="k-tiny k-mt14 note">{{ ov.note || '指标说明：* 以上数据为你有权限的门店汇总' }}</text>
     </view>
 
     <!-- 2 业务趋势 -->
     <view v-else-if="s === 2" class="k-body k-pad-tab">
       <view class="k-row k-gap10">
-        <view class="select k-flex1" @click="toast('选择门店')"><text>全部门店</text><k-icon name="chevron-down" :size="16" color="ink" :stroke="1.7" /></view>
-        <view class="select k-flex1" @click="toast('选择城市')"><text>全部城市</text><k-icon name="chevron-down" :size="16" color="ink" :stroke="1.7" /></view>
-        <view class="select select--icon" @click="toast('选择日期')"><k-icon name="calendar" :size="20" color="ink" :stroke="1.6" /></view>
+        <view class="select k-flex1" @click="pickTrendStore"><text>{{ tr.storeName || '全部门店' }}</text><k-icon name="chevron-down" :size="16" color="ink" :stroke="1.7" /></view>
+        <view class="select k-flex1" @click="pickTrendCity"><text>{{ tr.city || '全部城市' }}</text><k-icon name="chevron-down" :size="16" color="ink" :stroke="1.7" /></view>
+        <view class="select select--icon" @click="pickTrendEnd"><k-icon name="calendar" :size="20" color="ink" :stroke="1.6" /></view>
       </view>
       <view class="k-between k-mt10">
-        <text class="k-small k-muted">同期对比：7月24日 - 8月22日</text>
-        <view class="select select--sm" @click="toast('选择周期')"><text>近30天</text><k-icon name="chevron-down" :size="14" color="ink" :stroke="1.7" /></view>
+        <text class="k-small k-muted">{{ tr.compare }}</text>
+        <view class="select select--sm" @click="pickTrendPeriod"><text>{{ tr.periodText || '近30天' }}</text><k-icon name="chevron-down" :size="14" color="ink" :stroke="1.7" /></view>
       </view>
       <k-card class="k-mt10" :pad="14">
-        <view class="k-row k-gap4"><text class="k-subtitle">业务趋势</text><text class="k-meta">（近30天）</text></view>
+        <view class="k-row k-gap4"><text class="k-subtitle">业务趋势</text><text class="k-meta">（{{ tr.periodText || '近30天' }}）</text></view>
         <view class="legend k-mt8">
           <view class="legend__item"><view class="legend__bar" /><text>订单数（单）</text></view>
           <view class="legend__item"><view class="legend__line" style="background:#D9902E" /><text>入住数（间夜）</text></view>
         </view>
         <view class="legend k-mt6">
-          <view class="legend__item"><view class="legend__line" style="background:#4F7A66" /><text>报名数（人）</text></view>
+          <view class="legend__item"><view class="legend__line" style="background:var(--k-green)" /><text>报名数（人）</text></view>
           <view class="legend__item"><view class="legend__dash" /><text>活动参与（人次）</text></view>
         </view>
         <view class="chart k-mt12">
@@ -68,7 +70,7 @@
             <view v-for="n in 6" :key="n" class="chart__grid" :style="{ top: ((n - 1) * 30) + 'px' }" />
             <view v-for="(b, i) in bars" :key="'b' + i" class="chart__bar" :style="{ left: (i * barStep + 1) + 'px', height: (b / 1000 * 150) + 'px' }" />
             <view v-for="(g, i) in orangeLine.segs" :key="'o' + i" class="chart__seg" :style="{ left: g.x + 'px', top: g.y + 'px', width: g.len + 'px', transform: 'rotate(' + g.ang + 'deg)', background: '#E39A2E', height: '2.5px' }" />
-            <view v-for="(g, i) in greenLine.segs" :key="'g' + i" class="chart__seg" :style="{ left: g.x + 'px', top: g.y + 'px', width: g.len + 'px', transform: 'rotate(' + g.ang + 'deg)', background: '#4F7A66', height: '2px' }" />
+            <view v-for="(g, i) in greenLine.segs" :key="'g' + i" class="chart__seg" :style="{ left: g.x + 'px', top: g.y + 'px', width: g.len + 'px', transform: 'rotate(' + g.ang + 'deg)', background: '#4A6E3A', height: '2px' }" />
             <view v-for="(g, i) in dashLine.segs" :key="'d' + i" class="chart__dash" :style="{ left: g.x + 'px', top: g.y + 'px', width: g.len + 'px', transform: 'rotate(' + g.ang + 'deg)' }" />
             <view class="chart__flat" />
           </view>
@@ -76,12 +78,12 @@
         </view>
         <view class="chart__x"><text v-for="d in xLabels" :key="d">{{ d }}</text></view>
       </k-card>
-      <text class="k-small k-muted k-mt16 block">近30天合计</text>
+      <text class="k-small k-muted k-mt16 block">{{ tr.periodText || '近30天' }}合计</text>
       <view class="totals k-mt8">
         <view v-for="(t, i) in totals" :key="t.label" class="totals__cell" :class="{ line: i < totals.length - 1 }">
           <text class="k-tiny">{{ t.label }}</text>
           <text class="totals__value num">{{ t.value }}</text>
-          <view class="k-row k-gap2 totals__delta"><k-icon name="arrow-up" :size="13" color="green" :stroke="2" /><text>{{ t.delta }}</text></view>
+          <view class="k-row k-gap2 totals__delta"><k-icon v-if="t.dir" :name="t.dir > 0 ? 'arrow-up' : 'arrow-down'" :color="t.dir > 0 ? 'green' : 'alert'" :size="13" :stroke="2" /><text :class="{ 'k-alert': t.dir < 0, 'k-muted': !t.dir }">{{ t.delta }}</text></view>
         </view>
       </view>
       <k-card class="k-mt14" :pad="14">
@@ -98,46 +100,46 @@
         <view v-for="t in rankTabs" :key="t" class="rtabs__item" :class="{ active: rankTab === t }" @click="rankTab = t"><text>{{ t }}</text></view>
       </view>
       <view class="k-between k-mt12">
-        <text class="k-small k-muted">近30天（7.31-8.29）</text>
-        <view class="k-row k-gap6" @click="toast('筛选')"><text class="k-small">筛选</text><k-icon name="filter" :size="16" color="ink" :stroke="1.6" /></view>
+        <text class="k-small k-muted">{{ rk.range }}</text>
+        <view class="k-row k-gap6" @click="pickRankPeriod"><text class="k-small">筛选</text><k-icon name="filter" :size="16" color="ink" :stroke="1.6" /></view>
       </view>
       <k-card class="k-mt10" :pad="0">
-        <view v-for="(r, i) in ranks" :key="r.name" class="rank" :class="{ line: i < ranks.length - 1 }" @click="go(R.daily)">
+        <view v-for="(r, i) in ranks" :key="r.storeId" class="rank" :class="{ line: i < ranks.length - 1 }" @click="openDaily(r)">
           <view class="rank__no">
             <image v-if="i < 3" class="rank__crown" :src="'/static/media/dash-crown-' + (i + 1) + '.jpg'" mode="aspectFit" />
             <text v-else class="rank__num num">{{ i + 1 }}</text>
           </view>
-          <image class="rank__thumb" :src="'/static/media/dash-store-' + (i + 1) + '.jpg'" mode="aspectFill" />
+          <image class="rank__thumb" :src="r.thumb" mode="aspectFill" />
           <view class="k-flex1 k-col">
             <text class="k-subtitle">{{ r.name }}</text>
             <text class="k-meta k-mt2">{{ r.area }}</text>
           </view>
           <view class="k-col rank__right">
-            <text class="rank__amount">¥ {{ r.amount }}</text>
-            <view class="k-row k-gap2 k-mt2"><k-icon :name="r.down ? 'arrow-down' : 'arrow-up'" :size="13" :color="r.down ? 'red' : 'green'" :stroke="2" /><text class="rank__chg" :class="r.down ? 'k-red' : 'k-green'">{{ r.change }}</text></view>
+            <text class="rank__amount">{{ r.display }}</text>
+            <view class="k-row k-gap2 k-mt2"><k-icon v-if="r.dir" :name="r.dir < 0 ? 'arrow-down' : 'arrow-up'" :size="13" :color="r.dir < 0 ? 'alert' : 'green'" :stroke="2" /><text class="rank__chg" :class="r.dir < 0 ? 'k-alert' : (r.dir > 0 ? 'k-green' : 'k-muted')">{{ r.changeText }}</text></view>
           </view>
           <k-icon name="chevron-right" :size="16" color="muted" :stroke="1.6" />
         </view>
       </k-card>
-      <text class="k-tiny k-mt16 note">* 名次变化对比上一周期（7.1-7.30）</text>
+      <text class="k-tiny k-mt16 note">{{ rk.note }}</text>
     </view>
 
     <!-- 4 评价统计 -->
     <view v-else class="k-body k-pad-tab review-body">
       <view class="k-row k-gap10">
-        <view class="select k-flex1" @click="toast('选择周期')"><text>近30天（7.31-8.29）</text><k-icon name="chevron-down" :size="16" color="ink" :stroke="1.7" /></view>
-        <view class="select k-flex1" @click="toast('选择门店')"><text>全部门店</text><k-icon name="chevron-down" :size="16" color="ink" :stroke="1.7" /></view>
+        <view class="select k-flex1" @click="pickRvPeriod"><text>{{ rv.range || '近30天' }}</text><k-icon name="chevron-down" :size="16" color="ink" :stroke="1.7" /></view>
+        <view class="select k-flex1" @click="pickRvStore"><text>{{ rv.storeName || '全部门店' }}</text><k-icon name="chevron-down" :size="16" color="ink" :stroke="1.7" /></view>
       </view>
       <k-card class="k-mt12" :pad="10">
         <view class="k-row-start k-gap12">
           <view class="score">
             <text class="k-subtitle">评分分布</text>
-            <text class="score__big num">4.8</text>
+            <text class="score__big num">{{ rv.avg || '—' }}</text>
             <view class="k-row k-gap2 k-mt2">
-              <k-icon v-for="n in 4" :key="n" name="star" :size="16" color="#D9A441" :stroke="1" fill />
-              <k-icon name="star-half" :size="16" color="#D9A441" :stroke="1" fill />
+              <k-icon v-for="n in fullStars" :key="n" name="star" :size="16" color="#D9A441" :stroke="1" fill />
+              <k-icon v-if="halfStar" name="star-half" :size="16" color="#D9A441" :stroke="1" fill />
             </view>
-            <text class="k-meta k-mt8">共 2,860 条评价</text>
+            <text class="k-meta k-mt8">{{ rv.count || '共 0 条评价' }}</text>
           </view>
           <view class="k-flex1 k-col k-gap10 dist">
             <view v-for="d in dist" :key="d.star" class="k-row k-gap8">
@@ -150,13 +152,13 @@
       </k-card>
       <view class="k-grid-2 k-mt10">
         <k-card :pad="10">
-          <text class="k-subtitle">好评关键词 TOP5</text>
+          <text class="k-subtitle">得分较高的分项</text>
           <view class="k-col k-gap8 k-mt10 word-list">
             <view v-for="k in goodWords" :key="k[0]" class="k-between"><text class="k-small">{{ k[0] }}</text><text class="k-small">{{ k[1] }}</text></view>
           </view>
         </k-card>
         <k-card :pad="10">
-          <text class="k-subtitle">低分原因 TOP5</text>
+          <text class="k-subtitle">得分偏低的分项</text>
           <view class="k-col k-gap8 k-mt10 word-list">
             <view v-for="k in badWords" :key="k[0]" class="k-between"><text class="k-small">{{ k[0] }}</text><text class="k-small">{{ k[1] }}</text></view>
           </view>
@@ -166,44 +168,83 @@
         <view v-for="t in kpis" :key="t.label" class="kpi">
           <text class="k-small k-muted">{{ t.label }}</text>
           <text class="kpi__value num">{{ t.value }}</text>
-          <view class="k-row k-gap2 kpi__delta"><k-icon name="arrow-up" :size="13" color="green" :stroke="2" /><text>{{ t.delta }}</text></view>
+          <view class="k-row k-gap2 kpi__delta"><k-icon v-if="t.dir" :name="t.dir > 0 ? 'arrow-up' : 'arrow-down'" :color="t.dir > 0 ? 'green' : 'alert'" :size="13" :stroke="2" /><text :class="{ 'k-alert': t.dir < 0, 'k-muted': !t.dir }">{{ t.delta }}</text></view>
         </view>
       </view>
       <view class="k-grid-2 k-mt10">
         <k-card :pad="10">
-          <text class="k-subtitle">AI 评价摘要</text>
-          <text class="k-meta k-mt6 block">整体评价积极，用户对服务热度、环境氛围和体验感受认可度高；主要改进点集中在隔音和位置便利性。</text>
-          <view class="obtn k-mt10" @click="go(R.staffReviews)"><text>查看详情</text></view>
+          <text class="k-subtitle">评价概况</text>
+          <text class="k-meta k-mt6 block">{{ rv.summary || '加载中…' }}</text>
+          <view class="obtn k-mt10" @click="openReviews"><text>{{ reviewLinkText }}</text></view>
         </k-card>
         <k-card :pad="10">
           <text class="k-subtitle">改进建议</text>
           <view class="k-col k-gap4 k-mt6">
             <text v-for="t in advice" :key="t" class="k-meta">• {{ t }}</text>
           </view>
-          <view class="obtn k-mt10" @click="toast('已生成改进计划')"><text>生成改进计划</text></view>
+          <view class="obtn k-mt10" @click="makePlan"><text>生成改进计划</text></view>
         </k-card>
       </view>
     </view>
 
     <k-tabbar mode="staff" active="business" />
-    <view class="msg-dot" />
+    <!-- 统计截止日期：之前要手敲 yyyy-MM-dd，改成日历 -->
+    <k-date-picker v-if="endCalendar" title="统计截止日期" :value="trEnd || todayCn()" :max-date="todayCn()" @cancel="endCalendar = false" @confirm="confirmTrendEnd" />
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { selectCity } from '@/common/city-picker.js'
+// ---------------------------------------------------------------------------
+// 数据看板接入情况（主理人 / 管家，只统计本人有授权的门店）：
+//   s=1 核心指标：营业额、入住率、报名转化率、二消收入、好评率（与上一等长周期对比），迷你图为按日序列
+//   s=2 业务趋势：订单 / 入住间夜 / 报名 / 活动参与按日序列与合计，趋势洞察是规则文案（不是 AI）
+//   s=3 门店排名：只在你有权限的门店之间排，名次变化对比上一周期
+//   s=4 评价统计：评分分布、按评价分项的得分高低（不做关键词 NLP）、好评率 / 回复率 / 精选数、规则建议 → 一键生成任务草稿
+// ---------------------------------------------------------------------------
+import { ref, computed, watch } from 'vue'
 import { useScreen, go, back, toast } from '@/common/screen.js'
+import { apiDashOverview, apiDashTrend, apiDashRank, apiDashReviews, apiDashPlan } from '@/common/api.js'
+import { ensureSession, staffStoreUrl } from '@/common/experience.js'
+import { sheet, prompt, alert, pickPaged, confirm, todayCn, isYmd, errText, fmtNum } from '@/common/ui.js'
+import { absUrl } from '@/common/upload.js'
 import R from '@/common/routes.js'
 
-const s = useScreen(4)
+let booting = true
+const s = useScreen(4, {
+  onLoad: async (q) => {
+    if (q?.view === 'trend') s.value = 2
+    if (q?.view === 'rank') s.value = 3
+    if (q?.view === 'reviews') s.value = 4
+    // 从工作台 / 业务中心 / 日报进来会带上当前门店：趋势与评价默认看这家（门店选择框显示店名），
+    // 「生成改进计划」也落到这家；核心指标与门店排名本来就是跨门店口径，不受影响。
+    if (q?.storeId) { trStore.value = q.storeId; rvStore.value = q.storeId }
+    landing = s.value
+    await ensureSession()
+    loadScreen(s.value)
+    booting = false
+  }
+})
 const titles = ['数据看板', '业务趋势', '门店排名', '评价统计']
-const onBack = () => { if (s.value > 1) s.value = 1; else back() }
+// 进页时落在哪一屏（日报「异常提示」、荣誉页「查看趋势 / 全部建议」直接打开趋势或评价统计）：
+// 之前返回一律先回核心指标，要再按一次才回到来的页面；现在从第 1 屏点进去的屏返回第 1 屏，直接打开的屏返回上一页
+let landing = 1
+const onBack = () => { if (s.value !== landing) s.value = landing; else back() }
+const links = [{ s: 2, label: '业务趋势' }, { s: 3, label: '门店排名' }, { s: 4, label: '评价统计' }]
+watch(s, (v) => { if (!booting) loadScreen(v) })
+function loadScreen(v) {
+  if (v === 1) loadOverview()
+  if (v === 2) loadTrend()
+  if (v === 3) loadRank()
+  if (v === 4) loadReviews()
+}
 
 /** 折线：把数值转成可用 view 绘制的线段 */
 function line(vals, w, h, min, max, pad = 2) {
-  const lo = min ?? Math.min(...vals), hi = max ?? Math.max(...vals)
-  const step = w / (vals.length - 1)
-  const pts = vals.map((v, i) => [+(i * step).toFixed(2), +(pad + (h - pad * 2) * (1 - (v - lo) / (hi - lo || 1))).toFixed(2)])
+  const arr = vals && vals.length > 1 ? vals : [0, 0]
+  const lo = min ?? Math.min(...arr), hi = max ?? Math.max(...arr)
+  const step = w / (arr.length - 1)
+  const pts = arr.map((v, i) => [+(i * step).toFixed(2), +(pad + (h - pad * 2) * (1 - (v - lo) / (hi - lo || 1))).toFixed(2)])
   const segs = []
   for (let i = 0; i < pts.length - 1; i++) {
     const [x1, y1] = pts[i], [x2, y2] = pts[i + 1]
@@ -212,69 +253,219 @@ function line(vals, w, h, min, max, pad = 2) {
   return { pts, segs, step: +(step + 0.5).toFixed(2) }
 }
 
-// s1
+// ---------------- s=1 ----------------
 const periods = ['7天', '30天', '季度']
 const period = ref('7天')
-const metrics = [
-  { label: '营业额（元）', value: '28,760', delta: '12.5%', color: '#A94734', line: '#A94734', soft: '#F5E6E1', chart: line([30, 22, 26, 38, 46, 42, 34, 40, 55, 62, 58, 50, 60, 70, 66, 60, 74, 92], 144, 36) },
-  { label: '入住率', value: '78%', delta: '6.2%', color: '#241B17', line: '#D9A441', soft: '#F4E8D2', chart: line([26, 34, 42, 48, 44, 36, 40, 50, 58, 56, 50, 60, 68, 74, 70, 66, 78, 92], 144, 36) },
-  { label: '报名转化率', value: '32%', delta: '4.1%', color: '#241B17', line: '#4F7A66', soft: '#E7EFE7', chart: line([28, 34, 38, 44, 40, 32, 36, 46, 52, 50, 44, 52, 62, 70, 66, 60, 76, 92], 144, 36) },
-  { label: '二消收入（元）', value: '6,240', delta: '15.3%', color: '#40576B', line: '#40576B', soft: '#E7EDF1', chart: line([30, 40, 48, 40, 30, 36, 46, 56, 50, 44, 52, 62, 58, 52, 62, 72, 68, 80], 144, 36) }
+watch(period, () => loadOverview())
+const ov = ref({ metrics: [], good: { series: [] } })
+async function loadOverview() {
+  try {
+    ov.value = (await apiDashOverview(period.value)).data || ov.value
+  } catch (e) {
+    toast(errText(e, '看板加载失败'))
+  }
+}
+const STYLE = [
+  { color: '#9A6B3F', line: '#9A6B3F', soft: '#F6EDE2' }, // 和 theme.scss 的 --k-red / --k-ink / --k-green 一致
+  { color: '#3A322B', line: '#D9A441', soft: '#F4E8D2' },
+  { color: '#3A322B', line: '#4A6E3A', soft: '#E4EDDA' },
+  { color: '#40576B', line: '#40576B', soft: '#E7EDF1' }
 ]
-const wide = line([22, 28, 34, 40, 38, 32, 36, 44, 50, 46, 42, 50, 58, 62, 56, 60, 70, 76, 72, 78, 88, 96], 190, 48)
+// 箭头方向按变化值定：+12.5% → 绿色 ↑，-3% → 提醒红 ↓；「—」（没有对比数据）、「持平」、0 不画箭头、用灰色。
+// 服务端在没有对比值或持平时也给 up=true（KgManageService：up = x==null||prev==null||x>=prev），之前「— 」旁边也画绿色 ↑
+const trendDir = (v, up) => {
+  const t = String(v == null ? '' : v).trim()
+  if (!t || t === '—' || t === '持平' || /^[+-]?0+(\.0+)?%?$/.test(t)) return 0
+  if (t.startsWith('-')) return -1
+  if (t.startsWith('+')) return 1
+  return up === false ? -1 : 1
+}
+const withDir = (x) => ({ ...x, dir: trendDir(x.delta, x.up) })
+const metrics = computed(() => (ov.value.metrics || []).map((m, i) => ({ ...withDir(m), ...STYLE[i], chart: line(m.series || [], sparkW, 36) })))
+const wide = computed(() => line((ov.value.good || {}).series || [], 190, 48))
+const good = computed(() => withDir(ov.value.good || { value: '—', delta: '—', up: true }))
+// 「核心指标」旁的 i 图标之前点了没反应；口径与 KgManageService.overview / KgStats 一致
+const explainMetrics = () => alert('指标说明', [
+  `统计范围：${ov.value.range || '所选周期'}，你有权限的全部门店合计；箭头是与上一等长周期相比。`,
+  '营业额：住宿、服务订单与付费活动报名，按支付成功日计入、退款日扣减。',
+  '入住率：占用间夜 ÷（上架房型库存 × 天数）；没有上架房型时显示「—」。',
+  '报名转化率：报名中已到商家确认录用及之后的占比。',
+  '二消收入：服务订单 + 付费活动报名。好评率：4 星及以上评价占比。'
+].join('\n'))
 
-// s2
-const leftAxis = ['1,000', '800', '600', '400', '200', '0']
-const rightAxis = ['500', '400', '300', '200', '100', '0']
-const xLabels = ['7/24', '7/31', '8/7', '8/14', '8/21']
-const bars = [720, 400, 540, 340, 700, 620, 520, 950, 760, 480, 500, 560, 440, 820, 680, 540, 830, 740, 470, 600, 780, 600, 860, 730, 640, 560, 700, 820, 700, 760]
-const plotW = 262
-const barStep = plotW / 30
-const orangeLine = line([175, 178, 200, 210, 185, 170, 190, 205, 210, 200, 180, 170, 175, 200, 220, 210, 215, 205, 220, 235, 240, 235, 245, 240, 255, 275, 305], plotW - 4, 150, 0, 500, 1)
-const greenLine = line([70, 75, 80, 85, 95, 105, 115, 118, 100, 82, 76, 72, 76, 82, 88, 92, 100, 112, 92, 86, 80, 84, 92, 96, 108, 122, 150], plotW - 4, 150, 0, 500, 1)
-const dashLine = line([280, 258, 222, 232, 272, 302, 338, 312, 322, 292, 282, 320, 332, 342, 372, 382, 362, 392, 402, 352, 382, 362, 342, 372, 342, 322, 302], plotW - 4, 150, 0, 500, 1)
-const totals = [
-  { label: '订单数（单）', value: '12,860', delta: '14.7%' },
-  { label: '入住数（间夜）', value: '9,840', delta: '10.3%' },
-  { label: '报名数（人）', value: '3,420', delta: '18.6%' },
-  { label: '活动参与（人次）', value: '2,560', delta: '20.8%' }
-]
-const insights = ['8月18日订单数达到峰值 920 单', '活动参与度持续上升，较上周期增长 20.8%', '报名数在周末表现更佳，建议加强周末活动投放']
+// ---------------- s=2 ----------------
+const tr = ref({ orders: [], nights: [], apps: [], people: [], totals: [], insights: [], xLabels: [], stores: [], cities: [] })
+const trStore = ref(null)
+const trCity = ref('')
+const trPeriod = ref('30')
+const trEnd = ref('')
+async function loadTrend() {
+  try {
+    tr.value = (await apiDashTrend({ storeId: trStore.value || undefined, city: trCity.value || undefined, period: trPeriod.value, end: trEnd.value || undefined })).data || tr.value
+  } catch (e) {
+    toast(errText(e, '趋势加载失败'))
+  }
+}
+const nice = (m) => {
+  if (m <= 0) return 5
+  const step = Math.pow(10, Math.floor(Math.log10(m)))
+  return Math.ceil(m / step) * step
+}
+const leftMax = computed(() => nice(Math.max(0, ...(tr.value.orders || []))))
+const rightMax = computed(() => nice(Math.max(0, ...(tr.value.nights || []), ...(tr.value.apps || []), ...(tr.value.people || []))))
+// 千分位走 fmtNum（见 common/ui.js：安卓微信可能缺 ICU，系统本地化格式会丢逗号）
+const axis = (max) => [1, 0.8, 0.6, 0.4, 0.2, 0].map(r => fmtNum(Math.round(max * r)))
+const leftAxis = computed(() => axis(leftMax.value))
+const rightAxis = computed(() => axis(rightMax.value))
+const xLabels = computed(() => tr.value.xLabels || [])
+// 图表区宽度按屏宽算（设计稿 390 宽时为 262）：之前写死 262，375 / 360 宽的手机上最右边几根柱子压到右侧刻度上
+let winW = 390
+try { winW = uni.getSystemInfoSync().windowWidth || 390 } catch (e) { winW = 390 }
+const plotW = Math.max(180, Math.min(262, winW - 132))
+// 指标小卡里的折线也按屏宽算（设计稿 390 宽时为 144 = 半栏 174 - 卡片内边距和边框 30）：之前写死 144，375 / 320 宽时伸出卡片
+const sparkW = Math.max(96, Math.min(144, Math.floor((winW - 42) / 2 - 30)))
+const bars = computed(() => (tr.value.orders || []).map(v => (v / leftMax.value) * 1000))
+const barStep = computed(() => plotW / Math.max(1, (tr.value.orders || []).length))
+const orangeLine = computed(() => line(tr.value.nights || [], plotW - 4, 150, 0, rightMax.value, 1))
+const greenLine = computed(() => line(tr.value.apps || [], plotW - 4, 150, 0, rightMax.value, 1))
+const dashLine = computed(() => line(tr.value.people || [], plotW - 4, 150, 0, rightMax.value, 1))
+const totals = computed(() => (tr.value.totals || []).map(withDir))
+const insights = computed(() => tr.value.insights || [])
+async function pickTrendStore() {
+  const list = tr.value.stores || []
+  const i = await pickPaged(['全部门店', ...list.map(x => x.storeName)], '选择门店')
+  if (i < 0) return
+  trStore.value = i === 0 ? null : list[i - 1].storeId
+  loadTrend()
+}
+async function pickTrendCity() {
+  const list = tr.value.cities || []
+  const value = await selectCity({ value: trCity.value, items: list, allowAll: true, hint: '选择可查看经营数据的城市' })
+  if (value === null) return
+  trCity.value = value
+  loadTrend()
+}
+const endCalendar = ref(false)
+const pickTrendEnd = () => { endCalendar.value = true }
+const confirmTrendEnd = (v) => {
+  endCalendar.value = false
+  if (!v || v === trEnd.value) return
+  trEnd.value = v
+  loadTrend()
+}
+async function pickTrendPeriod() {
+  const i = await sheet(['近7天', '近30天', '近90天'])
+  if (i < 0) return
+  trPeriod.value = ['7', '30', '90'][i]
+  loadTrend()
+}
 
-// s3
+// ---------------- s=3 ----------------
 const rankTabs = ['营业额榜', '入住率榜', '好评榜', '岗位履约榜']
+const METRIC = { 营业额榜: 'revenue', 入住率榜: 'occupancy', 好评榜: 'good', 岗位履约榜: 'fulfill' }
 const rankTab = ref('营业额榜')
-const ranks = [
-  { name: '西湖边 · 温馨一居室', area: '杭州 · 西湖区', amount: '28,760', change: '2' },
-  { name: '花艺咖屋（兼职）', area: '苏州 · 姑苏区', amount: '24,580', change: '1' },
-  { name: '海边的风（全职）', area: '厦门 · 思明区', amount: '22,340', change: '5' },
-  { name: '山谷木屋 · 治愈系', area: '莫干山 · 德清县', amount: '18,760', change: '1', down: true },
-  { name: '民宿前台接待', area: '大理 · 古城区', amount: '16,420', change: '0' },
-  { name: '安心木院 · 美好生活', area: '成都 · 武侯区', amount: '15,380', change: '2', down: true },
-  { name: '手作老师（兼职）', area: '上海 · 闵行区', amount: '14,280', change: '1' },
-  { name: '茶香小院（兼职）', area: '杭州 · 余杭区', amount: '12,860', change: '3' }
-]
+const rankPeriod = ref('30')
+watch(rankTab, () => loadRank())
+const rk = ref({ rows: [] })
+async function loadRank() {
+  try {
+    rk.value = (await apiDashRank({ metric: METRIC[rankTab.value], period: rankPeriod.value })).data || rk.value
+  } catch (e) {
+    toast(errText(e, '排名加载失败'))
+  }
+}
+// 名次变化：change 是名次差的绝对值、down 是名次下降；名次没变（0）写「持平」、灰色不画箭头（之前是绿色「↑ 0」）
+const ranks = computed(() => (rk.value.rows || []).map((r, i) => {
+  const dir = !r.change || String(r.change) === '0' ? 0 : (r.down ? -1 : 1)
+  return { ...r, dir, changeText: dir ? r.change : '持平', thumb: r.cover ? absUrl(r.cover) : '/static/media/cover-empty.png' }
+}))
+async function pickRankPeriod() {
+  const i = await sheet(['近7天', '近30天', '近90天'])
+  if (i < 0) return
+  rankPeriod.value = ['7', '30', '90'][i]
+  loadRank()
+}
+const openDaily = (r) => go(R.daily + '?storeId=' + r.storeId)
 
-// s4
-const dist = [
-  { star: 5, pct: 67, num: '1,928 (67%)', color: '#4F7A66' },
-  { star: 4, pct: 24, num: '702 (24%)', color: '#D9A441' },
-  { star: 3, pct: 8, num: '172 (6%)', color: '#E39A2E' },
-  { star: 2, pct: 3, num: '38 (1%)', color: '#A94734' },
-  { star: 1, pct: 2, num: '20 (1%)', color: '#A94734' }
-]
-const goodWords = [['服务热情', 892], ['环境舒适', 756], ['体验很棒', 689], ['干净整洁', 542], ['氛围治愈', 438]]
-const badWords = [['隔音一般', 68], ['位置偏远', 52], ['设施陈旧', 48], ['早餐一般', 36], ['性价比低', 28]]
-const kpis = [
-  { label: '好评率', value: '96%', delta: '2.8%' },
-  { label: '回复率', value: '98%', delta: '3.6%' },
-  { label: '精选数量', value: '286', delta: '18' }
-]
-const advice = ['优化房间隔音措施', '增加周边交通指引', '升级老旧设施设备']
+// ---------------- s=4 ----------------
+const rv = ref({ dist: [], high: [], low: [], kpis: [], advice: [], stores: [] })
+const rvStore = ref(null)
+const rvPeriod = ref('30')
+async function loadReviews() {
+  try {
+    rv.value = (await apiDashReviews({ storeId: rvStore.value || undefined, period: rvPeriod.value })).data || rv.value
+  } catch (e) {
+    toast(errText(e, '评价统计加载失败'))
+  }
+}
+const fullStars = computed(() => Math.floor(Number(rv.value.avgValue || 0)))
+const halfStar = computed(() => Number(rv.value.avgValue || 0) - fullStars.value >= 0.5)
+const dist = computed(() => rv.value.dist || [])
+const goodWords = computed(() => ((rv.value.high || []).length ? rv.value.high : [['暂无分项评分', '—']]))
+const badWords = computed(() => ((rv.value.low || []).length ? rv.value.low : [['没有明显偏低的分项', '—']]))
+const kpis = computed(() => (rv.value.kpis || []).map(withDir))
+const advice = computed(() => rv.value.advice || [])
+async function pickRvPeriod() {
+  const i = await sheet(['近7天', '近30天', '近90天'])
+  if (i < 0) return
+  rvPeriod.value = ['7', '30', '90'][i]
+  loadReviews()
+}
+async function pickRvStore() {
+  const list = rv.value.stores || []
+  const i = await pickPaged(['全部门店', ...list.map(x => x.storeName)], '选择门店')
+  if (i < 0) return
+  rvStore.value = i === 0 ? null : list[i - 1].storeId
+  loadReviews()
+}
+// 「查看详情」打开员工端评价管理，带上这里选中的门店（staffStoreUrl 加 ?storeId=），不再固定看员工端当前门店。
+// 评价管理没有"全部门店"模式：这里选的是全部门店时先让人挑一家（只有一家就直接用），按钮文案也照实写。
+const reviewLinkText = computed(() => (rvStore.value || (rv.value.stores || []).length === 1 ? '查看详情' : '选择门店查看详情'))
+async function openReviews() {
+  const list = rv.value.stores || []
+  let storeId = rvStore.value
+  if (!storeId) {
+    if (!list.length) return toast('没有可查看评价的门店')
+    if (list.length === 1) storeId = list[0].storeId
+    else {
+      const i = await pickPaged(list.map(x => x.storeName), '选择门店')
+      if (i < 0) return
+      storeId = list[i].storeId
+    }
+  }
+  go(staffStoreUrl(R.staffReviews, storeId))
+}
+let planning = false
+async function makePlan() {
+  if (!rv.value.adviceReal) return toast('暂时没有需要改进的分项')
+  const list = rv.value.stores || []
+  let storeId = rvStore.value
+  if (!storeId) {
+    if (list.length === 1) storeId = list[0].storeId
+    else {
+      const i = await pickPaged(list.map(x => x.storeName), '选择门店')
+      if (i < 0) return
+      storeId = list[i].storeId
+    }
+  }
+  if (!(await confirm('生成改进计划', `把 ${advice.value.length} 条建议生成为下周一的任务草稿？草稿需要补充时间和接单人后再发布。`)) || planning) return
+  // 连点会生成两份一样的任务草稿
+  planning = true
+  try {
+    const res = await apiDashPlan({ storeId, advice: advice.value })
+    toast((res.data && res.data.message) || '已生成')
+    // 任务草稿生成在哪家门店，就打开哪家门店的任务列表
+    setTimeout(() => go(staffStoreUrl(R.tasks + '?weekStart=' + ((res.data && res.data.weekStart) || ''), storeId)), 600)
+  } catch (e) {
+    toast(errText(e, '生成失败'))
+  } finally {
+    planning = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
-.num { font-family: Georgia, "Times New Roman", var(--k-serif); font-weight: 700; }
+.num { font-family: var(--k-sans); font-weight: 700; }
 .block { display: block; }
 .note { display: block; }
 .k-mt2 { margin-top: 2px; }
@@ -282,7 +473,6 @@ const advice = ['优化房间隔音措施', '增加周边交通指引', '升级�
 .k-mt10 { margin-top: 10px; }
 .k-mt14 { margin-top: 14px; }
 .k-gap2 { gap: 2px; }
-.msg-dot { position: fixed; z-index: 51; left: 254px; bottom: calc(var(--k-safe-bottom) + 47px); width: 7px; height: 7px; border-radius: 50%; background: var(--k-red); }
 
 /* 页签 */
 .ptabs { display: flex; border-bottom: 1px solid var(--k-line); }
@@ -297,14 +487,17 @@ const advice = ['优化房间隔音措施', '增加周边交通指引', '升级�
 /* 指标卡 */
 .metric { padding: 14px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; }
 .metric--wide { flex-direction: row; align-items: flex-end; justify-content: space-between; }
-.metric__value { font-size: 32px; line-height: 1.1; margin-top: 6px; color: var(--k-ink); }
+.metric__value { font-size: 28px; line-height: 1.1; margin-top: 6px; color: var(--k-ink); overflow-wrap: anywhere; }
 .metric__delta { margin-top: 6px; font-size: 14px; color: var(--k-green); }
 .spark { position: relative; overflow: hidden; margin-top: 8px; }
+.links { display: flex; gap: 8px; }
+.links__item { flex: 1; height: 36px; border: 1px solid var(--k-line); border-radius: 8px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; gap: 2px; font-size: 14px; }
 .spark__area { position: absolute; }
 .spark__seg { position: absolute; height: 2px; border-radius: 1px; transform-origin: 0 50%; }
 
 /* 下拉 */
 .select { height: 40px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper); display: flex; align-items: center; justify-content: space-between; font-size: 15px; gap: 6px; }
+.select > text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .select--icon { width: 48px; flex: 0 0 auto; justify-content: center; }
 .select--sm { height: 32px; font-size: 14px; padding: 0 10px; }
 

@@ -1,0 +1,117 @@
+/* 房源详情参考稿。房型上下排列，封面使用较窄的横幅比例。 */
+@import './reference-font.scss';
+.stay-detail { --k-sans: 'KG Detail', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--stay-paper) 0 0 / 96px 96px, #FAF3ED; color: #50372B; }
+.overview { padding-bottom: calc(102px + var(--k-safe-bottom)); }
+.hero { height: 224px; }
+.hero-fade { height: 64px; }
+.hero-count { bottom: 72px; }
+.hero-actions { top: 47px !important; height: 32px; right: 14px; }
+/* 微信原生胶囊占用右上区域，业务操作移到它下方。 */
+/* #ifdef MP-WEIXIN */
+.hero-actions { top: 100px !important; }
+/* #endif */
+.bar-pill { height: 34px; padding: 0 22px; font-size: 16px; }
+.info { margin: -64px 13px 0; padding: 10px 12px 9px; border-radius: 14px; }
+.title-row { min-height: 0; }
+.title-actions>view { min-height: 26px; }
+.title-row>view:first-child>view:first-child>text { font-size: 20px; line-height: 1.3; }
+.title-actions { gap: 8px; }
+.info-meta { align-items: flex-end; gap: 8px; margin-top: 2px; }
+.info-meta__copy { padding-right: 78px; }
+.info-price { position: absolute; right: 12px; top: 40px; gap: 3px; }
+.stay-share-icon { display: block; width: 22px; height: 22px; }
+.info-chips,.info-meta__copy .info-chips { gap: 4px; }
+.ichip { height: 16px; font-size: 9px; padding: 0 4px; }
+.info-price__num { font-size: 27px; }
+.info-price__pill { height: 16px; font-size: 10px; }
+.info-meta__copy .rating { margin-top: 7px; min-height: 18px; }
+.info-meta__copy .rating text:nth-child(2) { font-size: 12px; }
+.location { margin-top: 5px; padding-top: 7px; gap: 5px; align-items: center; }
+.location-copy { min-width: 0; flex: 1; }
+.location-main,.location-area { font-size: 11px; font-weight: 700; line-height: 1.5; }
+.location-action { min-height: 23px; height: 23px; font-size: 10px; padding: 0 7px; }
+.overview-body { padding: 0 13px 12px; }
+.sec-card { border-radius: 13px; margin-top: 7px; padding: 8px 17px; }
+.sec-title { font-size: 17px; }
+.trip .sec-title { font-size: 16px; }
+.trip { padding-left: 12px; padding-right: 12px; }
+.trip .sec-head { margin-bottom: 3px; }
+.trip__row { gap: 1px; margin-top: 1px; }
+.trip__k,.trip__v { font-size: 10px; font-weight: 500; line-height: 1.45; }
+.trip__k::after { content: ': '; }
+.trip__k { height: auto; }
+.section-pending { display: block; margin: 8px 0 2px; font-size: 12px; line-height: 1.7; color: #9C8674; }
+.vcard { padding: 0; }
+.vcard__head { padding: 3px 15px; }
+.vcard__title .sec-title { font-size: 17px; letter-spacing: 1px; }
+.vcard__cover { padding-bottom: 28.5%; border-radius: 11px; }
+.vcard__play { width: 40px; height: 40px; margin: -20px 0 0 -20px; }
+.vcard__cap { font-size: 12px; bottom: 5px; }
+.vcard--pending { background: #FBF7F2; }
+.vcard--pending .sec-title { color: #805434; }
+.video-pending { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 100px; background: #F0E7DC; color: #9D836C; font-size: 12px; }
+.host2 { padding: 5px 12px 7px; }
+.host2 .sec-title { font-size: 14px; line-height: 1.4; }
+.host2 .sec-title::before { content: '👋'; margin-right: 4px; }
+.host2__main { gap: 10px; margin-top: 0; }
+.host2__avatar { width: 50px; height: 50px; margin-top: 3px; }
+.host2__name { font-size: 11px; line-height: 1.3; }
+.host2__name::before { content: '称呼：'; font-weight: 500; }
+.host2__fact { font-size: 10px; font-weight: 500; line-height: 1.35; }
+.host2__intro { font-size: 10px; font-weight: 500; line-height: 1.35; }
+.host2__copy { font-size: 10px; line-height: 1.3; gap: 0; }
+.host2__scores { justify-content: space-between; margin: 1px 0; }
+.host2__score { font-size: 10px; height: 12px; line-height: 12px; padding: 0 6px; }
+.host2__follow { font-size: 10px; height: 24px; }
+.room-section { padding: 0 8px 9px; margin-top: 5px; border-radius: 0 0 14px 14px; }
+.entries { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin-left: -8px; margin-right: -8px; }
+.entry,.entry.entry--reviews { padding: 4px 8px; min-height: 53px; box-sizing: border-box; gap: 3px; }
+.entry__copy { gap: 3px; }
+.entry__title,.entry.entry--reviews .entry__title { font-size: 14px; line-height: 1.45; overflow: hidden; text-overflow: ellipsis; }
+.entry.entry--reviews .entry__title::before { content: '✨' !important; margin-right: 3px; }
+.entry--diary .entry__title::before { content: '📷' !important; margin-right: 3px; }
+.entry--reviews .entry__score { min-height: 20px; padding: 1px 6px; }
+.entry--reviews .entry__score-label,.entry__sub { font-size: 11px; }
+.entry__method { display: none; }
+.rooms-head { margin: 11px 2px 6px; gap: 3px; }
+.rooms-head .sec-title { font-size: 17px; }
+.rooms-head .sec-title::before { content: '🏡'; margin-right: 4px; }
+.rooms-head__note { width: auto; margin-left: auto; padding: 2px 0; font-size: 9px; background: transparent; gap: 3px; }
+.rooms-head__note>text:first-child { max-width: 108px; white-space: normal; }
+.room-stack { display: flex; flex-direction: column; width: 100%; gap: 14px; padding: 2px 0; }
+.rt { position: relative; width: 100%; min-width: 0; box-sizing: border-box; margin: 0; border: 1px solid #D9C3A9; border-radius: 12px; box-shadow: none; display: flex; flex-direction: column; }
+.rt__pic { padding-bottom: 38%; border-radius: 11px 11px 0 0; flex-shrink: 0; }
+.rt__body { padding: 12px 14px 14px; flex: 1; }
+.rt__name { font-size: 18px; line-height: 1.45; white-space: normal; overflow: visible; }
+.rt__line { margin: 5px 0 8px; font-size: 12px; font-weight: 400; line-height: 1.6; display: block; overflow: visible; }
+.rt__review { min-height: 32px; margin: 0 0 6px; }
+.rt__score { font-size: 12px; }
+.rt__review .rt__cnt { display: inline; font-size: 11px; }
+.rt__review-go { font-size: 11px; }
+.rt__foot { flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid #EFE6D9; }
+.rt__left { flex: 1; max-width: 100%; gap: 6px 10px; }
+.rt__num { font-size: 28px; }
+.rt__yen,.rt__unit { font-size: 12px; }
+.rt__few { position: static; font-size: 12px; line-height: 1.5; padding: 0; color: #27845c; background: transparent; }
+.rt__few--off { color: #998374; }
+.rt__btn { min-width: 76px; height: 40px; padding: 0 16px; font-size: 14px; }
+.rt__badge { top: 10px; left: 10px; height: 22px; line-height: 22px; font-size: 12px; padding: 0 8px; }
+.rt__play-dot { width: 42px; height: 42px; }
+.rt .room__promo { top: 10px; bottom: auto; left: auto; right: 10px; height: 22px; line-height: 22px; font-size: 11px; }
+.stay-booking-dock { left: 13px; right: 13px; bottom: calc(7px + var(--k-safe-bottom)); }
+.pickbar { min-height: 66px; padding: 9px 10px 9px 22px; background: linear-gradient(105deg,#AF8256,#7C522F); }
+.picked__from { font-size: 25px; font-weight: 700; }
+.picked__from,.picked__hint { line-height: 1.35; }
+.picked__hint { font-size: 12px; }
+.book { min-width: 100px; height: 48px; padding: 0 19px; background: linear-gradient(100deg,#FFCE51,#FF8014); }
+.book__main { font-size: 20px; }
+@media(max-width:359px) {
+ .info { padding: 10px; } .ichip { font-size: 9px; padding: 0 4px; }
+ .location-main,.location-area { font-size: 11px; } .location-action { font-size: 10px; padding: 0 6px; }
+ .entry__title,.entry.entry--reviews .entry__title { font-size: 12px; }
+ .rt__name { font-size: 17px; } .rt__body { padding: 10px 12px; } .rt__num { font-size: 26px; }
+ .book { min-width: 87px; padding: 0 14px; } .book__main { font-size: 18px; }
+ .info-meta__copy { padding-right: 70px; }
+ .info-price { top: 39px; }
+ .rooms-head__note { width: 100%; }
+}

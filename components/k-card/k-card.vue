@@ -7,20 +7,21 @@ import { computed } from 'vue'
 defineOptions({ options: { virtualHost: true, styleIsolation: 'apply-shared' } })
 const props = defineProps({
   tone: { type: String, default: 'paper' },   // paper | flax | green | ochre | blue | red
-  flat: { type: Boolean, default: false },    // 无描边
+  flat: { type: Boolean, default: false },    // 无阴影（平铺）
   pad: { type: [Number, String], default: 14 },
-  radius: { type: [Number, String], default: 14 }
+  radius: { type: [Number, String], default: 16 } // 10-16 改版统一 16px（--k-radius）
 })
 defineEmits(['click'])
 const padding = computed(() => typeof props.pad === 'number' || /^\d+$/.test(String(props.pad)) ? `${props.pad}px` : props.pad)
 </script>
 
 <style scoped lang="scss">
-.k-card { display: block; width: 100%; min-width: 0; border: 1px solid var(--k-line); background: var(--k-paper); box-sizing: border-box; }
-.is-flat { border-color: transparent; }
-.is-flax { background: var(--k-paper2); border-color: var(--k-line); }
-.is-green { background: var(--k-green-soft); border-color: #C9DACC; }
-.is-ochre { background: var(--k-ochre-soft); border-color: #E3CFA6; }
-.is-blue { background: var(--k-indigo-soft); border-color: #C4D0D8; }
-.is-red { background: var(--k-red-soft); border-color: #E3BFB5; }
+/* 卡片不画框：纯白卡片 + 柔和阴影浮在奶白底色上；浅色底的卡片靠底色区分，不加阴影 */
+.k-card { display: block; width: 100%; min-width: 0; border: 0; background: var(--k-paper); box-shadow: var(--k-sh1); box-sizing: border-box; }
+.is-flat, .is-flax, .is-green, .is-ochre, .is-blue, .is-red { box-shadow: none; }
+.is-flax { background: var(--k-paper2); }
+.is-green { background: var(--k-green-soft); }
+.is-ochre { background: var(--k-ochre-soft); }
+.is-blue { background: var(--k-indigo-soft); }
+.is-red { background: var(--k-red-soft); }
 </style>

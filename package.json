@@ -3,11 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "test:insurance-scope": "node --test scripts/insurance-scope.test.mjs",
     "dev:h5": "node scripts/uni.mjs",
     "dev:mp-weixin": "node scripts/uni.mjs -p mp-weixin",
     "build:h5": "node scripts/uni.mjs build",
     "build:mp-weixin": "node scripts/uni.mjs build -p mp-weixin",
-    "check:mp-weixin": "node scripts/mp-package.mjs dist/build/mp-weixin"
+    "check:mp-weixin": "node scripts/mp-package.mjs dist/build/mp-weixin",
+    "test:config": "node --test scripts/config.test.mjs",
+    "test:phone-binding": "node --test scripts/phone-binding.test.mjs",
+    "test:staff-entry": "node --test scripts/staff-entry.test.mjs",
+    "test:job-salary": "node --test scripts/job-salary.test.mjs",
+    "test:message-scope": "node --test scripts/message-scope.test.mjs"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-alpha-5020520260829001",

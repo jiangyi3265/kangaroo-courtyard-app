@@ -1,69 +1,397 @@
 <template>
-  <view class="k-page messages-page">
-    <template v-if="s !== 4">
-      <k-topbar title="袋鼠小院">
-        <view class="msg-tabs"><view v-for="tab in tabs" :key="tab.name" class="msg-tab" :class="{ active: activeTab === tab.name }" @click="activeTab = tab.name"><text>{{ tab.name }}</text><text v-if="tab.badge" class="badge">{{ tab.badge }}</text></view></view>
-      </k-topbar>
-      <view class="all-body k-pad-tab">
-        <view v-if="!filteredMessages.length" class="empty-messages">
-          <k-icon name="message-circle" :size="46" color="muted" />
-          <text class="k-title">{{ emptyTitle }}</text><text class="empty-copy">{{ emptyCopy }}</text>
-          <k-button type="outline" @click="relaunch(experience.mode === 'staff' ? R.staff : R.home)">{{ experience.mode === 'staff' ? '返回工作台' : '去首页看看' }}</k-button>
+  <!-- #ifdef MP-WEIXIN -->
+  <page-meta :page-style="aiOpen ? 'overflow: hidden' : ''" />
+  <!-- page-meta 必须是页面第一个节点：AI袋鼠弹层开着时锁住页面滚动（网页版由弹层自己锁 body） -->
+  <!-- #endif -->
+  <view class="k-page msg-page" :class="{ 'msg-page--user': !staff }">
+    <k-topbar title="消息">
+      <template #left><view v-if="unreadCount" class="read-all" role="button" aria-label="将当前身份消息全部标为已读" hover-class="k-press" @click="readAll">全部已读</view></template>
+    </k-topbar>
+    <k-subscribe scenes="" label="微信订阅提醒" />
+    <view class="k-pad-tab">
+      <view class="entries">
+        <view v-for="e in entries" :key="e.type" class="entry" hover-class="k-press-s" @click="openEntry(e)">
+          <view class="tile" :class="'t-' + e.tone"><k-icon :name="e.icon" :size="23" color="white" :stroke="2" :fill="e.type === 'like'" /><text v-if="e.badge" class="badge">{{ e.badge > 99 ? '99+' : e.badge }}</text></view>
+          <text>{{ e.label }}</text>
         </view>
-        <view v-for="item in filteredMessages" :key="item.id" class="notice-item" @click="openMessage(item)">
-          <view class="notice-icon notice-icon--blue"><k-icon :name="item.icon || 'message-circle'" :size="24" color="white" /></view>
-          <view class="notice-copy"><text class="notice-title">{{ item.title }}</text><text>{{ item.desc }}</text></view>
-          <view class="notice-side"><text>{{ item.time }}</text><text v-if="!item.read" class="red-dot" /></view>
+      </view>
+      <view v-if="!guest" class="categories" role="tablist" aria-label="消息分类">
+        <button v-for="item in categories" :key="item.key" class="category" :class="{ 'category--active': activeCategory === item.key }" :data-category="item.key" role="tab" :aria-selected="activeCategory === item.key" hover-class="k-press" @click="selectCategory(item.key)">
+          <k-icon :name="item.icon" :size="18" :stroke="2" :color="activeCategory === item.key ? 'white' : item.color" />
+          <text>{{ item.label }}</text><text v-if="item.unread" class="category__dot" />
+        </button>
+      </view>
+      <view v-if="!guest" class="sec"><text>{{ activeLabel }}消息</text><text v-if="recentUnread" class="sec__count">{{ recentUnread }}</text><button class="manage-messages" @click="managing = !managing">{{ managing ? '完成' : '管理' }}</button></view>
+      <text v-if="!guest" class="retention-tip">历史消息保留 · 长按可删除</text>
+      <view v-if="ready && categoryRows.length && (activeCategory !== 'group' || groupChatEnabled)" class="list">
+        <view v-for="m in categoryRows" :key="m.id" class="row" :class="{ 'row--unread': !m.read }" hover-class="k-press" @click="openMessage(m)" @longpress.stop="removeMessage(m)">
+          <view class="ava" :class="m.ini ? 'ava--ini' : 't-' + m.k[1]" :style="{ background: m.color }"><text v-if="m.ini">{{ m.ini }}</text><k-icon v-else :name="m.k[0]" :size="22" :stroke="2" color="white" /><view v-if="m.avatar" class="ava__img" :style="m.avatar" /></view>
+          <view class="row__main">
+            <view class="row__head"><text v-if="m.k[2]" class="tag" :class="'g-' + m.k[1]">{{ m.k[2] }}</text><text class="row__title k-ellipsis">{{ m.name || m.title }}</text></view>
+            <text v-if="m.source" class="row__source k-ellipsis">{{ m.source }}</text>
+            <text class="row__desc k-ellipsis">{{ m.desc }}</text>
+            <text v-if="m.wordingUpdated" class="wording-original" @click.stop="alert('消息原文', m.originalText)">称呼已更新 · 查看原文</text>
+          </view>
+          <view class="row__side"><text>{{ m.time }}</text><view v-if="!m.read" class="unread-label"><text class="dot" /><text>未读</text></view></view>
+          <button v-if="managing" class="message-delete" :disabled="deleting" aria-label="删除消息" @click.stop="removeMessage(m)"><k-icon name="trash-2" :size="18" color="alert" /></button>
         </view>
-        <view class="service-link" @click="s = 4"><view class="service-icon"><k-icon name="headset" :size="29" color="ink" /></view><view><text>联系袋鼠小院客服</text><text>常见问题 · 在线咨询 · 转人工</text></view><k-icon name="chevron-right" :size="21" color="ink" /></view>
       </view>
-      <k-tabbar active="messages" :mode="experience.mode" />
-    </template>
-
-    <!-- 4 客服中心 -->
-    <template v-else>
-      <k-topbar title="袋鼠小院客服" back @back="s = 1" />
-      <view class="support-body">
-        <view class="faq-card"><view class="faq-head"><text>常见问题</text><view><text>更多</text><k-icon name="chevron-right" :size="18" color="muted" /></view></view><view class="faq-grid"><view v-for="f in faqs" :key="f.label"><view><k-icon :name="f.icon" :size="29" color="ink" /></view><text>{{ f.label }}</text></view></view></view>
-        <view class="assistant-card"><text class="support-title">AI 小袋鼠助手</text><view class="assistant-row"><image src="/static/media/cs-kangaroo.jpg" mode="aspectFit" /><text>您好，我是小袋鼠助手，\n可以帮您解答常见问题</text></view><view class="assistant-questions"><view v-for="q in aiQuestions" :key="q" @click="toast(q)"><text>{{ q }}</text></view><k-button type="outline" size="sm">换一批</k-button></view></view>
-        <view class="online-card"><text class="support-title">在线客服</text><view class="online-row"><view class="service-icon large"><k-icon name="headset" :size="32" color="ink" /></view><view><text>工作时间 09:00 – 21:00（每日）</text><text>当前咨询人数较少，请描述您的问题</text></view></view><k-button size="lg" block>转人工客服</k-button></view>
-        <view class="phone-card"><text class="support-title">联系电话</text><view class="phone-row"><view class="service-icon large"><k-icon name="phone" :size="31" color="ink" /></view><view><text>400-888-6655</text><text>工作时间 09:00 – 21:00（每日）</text></view><k-button type="outline" size="sm">拨打电话</k-button></view></view>
-        <view class="support-foot"><k-icon name="rabbit" :size="26" color="muted" /><text>服务由袋鼠小院提供</text></view><view class="k-home-indicator" />
+      <view v-else-if="ready && !failed" class="empty">
+        <view class="empty__ring"><k-icon name="message-circle" :size="36" color="muted" /></view>
+        <text class="empty__title">{{ empty[0] }}</text>
+        <text v-if="empty[1]" class="empty__copy">{{ empty[1] }}</text>
+        <k-button type="secondary" size="sm" :label="empty[2]" @click="emptyAction" />
       </view>
-    </template>
+      <view v-else-if="!ready && !failed" class="list-loading"><view /><view /><text>正在加载{{ activeLabel }}消息…</text></view>
+      <text v-if="failed && !paging" class="more" @click="load(failed === 2)">加载失败，点这里重试</text>
+      <text v-else-if="paging || (categoryRows.length >= PAGE && experience.messagesMore === false)" class="more">{{ paging ? '加载中…' : '没有更多了' }}</text>
+      <view class="help" hover-class="k-press" @click="aiOpen = true"><k-icon name="headset" :size="18" color="muted" /><text>联系袋鼠全球青年客服</text><k-icon name="chevron-right" :size="14" color="muted" /></view>
+    </view>
+    <k-tabbar active="messages" :mode="experience.mode" />
+    <!-- 「联系袋鼠小院客服」：AI袋鼠在本页底部弹出，不跳页 -->
+    <k-ai-sheet :show="aiOpen" ctx="profile" @close="aiOpen = false" />
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useScreen, toast, go, relaunch } from '@/common/screen.js'
-import { experience, visibleMessages, markMessageRead } from '@/common/experience.js'
+import { groupChatEnabled, privateChatEnabled } from '@/common/features.js'
+// ---------------------------------------------------------------------------
+// 消息（主包，10-15 重写）：
+//   顶部三个入口 → 分包子页 pages/notice/inbox?type=…：用户身份「系统通知 / 评论 / 赞」，员工身份「系统通知 / 报名 / 订单」；
+//     角标取 /summary 的 buckets，「系统通知」再加上没看过的公告条数。
+//   下面一个按时间排的列表（服务端 bucket=main）：用户身份是订单、报名 / 面试 / 签约进度、活动通知、私信、群聊；
+//     员工身份只有和报名人、顾客的私信与群聊。每页 20 条，滑到底再取下一页。
+//   会话行（10-31 主人：要表明消息来源）：头像、对方名字、名字下面一个来源小标签、最后一条消息。名字和来源是服务端给的 peerName / sourceLabel，
+//     不从 title 按分隔符拆（岗位名里也可能带「 · 」，title 还截过 64 字）；老接口不给这几个字段时退回 title，也不出标签。
+//   客服中心、公告卡片搬去了 pages/notice 分包，主包只留入口。
+// ---------------------------------------------------------------------------
+import { ref, computed, watch } from 'vue'
+import { onLoad, onShow, onHide, onReachBottom } from '@dcloudio/uni-app'
+import { toast, go, relaunch } from '@/common/screen.js'
+import { apiMessageSummary, apiNotices } from '@/common/api.js'
+import { experience, visibleMessages, unreadCount, markMessageRead, markAllMessagesRead, loadMessages, ensureSession, session, getMessageScopeKey } from '@/common/experience.js'
+import { readSeenNotices, readNoticeBadgeCleared, clearNoticeBadge, noticeBadged } from '@/common/notice.js'
+import { absUrl } from '@/common/upload.js'
 import R from '@/common/routes.js'
-const activeTab = ref('全部')
-const s = useScreen(4, { onLoad: q => { activeTab.value = q.s === '2' ? '系统' : q.s === '3' ? '订单' : '全部' } })
-const tabs = computed(() => ['全部', '系统', '订单', '私信', '群聊'].map(name => ({
-  name, badge: visibleMessages.value.filter(m => !m.read && (name === '全部' || m.category === name)).length
+import { removeInboxMessage } from '@/common/message-actions.js'
+import { messageWording } from '@/common/display-wording.js'
+import { alert } from '@/common/ui.js'
+import { showMessagePreview } from '@/common/message-preview.js'
+
+// 老链接：?s=4 客服中心搬进了分包客服页（评价页「联系客服」还在用），?s=2「系统」页签换成了「系统通知」子页。
+// 用 redirectTo 换掉本页，客服页返回时回到原来那一页
+const legacyUrl = (q) => q.s === '4' ? R.support : q.s === '2' ? R.inbox + '?type=system' : ''
+let leaving = ''
+const aiOpen = ref(false)
+const managing = ref(false)
+const deleting = ref(false)
+let suppressOpenUntil = 0
+onLoad((q) => { leaving = legacyUrl(q || {}); if (leaving) uni.redirectTo({ url: leaving }) })
+
+// 每条消息归哪一组，和服务端 KgMessageMapper.xml 的 bucketOf 同一口径。
+// 只在服务端还没分组（老接口，列表没回 hasMore）时用来在本地挑出下面列表该放的行
+const bucketOf = (m, staff) => {
+  const c = m.category, act = c === 'system' && /^activity/.test(m.bizType || '')
+  return c === 'comment' || c === 'like' ? c
+    : staff && (act || /^(apply|interview|contract|staff)$/.test(c)) ? 'apply'
+      : staff && c === 'order' ? 'order'
+        : c === 'system' && !act ? 'system' : 'main'
+}
+// 列表行的样子：[图标, 色调, 小标签]。私信、群聊不带标签；不认识的分类按系统通知画
+const KIND = {
+  chat: ['message-circle', 'indigo'], group: ['users', 'green'], staff: ['briefcase-business', 'green'],
+  order: ['receipt-text', 'ochre', '订单'], activity: ['ticket', 'ochre', '活动'],
+  apply: ['clipboard-check', 'red', '报名'], interview: ['calendar-clock', 'red', '面试'], contract: ['file-signature', 'red', '签约'],
+  system: ['bell', 'indigo']
+}
+const kindOf = (m) => KIND[m.category === 'system' && /^activity/.test(m.bizType || '') ? 'activity' : m.category] || KIND.system
+// 顶部入口：[子页 type（也是 buckets 的键）, 名字, 图标, 色调]
+const ENTRIES = {
+  user: [['system', '平台通知', 'bell', 'indigo'], ['comment', '评论', 'message-square-text', 'green'], ['like', '赞', 'heart', 'red']],
+  staff: [['system', '平台通知', 'bell', 'indigo'], ['apply', '报名', 'clipboard-check', 'green'], ['order', '订单', 'receipt-text', 'ochre']]
+}
+
+// 列表右侧的时间只有 createTime 一个真实来源：今天显示时分，昨天显示「昨天」，更早显示月日。
+const parseTime = (value) => {
+  if (!value) return null
+  const raw = String(value)
+  // 服务端两种格式都可能出现：ISO 串（2026-09-12T14:16:35.000-08:00）直接交给 Date，
+  // 'yyyy-MM-dd HH:mm:ss' 则要先把横杠换成斜杠，否则 iOS 与小程序解析不了
+  const d = new Date(raw.indexOf('T') > 0 ? raw : raw.replace(/-/g, '/'))
+  return isNaN(d.getTime()) ? null : d
+}
+const formatTime = (value) => {
+  const d = parseTime(value)
+  // 解析不出来就留空，宁可少一行时间，也不要把原始时间串堆到列表上撑坏排版
+  if (!d) return ''
+  const pad = (n) => (n < 10 ? '0' + n : '' + n)
+  const now = new Date()
+  const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  if (sameDay(d, now)) return pad(d.getHours()) + ':' + pad(d.getMinutes())
+  if (sameDay(d, new Date(now.getTime() - 86400000))) return '昨天'
+  return pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+}
+
+const staff = computed(() => experience.mode === 'staff')
+const guest = computed(() => session.restored && !experience.account)
+
+// category + bucket=main 由服务端先筛选再分页。system 在 main 下只有活动通知，不能只筛当前已加载的一页。
+const TOPICS = [
+  ['interview', '面试', 'calendar-clock', '#456D98'], ['contract', '签约', 'file-signature', '#947043'],
+  ['apply', '报名', 'clipboard-check', '#547B60'], ['order', '订单', 'receipt-text', '#B36745'],
+  ['system', '活动', 'ticket', '#9B5F79'], ['chat', '私信', 'message-circle', '#477C86'],
+  ['group', '群聊', 'users', '#6973A0'], ['staff', '工作', 'briefcase-business', '#70794B']
+]
+const categoryCounts = ref([])
+const activeCategory = ref('interview')
+watch(groupChatEnabled, enabled => { if (!enabled && activeCategory.value === 'group') selectCategory('chat') })
+const categories = computed(() => {
+  const base = staff.value ? TOPICS.filter(t => ['chat', 'group'].includes(t[0])) : TOPICS
+  const known = new Set([...TOPICS.map(t => t[0]), 'comment', 'like'])
+  const other = categoryCounts.value.filter(c => c.category && c.category !== 'system' && !known.has(c.category))
+    .map((c, i, all) => [c.category, all.length > 1 ? '其他' + (i + 1) : '其他', 'bell', '#69727B'])
+  return [...base, ...other].filter(t => t[0] !== 'group' || groupChatEnabled.value).map(([key, label, icon, color]) => {
+    const count = categoryCounts.value.find(c => c.category === key) || {}
+    // 系统分类中扣掉顶部系统通知入口，余下才是活动；不把公告/审核等算成活动未读。
+    const excluded = key === 'system' ? buckets.value?.system : null
+    const total = key === 'system' && !excluded ? 0 : Math.max(0, Number(count.total || 0) - Number(excluded?.total || 0))
+    const unread = key === 'system' && !excluded ? 0 : Math.max(0, Number(count.unread || 0) - Number(excluded?.unread || 0))
+    return { key, label: key === 'chat' && !privateChatEnabled.value ? '业务沟通' : label, icon, color, total, unread }
+  })
+})
+const activeLabel = computed(() => categories.value.find(c => c.key === activeCategory.value)?.label || '业务沟通')
+const messageScope = getMessageScopeKey
+let categoryScope = ''
+
+// 角标：buckets 是服务端按组数的 {total, unread}；公告是否看过记在本机（common/notice.js），没看过的算进「系统通知」。
+// 列表每行只显示一行：换行、连续空白并成一个空格（小程序 <text> 会把换行真的显示出来，撑高整行压到上下两条；10-16 主人截图）
+const oneLine = (v) => String(v || '').replace(/[\s\u3000]+/g, ' ').trim()
+// 对方头像用背景图（不用 <image>）：盖在首字头像上面，没头像、图裂了都还看得到底下的字。网址里的引号、括号、空白会弄坏 url()，去掉
+const avatarStyle = (v) => { const u = absUrl(v); return u ? 'background-image:url("' + String(u).replace(/["\\\s()]/g, '') + '")' : '' }
+// 服务端还没分组（老接口：/summary 没有 buckets，列表一次回全部）时，拿手上的全量列表按 bucketOf 在本地数
+const buckets = ref(null)
+const notices = ref([])
+const noticeSeen = ref({})
+const badgeCleared = ref({})
+const unseenNotices = computed(() => notices.value.filter(n => noticeBadged(n, noticeSeen.value, badgeCleared.value)).length)
+const unreadOf = (type) => buckets.value ? (buckets.value[type] || {}).unread || 0
+  : experience.messagesMore === null ? visibleMessages.value.filter(m => !m.read && bucketOf(m, staff.value) === type).length : 0
+const entries = computed(() => ENTRIES[staff.value ? 'staff' : 'user'].map(([type, label, icon, tone]) => ({
+  type, label, icon, tone, badge: unreadOf(type) + (type === 'system' ? unseenNotices.value : 0)
 })))
-const filteredMessages = computed(() => visibleMessages.value.filter(m => activeTab.value === '全部' || m.category === activeTab.value))
-const emptyTitle = computed(() => activeTab.value === '全部' ? '暂无消息' : `暂无${activeTab.value}消息`)
-const emptyCopy = computed(() => ({
-  '全部': '有新的通知或会话时，会在这里提醒你。报名、面试、签约等消息仅在你参与后产生。',
-  '系统': '与你有关的系统通知会显示在这里。',
-  '订单': '报名或预订后，相关订单通知会显示在这里。',
-  '私信': '收到私信后，可以在这里查看和回复。',
-  '群聊': '加入群聊后，群消息会显示在这里。'
-}[activeTab.value]))
-const openMessage = item => { markMessageRead(item.id); if (item.url?.startsWith('/pages/')) go(item.url) }
-const faqs=[{label:'报名审核',icon:'search'},{label:'面试流程',icon:'search'},{label:'签约与责任书',icon:'file-badge'},{label:'保险说明',icon:'shield-check'},{label:'到店与交通',icon:'bus'},{label:'费用与退款',icon:'wallet-cards'}]
-const aiQuestions=['报名后多久会有面试通知？','责任书怎么签署？','保险什么时候生效？']
+// 游客也能看公告，所以「系统通知」照常打开（子页里只有公告和登录提示）；评论、赞要先登录
+const openEntry = (e) => go(experience.account || e.type === 'system' ? R.inbox + '?type=' + e.type : R.login)
+
+const PAGE = 20
+const rows = computed(() => visibleMessages.value
+  .filter(m => privateChatEnabled.value || (m.conversationType !== 'private' && (m.category !== 'chat' || m.conversationType === 'store')))
+  .filter(m => experience.messagesMore !== null || bucketOf(m, staff.value) === 'main')
+  .map(m => {
+    const shown = messageWording(m)
+    return { id: m.id, title: oneLine(shown.title), desc: oneLine(shown.content), time: formatTime(m.createTime), read: !!m.read, route: m.route || '', k: kindOf(m), ini: m.category === 'chat' ? oneLine(m.title).slice(0, 1) : '', name: oneLine(m.peerName), source: oneLine(shown.sourceLabel), avatar: avatarStyle(m.peerAvatar), category: m.category, bizType: m.bizType, color: TOPICS.find(t => t[0] === m.category)?.[3] || '#69727B', wordingUpdated: shown.title !== (m.title || '') || shown.content !== (m.content || '') || shown.sourceLabel !== (m.sourceLabel || ''), originalText: [m.title, m.sourceLabel, m.content].filter(Boolean).join('\n\n') }
+  }))
+const categoryRows = computed(() => rows.value.filter(m => m.category === activeCategory.value && bucketOf(m, staff.value) === 'main'))
+const recentUnread = computed(() => ready.value ? categoryRows.value.filter(m => !m.read).length : 0)
+const empty = computed(() => guest.value ? ['登录后查看消息', '', '去登录']
+  : ['暂无' + activeLabel.value + '消息', '这类消息会单独显示在这里，可切换上方分类查看其他消息', staff.value ? '返回工作台' : '去首页看看'])
+const emptyAction = () => (guest.value ? go(R.login) : relaunch(staff.value ? R.staff : R.home))
+
+// route 由服务端随消息下发（如 /pages/jobs/progress?appId=12），为空说明这条消息没有落地页；
+// 落地页是消息页本身的只标已读（带 ?s=4 的在本页弹出 AI袋鼠），不再压一层一模一样的消息页
+const openMessage = (m) => {
+  if (managing.value || deleting.value || Date.now() < suppressOpenUntil) return
+  if (!m.read) {
+    const count = categoryCounts.value.find(c => c.category === m.category)
+    if (count) count.unread = Math.max(0, Number(count.unread || 0) - 1)
+  }
+  const scope = messageScope()
+  Promise.resolve(markMessageRead(m.id)).then(() => { if (scope === messageScope()) scheduleExpiry() })
+  scheduleExpiry()
+  if (!m.route) return
+  if (!/^\/?pages\/messages\/index/.test(m.route)) { if(m.category==='chat'||m.category==='group')go(m.route);else showMessagePreview({title:m.title,content:m.originalText,route:m.route}) }
+  else if (/[?&]s=4(&|$)/.test(m.route)) aiOpen.value = true
+}
+const removeMessage = async (m) => {
+  if (deleting.value) return
+  const scope = messageScope()
+  deleting.value = true
+  suppressOpenUntil = Date.now() + 1000
+  try {
+    if (!await removeInboxMessage(m.id) || scope !== messageScope()) return
+    cursor = 0
+    await load()
+    const r = await apiMessageSummary(experience.mode)
+    if (scope === messageScope()) {
+      buckets.value = r.buckets || null
+      categoryCounts.value = Array.isArray(r.categories) ? r.categories : []
+    }
+  } catch (_) { /* 删除已成功，统计下一次进入时重新获取 */ }
+  finally { deleting.value = false; suppressOpenUntil = Date.now() + 500 }
+}
+// 左上角「全部已读」清掉当前身份所有分组的未读，公告的角标也一起清（2026-10-17；公告要弹的照样在首页弹一次）
+const readAll = async () => {
+  try {
+    await markAllMessagesRead()
+    badgeCleared.value = clearNoticeBadge(notices.value)
+    buckets.value = null
+    categoryCounts.value = categoryCounts.value.map(c => ({ ...c, unread: 0 }))
+    // 回读服务端首次已读时间，覆盖设备时钟或其他设备已读造成的本地估计差异。
+    await load()
+    toast('已全部标为已读')
+  } catch (e) {
+    toast(e?.message || '操作失败，请稍后再试')
+  }
+}
+
+// 第一页回来之前不显示空状态，免得闪一下「还没有消息」；取失败时也不说「还没有消息」，给一行重试
+const ready = ref(false)
+const paging = ref(false)
+// 取失败：1 第一页、2 下一页（重试时接着取同一种）
+const failed = ref(0)
+// 服务端已经翻过的条数。下一页的页码按它算，不按去重后的本地条数算：新消息把旧行往下挤时，下一页开头会和已有的行重复，
+// 去重后本地条数变少，按本地条数算会一直重取同一页、再也翻不下去
+let cursor = 0
+let busy = false
+let seq = 0
+let expiryTimer = null
+let pageVisible = true
+const clearExpiry = () => { if (expiryTimer) clearTimeout(expiryTimer); expiryTimer = null }
+const scheduleExpiry = () => {
+  clearExpiry()
+  if (!pageVisible) return
+  const deadlines = visibleMessages.value.filter(m => m.read && Number(m.expiresAt) > 0).map(m => Number(m.expiresAt))
+  if (deadlines.length) expiryTimer = setTimeout(() => load(), Math.min(2147483647, Math.max(60000, Math.min(...deadlines) - Date.now() + 500)))
+}
+// more=false：从第一页重取（每次进来都取：消息会在报名、聊天等别的页面里产生、被读掉），已经往下翻过的按翻过的条数一次取回（最多 50）；
+// more=true：接着取下一页，按 id 去重。重取会顶掉还在路上的下一页；重取没回来之前不翻页
+const load = async (more) => {
+  if (more && (busy || experience.messagesMore !== true)) return
+  const my = ++seq
+  const scope = messageScope()
+  const page = more ? Math.floor(cursor / PAGE) + 1 : 1
+  const size = more ? PAGE : Math.min(50, Math.max(PAGE, Math.ceil(cursor / PAGE) * PAGE))
+  busy = true
+  paging.value = !!more
+  try {
+    const got = await loadMessages(activeCategory.value, { bucket: 'main', page, size }, more)
+    if (my !== seq || scope !== messageScope()) return
+    // 这一页被「全部已读」等更新的写入顶掉时没有落到列表上，翻页位置不动
+    if (got === experience.messages) cursor = page * size
+    failed.value = 0
+    ready.value = true
+    scheduleExpiry()
+  } catch (e) {
+    if (my !== seq || scope !== messageScope()) return
+    failed.value = more ? 2 : 1
+    toast(e?.message || '消息加载失败')
+    scheduleExpiry()
+  } finally {
+    if (my === seq) busy = paging.value = false
+  }
+}
+const selectCategory = (key) => {
+  if (key === activeCategory.value || !categories.value.some(c => c.key === key)) return
+  activeCategory.value = key
+  cursor = 0
+  ready.value = false
+  failed.value = 0
+  load()
+}
+onReachBottom(() => load(true))
+// 冷启动时登录态还在恢复，先 await ensureSession，否则会把已登录用户误判成游客而不发请求
+let showRequest = 0
+onHide(() => { pageVisible = false; showRequest++; seq++; busy = paging.value = false; clearExpiry() })
+watch(privateChatEnabled, () => { if (experience.account) load() })
+const refreshInbox = async () => {
+  pageVisible = true
+  if (leaving) return
+  const show = ++showRequest
+  await ensureSession()
+  if (show !== showRequest) return
+  const scope = messageScope()
+  const newScope = categoryScope !== scope
+  if (newScope) {
+    categoryScope = scope
+    categoryCounts.value = []
+    buckets.value = null
+    activeCategory.value = staff.value ? 'chat' : 'interview'
+    cursor = 0
+    ready.value = false
+  }
+  noticeSeen.value = readSeenNotices()
+  badgeCleared.value = readNoticeBadgeCleared()
+  // 公告取不到时只是「系统通知」少算几个角标，不影响消息
+  apiNotices().then(r => { notices.value = r.data || [] }, () => {})
+  if (!experience.account) {
+    ready.value = true
+    return
+  }
+  const selectedBeforeSummary = activeCategory.value
+  try {
+    const r = await apiMessageSummary(experience.mode)
+    if (show !== showRequest || scope !== messageScope()) return
+    buckets.value = r.buckets || null
+    categoryCounts.value = Array.isArray(r.categories) ? r.categories : []
+    if (newScope && activeCategory.value === selectedBeforeSummary) {
+      activeCategory.value = (categories.value.find(c => c.unread) || categories.value.find(c => c.total) || categories.value[0]).key
+    }
+  } catch (_) { /* 统计失败仍能按分类查询消息 */ }
+  if (show !== showRequest || scope !== messageScope()) return
+  load()
+}
+watch(messageScope, () => {
+  showRequest++
+  seq++
+  categoryScope = ''
+  categoryCounts.value = []
+  buckets.value = null
+  ready.value = false
+  failed.value = 0
+  busy = paging.value = false
+  clearExpiry()
+  if (pageVisible) refreshInbox()
+})
+onShow(refreshInbox)
 </script>
 
 <style scoped lang="scss">
-.empty-messages { display:flex; flex-direction:column; align-items:center; gap:20px; padding:64px 16px 48px; text-align:center; }.empty-copy { color:var(--k-muted); font-size:14px; line-height:1.8; max-width:30em; }
-
-.messages-page{background:var(--k-bg)}.brand{padding-left:10px;font-family:var(--k-serif);font-size:21px;font-weight:700}.msg-tabs{height:44px;padding:0 16px;border-bottom:1px solid var(--k-line);display:flex;justify-content:space-between}.msg-tab{position:relative;min-width:47px;height:44px;display:flex;align-items:center;justify-content:center;font-family:var(--k-serif);font-size:15px;font-weight:700}.msg-tab.active::after{content:'';position:absolute;left:8px;right:8px;bottom:0;height:2px;background:var(--k-red)}.badge{position:absolute;right:0;top:1px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--k-red);color:#fff;font:10px/17px sans-serif;text-align:center}.all-body,.system-body,.order-body{padding:8px 16px 102px}.day-title,.system-title{display:block;margin:0 4px 6px;font-family:var(--k-serif);font-size:16px;font-weight:700}.yesterday{margin-top:9px}.notice-item{min-height:72px;height:auto;margin-bottom:7px;padding:0 10px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;align-items:center;gap:10px}.notice-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto}.notice-icon--blue{background:#496981}.notice-icon--orange{background:#D7893C}.notice-icon--green{background:#4E8565}.notice-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:5px;color:var(--k-muted);font-size:14px;line-height:1.6}.notice-title{font-family:var(--k-serif);font-size:15px;font-weight:700;color:var(--k-ink)}.notice-side{align-self:stretch;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:7px;color:var(--k-muted);font-size:11px}.red-dot{width:7px;height:7px;border-radius:50%;background:var(--k-red)}.num-badge{min-width:17px;height:17px;border-radius:9px;background:var(--k-red);color:#fff;text-align:center;font-size:10px;line-height:17px}.service-link{height:58px;margin-top:10px;padding:0 12px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;align-items:center;gap:10px}.service-icon{width:42px;height:42px;border-radius:50%;background:var(--k-paper2);display:flex;align-items:center;justify-content:center}.service-link>view:nth-child(2){min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}.service-link>view:nth-child(2) text:first-child{font-family:var(--k-serif);font-size:15px;font-weight:700}.service-link>view:nth-child(2) text:last-child{color:var(--k-muted);font-size:11px}
-.progress-card{padding:7px 10px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper)}.progress-row{min-height:56px;display:flex;align-items:flex-start;border-bottom:1px dashed var(--k-line);padding:5px 0}.progress-row:last-child{border:0}.progress-left{position:relative;width:38px}.progress-icon{width:31px;height:31px;border:1px solid var(--k-line2);border-radius:50%;display:flex;align-items:center;justify-content:center}.progress-line{position:absolute;left:11px;top:31px;color:var(--k-green);font-size:20px}.progress-index{width:20px;color:var(--k-green);font-size:14px;font-weight:700;padding-top:6px}.progress-index.current{color:var(--k-red)}.progress-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px;color:var(--k-muted);font-size:11px}.progress-copy text:first-child{color:var(--k-ink);font-family:var(--k-serif);font-size:14px;font-weight:700}.progress-action{width:64px;display:flex;flex-direction:column;align-items:flex-end;gap:6px}.progress-state{padding:2px 6px;border-radius:4px;background:var(--k-green-soft);color:var(--k-green);font-size:10px}.progress-state.pending{background:var(--k-ochre-soft);color:#9B6A29}.more-title{margin-top:10px}.system-list{border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);overflow:hidden}.system-notice{height:58px;padding:0 10px;border-bottom:1px solid var(--k-line);display:flex;align-items:center;gap:9px}.system-notice:last-child{border:0}.system-side{display:flex;flex-direction:column;align-items:flex-end;gap:5px;color:var(--k-muted);font-size:10px}
-.order-card{padding:12px 14px;margin-bottom:8px;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper);display:flex;flex-direction:column;gap:8px;color:var(--k-muted);font-size:12px}.order-head,.order-pay{display:flex;align-items:center;justify-content:space-between}.order-head text:first-child{font-family:var(--k-serif);font-size:17px;font-weight:700;color:var(--k-ink)}.red{color:var(--k-red);font-weight:700}.green{color:var(--k-green);font-weight:700}.amount{font-size:14px;font-weight:700;color:var(--k-ink)}.order-dynamic-title{margin-top:10px}.order-dynamics{border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);overflow:hidden}.dynamic-row{height:62px;padding:0 10px;border-bottom:1px solid var(--k-line);display:flex;align-items:center;gap:9px}.dynamic-row:last-child{border:0}.dynamic-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;color:var(--k-muted);font-size:10px}
-.support-body{padding:8px 16px 26px}.faq-card,.assistant-card,.online-card,.phone-card{padding:12px;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper);margin-bottom:10px}.faq-head{display:flex;align-items:center;justify-content:space-between}.faq-head>text,.support-title{font-family:var(--k-serif);font-size:17px;font-weight:700}.faq-head>view{display:flex;align-items:center;gap:4px;color:var(--k-muted);font-size:12px}.faq-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px;margin-top:12px}.faq-grid>view{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;font-size:11px}.faq-grid>view>view{width:46px;height:46px;border-radius:50%;background:var(--k-paper2);display:flex;align-items:center;justify-content:center}.assistant-row{display:flex;align-items:center;gap:9px;margin-top:9px}.assistant-row image{width:55px;height:55px;border-radius:50%}.assistant-row>text{padding:10px 13px;border:1px solid var(--k-line2);border-radius:9px;font-size:12px;line-height:1.6;white-space:pre-line}.assistant-questions{display:grid;grid-template-columns:1fr 90px;gap:6px;margin-top:8px}.assistant-questions>view{grid-column:1;height:27px;padding:0 10px;border:1px solid var(--k-line2);border-radius:7px;display:flex;align-items:center;font-size:11px}.assistant-questions>.k-button{grid-column:2;grid-row:3}.online-row,.phone-row{display:flex;align-items:center;gap:11px;margin:10px 0}.service-icon.large{width:48px;height:48px}.online-row>view:nth-child(2),.phone-row>view:nth-child(2){min-width:0;flex:1;display:flex;flex-direction:column;gap:6px;color:var(--k-muted);font-size:11px}.online-row>view:nth-child(2) text:first-child,.phone-row>view:nth-child(2) text:first-child{color:var(--k-ink);font-size:13px}.phone-card{padding-bottom:9px}.support-foot{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--k-muted);font-size:12px;margin-top:15px}
-.order-card{padding:9px 12px;gap:5px}.assistant-card{padding-top:9px;padding-bottom:9px}.online-card{padding:9px 11px}.online-row{margin:5px 0}.online-row .service-icon.large{width:42px;height:42px}.phone-card{padding-top:9px;padding-bottom:7px}.phone-row{margin:6px 0}
+.wording-original { display: block; font-size: 11px; line-height: 18px; color: var(--k-muted); text-decoration: underline; margin-top: 3px; }
+/* 2026-10-17 主人：有消息时整页白扁扁的不好看。改成奶白底 + 两张白卡：上面三个入口一张、下面「最近消息」一张（圆角 16px、柔和阴影、行间细线从头像右边起）；
+   未读的行标题加粗、底色带一点暖色，红点外面一圈浅红。只改样式，主包里不加图片 */
+.msg-page{background:var(--k-bg)}
+.read-all{padding:8px 10px;line-height:20px;color:var(--k-red-deep);font-size:12px;font-weight:600;background:var(--k-paper2);border:1px solid var(--k-line);border-radius:18px;white-space:nowrap}.read-all:active{opacity:.7}
+.entries{display:grid;grid-template-columns:repeat(3,1fr);margin:10px 16px 0;padding:16px 0 14px;border-radius:16px;background:var(--k-paper);box-shadow:var(--k-sh1)}
+.entry{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--k-ink)}
+.tile{position:relative;width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center}
+.badge{position:absolute;top:-5px;right:-7px;min-width:18px;height:18px;padding:0 4px;border:2px solid var(--k-paper);border-radius:9px;background:var(--k-alert);color:#fff;font-size:11px;line-height:14px;text-align:center}
+/* 10-18 打磨：入口方块和头像用同色系的浅渐变 + 一圈白色内高光，不再是平涂色块；「最近消息」改成正文色粗标题 */
+.t-indigo{background:linear-gradient(145deg,#EEF2F6,var(--k-indigo-soft))}.t-green{background:linear-gradient(145deg,#EFF5EA,var(--k-green-soft))}.t-red{background:linear-gradient(145deg,#FBF1E6,var(--k-red-soft))}.t-ochre{background:linear-gradient(145deg,#FCF3E4,var(--k-ochre-soft))}
+.tile{box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 2px 6px rgba(58,50,43,.06)}
+.sec{display:block;padding:20px 20px 10px;font-family:var(--k-display-font);font-size:16px;font-weight:700;color:var(--k-ink)}
+.list{margin:0 16px;border-radius:16px;background:var(--k-paper);box-shadow:var(--k-sh1);overflow:hidden}
+.row{position:relative;height:74px;padding:0 14px;display:flex;align-items:center;gap:12px}
+.row+.row::before{content:'';position:absolute;left:72px;right:14px;top:0;height:1px;background:var(--k-line)}
+.row--unread{background:linear-gradient(90deg,#FFF8EF 0%,var(--k-paper) 70%)}
+.ava{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(58,50,43,.05)}
+/* 私信头像：对方名字的第一个字，暖棕渐变圆（10-18，代替一样的气泡图标） */
+.ava--ini{background:linear-gradient(145deg,#C79A69,var(--k-red));color:#fff;font-size:18px;font-weight:600}
+.row__main{flex:1;min-width:0;overflow:hidden}
+.row__head{display:flex;align-items:center;gap:6px}
+.tag{flex:none;padding:0 5px;border-radius:4px;font-size:11px;line-height:17px}
+.g-ochre{background:var(--k-ochre-soft);color:var(--k-ochre-deep)}.g-red{background:var(--k-red-soft);color:var(--k-red-deep)}
+.row__title{flex:1;min-width:0;font-size:15px;font-weight:500;color:var(--k-ink2)}
+.row--unread .row__title{font-weight:600;color:var(--k-ink)}
+.row__desc{display:block;margin-top:4px;font-size:13px;color:var(--k-muted)}
+.row__side{align-self:stretch;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:8px;font-size:11px;color:var(--k-muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--k-alert)}
+.row__side .dot{box-shadow:0 0 0 3px var(--k-alert-soft)}
+.empty{display:flex;flex-direction:column;align-items:center;gap:10px;margin:12px 16px 0;padding:32px 24px 24px;border-radius:16px;background:var(--k-paper);box-shadow:var(--k-sh1);text-align:center}
+.empty__ring{width:80px;height:80px;margin-bottom:6px;border-radius:50%;background:var(--k-paper2);display:flex;align-items:center;justify-content:center}
+.empty__title{font-family:var(--k-display-font);font-size:16px;font-weight:700}
+.empty__copy{margin-bottom:8px;font-size:13px;color:var(--k-muted)}
+.more{display:block;padding:14px 0 0;text-align:center;font-size:12px;color:var(--k-light)}
+.help{padding:18px 0;text-align:center;font-size:12px;color:var(--k-muted)}
+/* 10-19 复查（有消息时不要一片白）：暖米渐变底，白卡加暖色细边和柔阴影 */
+.msg-page{--k-bg:#F7EFE6;background:linear-gradient(180deg,#F7EFE6 0,#F7EFE6 200px,#FBF7F1 560px,#FBF7F1 100%)}.entries,.list,.empty{border-radius:20px;border:1px solid rgba(160,120,80,.12);box-shadow:0 8px 24px rgba(120,84,48,.1)}
+@import './messages-home.scss';
 </style>

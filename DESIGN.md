@@ -2,71 +2,116 @@
 name: 袋鼠小院
 description: 手作生活与青年旅居共创平台
 colors:
-  lacquer-red: "#A94734"
+  warm-brown: "#9A6B3F"
+  warm-brown-deep: "#8A5E36"
+  alert-red: "#C04437"
   ochre: "#C99043"
   indigo: "#40576B"
-  moss-green: "#4F7A66"
-  deep-ink: "#241B17"
-  muted-ink: "#6B635C"
-  flax-bg: "#F3ECE0"
-  paper-card: "#FBF7F0"
-  warm-line: "#D9D3C7"
-  soft-green: "#E7EFE7"
+  bean-green: "#4A6E3A"
+  deep-ink: "#3A322B"
+  ink-2: "#5A5149"
+  muted-ink: "#6F6A65"
+  light-ink: "#A39A92"
+  cream-bg: "#FCF9F3"
+  paper-card: "#FFFFFF"
+  cream-pill: "#F3EBDD"
+  warm-line: "#EFE9E1"
+  input-line: "#DDD5C9"
+  soft-brown: "#F6EDE2"
+  soft-alert: "#FCEEEB"
+  soft-green: "#E4EDDA"
   soft-ochre: "#F4E8D2"
   soft-blue: "#E7EDF1"
 typography:
-  headline:
-    fontFamily: "STSong, Songti SC, Noto Serif SC, serif"
-    fontSize: "28px"
+  brand:
+    fontFamily: "PingFang SC, Microsoft YaHei, system-ui, sans-serif"
+    fontSize: "20-22px"
     fontWeight: 700
-    lineHeight: 1.25
-  title:
-    fontFamily: "STSong, Songti SC, Noto Serif SC, serif"
-    fontSize: "20px"
-    fontWeight: 700
+    lineHeight: 1.3
+  page-title:
+    fontFamily: "PingFang SC, Microsoft YaHei, system-ui, sans-serif"
+    fontSize: "22px"
+    fontWeight: 600
+    lineHeight: 1.3
+  section-title:
+    fontFamily: "PingFang SC, Microsoft YaHei, system-ui, sans-serif"
+    fontSize: "18px"
+    fontWeight: 600
     lineHeight: 1.35
+  card-title:
+    fontFamily: "PingFang SC, Microsoft YaHei, system-ui, sans-serif"
+    fontSize: "15-16px"
+    fontWeight: 600
+    lineHeight: 1.4
   body:
     fontFamily: "PingFang SC, Microsoft YaHei, system-ui, sans-serif"
-    fontSize: "14px"
+    fontSize: "14-15px"
     fontWeight: 400
     lineHeight: 1.6
-  label:
+  meta:
     fontFamily: "PingFang SC, Microsoft YaHei, system-ui, sans-serif"
-    fontSize: "12px"
+    fontSize: "12-13px"
+    fontWeight: 400
+    lineHeight: 1.45
+  caption:
+    fontFamily: "PingFang SC, Microsoft YaHei, system-ui, sans-serif"
+    fontSize: "10-11px"
     fontWeight: 500
     lineHeight: 1.4
 rounded:
   xs: "4px"
   sm: "8px"
-  md: "14px"
+  md: "12px"
+  lg: "16px"
+  card: "16px"
   pill: "999px"
 spacing:
   xs: "4px"
   sm: "8px"
-  md: "16px"
-  lg: "24px"
-  xl: "32px"
+  md: "12px"
+  lg: "16px"
+  xl: "20px"
+  section: "28px"
+shadows:
+  sh1: "0 1px 3px rgba(58,50,43,.05), 0 6px 18px rgba(58,50,43,.08)"
+  sh2: "0 2px 12px rgba(58,50,43,.09), 0 0 0 .5px rgba(58,50,43,.06)"
+  sh3: "0 8px 24px rgba(58,50,43,.14)"
 components:
   button-primary:
-    backgroundColor: "{colors.lacquer-red}"
+    backgroundImage: "linear-gradient(135deg, #B07A47, #8A5A30)"
     textColor: "{colors.paper-card}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.pill}"
     height: "48px"
-    padding: "0 24px"
+    padding: "0 20px"
   button-secondary:
     backgroundColor: "{colors.paper-card}"
-    textColor: "{colors.lacquer-red}"
-    rounded: "{rounded.sm}"
+    textColor: "{colors.warm-brown}"
+    rounded: "{rounded.card}"
     height: "48px"
-    padding: "0 24px"
+    padding: "0 20px"
   card:
     backgroundColor: "{colors.paper-card}"
     textColor: "{colors.deep-ink}"
-    rounded: "{rounded.md}"
+    shadow: "{shadows.sh1}"
     padding: "16px"
 ---
 
 # Design System: 袋鼠小院
+
+## 2026-10-22 原稿优先的页面调整
+
+用户提供的概念图是用户端的主要视觉依据，后续明确的功能与布局修改优先于图中的示例。页面使用现有业务和后台素材，不用生成图替换真实门店照片、评价或价格。系统字体、安全区与小屏适配保留，因此逐页对照不等于逐像素一致。
+
+- 页面底色采用接近白色的暖底（`#FCF9F5` 至 `#F8F7F4`）；首页、社区更明亮。纸面卡片用细暖边和轻阴影，避免大面积深米黄。
+- 社区由大图叠卡、双图拼版、双列卡和横向图文卡组成，保留实际分类、最新/热门筛选及互动。图片内容来自真实帖子。
+- 旅居信息卡减少无效高度，突出照片、房型及预订；房型、卫浴、设施各自对齐。房型评价关联真实入住评价；AI未接入时显示住客评分来源。
+- 寻伴页按原稿重新绘制院落、海路与人物构图，保留四种分享方式；插画不代表真实门店实景。
+- 大号主按钮为暖棕渐变胶囊，主要预订动作沿用橙金色。底栏发布圆钮64px，凸出20px，页面保留足够底部安全空间。
+- 消息的未读背景为浅杏色`#FBF0DE`，已读为`#F2F2F1`，同时保留文字/红点；不只依赖颜色。
+- 简历与机会在320×568首屏保留机会入口。表单按基本资料、经历、技能和附件分组，不把整份简历重新放回报名流程。
+- 没有用户原稿的消息、行程、商家招募、入住人信息和确认订单，先以现有功能生成补充设计，再实现；不新增设计稿中的虚构业务。
+
+本轮原稿、生成提示、页面实拍和检查记录保存在上级目录 `artifacts/premium-ui-20261022/`。本地截图和构建不替代微信真机分享、横屏播放或真实支付验收。
 
 ## Overview
 
@@ -78,106 +123,151 @@ components:
 
 **Key Characteristics:**
 
-- 亚麻纸底与纸白内容面，深墨文字始终保持可读性。
-- 漆红只用于主操作、当前选择和关键提醒。
-- 宋体负责页面标题，黑体负责正文、标签、数字和操作。
-- 轻边框与极弱环境阴影建立层次，绝不使用厚重悬浮卡片。
+- 奶白底（#FCF9F3）上放纯白卡片，卡片靠柔和阴影浮起来，不画框；卡片、搜索框、面板圆角 16px。
+- 暖棕（#9A6B3F）只用于主操作、当前选择；未读、报错、名额紧张、逾期、删除等提醒一律用提醒红 `--k-alert`。
+- 全站系统黑体；品牌名「袋鼠青年义工旅行」「袋鼠小院」用黑体加粗（10-16 主人定，不再用宋体）。
+- 文字分三档深浅：深墨（标题）、二级墨（正文）、暖灰（时间地点等辅助信息）。
 - 所有流程页明确展示当前步骤、责任主体、截止时间和下一步。
+
+所有颜色、字体、阴影都以 `styles/theme.scss` 里的 `--k-*` 变量为准，页面里引用变量，不另写色值。读不到 CSS 变量的地方各抄了一份十六进制：图标 `components/k-icon/k-icon.vue` 的 TONES、`pages.json` 的 globalStyle、海报 `common/poster.js`、操作菜单 `common/ui.js`；改变量时一起改（`scripts/palette-tokens.test.mjs` 会核对）。
 
 ## Colors
 
-完整色板由漆红、赭黄、靛蓝和苔绿承担不同语义，暖中性色提供稳定背景。
+完整色板由暖棕、提醒红、赭黄、靛蓝和豆绿承担不同语义，暖中性色提供稳定背景（10-16 改版）。
 
 ### Primary
 
-- **漆红**：主 CTA、选中态、关键金额和需要立即处理的提醒。
+- **暖棕**（`--k-red`，变量名沿用旧名）：主 CTA、选中态、当前页签、价格。浅底 `--k-red-soft`，描边 `--k-red-line`；浅底上的小号棕字用深一档的 `--k-red-deep`（`#9A6B3F` 在浅底上不到 4.5:1）。
+- **提醒红**（`--k-alert`，浅底 `--k-alert-soft`，文字类 `.k-alert`，图标 `color="alert"`）：未读角标和红点、报错、名额紧张、逾期 / 截止倒计时、退款异常、撤回 / 删除等危险操作。`k-chip tone="red"` 也是提醒红。
 
 ### Secondary
 
 - **赭黄**：活动、积分、轻度警告和手作气质点缀。
 - **靛蓝**：AI、数据、订单与信息类状态。
-- **苔绿**：安心商家、成功、认证、保险和可恢复状态。
+- **豆绿**（`--k-green` 深豆绿写字和图标，`--k-green-soft` 浅豆绿做底）：安心商家、成功、认证、保险和可恢复状态。
 
 ### Neutral
 
-- **深墨**：主要文字和图标。
-- **亚麻纸**：应用背景。
-- **纸白**：卡片、输入框和导航内容面。
-- **暖线**：分隔线、描边与禁用边界。
+- **深墨**（`--k-ink`）：标题和主要图标。
+- **二级墨**（`--k-ink2`，`.k-ink2`）：正文、宫格文字、底栏文字。
+- **暖灰**（`--k-muted`）：时间、地点、计数等辅助信息。10-16 从主人定的 #7A7570 调深到 #6F6A65：奶白页面底 5.09:1、白卡 5.35:1、奶油胶囊 4.52:1，小字也够；奶油胶囊上更小的字用二级墨。
+- **浅灰**（`--k-light`）：只用于占位文字和禁用状态，不用来写正文。
+- **奶白**（`--k-bg`）：应用背景，比卡片略深。
+- **纯白**（`--k-paper`）：卡片、输入框和导航内容面。
+- **奶油色**（`--k-paper2`）：筛选胶囊、次级按钮、只读输入框的底色。
+- **暖线**（`--k-line`）：列表分隔线。**输入框描边**（`--k-line2`）不能再调浅，否则输入框看不见。
 
-**The One Red Action Rule.** 每屏只允许一个大面积漆红主操作。若同时出现多个红色实心按钮，必须重新确定优先级。
+**The One Primary Action Rule.** 每屏只允许一个大面积暖棕主操作。若同时出现多个实心主色按钮，必须重新确定优先级；同一列表里重复出现的操作（如每条动态的「关注」）用浅色胶囊，不用实心底。
 
 ## Typography
 
-**Display Font:** STSong / Songti SC，中文宋体回退
-**Body Font:** PingFang SC / Microsoft YaHei，系统无衬线回退
+**Body / Title Font:** PingFang SC / Microsoft YaHei，系统黑体回退（`--k-sans`）
+**Brand Font:** 系统黑体加粗（`--k-brand` = `--k-sans`，`.k-brand`）。主包放不下圆体字，不下载远程字体。
 
-**Character:** 宋体只承担品牌与章节气质，所有长文、表单、标签和数据均使用清晰黑体。
+**Character:** 标题、正文、表单、标签、数字、品牌名全部用系统黑体。
+
+`--k-serif` 和 `--k-brand` 现在都等于 `--k-sans`，老代码里写的 `var(--k-serif)` / `var(--k-brand)` 因此都显示黑体；品牌名照旧写 `var(--k-brand)`，以后想单独换品牌字体只改 `theme.scss` 一行。
 
 ### Hierarchy
 
-- **Headline**（700，28px，1.25）：模块标题和重要成功结果。
-- **Title**（700，20px，1.35）：页面标题与内容区标题。
-- **Body**（400，14px，1.6）：正文、表单值和说明。
-- **Label**（500，12px，1.4）：状态、辅助信息和元数据。
+- **Brand**（700，20–22px）：品牌名，`.k-brand`。
+- **Page title**（600，22px，1.3）：页面大标题，`.k-h1`。
+- **Section title**（600，18px，1.35）：区块标题，`.k-h2`。
+- **Card / row title**（600，15–16px，1.4）：卡片和列表行标题，`.k-title` / `.k-subtitle`。
+- **Body**（400，14–15px，1.6）：正文、表单值和说明，二级墨。
+- **Meta**（400，12–13px，1.45）：时间、地点、计数，暖灰，`.k-meta`。
+- **Caption**（500，10–11px）：底栏文字、角标。
+
+字重只用 400 / 500 / 600；700 只留给品牌名和价格。
 
 **The Reading First Rule.** 任何正文不得为了塞进一屏而低于 14px；优先滚动、换行和分组。
 
 ## Elevation
 
-系统以色面和 1px 暖灰边框建立层级，阴影只用于底部导航、浮层和需要与滚动内容分离的固定操作区。静态列表与表单保持平整。
+**Shadow instead of outline.** 卡片不画 1px 边框，用暖白底加淡阴影从背景上浮起来；卡片内部用细分隔线。浅色底的卡片（浅绿、浅黄、浅红、浅蓝、次级纸面）靠底色区分，既不描边也不加阴影。输入框保留 1px 描边（`--k-line2`），否则看不出是输入框。
 
 ### Shadow Vocabulary
 
-- **浮层弱阴影**（`0 8px 24px rgba(36, 27, 23, 0.08)`）：智能助手、底部浮层和页面固定操作区。
-- **卡片环境阴影**（`0 2px 10px rgba(36, 27, 23, 0.04)`）：仅用于图片主卡和关键结果卡。
+- **`--k-sh1`**：普通卡片（`k-card` 默认就是它）。
+- **`--k-sh2`**：搜索框等浮起来的控件。
+- **`--k-sh3`**：弹层、日历、底部浮层。
 
-**The Flat by Default Rule.** 普通卡片没有可见厚阴影；如果一页看起来像漂浮卡片墙，层级就是错误的。
+**The Flat by Default Rule.** 不用厚重阴影；如果一页看起来像漂浮卡片墙，层级就是错误的。
+
+## Shape
+
+圆角只用 **6 / 8 / 12 / 16 / 999** 这几档：6 小标签（`k-chip`），8 小缩略图和小块，12 输入框、图片、小卡片，16（`--k-radius`）卡片、按钮、搜索框、面板、弹窗和浮层顶边，999 胶囊、「关注」。不要再出现 5、7、9 这类零碎值。
 
 ## Components
 
 ### Buttons
 
-- **Shape:** 克制圆角（8px），高度 48px。
-- **Primary:** 漆红底、纸白字，按下时降低亮度并轻微缩放。
-- **Secondary:** 纸白底、漆红或深墨描边文字。
-- **Disabled:** 暖灰底与辅助灰字，并配套原因说明。
+- **Shape:** 圆角 16px（`--k-radius`；32 / 26 高的小按钮因此是胶囊），字重 600，高度 48 / 40 / 32 / 26。
+- **Primary:** 暖棕底、白字。
+- **Secondary:** 白底、暖棕字和棕框（`--k-red-line`）。
+- **Disabled:** 浅灰字配次级纸面底，并配套原因说明。
+- **Press:** 按下时轻微缩小变淡（`k-button` 自带 `hover-class="k-press-s"`）。
 
 ### Chips
 
-- **Style:** 4–8px 圆角的浅色标签，内容紧凑；筛选胶囊可使用全圆角。
-- **State:** 选中态必须同时改变边框、底色和文字色。
+- **Tag:** 20px 高、6px 圆角、11px 字，浅色底；默认奶油底二级墨字，`tone="red"` 是提醒红。
+- **Filter pill:** 32px 高、全圆角、奶油底、二级墨字，不描边。
+- **Selected:** 浅棕底（`--k-red-soft`）+ 深棕字（`--k-red-deep`）+ 棕框（`--k-red-line`），三者一起变。
 
 ### Cards / Containers
 
-- **Corner Style:** 14px。
-- **Background:** 纸白，必要时用语义浅色面。
-- **Border:** 1px 暖线。
+- **Background:** 纯白，必要时用语义浅色面；圆角 16px（`k-card` 默认）。
+- **Border:** 无；用 `--k-sh1` 阴影。浅色底卡片无阴影。
 - **Internal Padding:** 12–16px，根据内容密度调整。
 
 ### Inputs / Fields
 
-- **Style:** 纸白或极浅亚麻底、1px 暖线、8px 圆角，最小高度 44px。
-- **Focus:** 漆红边框；错误状态增加错误文案，不只改变颜色。
+- **Style:** 白底、1px `--k-line2` 描边、12px 圆角，最小高度 44px，字号 15px。
+- **Focus:** 暖棕边框；错误状态用提醒红边框（`.k-input--error`）并增加错误文案，不只改变颜色。
 - **Disabled:** 明显降低对比度并保留可读值。
+
+### 填写页
+
+招募义工 / 兼职 / 全职、创建活动、新增房源、发布线上任务、采购报销这几张要填东西的表（2026-10-31 主人：看起来很乱，用的人有年龄大的，要干净成熟）。样式在 `pages/staff/form-clean.scss`，放在 staff 分包，不进主包。它是上面「白卡阴影」「渐变胶囊」的例外，别的页面不跟着改。
+
+- **版式：** 通栏白块，块与块之间隔 10px 奶白；组标题放在白块里；不要卡片、不要阴影、不要带圈数字。字段只有两种：名字在上、控件在下（`.fc-field`）；名字在左、取值在右（`.fc-row`，整行能点）。
+- **大小：** 字段名、输入内容、取值 16px，选项 15px，说明 14px；13px 只给「必填」、字数这种一两个词，不再往下写。点击区至少 44px，输入框、主按钮 48px，一行字段 56px；唯一的例外是照片右上角的 ×（36px，点照片本身也能删）。
+- **颜色：** 全页只有一种强调色 `--k-red-deep`（白字 5.62:1）；未选中是平的奶油色方块、不描边，选中整块实心棕 + 白字 + 字重 600；提醒红只给报错。主按钮实心棕、圆角 12，不用渐变胶囊。只有底部弹层有阴影，只有输入框有描边。
+- **选项：** 四个以内摊开（`.fc-seg`）；多了或多选用底部弹层（`pages/staff/components/fc-sheet.vue`），不用系统菜单：系统菜单最多 6 项，不能显示当前选了哪个、不能带说明、不能多选。
+- **必填只有一种标法：** 名字后面一个棕色「必填」。有默认值又清不掉的不标；什么都不标就是选填，不再写「选填」两个字。
+- **说明要少：** 第一屏最多 1 句；底部操作条只放按钮，流程字确认框和提交成功页会说。
+- **更多选填：** 不常用的收起来（`.fc-more`），头上写有几项、填了几项。打开时里面已有内容就默认展开，不让人以为东西丢了。提交报错绝不藏住：折叠区有错自动展开并滚过去，又手动收起时头上写红字。
+- **客服：** 字段从屏幕边开始，浮动小钮会压字，所以填写屏 `k-topbar` 传 `:fab="false"`，客服方块放在操作条最左边（`pages/staff/components/fc-kefu.vue`），提交按钮在它右边；员工看不到它，提交按钮占满。
+- **老数据照实显示：** 选项收窄后，老岗位存的别的值不能被悄悄改掉。每日工时哪格都不亮、下面照实写一句，不点就原样提交。
+- **招募表单的模板和三步（2026-11-03 主人：「操作太繁琐了看不懂，增加一个预设模板，一键填写，我只要改一部分就行」）：** 顶上「第 1 步 · 选个模板」两列方块（`pages/staff/job-templates.js`，静态数据，不走服务端）加「用上次的岗位」，点一下填好文字和选项，照片、地点、日期不动；填完收成一行，能撤销、能换。下面「第 2 步 · 必填信息」「第 3 步 · 时间和待遇」，其余收进「更多设置（选填）」。这张表是「说明要少」的例外：看不懂的项（义工类型、最短期限、休息排班、结算方式、食宿、住宿条件、餐补）名字下面一行小字；操作条按钮上面一行一直写着「还差：…」，点了标红并滚过去。完善商家岗位时不出模板。
+
+### Press feedback
+
+小程序里 `:active` 经常不触发，按压效果一律写在 `hover-class` 上：**每个能点的 view 都要有**。列表行、文字链、图标按钮用 `hover-class="k-press"`（变淡）；卡片、宫格、入口方块用 `hover-class="k-press-s"`（轻微缩小）。`image`、`text` 不支持 `hover-class`，要包在能点的 view 里。
 
 ### Navigation
 
-用户端底栏为首页、社区、发布、消息、我的；员工端为工作台、业务、消息、数据/我的。发布按钮居中抬高，活动态使用漆红文字与图标。顶部保持微信胶囊安全区，不绘制虚假系统状态栏。
+用户端底栏为首页、社区（笑脸图标）、发布、消息、我的；员工端为工作台、业务、消息、我的。底栏顶边用发丝阴影代替硬线；文字 11px 二级墨，当前项暖棕加粗，首页和我的选中时图标变实心；未读角标用提醒红。「发布」（10-16 主人定）是暖棕圆钮，「发布」两个字写在圆里，一圈白边 + 柔和阴影，往上凸出底栏 20px，下面不再写字。带用户底栏的页面底部留白用 `.k-pad-tab`（92px + 安全区）；页面自己写底部留白时也不能少于它，否则拉到底时圆钮会压住最后一行。顶部保持微信胶囊安全区，不绘制虚假系统状态栏。
 
 ### Flow Progress
 
-编号节点、连接线和短标签组成流程条。当前节点使用漆红，完成节点使用苔绿，未开始节点使用暖灰；当前步骤下方必须出现责任主体和下一步。
+编号节点、连接线和短标签组成流程条。当前节点使用暖棕，完成节点使用豆绿，未开始节点使用暖灰；当前步骤下方必须出现责任主体和下一步。
+
+## Images and package size
+
+- **不要在 `/static` 下新增图片。** `/static` 里的文件不管哪个页面用，都算进小程序主包；主包按微信口径只剩几 KB。页面自己的图片放进所在分包的 `static` 文件夹（如 `pages/profile/static/`）；首页、消息页尽量用 CSS 和 `k-icon`。
+- 构建时 `scripts/mp-package.mjs` 会按微信口径估算主包大小，超过 2 MiB − 8 KiB 构建直接失败。
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** 使用 390×844 作为视觉校准基准，并适配微信安全区和小屏。
-- **Do** 保持正文至少 14px、主点击区域至少 48px。
+- **Do** 使用 390×844 作为视觉校准基准，并在 375 和 320 宽各看一遍；320 宽最容易放不下。
+- **Do** 保持正文至少 14px、主点击区域至少 44px（主按钮 48px）。
 - **Do** 让每个空、错、断网、权限拒绝和超时状态提供恢复动作。
 - **Do** 复用统一的主按钮、输入框、卡片、标签、流程条和底部导航。
 - **Do** 使用图标、文字和颜色三者共同传递状态。
+- **Do** 给每个能点的 view 加 `hover-class`。
 
 ### Don't:
 
@@ -186,3 +276,6 @@ components:
 - **Don't** 把产品做成通用 AI SaaS 模板或展示型落地页。
 - **Don't** 在同一屏制造多个同级主操作。
 - **Don't** 用颜色作为唯一状态信号，或隐藏失败原因和恢复路径。
+- **Don't** 给卡片同时画边框和阴影，或在任何地方用宋体 / 衬线数字字体。
+- **Don't** 把未读、报错、名额紧张、删除写成主色：提醒类用 `--k-alert`。
+- **Don't** 在 `/static` 下新增图片。

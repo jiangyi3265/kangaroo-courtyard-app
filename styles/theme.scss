@@ -1,24 +1,49 @@
 /* 袋鼠小院 · 手作人文设计系统（390×844 设计稿 1:1，单位 px） */
 page {
-  --k-bg: #FAF7F1;        /* 亚麻纸 页面背景 */
-  --k-paper: #FDFBF7;     /* 纸白 卡片 */
-  --k-paper2: #F4EEE4;    /* 次级纸面（输入框/次级底） */
-  --k-ink: #241B17;       /* 深墨 文字 */
-  --k-muted: #6B635C;     /* 暖灰 辅助文字 */
-  --k-light: #9A8E84;     /* 占位/禁用文字 */
-  --k-line: #E4DCCF;      /* 暖线 分隔 */
-  --k-line2: #D9D3C7;     /* 描边 */
-  --k-red: #A94734;       /* 漆红 主操作 */
-  --k-red-soft: #F5E6E1;
+  /* 10-16 改版配色（主人定）：奶白底 + 纯白卡片 + 暖棕主色 + 浅豆绿点缀；提醒类（未读/报错/名额紧张/删除）单独用 --k-alert 红 */
+  --k-bg: #FCF9F3;        /* 奶白 页面背景（比卡片略深，卡片靠柔和阴影浮起来） */
+  --k-paper: #FFFFFF;     /* 纯白 卡片 */
+  --k-paper2: #F3EBDD;    /* 奶油色：胶囊/次级按钮/只读输入框（上面的小字 --k-muted 4.52:1 刚够，更小的字用 --k-ink2） */
+  --k-ink: #3A322B;       /* 一级：标题 */
+  --k-ink2: #5A5149;      /* 二级：正文、宫格文字 */
+  --k-muted: #6F6A65;     /* 三级：时间/地点/计数（10-16 从 #7A7570 调深：页面底色上 5.09:1、白卡 5.35:1、奶油底 4.52:1，小字也够 4.5:1） */
+  --k-light: #A39A92;     /* 占位/禁用文字 */
+  --k-line: #EFE9E1;      /* 暖线 分隔 */
+  --k-line2: #DDD5C9;     /* 输入框描边（不能再浅，否则框看不见） */
+  --k-red: #9A6B3F;       /* 暖棕 主色：主按钮/选中/当前页签（变量名沿用 --k-red，全站 400 多处引用不改名） */
+  --k-red-soft: #F6EDE2;  /* 主色浅底：选中的胶囊、浅色卡 */
+  --k-red-line: rgba(154, 107, 63, .5); /* 主色描边：次级按钮、选中胶囊 */
+  --k-red-deep: #8A5E36;  /* 浅底上的小号棕字（#9A6B3F 在浅底上不到 4.5:1） */
+  --k-alert: #C04437;     /* 提醒红：未读角标/红点、报错、名额紧张、逾期、删除等危险操作 */
+  --k-alert-soft: #FCEEEB;
   --k-ochre: #C99043;     /* 赭黄 */
   --k-ochre-soft: #F4E8D2;
+  --k-ochre-deep: #8A5A1C; /* 赭黄小字（标签/文字链/描边按钮）：#C99043 写字只有 2.3–2.8:1；这档在赭黄浅底 4.87:1、白卡 5.90:1 */
   --k-indigo: #40576B;    /* 靛蓝 AI/数据 */
   --k-indigo-soft: #E7EDF1;
-  --k-green: #4F7A66;     /* 苔绿 安心/成功 */
-  --k-green-soft: #E7EFE7;
+  --k-green: #4A6E3A;     /* 深豆绿 安心/成功（文字、图标） */
+  --k-green-soft: #E4EDDA; /* 浅豆绿 点缀底色 */
+  --k-radius: 16px;       /* 卡片、搜索框、面板的圆角 */
   --k-safe-bottom: env(safe-area-inset-bottom);
-  --k-serif: "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", "Source Han Serif SC", serif;
-  --k-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", "Segoe UI", sans-serif;
+  /* 10-19 主人：「字体统一，都换一下」→ 全站统一思源黑体。
+     正文：手机自带的思源黑体（安卓自带中文字体就是它 Noto Sans CJK）/ 苹方（苹果，字形几乎一样），不额外下载；
+     标题类（--k-display-font：页面大标题、卡片标题、品牌名、价格大数字）：思源黑体 粗体 700 + 特粗 900，取常用 3800 字 + 页面上所有字，
+     各约 1MB，放在网页版 static/h5/fonts/（只进网页版、不进小程序包）；小程序在 App.vue 启动时用 wx.loadFontFace 从线上加载，加载完之前先用系统黑体 */
+  --k-sans: "Source Han Sans SC", "Noto Sans CJK SC", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --k-display-font: "KG Sans", var(--k-sans);
+  --k-brand: var(--k-display-font); /* 品牌名 */
+  --k-serif: var(--k-display-font); /* 标题（k-h1 / k-title / 各页小节标题都用它） */
+  --k-sh1: 0 1px 3px rgba(58,50,43,.05), 0 6px 18px rgba(58,50,43,.08); /* 卡片（白卡放在奶白底上，阴影比之前略重） */
+  --k-sh2: 0 2px 12px rgba(58,50,43,.09), 0 0 0 .5px rgba(58,50,43,.06); /* 搜索框等浮起的控件 */
+  --k-sh3: 0 8px 24px rgba(58,50,43,.14); /* 弹层、日历、底部浮层 */
+  /* 10-19 一比一还原参考图的全局视觉语言（只加不改，旧变量照常用）：强调橙用在搜索圆钮 / 立即预订这类最显眼的一个按钮，
+     橙字用 --k-orange-deep（白卡 5.1:1、页面底 4.8:1，小字也够）；大卡用很柔的暖色阴影 + 一圈极淡的暖色细边 */
+  --k-orange: #E9802E;
+  --k-orange-deep: #A9581C;
+  --k-grad-orange: linear-gradient(135deg, #F0A35A 0%, #E07E2E 100%);
+  --k-grad-brown: linear-gradient(135deg, #B07A47 0%, #8A5A30 100%);
+  --k-sh-soft: 0 8px 24px rgba(120, 84, 48, .10);
+  --k-hair: rgba(160, 120, 80, .12);
   min-height: 100%;
   color: var(--k-ink);
   background: var(--k-bg);
@@ -40,12 +65,21 @@ image { display: block; }
 .k-page { min-height: 100vh; background: var(--k-bg); }
 .k-page--paper { background: var(--k-paper); }
 .k-body { padding: 12px 16px; }
-.k-pad-tab { padding-bottom: calc(72px + var(--k-safe-bottom)); }
+/* 底栏 56px + 中间「发布」圆钮往上凸 20px + 留 16px：拉到底时圆钮不压住最后一行 */
+.k-pad-tab { padding-bottom: calc(92px + var(--k-safe-bottom)); }
 .k-pad-bottom { padding-bottom: calc(88px + var(--k-safe-bottom)); }
 .k-pad-safe { padding-bottom: calc(16px + var(--k-safe-bottom)); }
 
-/* 字体 */
+/* 字体：全站系统黑体；标题 600；700 只留给品牌名和价格 */
+.k-brand { font-family: var(--k-brand); font-weight: 700; }
 .k-serif { font-family: var(--k-serif); font-weight: 700; }
+/* 10-19 主人：大标题要有设计感。设计字体文件还没下，先统一挂这个 class（超粗 + 0.5px 字距）；字体到了只改这一条（加 font-family） */
+.k-display { font-family: var(--k-display-font); font-weight: 900; letter-spacing: .5px; }
+/* #ifdef H5 */
+@font-face { font-family: "KG Sans"; font-weight: 700; font-display: swap; src: url("/static/h5/fonts/kg-sans-bold.woff2") format("woff2"); }
+@font-face { font-family: "KG Sans"; font-weight: 900; font-display: swap; src: url("/static/h5/fonts/kg-sans-heavy.woff2") format("woff2"); }
+/* #endif */
+/* 10-19 复查：标题字体（KG Sans）只有 700 / 900 两档，下面这些标题统一写 700（之前写 600，字体到了显示的也是 700，没到时系统字体是半粗，两种样子） */
 .k-h1 { font-family: var(--k-serif); font-weight: 700; font-size: 22px; line-height: 1.3; }
 .k-h2 { font-family: var(--k-serif); font-weight: 700; font-size: 18px; line-height: 1.35; }
 .k-title { font-family: var(--k-serif); font-weight: 700; font-size: 16px; line-height: 1.4; }
@@ -59,12 +93,14 @@ image { display: block; }
 .k-muted { color: var(--k-muted); }
 .k-light { color: var(--k-light); }
 .k-red { color: var(--k-red); }
+.k-alert { color: var(--k-alert); }
 .k-green { color: var(--k-green); }
 .k-ochre { color: var(--k-ochre); }
 .k-indigo { color: var(--k-indigo); }
 .k-ink { color: var(--k-ink); }
-.k-price { color: var(--k-red); font-family: Georgia, "Times New Roman", var(--k-serif); font-weight: 700; font-size: 20px; line-height: 1; }
-.k-num { font-family: Georgia, "Times New Roman", serif; font-weight: 700; }
+.k-ink2 { color: var(--k-ink2); }
+.k-price { color: var(--k-red); font-weight: 700; font-size: 20px; line-height: 1; }
+.k-num { font-weight: 700; }
 .k-link { color: var(--k-red); font-size: 13px; }
 .k-link--green { color: var(--k-green); }
 .k-center { text-align: center; }
@@ -113,7 +149,7 @@ image { display: block; }
 .k-circle--soft-ochre { background: var(--k-ochre-soft); }
 .k-square { display: flex; align-items: center; justify-content: center; border-radius: 10px; flex: 0 0 auto; }
 
-/* 顶部页签（文字 + 红色下划线） */
+/* 顶部页签（文字 + 主色下划线） */
 .k-tabs { display: flex; align-items: center; border-bottom: 1px solid var(--k-line); background: var(--k-bg); }
 .k-tabs__item { position: relative; flex: 1; text-align: center; padding: 10px 0; font-size: 14px; color: var(--k-muted); }
 .k-tabs__item.active { color: var(--k-red); font-weight: 600; }
@@ -121,9 +157,13 @@ image { display: block; }
 .k-tabs--left { justify-content: flex-start; }
 .k-tabs--left .k-tabs__item { flex: 0 0 auto; padding: 10px 14px; }
 
-/* 徽标 */
-.k-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--k-red); color: #fff; font-size: 10px; line-height: 16px; }
-.k-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--k-red); }
+/* 按压反馈：写在 hover-class 上（小程序里 :active 经常不触发）。行/文字链用 k-press，卡片/宫格/按钮用 k-press-s */
+.k-press { opacity: .7; }
+.k-press-s { transform: scale(.97); opacity: .9; }
+
+/* 徽标：未读数、红点用提醒红 */
+.k-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--k-alert); color: #fff; font-size: 10px; line-height: 16px; }
+.k-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--k-alert); }
 
 /* iOS Home 指示条（仅 H5 预览绘制） */
 .k-home-indicator { position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: #1A1A1A; pointer-events: none; }
@@ -132,17 +172,17 @@ image { display: block; }
 /* #endif */
 
 /* 遮罩与底部浮层 */
-.k-mask { position: fixed; inset: 0; z-index: 90; background: rgba(36, 27, 23, .45); }
-.k-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 95; background: var(--k-paper); border-radius: 16px 16px 0 0; padding: 16px 16px calc(16px + var(--k-safe-bottom)); }
+.k-mask { position: fixed; inset: 0; z-index: 90; background: rgba(58, 50, 43, .45); }
+.k-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 95; background: var(--k-paper); border-radius: var(--k-radius) var(--k-radius) 0 0; padding: 16px 16px calc(16px + var(--k-safe-bottom)); }
 .k-sheet__handle { width: 36px; height: 4px; border-radius: 2px; background: var(--k-line2); margin: 0 auto 12px; }
-.k-dialog { position: fixed; left: 32px; right: 32px; top: 50%; z-index: 95; transform: translateY(-50%); background: var(--k-paper); border-radius: 14px; padding: 20px; }
+.k-dialog { position: fixed; left: 32px; right: 32px; top: 50%; z-index: 95; transform: translateY(-50%); background: var(--k-paper); border-radius: var(--k-radius); padding: 20px; }
 
 /* 输入 */
-.k-input { display: flex; align-items: center; min-height: 44px; padding: 0 12px; background: var(--k-paper); border: 1px solid var(--k-line2); border-radius: 8px; font-size: 14px; }
+.k-input { display: flex; align-items: center; min-height: 44px; padding: 0 12px; background: var(--k-paper); border: 1px solid var(--k-line2); border-radius: 12px; font-size: 14px; }
 .k-input input { flex: 1; min-width: 0; height: 42px; font-size: 14px; }
 .k-input textarea { width: 100%; font-size: 14px; }
 .k-input--focus { border-color: var(--k-red); }
-.k-input--error { border-color: var(--k-red); }
+.k-input--error { border-color: var(--k-alert); }
 .k-placeholder { color: var(--k-light); }
 
 /* 进度条 */

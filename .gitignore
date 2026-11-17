@@ -36,7 +36,19 @@ __pycache__/
 tmp/
 temp/
 artifacts/
-.qa/
+# .qa/ 里的截图、日志、临时产物照旧不入库，只放行页面保护的两个基线文件：
+# 它们正是要交给 code review 逐条看的东西，不进版本库的话别人 clone 下来根本没有，
+# 检查就会退化成"缺文件"分支。写成 .qa/* 而不是 .qa/ 是 git 的硬性要求 ——
+# 父目录被整个排除时，下面的 ! 例外一律不生效。
+.qa/*
+!.qa/approved-diff.json
+!.qa/approved-structure.json
+!.qa/baseline-ref
+# 页面版式回归的已登记差异，同样是要交给人逐条复核的
+!.qa/approved-layout.json
+# 检查脚本本身必须入库，否则别人 clone 下来没有脚本，这几项检查等于不存在
+!.qa/*.py
+!.qa/*.mjs
 .impeccable/
 playwright-report/
 test-results/
@@ -73,3 +85,5 @@ secrets.*
 /manifest.json
 /project.private.config.json
 /CODEX-PROMPT.md
+# Local one-off browser debug screenshots
+/out-urgent-city/

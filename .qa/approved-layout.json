@@ -1,0 +1,211 @@
+{
+  "_说明": [
+    "页面版式回归里\"整块区域消失\"的已登记清单，由 node .qa/visual-regression.mjs --approve 生成。",
+    "每一条都是：基线提交里存在的某个静态 class，在当前版本的同一屏里一个元素都不剩。",
+    "这类差异必须逐条看过 —— 它要么是\"真实数据为空所以不显示\"（正当），",
+    "要么是\"某块内容被删掉了\"（越界）。理由写在「理由」里，截图在 artifacts/visual/。",
+    "删掉某一条，下次运行就会把它重新报成未登记，所以不要为了让脚本通过而随手添加。"
+  ],
+  "条目": {
+    "pages/auth/login?s=4": [
+      "quick__ok",
+      "on",
+      "or",
+      "or__line",
+      "k-gap8",
+      "k-mt10",
+      "k-input",
+      "code",
+      "uni-input-wrapper",
+      "uni-input-placeholder",
+      "k-placeholder",
+      "uni-input-input",
+      "k-mt16",
+      "sent",
+      "k-mt8",
+      "resend",
+      "is-primary"
+    ],
+    "pages/jobs/list?s=1": [
+      "on",
+      "match"
+    ],
+    "pages/jobs/list?s=2": [
+      "on"
+    ],
+    "pages/jobs/list?s=3": [
+      "on"
+    ],
+    "pages/jobs/list?s=4": [
+      "on"
+    ],
+    "pages/jobs/interview?s=3": [
+      "active"
+    ],
+    "pages/jobs/filter?s=2": [
+      "on"
+    ],
+    "pages/messages/index?s=1": [
+      "empty-messages",
+      "k-title",
+      "empty-copy",
+      "k-button",
+      "is-outline",
+      "is-lg",
+      "k-button__label"
+    ],
+    "pages/messages/index?s=2": [
+      "empty-messages",
+      "k-title",
+      "empty-copy",
+      "k-button",
+      "is-outline",
+      "is-lg",
+      "k-button__label"
+    ],
+    "pages/messages/reminders?s=1": [
+      "is-green",
+      "reminder-icon--ochre",
+      "reminder-icon--blue",
+      "reminder-icon--red"
+    ],
+    "pages/messages/reminders?s=2": [
+      "k-row",
+      "k-gap6",
+      "k-red",
+      "large-reminder",
+      "large-icon",
+      "large-icon--ochre",
+      "large-reminder__title",
+      "large-reminder__desc",
+      "large-reminder__time",
+      "large-icon--red",
+      "large-icon--green",
+      "k-ochre"
+    ],
+    "pages/messages/reminders?s=3": [
+      "large-reminder",
+      "large-icon",
+      "large-icon--red",
+      "large-reminder__title",
+      "large-reminder__desc",
+      "large-reminder__time",
+      "k-red",
+      "large-icon--blue",
+      "large-icon--ochre",
+      "k-ochre",
+      "large-icon--green"
+    ],
+    "pages/profile/index?s=1": [
+      "me__pill",
+      "level",
+      "k-between",
+      "k-title",
+      "level__name",
+      "bar",
+      "k-mt10",
+      "bar__fill",
+      "k-meta",
+      "level__img"
+    ],
+    "pages/profile/index?s=2": [
+      "k-circle",
+      "k-circle--green",
+      "ok"
+    ],
+    "pages/profile/index?s=3": [
+      "level__name",
+      "levels__dot",
+      "cur",
+      "k-gap8",
+      "k-mt8",
+      "points",
+      "k-text",
+      "k-mt6",
+      "bar",
+      "bar__fill",
+      "record",
+      "k-flex1",
+      "k-col",
+      "k-meta",
+      "record__pts",
+      "k-small",
+      "k-grid-4",
+      "benefit",
+      "benefit__icon",
+      "benefit__title",
+      "benefit__sub",
+      "k-gap2"
+    ],
+    "pages/profile/index?s=4": [
+      "k-row",
+      "k-gap6",
+      "k-circle",
+      "k-circle--green",
+      "ok",
+      "k-green"
+    ],
+    "pages/jobs/detail?s=4": [
+      "review",
+      "review__main",
+      "review__head",
+      "review__name",
+      "is-neutral",
+      "review__date",
+      "review__stars",
+      "review__copy",
+      "review__score",
+      "is-blue"
+    ],
+    "pages/jobs/contract?s=1": [
+      "term-icon"
+    ],
+    "pages/jobs/contract?s=3": [
+      "on"
+    ],
+    "pages/jobs/filter?s=3": [
+      "is-green",
+      "skeleton",
+      "skeleton__image",
+      "skeleton__lines",
+      "skeleton__line",
+      "is-long",
+      "is-short",
+      "is-mid",
+      "loading",
+      "loading__spinner"
+    ],
+    "pages/jobs/filter?s=4": [
+      "suggestion",
+      "is-xs"
+    ],
+    "pages/messages/index?s=4": [
+      "faq-grid"
+    ]
+  },
+  "生成时间": "2026-09-14 14:40:45",
+  "理由": {
+    "pages/auth/login?s=4": "2026-10-01：用户明确要求手机号绑定改为微信一键授权，已查看当前截图：移除手填号码、短信码、发送/重发/确认绑定及分隔线；保留微信授权入口、协议和取消入口。H5 明示须在微信内授权。对应真实请求、数据持久化和取消行为由 C08 及手机号专项回归验证。只登记本次授权变更，不放宽其他页面。",
+    "pages/jobs/list?s=1": "\"有新机会提醒我\"开关默认关闭（原来写死成已开启且关不掉）；\"匹配度\"角标去掉了 —— 匹配算法属于未确认的业务规则，不能编一个百分比。",
+    "pages/jobs/list?s=2": "同上：提醒开关默认关闭。",
+    "pages/jobs/list?s=3": "同上：提醒开关默认关闭。",
+    "pages/jobs/list?s=4": "同上：提醒开关默认关闭。",
+    "pages/jobs/interview?s=3": "步骤条的高亮改为按真实报名状态计算，探针账号这条报名还没走到那一步，所以该步未点亮。",
+    "pages/jobs/filter?s=2": "同上：提醒开关默认关闭。",
+    "pages/messages/index?s=1": "空态区块消失是**正确**的：探针账号真的有消息，空态本来就该隐藏。基线那一版没有后端，永远是空态。",
+    "pages/messages/index?s=2": "同上：该分类下有真实消息，空态隐藏。",
+    "pages/messages/reminders?s=1": "提醒卡片按真实消息渲染，探针账号的消息category分布与设计稿示例不同，所以部分配色变体（绿/赭/蓝/红）没有出现。卡片本身是有的。",
+    "pages/messages/reminders?s=2": "这是**员工端**那一屏，探针账号没有员工授权，所以没有员工待办可显示。基线那一版是静态设计稿，不区分身份，永远有卡片。",
+    "pages/messages/reminders?s=3": "同上：平台端那一屏对非员工账号为空。",
+    "pages/profile/index?s=1": "等级、积分进度条这些区块整块隐藏：后端没有积分体系，原来是对每个账号显示同一套伪造数字，已按\"没有数据就不显示\"处理。",
+    "pages/profile/index?s=2": "\"已实名\"的绿色对勾隐藏：没有接实名认证，原来是写死的。",
+    "pages/profile/index?s=3": "2026-10-04已查看本轮实际截图并独立复核：用户要求沿用成长等级并按等级提供多店折扣权益。等级、真实积分进度和积分规则均展示；原写死权益网格改为“查看会员权益”入口，详情列出后台合作店。仅登记旧网格及其样式class，未批准错误页。权益接口及后台同步另由业务回归验证。",
+    "pages/profile/index?s=4": "同上：实名对勾隐藏。",
+    "pages/jobs/detail?s=4": "评价摘录改接真实评价（V11，/app/stores/{id}/reviews）：演示基线里这家门店还没有岗位评价，列表为空，页面显示「这家店还没有岗位评价」。基线版本是写死的三条示例评价。2026-09-24 看过截图。",
+    "pages/jobs/contract?s=1": "责任书条款改为按报名从服务端取（c.terms）。探针直接打开签约页、不带 appId，页面如实提示「请从报名进度进入签约到店」，条款列表为空。基线是写死的示例条款。2026-09-24 看过截图。",
+    "pages/jobs/contract?s=3": "到店屏「需要接站」开关改为绑定真实的 arr.needPickup（默认不接站，由门店确认），基线把开关写死成开启。",
+    "pages/jobs/filter?s=3": "s=3 是「正在匹配」的加载态：骨架屏与转圈只在请求进行中（counting）显示，接口返回后换成真实结果，所以截图时已经不在。基线没有后端，永远停在加载态。",
+    "pages/jobs/filter?s=4": "s=4 是「无结果 → 放宽建议」屏：建议条目来自服务端按冲突条件算出的 relax 列表；探针的筛选条件在演示数据里有结果，没有可放宽的建议，所以条目为空。基线是写死的示例建议。",
+    "pages/messages/index?s=4": "2026-10-04已查看本轮实际截图并独立复核：用户要求常见问题后台可设置，原6个写死图标网格改为后台真实问答列表、搜索和展开答案。仅登记faq-grid旧容器，未批准任何加载失败或错误页。功能另由真实FAQ回归验证。"
+  }
+}

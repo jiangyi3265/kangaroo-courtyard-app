@@ -1,0 +1,104 @@
+/* Reference-led companion page: illustration, contextual job, then four share choices. */
+.team-page { background: #FCF9F3; }
+.team-page .tm-hero { height: 208px; background: #FCF9F3; }
+.team-page .tm-hero__copy { top: 24px; left: 12px; right: 12px; z-index: 3; text-align: center; align-items: center; }
+.team-page .tm-hero__title { font-family: var(--k-sans); color: #422C1D; font-size: 25px; font-weight: 800; letter-spacing: -.9px; line-height: 1.35; }
+.team-page .tm-hero__title--long { font-size: 22px; letter-spacing: -.8px; }
+.team-page .tm-hero__sub { margin-top: 7px; color: #765D43; font-size: 13px; letter-spacing: .2px; }
+.team-page .tm-hero__scene { top: auto; bottom: 0; height: 175px; width: 100%; }
+.team-page .tm-hero__fade { position: absolute; z-index: 2; top: 40px; left: 0; right: 0; height: 28px; background: linear-gradient(#FCF9F3, rgba(252,249,243,0)); pointer-events: none; }
+.team-page .tm-sticker { top: 1px; width: 28px; height: 28px; background: transparent; border: 0; box-shadow: none; }
+.team-page .tm-job { margin: -18px 14px 0; padding: 12px; min-height: 78px; box-sizing: border-box; border-radius: 16px; gap: 11px; box-shadow: 0 5px 14px rgba(111,78,43,.09); }
+.team-page .tm-job__img { width: 54px; height: 56px; border-radius: 8px; }
+.team-page .tm-job__main { padding-right: 18px; gap: 6px; }
+.team-page .tm-job__head { display: block; font-family: var(--k-sans); }
+.team-page .tm-job__title { white-space: normal; display: inline; line-height: 1.4; font-size: 16px; font-weight: 700; }
+.team-page .tm-job__city { display: inline; font-size: 14px; white-space: nowrap; }
+.team-page .tm-job__chip { min-height: 22px; height: auto; align-self: flex-start; white-space: normal; padding: 2px 7px; background: #F6E7CF; border-radius: 5px; box-shadow: none; font-size: 11px; }
+.team-page .tm-job__chip-icon { display: none; }
+.team-page .tm-job__share { top: 10px; right: 7px; width: 36px; height: 36px; background: transparent; }
+.team-page .tm-ways { margin: 10px 13px 0; padding: 0; background: transparent; box-shadow: none; }
+.team-page .tm-ways__title { margin: 0 0 12px; font-family: var(--k-sans); font-size: 22px; line-height: 28px; font-weight: 700; color: #422C1D; }
+.team-page .tm-ways__panel { padding: 9px; background: #FFFEFC; border-radius: 20px; box-shadow: 0 4px 13px rgba(111,78,43,.08); }
+.team-page .tm-ways .tm-way { margin: 0; padding: 8px 12px; min-height: 60px; border-radius: 13px; box-shadow: none; background: #FAF9F6; gap: 12px; }
+.team-page .tm-ways .tm-way + .tm-way { margin-top: 5px; }
+.team-page .tm-ways .tm-way:nth-child(1), .team-page .tm-ways .tm-way:nth-child(2) { background: linear-gradient(110deg,#FAEDD9,#F3DFC2); }
+.team-page .tm-ways .tm-way:nth-child(n+3) { background: #FAF9F6; }
+.team-page .tm-way__icon { width: 43px; height: 43px; box-shadow: none; }
+.team-page .tm-way:nth-child(1) .tm-way__icon { background: #EEA847; }
+.team-page .tm-way:nth-child(2) .tm-way__icon { background: #35BA61; }
+.team-page .tm-way:nth-child(3) .tm-way__icon { background: #65A9E6; }
+.team-page .tm-way:nth-child(4) .tm-way__icon { background: #F5B38F; }
+.team-page .tm-way__title { font-family: var(--k-sans); font-size: 17px; line-height: 1.35; font-weight: 700; }
+.team-page .tm-way__desc { color: #806A51; font-size: 12px; line-height: 1.5; }
+.team-page .tm-safe { min-height: 32px; margin: 8px 14px 0; padding: 6px 7px; gap: 3px; border-radius: 10px; background: #F6ECD9; box-shadow: none; font-size: 10px; font-weight: 500; box-sizing: border-box; }
+.team-page .tm-safe__item { margin-left: 2px; }
+.team-page .tm-safe__item + .tm-safe__item { margin-left: 4px; padding-left: 4px; }
+.team-page .tm-cta { margin-top: 12px; min-height: 48px; border: 1px solid #EADFD1; border-radius: 12px; box-shadow: none; }
+.team-page .poster-hero { height: 220px; }
+.team-page .poster-tags { flex-wrap: wrap; }
+.team-page .shop-body { padding: 10px 14px calc(172px + var(--k-safe-bottom)); }
+.team-page .shop-head { box-shadow: none; }
+.team-page .shop-head>image { width: 105px; height: 104px; }
+.team-page .shop-head__title { font-size: 22px; line-height: 1.35; }
+/* A 375 × 812 screen has less vertical room; keep type and illustration size,
+   and recover space from the surrounding gaps so the safety strip stays visible. */
+@media (min-width:360px) and (max-height:820px) {
+ .team-page .tm-hero { height: 192px; }
+ .team-page .tm-hero__copy { top: 18px; }
+ .team-page .tm-ways { margin-top: 8px; }
+ .team-page .tm-ways__title { margin-bottom: 8px; }
+ .team-page .tm-ways__panel { padding-top: 7px; padding-bottom: 7px; }
+ .team-page .tm-safe { margin-top: 6px; }
+}
+@media(max-width:359px) {
+ .team-page .tm-hero { height: 210px; }
+ .team-page .tm-hero__title { font-size: 21px; }
+ .team-page .tm-hero__title--long { font-size: 18px; }
+ .team-page .tm-hero__copy { left: 10px; right: 10px; }
+ .team-page .tm-hero__sub { font-size: 11px; }
+ .team-page .tm-hero__scene { height: 152px; }
+ .team-page .tm-job { gap: 9px; margin-left: 11px; margin-right: 11px; }
+ .team-page .tm-job__title { font-size: 14px; }
+ .team-page .tm-job__city { font-size: 12px; }
+ .team-page .tm-job__img { width: 46px; height: 52px; }
+ .team-page .tm-ways { margin-left: 11px; margin-right: 11px; }
+ .team-page .tm-ways .tm-way { gap: 9px; padding: 10px; }
+ .team-page .tm-way__title { font-size: 15px; }
+ .team-page .tm-way__desc { font-size: 11px; }
+ .team-page .tm-way__icon { width: 38px; height: 38px; }
+ .team-page .tm-safe { flex-wrap: wrap; justify-content: center; font-size: 10px; }
+ .team-page .shop-head__title { font-size: 19px; }
+}
+
+/* Store reviews use the same warm, legible hierarchy as the job detail. */
+.team-page .shop-head > image { flex: 0 0 105px; }
+.team-page .shop-head__noimg { flex-basis: 105px; width: 105px; height: 104px; }
+.team-page .shop-head__main { padding-left: 12px; }
+.team-page .shop-head__meta { font-size: 12px; line-height: 1.6; }
+.team-page .ai-summary, .team-page .score-panels, .team-page .shop-review { border: 1px solid #E9DFD3; box-shadow: 0 3px 10px rgba(91,61,32,.04); border-radius: 14px; }
+.team-page .ai-summary { margin-top: 14px; padding: 15px 13px; }
+.team-page .ai-summary__copy > text { font-size: 13px; line-height: 1.7; }
+.team-page .ai-mark { background: #A17B51; font-size: 11px; }
+.team-page .score { flex: 0 0 83px; width: 83px; }
+.team-page .score-panels { margin-top: 12px; }
+.team-page .score-row { font-size: 12px; margin-top: 7px; }
+.team-page .filters > view text { min-height: 32px; border-radius: 16px; }
+.team-page .filters > view text.active { background: #F5E9D8; border-color: #CBAF89; color: #805936; }
+.team-page .review-sort { margin-top: 12px; margin-bottom: 12px; }
+.team-page .review-sort > view { height: 36px; font-size: 13px; border-radius: 18px; }
+.team-page .shop-review { margin-top: 10px; padding: 14px 12px; }
+.team-page .shop-review__name { font-size: 15px; }
+.team-page .shop-review__copy { font-size: 14px; line-height: 1.75; }
+.team-page .shop-review__date { font-size: 11px; }
+.team-page .shop-review__photos image, .team-page .shop-review__photos > view { height: 62px; }
+.team-page .reply { font-size: 12px; line-height: 1.65; background: #F5EFE6; }
+.team-page .shop-actions { bottom: calc(56px + var(--k-safe-bottom)); gap: 8px; }
+.team-page .shop-actions :deep(.k-button) { padding-left: 10px; padding-right: 10px; font-size: 14px; }
+@media(max-width:359px) {
+ .team-page .shop-head > image, .team-page .shop-head__noimg { flex-basis: 90px; width: 90px; height: 100px; }
+ .team-page .score { flex-basis: 76px; width: 76px; }
+ .team-page .distribution, .team-page .filters { padding: 10px 8px; }
+ .team-page .score-row { gap: 3px; font-size: 11px; }
+ .team-page .shop-actions :deep(.k-button) { font-size: 12px; padding-left: 6px; padding-right: 6px; }
+}

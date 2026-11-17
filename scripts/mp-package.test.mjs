@@ -3,7 +3,7 @@ import test from 'node:test'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, unlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
-import { checkMpPackage } from './mp-package.mjs'
+import { checkMpPackage, estimateWechatMain, wechatMarginBytes } from './mp-package.mjs'
 
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'kangaroo-package-test-'))
@@ -72,6 +72,24 @@ test('fails if main package exceeds the limit', (t) => {
   assert.equal(checkMpPackage(f.output, f.root).packages[0].ok, false)
 })
 
+test('rejects mutually exclusive WeChat location permissions before upload', (t) => {
+  const f = fixture(t)
+  f.write('dist/app.json', JSON.stringify({
+    pages: ['pages/home'], requiredPrivateInfos: ['getLocation', 'getFuzzyLocation']
+  }))
+  const report = checkMpPackage(f.output, f.root)
+  assert.equal(report.ok, false)
+  assert.match(report.problems.join('\n'), /getLocation.*getFuzzyLocation.*mutually exclusive/)
+})
+
+test('allows the precise location API used for distance verification', (t) => {
+  const f = fixture(t)
+  f.write('dist/app.json', JSON.stringify({
+    pages: ['pages/home'], requiredPrivateInfos: ['getLocation']
+  }))
+  assert.equal(checkMpPackage(f.output, f.root).ok, true)
+})
+
 test('accounts for a subpackage separately', (t) => {
   const f = fixture(t)
   f.write('pages.json', JSON.stringify({ pages: [{ path: 'pages/home' }], subPackages: [{ root: 'pages/jobs', pages: [{ path: 'list' }] }] }))
@@ -81,4 +99,58 @@ test('accounts for a subpackage separately', (t) => {
   assert.equal(report.ok, true)
   assert.equal(report.packages[1].files, 4)
   assert.equal(report.packages[1].bytes, 4 * Buffer.byteLength('subpackage-content'))
+})
+
+// 微信口径的主包估算：拿两次真实上传对一下（微信回报的主包大小），误差不超过拟合时的最大误差 428 字节
+test('WeChat-size estimate matches real uploads within the fitted error', () => {
+  const fixes5 = estimateWechatMain({ bytes: 2006052, js: 350549, wxss: 101376, wxml: 110075 })
+  const polish3 = estimateWechatMain({ bytes: 2001855, js: 347424, wxss: 101241, wxml: 109138 })
+  assert.ok(Math.abs(fixes5 - 2085023) <= 428, String(fixes5))
+  assert.ok(Math.abs(polish3 - 2080594) <= 428, String(polish3))
+  assert.equal(wechatMarginBytes, 8192)
+})
+
+test('reports the WeChat-size estimate from main-package code only', (t) => {
+  const f = fixture(t)
+  // 假 JS 用空格填：全 0 字节解析不了，打包检查会拦（见 scan-compiled-mp.test.mjs）
+  f.write('dist/common/vendor.js', Buffer.alloc(10000, ' '))
+  f.write('dist/app.wxss', Buffer.alloc(4000))
+  f.write('dist/pages/home.wxml', Buffer.alloc(1000))
+  f.write('pages.json', JSON.stringify({ pages: [{ path: 'pages/home' }], subPackages: [{ root: 'pages/jobs', pages: [{ path: 'list' }] }] }))
+  f.write('dist/app.json', JSON.stringify({ pages: ['pages/home'], subPackages: [{ root: 'pages/jobs', pages: ['list'] }] }))
+  for (const ext of ['json', 'wxml', 'wxss']) f.write(`dist/pages/jobs/list.${ext}`, Buffer.alloc(50000))
+  f.write('dist/pages/jobs/list.js', Buffer.alloc(50000, ' '))
+  const report = checkMpPackage(f.output, f.root)
+  const main = report.packages[0]
+  assert.deepEqual([report.wechatMain.js, report.wechatMain.wxss, report.wechatMain.wxml], [10000, 4000, 1000])
+  assert.equal(report.wechatMain.checkerBytes, main.bytes)
+  assert.equal(report.wechatMain.estimateBytes, Math.round(main.bytes + 0.2135 * 10000 + 0.3267 * 4000 - 0.03 * 1000 - 25343))
+  assert.equal(report.wechatMain.limitBytes, 2 * 1024 * 1024 - 8192)
+  assert.equal(report.wechatMain.ok, true)
+  assert.equal(report.ok, true)
+})
+
+// 本脚本数出来还差 200 多 KB 才到 2 MiB，但按微信口径已经超了：构建要失败，不能等上传时才被拒
+test('fails when the WeChat-size estimate is over the limit although the raw count fits', (t) => {
+  const f = fixture(t)
+  f.write('dist/common/vendor.js', Buffer.alloc(1800000))
+  const report = checkMpPackage(f.output, f.root)
+  assert.equal(report.packages[0].ok, true)
+  assert.ok(report.wechatMain.estimateBytes > 2 * 1024 * 1024 - 8192)
+  assert.equal(report.wechatMain.ok, false)
+  assert.ok(report.wechatMain.remainingBytes < 0)
+  assert.equal(report.ok, false)
+  assert.match(report.problems.join('\n'), /WeChat-size estimate \d+ bytes exceeds 2088960/)
+})
+
+test('subpackage code does not count toward the WeChat main estimate', (t) => {
+  const f = fixture(t)
+  f.write('pages.json', JSON.stringify({ pages: [{ path: 'pages/home' }], subPackages: [{ root: 'pages/jobs', pages: [{ path: 'list' }] }] }))
+  f.write('dist/app.json', JSON.stringify({ pages: ['pages/home'], subPackages: [{ root: 'pages/jobs', pages: ['list'] }] }))
+  for (const ext of ['json', 'wxml', 'wxss']) f.write(`dist/pages/jobs/list.${ext}`, '')
+  f.write('dist/pages/jobs/list.js', Buffer.alloc(1800000, ' '))
+  const report = checkMpPackage(f.output, f.root)
+  assert.equal(report.wechatMain.js, 0)
+  assert.equal(report.wechatMain.ok, true)
+  assert.equal(report.ok, true)
 })

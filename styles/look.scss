@@ -1,0 +1,54 @@
+/* 参考图的共用视觉值：只有 SCSS 变量和 mixin，本身不产出任何 CSS —— 页面 <style> 里 @import 它，
+   用到哪条才编进那个页面（分包页面就编进分包），不占主包。颜色真值仍以 theme.scss 的 --k-* 为准，这里是参考图里额外的几档。 */
+
+/* 页面底：极浅暖白渐变（顶部 #FCF9F5 → #F8F7F4） */
+$look-bg-top: #FCF9F5;
+$look-bg-bottom: #F8F7F4;
+$look-bg: linear-gradient(180deg, #{$look-bg-top} 0, #{$look-bg-top} 200px, #{$look-bg-bottom} 560px, #{$look-bg-bottom} 100%); /* 前 200px 和顶栏同色，顶栏下沿看不出接缝 */
+
+/* 卡片：纯白，大卡圆角 22、小卡 16；阴影很柔 + 1px 暖色细边 */
+$look-card-r: 22px;
+$look-card-r-sm: 16px;
+$look-shadow: 0 2px 4px rgba(80, 59, 39, .025), 0 7px 20px rgba(120, 84, 48, .055);
+$look-shadow-sm: 0 3px 10px rgba(120, 84, 48, .055);
+$look-hairline: 1px solid rgba(160, 120, 80, .09);
+
+/* 主色暖棕按钮渐变；强调橙（立即预订、搜索圆钮） */
+$look-brown: #9A6B3F;
+$look-brown-deep: #8A5A30;
+$look-grad-brown: linear-gradient(135deg, #B07A47, #8A5A30);
+$look-grad-orange: linear-gradient(135deg, #F0A35A, #E07E2E);
+
+/* 胶囊：选中浅橙底 + 暖棕描边 + 深棕字；未选浅灰暖底 */
+$look-chip-on-bg: #F6EBDD;
+$look-chip-on-line: #C9935F;
+$look-chip-on-ink: #8A5A30;
+$look-chip-bg: #F4F1EC;
+
+/* 绿色「可订 / 选择」实心按钮 */
+$look-green: #2F7D4A;
+$look-green-soft: #E6F1E8;
+
+/* 文字 */
+$look-ink: #3A322B;
+
+/* 白卡：圆角 + 柔阴影 + 细边 */
+@mixin look-card($r: $look-card-r) {
+  background: #fff;
+  border-radius: $r;
+  border: $look-hairline;
+  box-shadow: $look-shadow;
+}
+
+/* 胶囊：未选 / 选中 */
+@mixin look-chip {
+  border: 1px solid transparent;
+  background: $look-chip-bg;
+  color: var(--k-ink2);
+}
+@mixin look-chip-on {
+  border-color: $look-chip-on-line;
+  background: $look-chip-on-bg;
+  color: $look-chip-on-ink;
+  font-weight: 700;
+}

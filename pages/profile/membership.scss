@@ -1,0 +1,163 @@
+// 会员页独立样式，其他个人资料、设置和员工页面保持原有布局。
+.profile--membership {
+  --k-bg: #FCF9F3;
+  background: #FCF9F3;
+  color: #3A322B;
+  font-family: var(--k-sans);
+
+  .mi { padding-top: 12px; }
+  .card { border: 1px solid #EAE3D9; border-radius: 16px; box-shadow: 0 3px 14px rgba(58, 50, 43, .035); }
+  .mi-hero { display: block; padding: 20px 18px 14px; background: #F8F0E3; border-color: #DDD0BC; box-shadow: 0 3px 10px rgba(58,50,43,.06); }
+  .mi-hero::after { display: none; }
+  .mi-hero__identity { display: flex; align-items: center; gap: 20px; }
+  .mi-hero__body { gap: 4px; }
+  .mi-hero__tag { align-self: flex-start; height: auto; line-height: 1.5; padding: 2px 9px; background: #F1E2CA; border-radius: 999px; font-size: 11px; letter-spacing: 0; color: #795331; font-weight: 400; }
+  .mi-hero__level { font-family: var(--k-sans); font-size: 27px; font-weight: 600; letter-spacing: 0; white-space: normal; overflow: visible; overflow-wrap: anywhere; line-height: 1.3; }
+  .mi-hero__nick { font-size: 18px; line-height: 1.5; color: #3A322B; font-weight: 600; margin: 2px 0 0; white-space: normal; overflow-wrap: anywhere; }
+  .mi-hero__row { margin-top: 14px; padding-top: 0; border:0; gap: 10px; }
+  .mi-hero__pts { gap: 12px; font-size: 14px; color: #5A5149; flex-wrap: wrap; white-space: normal; }
+  .mi-hero__num { font-family: var(--k-sans); font-size: 32px; font-weight: 600; line-height: 1.2; color: #3A322B; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .mi-hero__rules { margin: 0; padding: 0; min-height: 48px; display: flex; align-items: center; }
+  .mi-hero__rules-pill { height: 40px; border-radius: 12px; border-color: #CBB79D; background: transparent; padding: 0 12px; font-size: 13px; font-weight: 400; }
+  .mi-hero__rules-pill::before { display: none; }
+  .mi-card { margin-top: -2px; padding: 14px 18px; background: #FFFEFB; border-radius:0 0 16px 16px; }
+  .mi-head { margin: -4px 0 10px; min-height: 44px; }
+  .mi-title, .mi-rules__title, .k-title { font-family: var(--k-sans); font-size: 18px; font-weight: 600; color: #3A322B; }
+  .mi-link { min-height: 48px; font-size: 13px; color: #795331; margin: 0; padding: 0 0 0 10px; }
+  .mi-bar { height: 6px; border-radius: 6px; background: #EEE7DC; }
+  .mi-bar__fill { border-radius: 6px; background: #9A6B3F; }
+  .mi-prog { margin-top: 8px; gap: 4px; flex-direction: column; align-items: flex-start; }
+  .mi-prog__count { font-family: var(--k-sans); font-size: 17px; font-weight: 600; color: #795331; }
+  .mi-prog__tip { font-size: 14px; line-height: 1.6; }
+  .mi-ledger { margin-top: 10px; font-size: 12px; line-height: 1.6; }
+  .mi-sec { margin-top: 14px; padding: 0; min-height: 44px; }
+  .mi-level-scroll { width: 100%; margin-top: 4px; }
+  .levels { display: flex; align-items: flex-start; padding: 8px 0 12px; }
+  .levels__item { flex: 0 0 88px; width: 88px; min-width: 0; gap: 7px; }
+  .levels__track { top: 32px; left: 44px; right: 44px; height: 1px; background: #D8CDBD; }
+  .levels__fill { height: 1px; background: #9A6B3F; }
+  .levels__ring { width: 48px; height: 48px; border-radius: 50%; background: #FCF9F3; }
+  .levels__ring.cur { box-shadow: none; }
+  .levels__label { margin: 0; padding: 3px 7px; border-radius: 6px; max-width: 80px; font-size: 13px; line-height: 1.5; white-space: normal; text-align: center; overflow: visible; overflow-wrap: anywhere; }
+  .levels__label.cur { padding: 3px 7px; background: #9A6B3F; color: #FFFEFB; font-weight: 600; letter-spacing: 0; }
+  .levels__pts { font-size: 12px; line-height: 1.5; color: #6F6A65; }
+  .levels__ji { display: inline; }
+  .mi-perks-scroll { width: 100%; margin-top: 4px; }
+  .mi-perks { display: grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items: stretch; gap: 8px; padding: 2px 0 8px; }
+  .mi-perks .mi-perk { width:auto; min-width: 0; box-sizing: border-box; padding: 12px 9px; border-radius: 12px; border: 1px solid #E3DBCF; box-shadow: none; background: #FFFEFB; gap: 9px; }
+  .mi-perks .mi-perk.cur { border-color: #B28C60; background: #F8F1E7; box-shadow: none; }
+  .mi-perk__head { min-height: 34px; gap: 5px; flex-wrap:wrap; }
+  .mi-perk__now { height: auto; padding: 3px 6px; line-height: 1.4; border-radius: 6px; font-size: 10px; color: #795331; background: #EDE1CE; }
+  .mi-perk__now.locked { color: #6F6A65; background: #F1EFEB; }
+  .mi-perk__title { min-height: 42px; font-family: var(--k-sans); font-size: 14px; line-height: 1.5; font-weight: 600; overflow-wrap:anywhere; }
+  .mi-perk__line { margin: 0; font-size: 14px; line-height: 1.65; gap: 5px; }
+  .mi-perk__tick { height: 23px; }
+  .mi-perk__none { font-size: 13px; line-height: 1.6; }
+  .mi-perk__shop { padding-top: 12px; border-top: 1px solid #E3DBCF; gap: 3px; }
+  .mi-perk__shop-n { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+  .mi-perk__shop-t { font-size: 12px; }
+  .mi-tasks { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); padding: 12px 0; margin-top: 12px; background: #FFFEFB; }
+  .mi-task { display: grid; grid-template-columns: 20px minmax(0,1fr); align-items: start; min-height: 100px; padding: 0 12px; box-sizing: border-box; gap: 5px 7px; }
+  .mi-task + .mi-task { border-top: 0; border-left: 1px solid #E3DBCF; }
+  .mi-task__icon { width: 20px; height: 24px; border-radius: 0; background: transparent; }
+  .mi-task__top { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .mi-task__title { font-size: 14px; line-height: 1.6; font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
+  .mi-task__pts { font-size: 13px; font-weight: 500; color: #795331; }
+  .mi-task__sub { margin-top: 4px; font-size: 12px; line-height: 1.5; }
+  .mi-task__go { grid-column: 1 / -1; align-self: end; margin: 0; padding: 0; }
+  .mi-task__btn { justify-content: center; height: 44px; padding: 0 14px; border-radius: 999px; background: #9A6B3F; color: #FFFEFB; box-shadow: none; font-size: 13px; font-weight: 500; }
+  .mi-task__btn.done { background: #F1EFEB; color: #6F6A65; }
+  .mi .k-mt12 { margin-top: 24px; }
+  .mi-rules { margin-top: 24px; padding: 18px 16px 8px; border: 1px solid #E3DBCF; border-radius: 16px; background: #F7F3EB; box-shadow: none; overflow: hidden; }
+  .mi-rules::before, .mi-rules::after { display: none; }
+  .mi-rules__title { text-align: left; margin-bottom: 8px; }
+  .mi-rule { gap: 12px; padding: 14px 0; }
+  .mi-rule + .mi-rule { border-color: #E3DBCF; }
+  .mi-rule__no { width: 22px; font-family: var(--k-sans); font-size: 14px; line-height: 1.7; color: #8A5E36; font-weight: 500; }
+  .mi-rule__body { font-size: 14px; line-height: 1.7; }
+  .mi-rule__name { font-weight: 500; }
+  @media (max-width: 359px) {
+    .mi-hero { padding: 18px 16px 14px; }
+    .mi-hero__identity { gap: 16px; }
+    .mi-hero__level { font-size: 24px; }
+    .mi-hero__num { font-size: 28px; }
+    .mi-hero__pts { flex: 1; gap: 6px; }
+    .mi-perks { gap:6px; }
+    .mi-perks .mi-perk { padding: 10px 7px; }
+    .mi-perk__head { flex-direction:column;align-items:flex-start; }
+    .mi-task { padding: 0 9px; gap: 5px; }
+    .mi-task__btn { padding: 0 10px; }
+  }
+}
+
+/* 会员原稿：身份牌与升级区作为同一张会员卡，权益为三张白色纸卡。 */
+.profile--membership {
+  --k-bg:#FBF6ED;
+  --k-paper:#FFFEFB;
+  background:linear-gradient(135deg,#FFF9F1,#FBF6ED 56%,#F8F7F2);
+  .mi { padding-top:16px; }
+  .mi-hero { padding:20px 18px 14px;border:1px solid #E5D7BE;border-radius:21px;background:linear-gradient(120deg,#FEFCF4,#FAEDDD);box-shadow:0 3px 3px rgba(136,100,52,.13),inset 0 0 0 2px rgba(255,255,255,.65);position:relative;z-index:1; }
+  .mi-hero__identity { gap:15px; }
+  .mi-hero__body { flex:1;min-width:0;gap:8px; }
+  .mi-hero__level-row { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+  .mi-hero__level { font-size:26px;font-weight:700;color:#745129; }
+  .mi-hero__tag { align-self:center;font-size:11px;padding:2px 8px;background:#F4E4C9;color:#9D793F;white-space:nowrap; }
+  .mi-hero__nick { font-size:21px;font-weight:650;margin:0;color:#33291F; }
+  .mi-hero__row { margin-top:18px; }
+  .mi-hero__pts { font-size:16px;font-weight:600;gap:10px; }
+  .mi-hero__num { font-size:30px;color:#30251D; }
+  .mi-hero__rules-pill { height:34px;border-radius:999px;padding:0 10px;border-color:#DED0B7;background:rgba(255,253,245,.7); }
+  .mi-card { margin-top:-15px;padding:24px 18px 15px;border:0;border-radius:0 0 21px 21px;box-shadow:0 7px 18px rgba(106,77,40,.08); }
+  .mi-head { min-height:32px;margin:0 0 9px; }
+  .mi-head .mi-link { min-height:44px; }
+  .mi-bar { height:7px;background:#F0E6D8; }
+  .mi-bar__fill { background:linear-gradient(90deg,#E6AC58,#BC8140); }
+  .mi-prog { margin-top:7px;gap:3px; }
+  .mi-prog__count { font-size:17px;color:#6B502F; }
+  .mi-prog__tip { font-size:14px;color:#635A4F; }
+  .mi-sec { margin-top:17px;min-height:37px; }
+  .mi-title,.mi-rules__title { font-size:19px;font-weight:650; }
+  .levels { padding-top:5px;padding-bottom:8px; }
+  .levels__label.cur { background:linear-gradient(135deg,#D5A15B,#B27B35);box-shadow:0 2px 5px rgba(159,113,53,.15); }
+  .mi-perks { gap:8px; }
+  .mi-perks .mi-perk { border:0;border-radius:14px;padding:13px 10px;background:linear-gradient(180deg,#FDF8EF 0,#FFFEFD 32%);box-shadow:0 4px 12px rgba(99,76,44,.09);gap:11px; }
+  .mi-perks .mi-perk.cur { background:linear-gradient(180deg,#FBF1E0 0,#FFFEFD 36%);box-shadow:0 4px 12px rgba(99,76,44,.1),inset 0 0 0 1px #E9D8BB; }
+  .mi-perk__title { font-size:15px;line-height:1.4;min-height:42px;font-weight:650;color:#6B472B; }
+  .mi-perk__head { padding-bottom:8px;border-bottom:1px solid #F0EAE1; }
+  .mi-perk__now { padding:2px 4px;font-size:9px; }
+  .mi-perk__line { font-size:14px;line-height:1.7;color:#655A4F; }
+  .mi-perk__tick { width:15px;height:20px;border:1px solid #E2C591;border-radius:50%;background:#FAF0D7;justify-content:center;margin-top:2px; }
+  .mi-tasks { border:0;border-radius:16px;padding:12px 0;box-shadow:0 4px 12px rgba(99,76,44,.08); }
+  .mi-task__btn { background:linear-gradient(135deg,#D6A064,#A67236);box-shadow:0 2px 5px rgba(150,108,53,.16); }
+  .mi-task__btn.done { background:#EEEBE4;box-shadow:none; }
+  .mi-rules { position:relative;overflow:visible;border:1px solid #ECE1D0;border-radius:3px;background:#FFFCF7;box-shadow:0 5px 16px rgba(99,76,44,.07);padding:19px 16px 9px; }
+  .mi-rules::after { display:block;content:'';position:absolute;top:-4px;left:44%;width:58px;height:9px;background:rgba(228,205,158,.46);transform:rotate(-4deg); }
+  .mi-rule__no { width:23px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid #CAAF7C;border-radius:5px;font-size:13px;line-height:1; }
+  @media(max-width:359px) {
+    .mi-hero { padding:16px 14px 12px; }
+    .mi-hero__identity { gap:12px; }
+    .mi-hero__level { font-size:23px; }
+    .mi-hero__nick { font-size:18px; }
+    .mi-hero__pts { font-size:14px; }
+    .mi-perks .mi-perk { padding:11px 8px; }
+    .mi-perk__title { font-size:14px; }
+    .mi-perk__head { flex-direction:row; }
+  }
+}
+
+/* 每级权益用完整行展示，避免高等级条目挤在三列窄卡中。 */
+.profile--membership {
+  .levels__item { cursor: pointer; padding-bottom: 8px; border-bottom: 2px solid transparent; box-sizing: border-box; }
+  .levels__item.selected { border-bottom-color: #AA7844; }
+  .mi-level-hint { display: block; color: #807467; font-size: 12px; line-height: 1.7; margin: 0 0 12px; }
+  .mi-benefit-detail { padding: 16px; background: #FFFEFB; border: 1px solid #E4D8C7; border-radius: 16px; }
+  .mi-benefit-detail__head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .mi-benefit-detail__identity { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .mi-benefit-detail__title { font-size: 18px; font-weight: 600; color: #69482B; overflow-wrap: anywhere; }
+  .mi-benefit-detail__status { font-size: 12px; color: #807467; }
+  .mi-benefit-detail__line { display: flex; gap: 9px; align-items: flex-start; padding: 8px 0; font-size: 14px; line-height: 1.75; color: #51463A; }
+  .mi-benefit-detail__line .k-icon { flex-shrink: 0; margin-top: 4px; }
+  .mi-benefit-detail__line text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .mi-benefit-detail__shops { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding: 12px 0 0; margin-top: 8px; border-radius: 0; border-top: 1px solid #E9E0D4; background: transparent; color: #8A6035; font-size: 14px; text-align: left; }
+  .mi-benefit-detail__shops::after { border: 0; }
+}

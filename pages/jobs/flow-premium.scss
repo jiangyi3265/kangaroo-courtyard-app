@@ -1,0 +1,93 @@
+/* Consistent, quiet forms: readable help text and explicit action hierarchy. */
+.ap-page, .progress, .contract-page, .filter-page, .deliver, .interview-page:not(.video-page) { --k-bg: #FCF9F3; background: #FCF9F3; }
+.ap-card, .steps--flow, .subscribe-card, .subscribe-line, .match-slider, .message-switch, .frequency { border: 1px solid #E9DFD3; border-radius: 15px; box-shadow: 0 3px 10px rgba(91,61,32,.04); }
+.ap-page .k-bottom, .progress .k-bottom { box-shadow: 0 -2px 10px rgba(91,61,32,.04); }
+.ap-page .k-bottom :deep(.k-button.is-primary), .progress .k-bottom :deep(.k-button.is-primary) { background: #8A603D; box-shadow: 0 3px 9px rgba(95,58,27,.12); letter-spacing: 0; }
+.ap-page .k-bottom :deep(.k-button.is-primary.is-disabled) { background: #ECE5DC; color: #A39A92; box-shadow: none; }
+.ap-job__img { border-radius: 10px; box-shadow: none; }
+.ap-job__title { white-space: normal; font-size: 17px; line-height: 1.45; }
+.ap-sec { margin-top: 20px; }
+.ap-sec__title { font-size: 18px; font-weight: 700; letter-spacing: 0; }
+.ap-resume { padding: 14px; }
+.ap-resume__avatar { border-width: 2px; box-shadow: 0 2px 6px rgba(91,61,32,.09); }
+.ap-resume__edit { height: 34px; padding-left: 10px; border-radius: 17px; background: #F5E9D8; box-shadow: none; }
+.ap-resume__rows { margin-top: 12px; }
+.ap-plan { padding: 4px 14px 14px; }
+.ap-row { min-height: 66px; }
+.ap-row__icon { background: #F5E9D8; border-radius: 9px; }
+.ap-row__hint { font-size: 12px; line-height: 1.5; color: #8A7865; }
+.ap-dur { height: 36px; border-radius: 18px; }
+.ap-dur.on, .ap-other.on { border-color: #BE966C; background: #F3E3CC; color: #78512E; }
+.ap-other { height: 36px; border-radius: 18px; }
+.ap-empty { background: #FFFCF7; }
+.ap-empty__art { box-shadow: none; background: #F5E9D8; }
+.ap-empty__btn { background: #8A603D; box-shadow: 0 3px 8px rgba(95,58,27,.1); }
+.ap-done__icon { background: #AF7D44; box-shadow: 0 0 0 5px #F2E5D3; }
+.progress :deep(.k-card) { border: 1px solid #E9DFD3; border-radius: 15px !important; box-shadow: 0 3px 10px rgba(91,61,32,.04); }
+.progress .hero__title { font-size: 24px; font-weight: 700; letter-spacing: 0; }
+.progress .hero__desc { line-height: 1.75; }
+.progress .tips { background: #F7EFE4; border-color: #E5D6C4; border-radius: 12px; }
+.progress .opt { border-color: #E5D6C4; border-radius: 12px; box-shadow: none; }
+.progress .opt.on { background: #FAEDDB; border-color: #BE966C; }
+.contract-page .flow { padding-left: 16px; padding-right: 16px; height: 56px; }
+.contract-page .terms > view { min-height: 74px; padding: 12px 0; gap: 0; }
+.contract-page .terms > view > view:nth-child(2) text:last-child { font-size: 13px; line-height: 1.6; margin-top: 4px; }
+.contract-page .term-icon { background: #F5E9D8; }
+.contract-page .read-progress { font-size: 17px; }
+.contract-page .read-done { font-size: 13px; }
+.contract-page .field-title { font-size: 17px; }
+.contract-page .identity > view { height: 58px; }
+.contract-page .arrival-row { min-height: 52px; height: auto; padding: 4px 0; }
+.contract-page .note { height: auto; min-height: 80px; }
+.contract-page .note text:last-child { color: #8A7865; font-size: 13px; line-height: 1.6; }
+.interview-page .lobby .card, .interview-page .countdown, .interview-page .job, .interview-page .confirm-group .choice-card { border-color: #E9DFD3; background: #FFFEFC; border-radius: 14px; }
+.interview-page .job { height: auto; min-height: 116px; padding: 12px; }
+.interview-page .job > image { width: 90px; height: 94px; }
+.interview-page .job__title { white-space: normal; font-size: 16px; line-height: 1.45; }
+.interview-page .checklist > view { min-height: 42px; height: auto; padding: 5px 0; font-size: 13px; }
+.interview-page .device > view { min-height: 54px; }
+.interview-page .confirm-question { font-size: 13px; line-height: 1.6; }
+.interview-page .choice-card > view { min-height: 38px; height: auto; }
+.interview-page .meeting-card { border: 1px solid #E9DFD3; background: #FFFEFC; border-radius: 14px; }
+.interview-page .tm-hint, .interview-page .help { color: #8A7865; line-height: 1.6; }
+.filter-page .subscribe-card__hint, .filter-page .message-switch__sub, .filter-page .frequency__item text + text { font-size: 12px; line-height: 1.6; }
+.filter-page .subscribe-line { font-size: 14px; height: 58px; }
+.filter-page .selected-chip { min-height: 34px; font-size: 13px; background: #F4EADC; }
+.filter-page .message-switch__title { font-size: 15px; }
+.filter-page .manage-note { font-size: 12px; line-height: 1.6; }
+.filter-page .job-card { border: 1px solid #E9DFD3; border-radius: 14px; box-shadow: 0 3px 10px rgba(91,61,32,.04); }
+.filter-page .job-card__title { font-size: 16px; white-space: normal; line-height: 1.45; }
+.filter-page .job-card__meta, .filter-page .job-card__bottom { font-size: 12px; }
+.deliver .section-title { font-size: 17px; }
+.deliver .row { font-size: 14px; line-height: 1.65; }
+.deliver .notice { padding: 10px 12px; background: #F5EADB; font-size: 13px; line-height: 1.65; }
+.deliver .material, .deliver .mfile, .deliver .flow { border-color: #E9DFD3; background: #FFFEFC; border-radius: 12px; }
+.deliver .material__head { font-size: 14px; }
+.deliver .material__from, .deliver .link__label { font-size: 12px; }
+.deliver .mfile__act { padding: 7px 12px; border-radius: 17px; }
+@media(max-width:359px) {
+ .ap { padding-left: 12px; padding-right: 12px; }
+ .ap-resume__edit { font-size: 11px; }
+ .ap-job__title { font-size: 16px; }
+ .ap-row { gap: 8px; }
+ .ap-row__value { font-size: 14px; }
+ .interview-page .job > image { width: 76px; height: 88px; }
+ .contract-page .flow { padding-left: 10px; padding-right: 10px; }
+}
+
+.interview-page .checklist > view { gap: 9px; }
+.interview-page .checklist > view > text { flex: 1; min-width: 0; line-height: 1.55; }
+.interview-page .checklist > view > view, .interview-page .device > view > view { flex: 0 0 auto; white-space: nowrap; }
+
+.interview-page .checklist > view > view, .interview-page .device > view > view { color: #8A7865; }
+.contract-page .insurance { height: auto; min-height: 78px; box-sizing: border-box; padding: 12px; border-radius: 12px; background: #F5EADB; border: 1px solid #E6D6BF; }
+.contract-page .insurance > view text:first-child { font-size: 18px; line-height: 1.4; color: #805936; }
+.contract-page .insurance > view text:last-child { line-height: 1.6; }
+.contract-page .insurance--active { background: #EAF1E3; border-color: #D3DEC9; }
+.contract-page .insurance--active > view text:first-child { color: #506E3C; }
+.contract-page .legal { line-height: 1.6; align-items: flex-start; }
+.deliver .guide-link { min-height: 44px; }
+@media(max-width:359px) {
+ .deliver .stats > view:nth-child(2) .stats__value { font-size: 12px; letter-spacing: -.3px; white-space: nowrap; }
+ .deliver .guide-link__sub { font-size: 11px; }
+}
