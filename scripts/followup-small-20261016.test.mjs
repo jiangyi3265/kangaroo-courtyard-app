@@ -83,7 +83,7 @@ test('我的活动：顶栏写「我的活动」（和「我的行程」一样�
   const visible = s1.replace(/<!--[\s\S]*?-->/g, '')
   assert.equal((visible.match(/我的活动/g) || []).length, 1, '整屏只在顶栏出现一次「我的活动」')
   assert.doesNotMatch(src, /page-heading/)
-  assert.ok(s1.includes('<view class="mine-head"><view class="create-link" hover-class="k-press" @click="startCreate"><k-icon name="plus" :size="15" color="red" /><text>创办活动</text></view></view>'))
+  assert.match(visible, /<view v-if="communityEnabled" class="create-link"[^>]*@click="startCreate"[^>]*>[\s\S]*?<text>创办活动<\/text>/)
   assert.match(src, /\.mine-head \{ display:flex; justify-content:flex-end;/, '入口靠右，和原来的位置一样')
   // 已报名 / 已完成 / 我发起的 三个页签照旧
   assert.ok(s1.includes('<view class="k-tabs mine-tabs">'))

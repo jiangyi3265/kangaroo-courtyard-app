@@ -16,7 +16,7 @@
 //   · 换页签时，新页签用不上的条件清掉，用得上的（兼职 ↔ 全职的食宿）带过去，城市照旧共用（见 filterForTab）。
 
 export const TYPES = ['volunteer', 'parttime', 'fulltime', 'online']
-export const TYPE_NAMES = { volunteer: '换宿旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' }
+export const TYPE_NAMES = { volunteer: '换工旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' }
 export const MAX_CITIES = 5
 // 技能最多选几个（后端 AppJobController.MAX_SKILLS 也是 8，多了会被拒）
 export const MAX_SKILLS = 8

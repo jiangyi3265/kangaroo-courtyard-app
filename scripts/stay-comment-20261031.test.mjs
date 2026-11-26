@@ -70,6 +70,7 @@ function runDiary({ account = { id: 1 }, comments, diaryFail, commentFail, sheet
   let answer = comments || (() => ({ total: 0, hasMore: false, rows: [], mine: [] }))
   const sandbox = {
     ...sm, ...sc,
+    watchStayGate: vue.watch, stayBookingEnabled: vue.ref(true), refreshFeatures: async () => ({ stayBookingEnabled: true }),
     onReachBottom: (fn) => { hooks.reach = fn }, onHide: () => {}, onShow: (fn) => { hooks.show = fn },
     useScreen: (max, extra) => { screen.extra = extra; return vue.ref(1) },
     go: (u) => gone.push(u), toast: (t) => toasts.push(t), errText: (e, d) => (e && e.message) || d,
@@ -97,7 +98,7 @@ test('一进来同时取日记和评论第 1 页；上滑只加载当前页签�
   const p = runDiary({ comments: (page) => ({ total: 21, hasMore: page < 2, rows: [onlineCard(page)], mine: page === 1 ? [onlineCard(99, { status: 'pending', isMe: true })] : [] }) })
   p.screen.extra.onLoad({ stayId: '7' })
   await flush()
-  assert.deepEqual(plain(p.calls), [{ url: '/app/stay/7/diary', page: 1 }, { url: '/app/stay/7/comments', page: 1 }])
+  assert.deepEqual(plain(p.calls).sort((a, b) => a.url.localeCompare(b.url)), [{ url: '/app/stay/7/comments', page: 1 }, { url: '/app/stay/7/diary', page: 1 }])
   assert.equal(p.x.commentTabText.value, '小伙伴评论 (21)')
   assert.equal(p.x.tab.value, 'diary')
   p.calls.length = 0

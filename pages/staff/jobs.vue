@@ -7,14 +7,18 @@
   <!-- #endif -->
   <k-feature-gate feature="recruitment">
   <view class="k-page staff-jobs">
-    <template v-if="s===1">
+    <template v-if="entryLoading || jobsScopeChanged || (jobsError && !submitted && !formOpen)">
+      <k-topbar title="岗位管理" back />
+      <view class="jobs-retry"><text>{{ entryLoading ? '正在读取门店岗位…' : jobsError || '门店身份已变化，请重新读取岗位' }}</text><k-button v-if="!entryLoading" label="重试" @click="retryJobs" /></view>
+    </template>
+    <template v-else-if="s===1">
       <k-topbar title="岗位列表" back />
       <view class="jobs-list k-pad-tab">
-        <view class="search-row"><view class="search-box" hover-class="k-press-s" @click="askKeyword"><k-icon name="search" :size="20" color="muted" /><text>{{ keyword || '搜索岗位 / 关键词 / 地点 / 编号' }}</text></view><button class="filter-button" @click="pickStatus"><text>{{ statusFilterLabel }}</text></button></view>
+        <view class="search-row"><view class="search-box" hover-class="k-press-s" @click="askKeyword"><k-icon name="search" :size="16" color="muted" /><text>{{ keyword || '搜索岗位 / 关键词 / 地点 / 编号' }}</text></view><button class="filter-button" @click="pickStatus"><text>{{ statusFilterLabel }}</text></button></view>
         <!-- 补填筛选条件（10-16 跟进）：已上架的线下岗位里，性别 / 排班 / 住宿 / 在店一项都没填的有几个（服务端按全店数，不受下面的筛选影响）。
              这些岗位在用户按条件筛时看不到；只给有岗位编辑权限的人看，点「去补填」打开最新的那一个 -->
-        <view v-if="draftRows.length" class="cond-banner"><k-icon name="store" :size="18" color="red" /><text class="cond-banner__text">{{ draftRows.length }} 个商家岗位等你完善并上架</text><view class="cond-banner__btn" hover-class="k-press-s" @click="jobActions(draftRows[0])"><text>去处理</text></view></view>
-        <view v-if="canEdit && missingCount > 0" class="cond-banner"><k-icon name="list-filter" :size="18" color="red" /><text class="cond-banner__text">{{ missingCount }} 个岗位还没填排班 / 住宿等条件，补上后更容易被用户筛到</text><view class="cond-banner__btn" hover-class="k-press-s" @click="fillFirstMissing"><text>去补填</text></view></view>
+        <view v-if="draftRows.length" class="cond-banner"><k-icon name="store" :size="16" color="red" /><text class="cond-banner__text">{{ draftRows.length }} 个商家岗位等你完善并上架</text><view class="cond-banner__btn" hover-class="k-press-s" @click="jobActions(draftRows[0])"><text>去处理</text></view></view>
+        <view v-if="canEdit && missingCount > 0" class="cond-banner"><k-icon name="list-filter" :size="16" color="red" /><text class="cond-banner__text">{{ missingCount }} 个岗位还没填排班 / 住宿等条件，补上后更容易被用户筛到</text><view class="cond-banner__btn" hover-class="k-press-s" @click="fillFirstMissing"><text>去补填</text></view></view>
         <!-- 2026-11-03 主人：简化商家端。合作商家不看四个指标（缺人中 / 匹配率这些是内部运营看的），卡片只留状态 + 报名数，按钮直接摆在卡片上 -->
         <view v-if="!merchantStaff" class="metrics"><view v-for="m in metrics" :key="m.label"><text>{{m.label}}</text><text :class="m.tone">{{m.value}}</text></view></view>
         <view class="job-tabs"><text :class="{active:type===''}" @click="setType('')">全部</text><text :class="{active:type==='volunteer'}" @click="setType('volunteer')">换工</text><text :class="{active:type==='parttime'}" @click="setType('parttime')">兼职</text><text :class="{active:type==='fulltime'}" @click="setType('fulltime')">全职</text><text v-if="staffCan('online', 'view')" :class="{active:type==='online'}" @click="setType('online')">线上任务</text></view>
@@ -93,13 +97,13 @@
         <view class="pub-intro"><text class="pub-intro__title">你想招什么人？</text><text class="pub-intro__sub">{{ merchantStaff ? '选一个板块填好提交，袋鼠工作人员核实后上架' : '选一个板块填好提交，平台审核通过后用户就能看到' }}</text></view>
         <view class="pub-kinds">
           <view v-for="kind in publishKinds" :key="kind.key" class="pub-kind" :class="'pub-kind--' + kind.key" hover-class="k-press-s" @click="choosePublish(kind.key)">
-            <view class="pub-kind__icon"><k-icon :name="kind.icon" :size="24" color="red" :stroke="1.8" /></view>
+            <view class="pub-kind__icon"><k-icon :name="kind.icon" :size="22" color="red" :stroke="1.8" /></view>
             <view class="pub-kind__copy"><text class="pub-kind__title">{{ kind.title }}</text><text class="pub-kind__sub">{{ kind.sub }}</text></view>
-            <k-icon name="chevron-right" :size="18" color="muted" />
+            <k-icon name="chevron-right" :size="12" color="muted" />
           </view>
         </view>
-        <view class="pub-flow"><view v-for="(st, i) in FLOW_STEPS" :key="st" class="pub-flow__step"><text class="pub-flow__num">{{ i + 1 }}</text><text class="pub-flow__text">{{ st }}</text><k-icon v-if="i < FLOW_STEPS.length - 1" name="chevron-right" :size="13" color="light" /></view></view>
-        <view class="pub-note"><k-icon name="store" :size="17" color="red" /><text>{{ STORE_NOTE }}</text></view>
+        <view class="pub-flow"><view v-for="(st, i) in FLOW_STEPS" :key="st" class="pub-flow__step"><text class="pub-flow__num">{{ i + 1 }}</text><text class="pub-flow__text">{{ st }}</text><k-icon v-if="i < FLOW_STEPS.length - 1" name="chevron-right" :size="12" color="light" /></view></view>
+        <view class="pub-note"><k-icon name="store" :size="16" color="red" /><text>{{ STORE_NOTE }}</text></view>
       </view>
       <!-- 提交成功：说清楚接下来是平台审核，审核通过才对用户公示；可以回列表看「待平台审核」，也可以接着再发一个 -->
       <view v-else-if="submitted" class="pub-done k-pad-tab">
@@ -117,6 +121,11 @@
            分三步——第 1 步选模板（job-templates.js，点一下全填好）→ 第 2 步必填信息 → 第 3 步时间和待遇（模板已选好，看一眼）；住宿照片、宠物、要求、福利都收进「更多设置（选填）」。
            看不懂的项下面一行小字说明；底部提交栏一直写着还差什么，不用等点了提交才知道。提交给服务端的内容一项没变 -->
       <view v-else class="fc-form">
+        <view v-if="form.jobType === 'fulltime'" class="fc-block">
+          <text class="fc-group__title">粘贴全职招聘文案</text>
+          <textarea v-model="recruitmentText" class="fc-area" maxlength="2000" placeholder="例如：招聘民宿前台2人，月薪5000元，包吃包住，双休，负责接待客人" />
+          <button class="paste-action" :disabled="!recruitmentText.trim()" @click="fillRecruitmentText">识别并填入</button>
+        </view>
         <!-- 第 1 步：模板。点一下改标题、工作内容、换工类型、工时、排班、期限、食宿、住宿条件、年龄、性格、技能、要求（兼职全职还有结算、薪资类型，全职还有门店类型、试用期、培训）；
              岗位照片、工作地点、到岗日期、招募人数、住宿照片视频、宠物、补贴奖金提成保险不动。填完收成一行，能撤销、能换一个。完善商家岗位时不出（商家写的不能一下被换掉） -->
         <view v-if="tplShown" class="fc-block">
@@ -174,7 +183,7 @@
         <view class="fc-block">
           <text class="fc-group__title">{{ stepTitles[1] }}</text>
           <!-- 换工类型（后台「字典管理 → 换工类型」可改）：只有换工岗位要选，不选也能发布；选项和说明在底部弹层里 -->
-          <view v-if="form.jobType==='volunteer' && kindOptions.length" class="fc-row" hover-class="k-press" @click="openSheet('workKind')"><view class="fc-row__copy"><text class="fc-row__k">换工类型</text><text class="fc-note">用户在「换宿旅行」按类型找岗位</text></view><text class="fc-row__v" :class="{ 'fc-row__v--empty': !workKindLabel }">{{ workKindLabel || '请选择' }}</text><k-icon name="chevron-right" :size="18" color="muted" /></view>
+          <view v-if="form.jobType==='volunteer' && kindOptions.length" class="fc-row" hover-class="k-press" @click="openSheet('workKind')"><view class="fc-row__copy"><text class="fc-row__k">换工类型</text><text class="fc-note">用户在「换工旅行」按类型找岗位</text></view><text class="fc-row__v" :class="{ 'fc-row__v--empty': !workKindLabel }">{{ workKindLabel || '请选择' }}</text><k-icon name="chevron-right" :size="18" color="muted" /></view>
           <!-- 门店类型（全职）：用户在「全职旅行」按 民宿 / 酒店 / 咖啡餐饮 / 酒吧 筛选；选了会写成岗位的第一个标签 -->
           <view v-if="form.jobType==='fulltime'" class="fc-row" hover-class="k-press" @click="openSheet('category')"><view class="fc-row__copy"><text class="fc-row__k">门店类型</text><text class="fc-note">用户按门店类型找岗位</text></view><text class="fc-row__v" :class="{ 'fc-row__v--empty': !categoryLabel }">{{ categoryLabel || '请选择' }}</text><k-icon name="chevron-right" :size="18" color="muted" /></view>
           <view id="pf-startDate" class="fc-row" :class="{ 'fc-row--err': err.startDate }" hover-class="k-press" @click="startCalendar = true"><view class="fc-row__copy"><text class="fc-row__k">到岗日期</text><text v-if="err.startDate" class="fc-err">{{ err.startDate }}</text><text v-else class="fc-note">最早哪天能来</text></view><text class="fc-row__v" :class="{ 'fc-row__v--empty': !startDateText }">{{ startDateText || '请选择' }}</text><k-icon name="chevron-right" :size="18" color="muted" /></view>
@@ -207,7 +216,7 @@
           <view class="fc-field">
             <view class="fc-label"><text class="fc-label__t">食宿</text></view>
             <view class="fc-seg" :class="boardOptions.length === 2 ? 'fc-seg--2' : 'fc-seg--4'"><view v-for="b in boardOptions" :key="b[1]" class="fc-seg__item" :class="{ on: boardOf(form) === b[1] }" hover-class="k-press" @click="setBoard(b[1])"><text>{{ b[0] }}</text></view></view>
-            <text v-if="form.jobType === 'volunteer'" class="fc-note">换宿换的就是住宿，所以至少要包住</text>
+            <text v-if="form.jobType === 'volunteer'" class="fc-note">换工岗位至少要提供住宿</text>
           </view>
           <!-- R2 餐补：只要不包吃就出现（只包住 / 包住 / 不包食宿），选填；用户端岗位详情看得到 -->
           <view v-if="mealShown" id="pf-meal" class="fc-field">
@@ -334,7 +343,7 @@
         <text class="track-title">追踪维度</text><view class="track-tabs"><text :class="{active:dim==='manager'}" @click="setDim('manager')">按换工主理人</text><text :class="{active:dim==='staff'}" @click="setDim('staff')">按员工</text><text :class="{active:dim==='channel'}" @click="setDim('channel')">按渠道</text></view>
         <view class="data-title"><text>{{ dimTitle }}（近30天）</text><text>· 数据更新：{{ stats.updatedAt || '' }}</text></view>
         <view class="data-table"><view class="thead"><text>{{ dimHead }}</text><text>访问</text><text>报名</text><text>通过</text><text>转化率</text></view><view v-for="r in channelRows" :key="r.name"><text>{{r.name}}</text><text>{{r.visit}}</text><text>{{r.apply}}</text><text>{{r.pass}}</text><text>{{r.rate}}</text></view><view class="total"><text>合计</text><text>{{ statTotal.visit }}</text><text>{{ statTotal.apply }}</text><text>{{ statTotal.pass }}</text><text>{{ statTotal.rate }}</text></view></view>
-        <text class="rank-title">员工分享榜 TOP5</text><view class="rank-card"><view class="rank-head"><text></text><text>分享</text><text>报名</text><text>通过</text></view><view v-for="(r,i) in ranks" :key="r.name"><text class="rank-name"><text class="rank-num">{{i+1}}</text>　{{r.name}}（ID: {{r.id}}）</text><text>{{r.share}}</text><text>{{r.apply}}</text><text>{{r.pass}}</text></view></view><text class="full-rank" @click="showAllRanks">查看完整榜单 〉</text>
+        <text class="rank-title">员工分享榜 TOP5</text><view class="rank-card"><view class="rank-head"><text></text><text>分享</text><text>报名</text><text>通过</text></view><view v-for="(r,i) in ranks" :key="r.name"><text class="rank-name"><text class="rank-num">{{i+1}}</text>　{{r.name}}（ID: {{r.id}}）</text><text>{{r.share}}</text><text>{{r.apply}}</text><text>{{r.pass}}</text></view></view><view class="full-rank-row"><text class="full-rank" @click="showAllRanks">查看完整榜单</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
         </template>
       </view><k-tabbar mode="staff" active="work" />
     </template>
@@ -343,6 +352,7 @@
 </template>
 
 <script setup>
+import { parseRecruitmentText } from './recruitment-text.js'
 // ---------------------------------------------------------------------------
 // 岗位管理（员工端）接入情况：
 //   s=1 列表与指标：apiStaffJobs（类型页签、关键词、状态筛选）；点卡片可分享、暂停/恢复、调整名额；
@@ -363,7 +373,7 @@ import {
   apiStaffJobs, apiStaffJobKeywords, apiStaffDescribeJob, apiStaffCreateJob, apiStaffBatchJobs,
   apiStaffShareJob, apiStaffShareStats, apiJobKinds
 } from '@/common/api.js'
-import { ensureSession, hasStaffAccess, currentStaffStoreId, merchantStaff, selectStaffStore, staffStoreUrl } from '@/common/experience.js'
+import { ensureSession, experience, hasStaffAccess, currentStaffStore, currentStaffStoreId, merchantStaff, selectStaffStore, staffStoreUrl } from '@/common/experience.js'
 import { errText, confirm, alert, prompt, sheet, copy, isYmd, shiftDate, todayCn } from '@/common/ui.js'
 import { savePosterImage } from '@/common/poster.js'
 import { genderPlanPayload, genderPlanError, genderCountText } from '@/common/job-gender.js'
@@ -382,6 +392,11 @@ import R from '@/common/routes.js'
 
 // 打开本页时落在哪一屏：直接打开分享追踪（?s=4）的，返回回来源页
 let entryScreen = 1
+let entryQuery = {}
+let entryReady = false
+let pageAlive = true
+const jobsError = ref('')
+const entryLoading = ref(false)
 const s = useScreen(4, {
   onLoad: (q) => {
     entryScreen = Number(q?.s) || 1
@@ -389,23 +404,53 @@ const s = useScreen(4, {
     if (entryScreen === 3) { entryScreen = 2; s.value = 2 }
     // 工作台「发布招募」直接点某一类（?s=2&kind=volunteer）：权限取回来后直接打开那张表
     entryKind = entryScreen === 2 && KIND_META[q?.kind] ? q.kind : ''
-    enterLinkedStore(q?.storeId).then(loadJobs).then(() => { if (entryKind && s.value === 2 && !formOpen.value) choosePublish(entryKind) })
+    entryQuery = q || {}
+    openJobEntry()
   }
 })
-// 派单消息点进来带着门店（/pages/staff/jobs?storeId=…，V63）：先切到那家商家店，列表和权限才是那家店的。切不过去就留在当前门店，说一声
-async function enterLinkedStore(target) {
-  if (target == null || target === '') return
+function retryJobs() {
+  if (jobsScopeChanged.value) {
+    entryReady = false
+    leaveDraft()
+    submitted.value = null
+    closeConditions()
+    closePhotos()
+    closeExtras()
+    s.value = entryScreen === 2 ? 2 : 1
+  }
+  return entryReady ? loadJobs() : openJobEntry()
+}
+async function openJobEntry() {
+  if (entryLoading.value) return
+  entryLoading.value = true
+  const target = entryQuery.storeId
   try {
-    await ensureSession()
-    if (String(target) !== String(currentStaffStoreId())) await selectStaffStore(target)
+    if (target != null && target !== '') {
+      await ensureSession()
+      if (!pageAlive) return
+      if (String(target) !== String(currentStaffStoreId())) await selectStaffStore(target)
+      if (String(target) !== String(currentStaffStoreId())) throw new Error('无法进入指定门店，请核对门店授权')
+    }
+    if (!pageAlive) return
+    if (!await loadJobs()) {
+      if (!jobsError.value) jobsError.value = '门店信息已变化，请重试'
+      return
+    }
+    if (target != null && target !== '' && String(target) !== String(currentStaffStoreId())) throw new Error('无法进入指定门店，请核对门店授权')
+    entryReady = true
+    if (Number(entryQuery.jobId) && String(currentStaffStoreId()) === String(target)) editDraft({ jobId: Number(entryQuery.jobId) })
+    else if (entryKind && s.value === 2 && !formOpen.value) choosePublish(entryKind)
+    else if (s.value === 4) loadStats()
   } catch (e) {
-    toast(errText(e, '切换门店失败'))
+    if (pageAlive) jobsError.value = errText(e, '切换门店失败，请重试')
+  } finally {
+    entryLoading.value = false
   }
 }
 // 之前从卡片去「调整名额 / 紧急招募」「交付与结算」等页面处理完返回，列表还是旧的人数和状态（本页没有 onShow）。
 // 现在回到列表屏时重取一次；第一次显示由 onLoad 取，不重复请求
 let shownOnce = false
-onShow(() => { if (shownOnce && s.value === 1) loadJobs(); shownOnce = true; lockPageScroll(listSheetOpen()) })
+onShow(() => { if (shownOnce && s.value === 1) retryJobs(); shownOnce = true; lockPageScroll(listSheetOpen()) })
 
 // ---------------- s=1 列表 ----------------
 const type = ref('')
@@ -436,16 +481,28 @@ const staffWording = (t) => String(t == null ? '' : t).replace(/换工主理人|
 const merchantJobStatus = (t) => staffWording(t).replace(/待审核/g, '待完善')
 const jobList = computed(() => rows.value.map(r => ({ ...r, img: absUrl(r.img), status: merchantStaff.value ? merchantJobStatus(r.statusLabel) : r.statusLabel, rawStatus: r.status })))
 
+let jobsRequest = 0
+const jobScope = () => JSON.stringify([experience.account?.id, hasStaffAccess.value, currentStaffStoreId(), currentStaffStore.value?.identityKey, currentStaffStore.value?.roleCode])
+const loadedJobsScope = ref('')
+const jobsScopeChanged = computed(() => !!loadedJobsScope.value && loadedJobsScope.value !== jobScope())
 async function loadJobs() {
-  await ensureSession()
-  if (!hasStaffAccess.value) return
+  const request = ++jobsRequest
+  let scope
+  const current = () => pageAlive && request === jobsRequest && (scope === undefined || scope === jobScope())
   try {
+    await ensureSession()
+    if (!current()) return false
+    if (!hasStaffAccess.value) throw new Error('当前账号没有门店岗位权限')
+    scope = jobScope()
     const res = await apiStaffJobs({
       storeId: currentStaffStoreId(),
       type: type.value || undefined,
       keyword: keyword.value || undefined,
       status: statusFilter.value || undefined
     })
+    if (!current()) return false
+    jobsError.value = ''
+    loadedJobsScope.value = scope
     const data = res.data || {}
     metrics.value = data.metrics || metrics.value
     rows.value = data.rows || []
@@ -456,8 +513,14 @@ async function loadJobs() {
     // 合作商家不补筛选条件（2026-11-03 主人：简化，这页只留状态、报名数和三个按钮）：顶上的「去补填」提示不出
     missingCount.value = merchantStaff.value ? 0 : (Number(data.conditionsMissingCount) || 0)
     missingJob.value = merchantStaff.value ? null : (data.conditionsMissingJob || null)
+    return true
   } catch (e) {
-    toast(errText(e, '岗位加载失败'))
+    if (current()) {
+      rows.value = []
+      canEdit.value = false
+      jobsError.value = errText(e, '岗位加载失败，请重试')
+    }
+    return false
   }
 }
 const setType = (t) => { type.value = t; loadJobs() }
@@ -513,14 +576,21 @@ const merchantActs = (j) => {
   if (j.rawStatus === 'published' || j.rawStatus === 'paused') acts.push('分享')
   if (j.rawStatus === 'published' && canToggle) acts.push('暂停')
   if (j.rawStatus === 'paused' && canToggle) acts.push('恢复')
+  if (j.canArchive) acts.push('删除')
   return acts
 }
+async function archiveClosed(j) {
+  if (!j.canArchive || !(await confirm('删除已关闭岗位', '“' + j.title + '”将从岗位列表移除。历史报名和入职记录仍可查询。'))) return
+  return runBatch([j.jobId], 'archive')
+}
 function merchantAct(j, a) {
+  if (a === '删除') return archiveClosed(j)
   if (a === '分享') return openShare(j)
   if (a === '暂停') return runBatch([j.jobId], 'pause')
   if (a === '恢复') return runBatch([j.jobId], 'resume')
 }
 function merchantTap(j) {
+  if (j.canArchive) return archiveClosed(j)
   if (j.rawStatus === 'published' || j.rawStatus === 'paused') return go('/pages/jobs/detail?jobId=' + j.jobId)
   toast(j.rawStatus === 'draft' ? MERCHANT_DRAFT_TIP : '岗位关闭后无法再操作')
 }
@@ -529,6 +599,7 @@ async function jobActions(j) {
   if (merchantStaff.value) return merchantTap(j)
   const live = j.rawStatus === 'published' || j.rawStatus === 'paused'
   const acts = []
+  if (j.canArchive) acts.push('删除已关闭岗位')
   if (j.canPublish) acts.push(DRAFT_PUBLISH, DRAFT_EDIT, DRAFT_CLOSE)
   // 线上任务：接单人的成果验收与线下结算在「线上任务」页处理
   if (j.jobType === 'online') acts.push('交付与结算')
@@ -560,6 +631,7 @@ async function jobActions(j) {
     a = edits[k]
   }
   if (a === DRAFT_PUBLISH) return publishDraft(j)
+  if (a === '删除已关闭岗位') return archiveClosed(j)
   if (a === DRAFT_EDIT) return editDraft(j)
   if (a === DRAFT_CLOSE) return closeDraft(j)
   if (a === '交付与结算') return go(R.staffOnline + '?jobId=' + j.jobId)
@@ -617,11 +689,14 @@ async function closeDraft(j) {
 }
 async function editDraft(j) {
   if (draftBusy) return
+  const scope = jobScope()
   draftBusy = true
   try {
     const d = (await get(MERCHANT_JOBS_API + '/' + j.jobId)).data || {}
+    if (!pageAlive || scope !== jobScope()) return
     if (!d.canEdit || !d.job) { toast('这个商家岗位已经处理过了'); loadJobs(); return }
     const next = draftJobForm(d.job, newForm(d.job.jobType), { categories: CATEGORY_OPTS, storeAddress: storeAddress.value })
+    recruitmentText.value = ''
     form.value = next.form
     gen.value = next.gen
     tried.value = false
@@ -633,6 +708,7 @@ async function editDraft(j) {
     hoursBefore.value = legacyHoursOf(next.form.dailyHours)
     resetTemplate()
     draftJob.value = { jobId: j.jobId, title: j.title }
+    formScope = scope
     draftBefore = draftSnapshot()
     formOpen.value = true
     s.value = 2
@@ -661,11 +737,14 @@ function leaveDraft() {
 }
 async function saveDraft(f) {
   const job = draftJob.value
+  const scope = formScope
   const res = await put(MERCHANT_JOBS_API + '/' + job.jobId, jobPayload(f, String(gen.value.title || '').trim()))
+  if (!currentForm(f)) return
   toast(res.msg || '已保存')
   leaveDraft()
-  await loadJobs()
-  publishDraft({ jobId: job.jobId, title: (res.data && res.data.title) || job.title })
+  if (await loadJobs() && pageAlive && scope === jobScope() && s.value === 1 && !formOpen.value) {
+    publishDraft({ jobId: job.jobId, title: (res.data && res.data.title) || job.title })
+  }
 }
 
 // ---------------- s=2 发布（2026-10-18 商家端改版，E1） ----------------
@@ -677,7 +756,7 @@ async function saveDraft(f) {
 // 标题、工作内容、其他要求放在 gen 里（之前是第 3 屏「生成描述」的结果，现在直接在表里写）：「帮我起草」调同一个描述接口，只填空着的几项。
 // 流程不变：提交 → 落草稿（待平台审核）→ 后台审核上架 → 用户可见
 const KIND_LIST = [
-  { key: 'volunteer', title: '招募换工', icon: 'heart-handshake', sub: '换宿旅行：店里包住，用每天几小时帮忙换食宿' },
+  { key: 'volunteer', title: '招募换工', icon: 'heart-handshake', sub: '换工旅行：店里包住，用每天几小时帮忙换食宿' },
   { key: 'parttime', title: '招募兼职', icon: 'briefcase', sub: '兼职旅行：按天或按小时算工钱，边旅行边打工' },
   { key: 'fulltime', title: '招募全职', icon: 'briefcase-business', sub: '全职旅行：按月发工资，长期在店里工作' },
   { key: 'online', title: '发布线上任务', icon: 'laptop', sub: '远程完成：写作、设计、剪辑等，验收后结算报酬' }
@@ -741,8 +820,36 @@ const recruitmentFeePreview = computed(() => {
 const form = ref(newForm())
 // 标题、工作内容、其他要求（之前是第 3 屏「生成描述」的结果，名字沿用 gen）
 const gen = ref({})
+const recruitmentText = ref('')
+async function fillRecruitmentText() {
+  const target = form.value
+  const account = experience.account?.id
+  const store = currentStaffStoreId()
+  if (!canEdit.value || !hasStaffAccess.value || target.jobType !== 'fulltime') return
+  const result = parseRecruitmentText(recruitmentText.value)
+  const fields = {...result.gen,...result.form}
+  const names = {title:'岗位名称',work:'工作内容',hope:'岗位要求',headcount:'人数',salary:'底薪',salaryType:'薪资周期',address:'工作地点',dailyHours:'每日工时',boardType:'食宿',restMode:'排班'}
+  const display = {all:'包吃包住',room:'包住',meal:'包吃',none:'不包食宿',monthly:'月薪',daily:'日薪',weekly:'周薪',hourly:'时薪','5-2':'做五休二','6-1':'做六休一'}
+  const entries = Object.entries(fields)
+  if (!entries.length) return toast('暂未识别到字段，可写上招聘岗位、薪资或人数再试')
+  const preview = entries.map(([k,v]) => names[k] + '：' + (['boardType','salaryType','restMode'].includes(k) ? display[v] : v)).join('\n')
+  if (!(await confirm('将以下内容填入表单？', preview))) return
+  if (target !== form.value || !formOpen.value || submitted.value || s.value !== 2
+    || !canEdit.value || !hasStaffAccess.value || experience.account?.id !== account || currentStaffStoreId() !== store) return
+  if (result.form.address && result.form.address !== form.value.address) {
+    form.value.latitude = null
+    form.value.longitude = null
+  }
+  Object.assign(form.value,result.form)
+  Object.assign(gen.value,result.gen)
+  if (result.form.boardType) setBoard(result.form.boardType)
+  editing.value = ''
+  toast('已填入，可以继续修改')
+}
 // formOpen：在填表（false = 四个板块的入口）；submitted：刚提交成功的那个（{ title, jobId }），显示「已提交，等平台审核」
 const formOpen = ref(false)
+let formScope = ''
+const currentForm = (f) => pageAlive && formOpen.value && form.value === f && formScope === jobScope()
 const submitted = ref(null)
 // 从工作台「发布招募」直接点某一类进来的（?s=2&kind=volunteer）：表单左上角返回回来源页
 let entryKind = ''
@@ -754,9 +861,12 @@ const startPublish = () => {
   s.value = 2
 }
 function choosePublish(kind) {
+  recruitmentText.value = ''
   if (kind === 'online') return staffCan('online', 'edit') ? go(R.staffOnline + '?s=1') : toast('当前角色没有线上任务发布权限')
   if (!KIND_META[kind]) return
   if (!canEdit.value) return toast('当前门店身份没有岗位发布权限')
+  recruitmentText.value = ''
+  formScope = jobScope()
   form.value = newForm(kind)
   gen.value = {}
   tried.value = false
@@ -1518,7 +1628,7 @@ watch(listSheetOpen, (open) => lockPageScroll(open))
 // 系统返回切走、离开本页：收起弹层、解锁
 watch(s, (v) => { if (v !== 1) { condSheet.value = null; photoSheet.value = null; extrasSheet.value = null } if (v !== 2) { editing.value = ''; sheetKey.value = '' } })
 onHide(() => lockPageScroll(false))
-onUnload(() => lockPageScroll(false))
+onUnload(() => { pageAlive = false; lockPageScroll(false) })
 
 // ---------------- 预设模板，一键填写（2026-11-03） ----------------
 // 主人：「优化界面，现在操作太繁琐了看不懂，增加一个预设模板，一键填写，我只要改一部分就行」。
@@ -1615,10 +1725,13 @@ async function generate() {
     return
   }
   if (generating.value) return
+  const current = () => currentForm(f)
+  const before = { ...gen.value }
   // 2026-11-03 主人：简化。起草不再要求先选到岗日期：没选就不写「X 前后可以到岗」那句（服务端 describe 对空日期写「未填」，不拒）；提交时照样必填
   const filled = GEN_KEYS.filter(k => String(gen.value[k] || '').trim())
   const all = filled.length === GEN_KEYS.length
   if (all && !(await confirm('按模板重写', '标题、工作内容、其他要求都已经写了，用模板起的草稿整份替换掉？'))) return
+  if (!current() || generating.value) return
   // 薪资、奖金、提成还没填好时先不带（服务端会因为金额 / 规则没写拒绝），模板照样能起草，只是不写待遇
   const draft = { ...f }
   if (!isYmd(f.startDate)) draft.startDate = ''
@@ -1628,13 +1741,14 @@ async function generate() {
   generating.value = true
   try {
     const res = await apiStaffDescribeJob(currentStaffStoreId(), { ...draft, ...genderPlanPayload(draft), ...salaryPayload(draft), ...conditionPayload(draft), ...publishExtras(draft), variant: genVariant })
+    if (!current()) return
     const d = res.data || {}
     genVariant = (Number(d.variant) || 0) + 1
     const next = { ...gen.value }
-    for (const k of GEN_KEYS) if (all || !String(next[k] || '').trim()) next[k] = String(d[k] || '').slice(0, k === 'title' ? 30 : 300)
+    for (const k of GEN_KEYS) if (next[k] === before[k] && (all || !String(next[k] || '').trim())) next[k] = String(d[k] || '').slice(0, k === 'title' ? 30 : 300)
     gen.value = next
   } catch (e) {
-    toast(errText(e, '生成失败'))
+    if (current()) toast(errText(e, '生成失败'))
   } finally {
     generating.value = false
   }
@@ -1650,6 +1764,8 @@ async function submitJob() {
   if (photoUploading) return toast('照片还在上传，请稍等')
   if (videoUploading.value) return toast('视频还在上传，请稍等')
   const f = form.value
+  if (!currentForm(f)) return toast('门店身份已变化，请返回后重新打开岗位')
+  const storeId = currentStaffStoreId()
   if (f.jobType === 'online') {
     // 线上任务要填交付物、截止时间、佣金与验收标准，走线上任务发布页
     if (await confirm('发布线上任务', '线上任务需要填写交付物、截止时间、佣金和验收标准，去线上任务发布页填写？')) go(R.staffOnline + '?s=1')
@@ -1666,9 +1782,12 @@ async function submitJob() {
   try {
     if (draftJob.value) return await saveDraft(f)
     if (merchantStaff.value && !await merchantAgreement.value?.confirm()) return
-    if (merchantStaff.value && form.value.jobType === 'volunteer' && !await volunteerNotice.value?.confirm()) return
+    if (!currentForm(f)) return
+    if (merchantStaff.value && f.jobType === 'volunteer' && !await volunteerNotice.value?.confirm()) return
+    if (!currentForm(f)) return
     const title = String(gen.value.title || '').trim()
-    const res = await apiStaffCreateJob(currentStaffStoreId(), jobPayload(f, title))
+    const res = await apiStaffCreateJob(storeId, jobPayload(f, title))
+    if (!currentForm(f)) return
     toast(res.msg || '已提交平台审核')
     // 提交成功就清掉这份草稿（连点、返回再点都不会重复建岗位），页面换成「已提交，等平台审核」
     // 商家发的走派单（V63）：服务端说清去向（message），不是平台审核
@@ -1681,7 +1800,7 @@ async function submitJob() {
     resetTemplate()
     loadJobs()
   } catch (e) {
-    toast(errText(e, '提交失败'))
+    if (currentForm(f)) toast(errText(e, '提交失败'))
   } finally {
     submitting = false
   }
@@ -1705,62 +1824,80 @@ const linkHint = computed(() => (shareJob.value ? '链接生成中…' : '岗位
 // 分享追踪的返回：从列表点「分享与追踪」进来的、刚提交完岗位落到这里的（草稿已清空），都回岗位列表；
 // 直接打开本屏的回来源页。之前固定回第 3 屏：从列表进来看到空的描述页，提交后返回还能再提交一次
 let shareFromPage = false
+let shareVersion = 0, statsRequest = 0
+function shareContext() {
+  const version = shareVersion, scope = jobScope()
+  return () => pageAlive && s.value === 4 && !jobsScopeChanged.value && version === shareVersion && jobScope() === scope
+}
 const backFromShare = () => { if (entryScreen === 4 && !shareFromPage) back(); else s.value = 1 }
 
 async function openShare(j) {
+  if (!pageAlive || jobsScopeChanged.value) return
+  shareVersion++
   shareFromPage = true
   shareJob.value = j
   share.value = {}
   shareCodes.value = {}
   s.value = 4
+  const current = shareContext()
   loadStats()
   try {
     const [link, friend] = await Promise.all([
       apiStaffShareJob(j.jobId, 'link', false),
       apiStaffShareJob(j.jobId, 'friend', false)
     ])
+    if (!current()) return
     share.value = link.data || {}
     shareCodes.value = { friend: (friend.data || {}).shareCode }
   } catch (e) {
-    toast(errText(e, '分享链接生成失败'))
+    if (current()) toast(errText(e, '分享链接生成失败'))
   }
 }
 async function loadStats() {
   // 合作商家的分享页只有链接 + 海报（2026-11-03 主人：简化），不取追踪表
-  if (merchantStaff.value) return
+  const request = ++statsRequest, current = shareContext()
+  stats.value = {}
+  if (merchantStaff.value || jobsScopeChanged.value) return
   try {
     const res = await apiStaffShareStats({
       storeId: currentStaffStoreId(),
       jobId: shareJob.value ? shareJob.value.jobId : undefined,
       dim: dim.value
     })
-    stats.value = res.data || {}
+    if (request === statsRequest && current()) stats.value = res.data || {}
   } catch (e) {
-    toast(errText(e, '分享数据加载失败'))
+    if (request === statsRequest && current()) toast(errText(e, '分享数据加载失败'))
   }
 }
 const setDim = (v) => { dim.value = v; loadStats() }
 async function copyLink() {
+  const current = shareContext()
+  if (!current()) return
   if (!shareJob.value) return toast('岗位上架后才能分享')
   try {
     const res = await apiStaffShareJob(shareJob.value.jobId, 'link', true)
+    if (!current()) return
     share.value = res.data || share.value
     copy(share.value.link, '链接已复制')
     loadStats()
   } catch (e) {
-    toast(errText(e, '复制失败'))
+    if (current()) toast(errText(e, '复制失败'))
   }
 }
 async function savePoster() {
+  const current = shareContext()
+  if (!current()) return
   if (!shareJob.value) return toast('岗位上架后才能生成海报')
   try {
     const res = await apiStaffShareJob(shareJob.value.jobId, 'poster', true)
+    if (!current()) return
     const p = res.data || {}
     await savePosterImage({ cover: p.cover || '/static/media/cover-empty.png', title: p.title, summary: p.summary, code: p.shareCode })
+    if (!current()) return
     toast('海报已保存')
     loadStats()
   } catch (e) {
-    toast(errText(e, '海报保存失败'))
+    if (current()) toast(errText(e, '海报保存失败'))
   }
 }
 const showAllRanks = () => {
@@ -1774,7 +1911,7 @@ const showAllRanks = () => {
 const shareTarget = (channel) => {
   const j = shareJob.value
   const code = shareCodes.value[channel]
-  if (!j || !code) return null
+  if (!j || !code || jobsScopeChanged.value) return null
   apiStaffShareJob(j.jobId, channel, true).catch(() => {})
   return { title: j.title, code, jobId: j.jobId }
 }
@@ -1785,26 +1922,57 @@ onShareAppMessage(() => {
 </script>
 
 <style scoped lang="scss">
+.jobs-retry{padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:16px;color:var(--k-muted)}
 /* 发布入口（四个板块）、提交成功的样式在 ./publish-form.scss；填写屏（2026-10-31 R7 改版）在 ./form-clean.scss，和创建活动、新增房源、线上任务发布共用 */
 @import './publish-form.scss';
 @import './form-clean.scss';
-.staff-jobs{background:var(--k-bg)}button{margin:0;padding:0;border:0;background:transparent;line-height:1.2}.search-row{padding:5px 14px 11px;display:flex;gap:10px}.search-box{height:42px;min-width:0;flex:1;padding:0 12px;border:1px solid var(--k-line2);border-radius:8px;background:var(--k-paper);display:flex;align-items:center;gap:9px;color:var(--k-muted);font-size:13px}.filter-button{min-width:62px;padding:0 8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--k-line2);border-radius:8px;background:var(--k-paper);font-family:var(--k-serif);font-size:15px;font-weight:700}.metrics{margin:3px 14px 9px;height:59px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex}.metrics>view{flex:1;border-right:1px solid var(--k-line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;font-size:11px}.metrics>view:last-child{border-right:0}.metrics>view text:last-child{font-size:20px;font-weight:700}.amber-text{color:#B36A20}.job-tabs{height:43px;margin:0 14px;border-bottom:1px solid var(--k-line);display:flex;align-items:center;justify-content:space-between;font-family:var(--k-serif);font-size:14px;font-weight:700}.job-tabs .active{height:41px;display:flex;align-items:center;border-bottom:2px solid var(--k-red);color:var(--k-red)}.job-list{padding:7px 14px 123px}.job-card{height:84px;padding:6px 0;border-bottom:1px solid var(--k-line);display:flex;gap:11px;box-sizing:border-box}.job-card>image{width:67px;height:67px;border-radius:7px}.job-main{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:space-between}.job-main>view:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px}.job-title{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:var(--k-serif);font-size:14px;font-weight:700}.job-status{flex-shrink:0;padding:3px 7px;border-radius:5px;font-size:10px}.job-status.green{background:var(--k-green-soft);color:var(--k-green)}.job-status.amber{background:var(--k-ochre-soft);color:#B36A20}.job-status.gray{background:#EEEAE4;color:var(--k-muted)}.job-meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:var(--k-muted)}.job-stats{display:flex;justify-content:space-between;font-size:11px;color:var(--k-muted)}.job-stats text text{color:var(--k-ink);font-size:13px}.green-text{color:var(--k-green)!important}.list-actions{position:fixed;left:0;right:0;bottom:calc(66px + var(--k-safe-bottom));z-index:42;padding:10px 14px;background:var(--k-bg);display:flex;gap:9px}.list-actions button{height:45px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-family:var(--k-serif);font-size:16px;font-weight:700}.list-actions button:first-child{width:113px;border:1px solid var(--k-red-line);color:var(--k-red)}.list-actions button:last-child{flex:1;background:var(--k-red);color:#fff}.list-actions button.off{opacity:.45}
+/* 2026-11-17 改版「小而精」（岗位列表、分享追踪、三个弹层）：浅灰底、页边距 12；搜索框是 36 高的白色胶囊，四个指标是一张白卡；
+   每个岗位一张白卡（12 圆角、不描边），照片 68、8 圆角，状态和「待补条件」是 17 高的小标签；底部两个按钮是 44 高的胶囊，贴着 50 高的底栏。
+   合作商家卡片上那排大按钮（44 高、字 16）是 2026-11-03 定的，没动 */
+.staff-jobs{background:var(--k-bg)}.staff-jobs :deep(.k-button){border-radius:999px}button{margin:0;padding:0;border:0;background:transparent;line-height:1.2}.search-row{padding:8px 12px;display:flex;gap:8px}.search-box{height:36px;min-width:0;flex:1;padding:0 12px;border-radius:18px;background:var(--k-paper);display:flex;align-items:center;gap:8px;color:var(--k-muted);font-size:13px}.filter-button{min-width:64px;padding:0 12px;display:flex;align-items:center;justify-content:center;border-radius:18px;background:var(--k-paper);font-family:var(--k-sans);font-size:13px;font-weight:500;color:var(--k-ink2)}.metrics{margin:0 12px 8px;padding:12px 0;border-radius:12px;background:var(--k-paper);display:flex}.metrics>view{flex:1;border-right:1px solid var(--k-line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px}.metrics>view:last-child{border-right:0}.metrics>view text:first-child{color:var(--k-muted)}.metrics>view text:last-child{font-size:18px;font-weight:700;line-height:1.1}.amber-text{color:var(--k-ochre-deep)}.job-tabs{height:40px;margin:0 12px;padding:0 6px;display:flex;align-items:center;justify-content:space-between;font-family:var(--k-sans);font-size:14px;font-weight:500;color:var(--k-ink2)}.job-tabs .active{height:38px;display:flex;align-items:center;border-bottom:2px solid var(--k-red);color:var(--k-red-deep);font-weight:600}.job-list{padding:0 12px 132px}.job-card{height:88px;margin-top:8px;padding:10px;border-radius:12px;background:var(--k-paper);display:flex;gap:10px;box-sizing:border-box}.job-card>image{flex-shrink:0;width:68px;height:68px;border-radius:8px;background:var(--k-paper2)}.job-main{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:space-between}.job-main>view:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px}.job-title{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:var(--k-sans);font-size:14px;font-weight:600}.job-status{flex-shrink:0;height:17px;padding:0 5px;border-radius:4px;font-size:10px;font-weight:500;line-height:17px}.job-status.green{background:var(--k-green-soft);color:var(--k-green)}.job-status.amber{background:var(--k-ochre-soft);color:var(--k-ochre-deep)}.job-status.gray{background:#F5F1EB;color:var(--k-muted)}.job-meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:var(--k-muted)}.job-stats{display:flex;justify-content:space-between;font-size:11px;color:var(--k-muted)}.job-stats text text{color:var(--k-ink);font-size:13px;font-weight:600}.green-text{color:var(--k-green)!important}.list-actions{position:fixed;left:0;right:0;bottom:calc(50px + var(--k-safe-bottom));z-index:42;padding:8px 12px 18px;background:var(--k-bg);display:flex;gap:8px}.list-actions button{height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:var(--k-sans);font-size:15px;font-weight:600}.list-actions button:first-child{width:113px;border:1px solid var(--k-red-line);background:var(--k-paper);color:var(--k-red-deep)}.list-actions button:last-child{flex:1;border:0;background:linear-gradient(135deg,#B5814D,#8E5E33);color:#fff}.list-actions button.off{opacity:.45}
 /* 2026-11-03 主人：简化商家端。合作商家的卡片不定高，下面一排大按钮（高 44）：分享 / 暂停 / 恢复；待上架的写一句去向。只剩「发布岗位」一个钮时通栏实心 */
-.job-card--merchant{height:auto;flex-wrap:wrap;padding:10px 0}.job-card--merchant .job-main{min-height:67px}.job-acts{flex-basis:100%;margin-top:10px;display:flex;align-items:center;gap:10px}.job-act{flex:1;height:44px;border:1px solid var(--k-red-line);border-radius:10px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;font-family:var(--k-serif);font-size:16px;font-weight:700;color:var(--k-red)}.job-act--main{background:var(--k-red);border-color:var(--k-red);color:#fff}.job-acts__tip{font-size:14px;line-height:1.6;color:var(--k-muted)}
-.list-actions button:only-child{width:auto;flex:1;border:0;background:var(--k-red);color:#fff}
+.job-card--merchant{height:auto;flex-wrap:wrap;padding:10px}.job-card--merchant .job-main{min-height:68px}.job-acts{flex-basis:100%;margin-top:2px;display:flex;align-items:center;gap:8px}/* 没有按钮也没有提示的卡片（如待平台审核）：这一行是空的，不占位，卡片底下不多出一截空白 */.job-acts:empty{display:none}.job-act{flex:1;height:44px;border:1px solid var(--k-red-line);border-radius:22px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;font-family:var(--k-sans);font-size:16px;font-weight:600;color:var(--k-red-deep)}.job-act--main{background:var(--k-red);border-color:var(--k-red);color:#fff}.job-acts__tip{font-size:14px;line-height:1.6;color:var(--k-muted)}
+.list-actions button:only-child{width:auto;flex:1;border:0;background:linear-gradient(135deg,#B5814D,#8E5E33);color:#fff}
 /* 补填筛选条件弹层里的分段选择（性别、最短在店） */
-.seg{height:40px;border:1px solid var(--k-line2);border-radius:8px;background:var(--k-paper);display:flex}.seg>text{flex:1;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--k-line);font-size:13px}.seg>text:last-child{border-right:0}.seg .active{background:var(--k-red);color:#fff;border-radius:7px}.seg.three>text,.seg.five>text{font-size:13px;white-space:nowrap}
+.seg{height:40px;padding:2px;box-sizing:border-box;border-radius:10px;background:#F5F1EB;display:flex}.seg>text{flex:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;color:var(--k-ink2)}.seg .active{background:var(--k-red);color:#fff;font-weight:600}.seg.three>text,.seg.five>text{font-size:13px;white-space:nowrap}
 .insurance-hint{display:block;margin:7px 0 0;font-size:12px;line-height:1.6;color:var(--k-muted)}.insurance-hint--warn{color:var(--k-alert)}
-.share-page{padding:0 14px calc(88px + var(--k-safe-bottom))}.share-card{border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper)}.share-title{display:block;font-family:var(--k-serif);font-size:15px;font-weight:700}.link-row{padding:12px 10px;display:flex;gap:10px}.link-row>text{height:35px;min-width:0;flex:1;padding:0 9px;border:1px solid var(--k-line2);border-radius:7px;display:block;line-height:33px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.link-row>button,.share-poster button{width:69px;height:35px;display:flex;align-items:center;justify-content:center;border:1px solid var(--k-red-line);border-radius:7px;color:var(--k-red);font-family:var(--k-serif);font-size:13px;font-weight:700}.link-row .share-title{position:absolute}.share-poster{padding:12px 10px;border-top:1px solid var(--k-line)}.share-poster>view{margin-top:10px;display:flex;align-items:center;gap:10px}.share-poster image{width:57px;height:57px;border-radius:6px}.share-poster>view>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:8px}.share-poster>view>view text:first-child{font-family:var(--k-serif);font-size:14px;font-weight:700}.share-poster>view>view text:last-child{font-size:11px;color:var(--k-muted)}.track-title,.data-title>text:first-child,.rank-title{display:block;margin:14px 0 7px;font-family:var(--k-serif);font-size:15px;font-weight:700}.track-tabs{height:36px;border:1px solid var(--k-line2);border-radius:8px;background:var(--k-paper);display:flex}.track-tabs>text{flex:1;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--k-line)}.track-tabs>text:last-child{border-right:0}.track-tabs .active{border-radius:7px;background:var(--k-red);color:#fff}.data-title{display:flex;align-items:center;justify-content:space-between}.data-title>text:last-child{color:var(--k-muted);font-size:10px}.data-table>view{height:29px;display:grid;grid-template-columns:1.4fr repeat(4,1fr);align-items:center;border-bottom:1px solid var(--k-line);font-size:12px}.data-table .thead{height:25px;color:var(--k-muted)}.data-table .total{font-family:var(--k-serif);font-size:15px;font-weight:700;color:var(--k-red-deep)}.rank-title{margin-top:14px}.rank-card{padding:5px 9px;border:1px solid var(--k-line2);border-radius:8px;background:var(--k-paper)}.rank-card>view{height:28px;display:grid;grid-template-columns:2.7fr repeat(3,.65fr);align-items:center;font-size:12px}.rank-head{color:var(--k-muted)}.rank-name{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.rank-num{color:var(--k-red);font-weight:700}.full-rank{display:block;margin-top:12px;text-align:center;color:var(--k-red);font-family:var(--k-serif);font-size:14px;font-weight:700}
-.chip-pop{position:fixed;inset:0;z-index:1000}.chip-pop__mask{position:absolute;inset:0;background:rgba(36,27,23,.45)}.chip-pop__panel{position:absolute;left:0;right:0;bottom:0;padding:18px 16px calc(16px + var(--k-safe-bottom));border-radius:20px 20px 0 0;background:var(--k-paper)}.chip-pop__head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.chip-pop__title{font-family:var(--k-serif);font-size:18px;font-weight:700}.chip-pop__hint{color:var(--k-muted);font-size:13px}.chip-pop__scroll{max-height:50vh;margin:16px 0 20px}.chip-pop__chips{display:flex;flex-wrap:wrap;gap:10px}.chip-pop__chip{padding:8px 14px;border:1px solid var(--k-line);border-radius:18px;font-size:14px;background:var(--k-bg)}.chip-pop__chip.on{color:#fff;border-color:var(--k-red);background:var(--k-red);font-weight:600}.chip-pop__chip--add{border-style:dashed;color:var(--k-red)}.chip-pop__foot{display:flex;gap:12px}.chip-pop__btn{flex:1;min-width:0}.chip-pop__btn--main{flex:2}
+.share-page{padding:8px 12px calc(88px + var(--k-safe-bottom))}.share-card{border-radius:12px;background:var(--k-paper)}.share-title{display:block;font-family:var(--k-sans);font-size:15px;font-weight:700;line-height:22px}.share-card>.share-title{padding:12px 12px 0}.link-row{padding:8px 12px 12px;display:flex;align-items:center;gap:8px}.link-row>text{height:36px;min-width:0;flex:1;padding:0 12px;border-radius:8px;background:#F7F5F2;display:block;line-height:36px;font-size:12px;color:var(--k-ink2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.link-row>button,.share-poster button{flex-shrink:0;min-width:64px;height:32px;padding:0 12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--k-red-line);border-radius:999px;background:var(--k-paper);color:var(--k-red-deep);font-family:var(--k-sans);font-size:12px;font-weight:500}.link-row .share-title{position:absolute}.share-poster{padding:12px;border-top:1px solid var(--k-line)}.share-poster>view{margin-top:10px;display:flex;align-items:center;gap:10px}.share-poster image{flex-shrink:0;width:56px;height:56px;border-radius:8px;background:var(--k-paper2)}.share-poster>view>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:8px}.share-poster>view>view text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}.share-poster>view>view text:last-child{font-size:11px;color:var(--k-muted)}.track-title,.data-title>text:first-child,.rank-title{display:block;margin:16px 2px 8px;font-family:var(--k-sans);font-size:15px;font-weight:700}.track-tabs{height:36px;padding:2px;box-sizing:border-box;border-radius:10px;background:#EEEBE6;display:flex}.track-tabs>text{flex:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;color:var(--k-ink2)}.track-tabs .active{background:var(--k-paper);color:var(--k-red-deep);font-weight:600}.data-title{display:flex;align-items:center;justify-content:space-between}.data-title>text:last-child{color:var(--k-muted);font-size:11px}.data-table{padding:2px 12px;border-radius:12px;background:var(--k-paper)}.data-table>view{height:34px;display:grid;grid-template-columns:1.4fr repeat(4,1fr);align-items:center;border-bottom:1px solid var(--k-line);font-size:12px}.data-table>view:last-child{border-bottom:0}.data-table .thead{height:30px;color:var(--k-muted);font-size:11px}.data-table .total{font-family:var(--k-sans);font-size:13px;font-weight:700;color:var(--k-red-deep)}.rank-title{margin-top:16px}.rank-card{padding:2px 12px;border-radius:12px;background:var(--k-paper)}.rank-card>view{height:34px;display:grid;grid-template-columns:2.7fr repeat(3,.65fr);align-items:center;font-size:12px}.rank-head{color:var(--k-muted)}.rank-name{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.rank-num{color:var(--k-red-deep);font-weight:700}.full-rank{display:block;padding:12px 0;text-align:center;color:var(--k-red-deep);font-family:var(--k-sans);font-size:13px;font-weight:500}
+.chip-pop{position:fixed;inset:0;z-index:1000}.chip-pop__mask{position:absolute;inset:0;background:rgba(36,27,23,.45)}.chip-pop__panel{position:absolute;left:0;right:0;bottom:0;padding:18px 16px calc(16px + var(--k-safe-bottom));border-radius:16px 16px 0 0;background:var(--k-paper)}.chip-pop__head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.chip-pop__title{font-family:var(--k-sans);font-size:17px;font-weight:700}.chip-pop__hint{color:var(--k-muted);font-size:13px}.chip-pop__scroll{max-height:50vh;margin:16px 0 20px}.chip-pop__chips{display:flex;flex-wrap:wrap;gap:10px}.chip-pop__chip{padding:8px 14px;border:1px solid transparent;border-radius:999px;font-size:14px;color:var(--k-ink2);background:#F5F1EB}.chip-pop__chip.on{color:#fff;border-color:var(--k-red);background:var(--k-red);font-weight:600}.chip-pop__chip--add{border:1px dashed var(--k-red-line);background:var(--k-paper);color:var(--k-red-deep)}.chip-pop__foot{display:flex;gap:12px}.chip-pop__btn{flex:1;min-width:0}.chip-pop__btn--main{flex:2}
 /* 补填筛选条件：顶上的提示条、卡片上的「待补条件」、弹层（选项区最高到屏幕高减去标题和按钮区，320×640 也露得出按钮） */
-.cond-banner{margin:0 14px 9px;padding:9px 10px;border-radius:12px;background:var(--k-red-soft);display:flex;align-items:center;gap:8px}.cond-banner__text{min-width:0;flex:1;font-size:12px;line-height:1.5;color:var(--k-ink2)}.cond-banner__btn{flex-shrink:0;height:30px;padding:0 11px;border-radius:15px;background:var(--k-red);color:#fff;display:flex;align-items:center;font-size:13px;font-weight:700}
-.job-cond{flex-shrink:0;margin-left:auto;padding:3px 6px;border-radius:5px;background:var(--k-red-soft);color:var(--k-red-deep);font-size:10px}
-.cond-sheet .chip-pop__head{flex-direction:column;align-items:flex-start;gap:4px}.cond-sheet__job{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.cond-sheet .cond-sheet__scroll{max-height:calc(100vh - 210px);margin:10px 0 16px}.cond-sheet__label{display:block;margin:10px 0 6px;font-family:var(--k-serif);font-size:15px;font-weight:700}.cond-sheet__chips{gap:8px}.cond-sheet .chip-pop__chip{padding:7px 12px;font-size:13px}.cond-sheet .seg{height:36px}
+.cond-banner{margin:0 12px 8px;padding:8px 8px 8px 12px;border-radius:12px;background:var(--k-red-soft);display:flex;align-items:center;gap:8px}.cond-banner__text{min-width:0;flex:1;font-size:12px;line-height:1.5;color:var(--k-ink2)}.cond-banner__btn{flex-shrink:0;height:28px;padding:0 12px;border-radius:14px;background:var(--k-red);color:#fff;display:flex;align-items:center;font-size:12px;font-weight:600}
+.job-cond{flex-shrink:0;margin-left:auto;height:17px;padding:0 5px;border-radius:4px;background:var(--k-red-soft);color:var(--k-red-deep);font-size:10px;font-weight:500;line-height:17px}
+.cond-sheet .chip-pop__head{flex-direction:column;align-items:flex-start;gap:4px}.cond-sheet__job{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.cond-sheet .cond-sheet__scroll{max-height:calc(100vh - 210px);margin:10px 0 16px}.cond-sheet__label{display:block;margin:12px 0 6px;font-family:var(--k-sans);font-size:15px;font-weight:600}.cond-sheet__chips{gap:8px}.cond-sheet .chip-pop__chip{padding:7px 12px;font-size:13px}.cond-sheet .seg{height:36px}
 /* 岗位照片（V49）：四列方格，第一张左下角写「封面」，右上角 × 删掉；最后一格「+」接着传（320 宽一格约 64px） */
-.photo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.photo-cell{position:relative;height:0;padding-bottom:100%;border-radius:8px;overflow:hidden;background:var(--k-paper2)}.photo-cell__img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}.photo-cell__cover{position:absolute;left:0;bottom:0;padding:2px 6px;border-top-right-radius:8px;background:rgba(36,27,23,.62);color:#fff;font-size:11px}.photo-cell__del{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(36,27,23,.62);display:flex;align-items:center;justify-content:center}.photo-cell--add{border:1px dashed var(--k-line2);background:var(--k-paper);box-sizing:border-box}.photo-cell__add{position:absolute;left:0;top:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--k-muted);font-size:11px}.photo-sheet .photo-grid{margin-top:4px}
+.photo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.photo-cell{position:relative;height:0;padding-bottom:100%;border-radius:8px;overflow:hidden;background:var(--k-paper2)}.photo-cell__img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}.photo-cell__cover{position:absolute;left:0;bottom:0;padding:2px 6px;border-top-right-radius:8px;background:rgba(36,27,23,.62);color:#fff;font-size:11px}.photo-cell__del{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(36,27,23,.62);display:flex;align-items:center;justify-content:center}.photo-cell--add{background:var(--k-paper2);box-sizing:border-box}.photo-cell__add{position:absolute;left:0;top:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--k-muted);font-size:11px}.photo-sheet .photo-grid{margin-top:4px}
 /* 住宿与宠物弹层（R4）：里面的控件用填写页那一套 fc-*，和发布表单长得一样；白块、分隔线不要，每块之间留白 */
 .extras-item{margin-top:18px}.extras-item:first-child{margin-top:4px}.extras-tip{margin-top:16px}
+/* 2026-11-18 第二轮精修（岗位列表、分享追踪、补填条件弹层），按精修词典统一：
+   合作商家卡片上每张都有的「分享」改浅底（尺寸 44 高、字 16 不动），一屏只留底部「发布岗位」一个实心主按钮；横幅里的按钮白底；
+   状态页签是下划线式（未选 400 muted，选中 600 ink + 16×3 暖棕短条）；四个指标是数据格（数字在上 18/700 ink、说明在下 11 muted、不画竖线）；
+   分享追踪的切换条是胶囊分段控件，数据表发丝线、数字右对齐等宽；弹层里选中的胶囊、分段用浅底 / 白底，不再是实心棕块。按钮、文字、筛选一个不少 */
+.job-act--main{background:var(--k-red-soft);border-color:transparent;color:var(--k-red-deep)}
+.cond-banner__btn{background:var(--k-paper);color:var(--k-red-deep);font-weight:500}
+.job-tabs>text{position:relative;height:40px;display:flex;align-items:center;font-weight:400;color:var(--k-muted)}
+.job-tabs .active{height:40px;border-bottom:0;color:var(--k-ink);font-weight:600}
+.job-tabs .active::after{content:'';position:absolute;left:50%;bottom:4px;width:16px;height:3px;margin-left:-8px;border-radius:2px;background:var(--k-red)}
+.metrics>view{flex-direction:column-reverse;gap:2px;border-right:0}.metrics>view text:first-child{font-size:11px}.metrics>view text:last-child{color:var(--k-ink);font-variant-numeric:tabular-nums}.metrics>view text.amber-text{color:var(--k-ochre-deep)}
+.job-stats{font-variant-numeric:tabular-nums}
+/* 底部两个按钮那一条：白底、顶上一条发丝线，和列表分开（内边距、安全区照旧） */
+.list-actions{background:var(--k-paper)}.list-actions::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.track-tabs{height:32px;border-radius:16px;background:#F0EBE4}.track-tabs>text{position:relative;border-radius:14px;font-weight:400;color:var(--k-ink2)}.track-tabs .active{color:var(--k-ink);font-weight:600}
+/* 分段条看着 28 高，上下各多一圈看不见的可点范围 */
+.track-tabs>text::after{content:'';position:absolute;left:0;right:0;top:-6px;bottom:-6px}
+/* 卡外标题 16/700，卡里的标题 14/600；更新时间和标题按基线对齐 */
+.track-title,.data-title>text:first-child,.rank-title{font-size:16px}.share-title{font-size:14px;font-weight:600}.data-title{align-items:baseline}
+/* 窄屏（320 宽）放不下一行时，更新时间整句换到标题下面，不拆成两截 */
+.data-title{flex-wrap:wrap;column-gap:8px}.data-title>text:last-child{margin:0 2px 8px;white-space:nowrap}
+.share-poster{position:relative;border-top:0}.share-poster::before{content:'';position:absolute;left:12px;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.data-table>view{position:relative;border-bottom:0}.data-table>view::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--k-line);transform:scaleY(.5)}.data-table>view:last-child::after{content:none}
+.data-table>view>text:nth-child(n+2),.rank-card>view>text:nth-child(n+2){text-align:right;font-variant-numeric:tabular-nums}.data-table .total{font-weight:600;color:var(--k-ink)}.rank-num{color:var(--k-muted);font-weight:500}
+/* 「查看完整榜单」后面的箭头换成图标：字的右边留出 16 的可点范围，箭头叠在上面、点它等于点字 */
+.full-rank-row{display:flex;align-items:center;justify-content:center}.full-rank{padding:12px 16px 12px 0;margin-right:-14px;font-size:12px;font-weight:400;color:var(--k-muted)}.full-rank-row :deep(.k-icon){pointer-events:none}
+.chip-pop__chip.on{background:var(--k-red-soft);border-color:transparent;color:var(--k-red-deep);font-weight:500}
+.seg{background:#F0EBE4}.cond-sheet .seg{border-radius:18px}.seg>text{border-radius:16px}.seg .active{background:var(--k-paper);color:var(--k-ink);font-weight:600}
 /* 2026-11-03 预设模板（第 1 步）、每组标题下的一句说明、底部「还差什么」：守 form-clean.scss 那几条（--k-* 颜色、强调色只用 --k-red-deep、不用渐变和描边、字号不小于 13、能点的不低于 44、圆角 8/12/16） */
 .fc-group__sub{display:block;padding:0 16px 12px;font-size:14px;line-height:22px;color:var(--k-muted)}
 .tpl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 16px 16px}
@@ -1822,4 +1990,5 @@ onShareAppMessage(() => {
 .gender-plan__counts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
 .gender-plan__count{display:flex;align-items:center;gap:8px;min-width:0;min-height:48px;padding:0 12px;border-radius:12px;background:var(--k-paper2);font-size:16px;color:var(--k-ink)}
 .gender-plan__input{flex:1;min-width:0;height:48px;text-align:center;font-size:18px;font-weight:600;color:var(--k-red-deep)}
+.paste-action{margin:8px 0 0 auto;width:max-content;padding:0 14px;border-radius:8px;background:var(--k-red-soft);color:var(--k-red-deep);font-size:13px;line-height:32px}.paste-action::after{border:0}
 </style>

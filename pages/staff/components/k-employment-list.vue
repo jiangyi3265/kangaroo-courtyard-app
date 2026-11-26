@@ -81,7 +81,7 @@ const updateRecord = record => {
 }
 const openInsurance = () => {
   if (!selected.value?.appId || !props.storeId) return
-  go(staffStoreUrl('/pages/staff/interviews?s=4&appId=' + selected.value.appId, props.storeId))
+  go(staffStoreUrl('/pages/staff/insurance-account?applicationId=' + encodeURIComponent(selected.value.appId), props.storeId))
 }
 
 watch([() => props.storeId, () => props.autoOpen], () => {
@@ -98,18 +98,21 @@ watch([() => props.storeId, () => props.autoOpen], () => {
 </script>
 
 <style scoped lang="scss">
-.roster { padding: 14px 0; margin-bottom: 8px; border-bottom: 1px solid var(--k-line); }
+/* 2026-11-17 改版「小而精」：整块收成一张白卡（12 圆角、不描边）；人员行标题 14、岗位 12，在岗状态用小标签；按钮收成胶囊 */
+.roster { padding: 12px; margin-bottom: 8px; border: 0; border-radius: 12px; background: var(--k-paper); }
+.roster :deep(.k-button) { border-radius: 999px; }
+.roster :deep(.employment) { padding-bottom: 4px; border-bottom: 0; }
 .roster__head, .roster__selected { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.roster__title { color: var(--k-ink); font-size: 16px; font-weight: 600; }
-.roster__selected { margin-top: 12px; font-size: 14px; line-height: 1.6; color: var(--k-ink2); }
+.roster__title { color: var(--k-ink); font-size: 15px; font-weight: 700; }
+.roster__selected { margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--k-ink2); }
 .roster__selected > text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.roster__person { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 64px; padding: 12px 0; margin: 0; border-radius: 0; background: transparent; text-align: left; line-height: 1.5; border-bottom: 1px solid var(--k-line); }
+.roster__person { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 56px; padding: 10px 0; margin: 0; border-radius: 0; background: transparent; text-align: left; line-height: 1.5; border-bottom: 1px solid var(--k-line); }
 .roster__person::after { border: 0; }
-.roster__person-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.roster__person-main > text:first-child { font-size: 15px; color: var(--k-ink); }
-.roster__person-main > text:last-child { font-size: 14px; color: var(--k-muted); overflow-wrap: anywhere; }
-.roster__state { font-size: 13px; color: var(--k-muted); flex-shrink: 0; }
-.roster__hint, .roster__error { display: block; margin-top: 12px; font-size: 14px; line-height: 1.6; color: var(--k-muted); }
+.roster__person-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.roster__person-main > text:first-child { font-size: 14px; font-weight: 600; color: var(--k-ink); }
+.roster__person-main > text:last-child { font-size: 12px; color: var(--k-muted); overflow-wrap: anywhere; }
+.roster__state { height: 17px; padding: 0 5px; border-radius: 4px; background: #F5F1EB; font-size: 10px; font-weight: 500; line-height: 17px; color: var(--k-ink2); flex-shrink: 0; }
+.roster__hint, .roster__error { display: block; margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--k-muted); }
 .roster__error { color: var(--k-alert); }
-.roster__tools { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.roster__tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 </style>

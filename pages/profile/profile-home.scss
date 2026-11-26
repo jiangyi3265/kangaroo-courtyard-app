@@ -1,52 +1,236 @@
-// 首屏仅展示会员身份、积分与权益入口，详细升级进度仍在会员信息页。
+// 「我的」首屏（本文件最后引入，首屏的规则以这里为准）。
+// 2026-11-18 第三轮重排（主人：「一进去没有一种特别精致的感觉」「图标用得比较杂」）：
+//   · 一屏一个焦点：头像资料不装白卡，直接放在顶部浅暖底上（头像 64、昵称 20 / 700），左边和页边距同一条线；
+//   · 往下依次是 会员条 → 常用入口（纠纷调解一张、草稿箱 / 营地 / 大众评审等一张）→ 四组宫格；常用入口全是同一种行：图标 18 + 名字 14 + 右侧 12 号灰字 + 12 号箭头，48 高、行间发丝线；
+//   · 宫格图标统一：40 的浅棕平底方块（12 圆角）+ 22 号暖棕单色线性图标，不再是绿 + 橙双色手绘、渐变方块和内高光；
+//   · 间距只用 4 / 8 / 12 / 16 / 20：同组卡片间 8，区块之间 20，卡内边距 12、卡头上 14 下 10。
+// 功能和文字不变：编辑资料、复制会员编号、团队报表、纠纷调解、保险账户、草稿箱、青年营地、大众评审、会员权益、我的勋章、各宫格入口、员工工作台都在。
+.profile { background: var(--k-bg); }
 .mine {
-  padding-top: 8px;
-  .me { padding: 12px; gap: 10px; }
-  .me__avatar { width: 48px; height: 48px; }
-  .me__name { font-size: 20px; line-height: 1.3; }
-  .me__no { font-size: 12px; }
-  .member-card { flex-wrap: nowrap; gap: 10px; margin-top: 8px; padding: 10px 12px; border: 0; border-radius: 16px; background: var(--k-paper2); box-shadow: none; }
-  .member-mascot { flex-basis: 44px; width: 44px; height: 44px; }
-  .member-level { display: block; font-family: var(--k-sans); font-size: 17px; font-weight: 600; line-height: 1.3; }
-  .member-points { gap: 5px; margin-top: 3px; }
-  .member-points__num { font-family: var(--k-sans); font-size: 15px; font-weight: 600; line-height: 1.4; }
-  .member-points__unit { font-size: 12px; }
-  .member-cta { gap: 3px; font-size: 13px; color: var(--k-red-deep); }
+  padding-top: 0;
+  background: linear-gradient(180deg, var(--k-red-soft) 0, var(--k-bg) 200px) no-repeat;
+  .card { border: 0; border-radius: 12px; box-shadow: none; }
+
+  // 头像资料区：焦点。整块能点进编辑资料，「编辑资料」是右边 28 高的描边小胶囊
+  .me { display: flex; align-items: center; gap: 12px; padding: 12px 0 20px; background: transparent; border-radius: 0; }
+  .me__avatar { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--k-paper); box-shadow: 0 1px 2px rgba(58, 50, 43, .08); }
+  .me__info { gap: 4px; }
+  .me__name { font-family: var(--k-sans); font-size: 20px; font-weight: 700; line-height: 28px; color: var(--k-ink); }
+  .me__no { gap: 4px; min-height: 44px; margin: -14px 0 -13px; font-size: 12px; line-height: 17px; color: var(--k-muted); font-variant-numeric: tabular-nums; }
+  .me__edit { min-height: 44px; }
+  .me__edit-pill { height: 28px; padding: 0 12px; border: 1px solid var(--k-red-line); border-radius: 14px; background: rgba(255, 255, 255, .7); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+
+  // 会员条：第二层重点，一条 64 高的浅杏卡（吉祥物 44）
+  .member-card { flex-wrap: nowrap; gap: 10px; margin-top: 0; padding: 10px 4px 10px 12px; border: 0; border-radius: 12px; background: linear-gradient(105deg, var(--k-ochre-soft) 0%, var(--k-paper2) 100%); box-shadow: none; }
+  .member-mascot { flex: 0 0 44px; width: 44px; height: 44px; }
+  .member-body { display: flex; flex-direction: column; gap: 2px; }
+  .member-level { display: block; font-family: var(--k-sans); font-size: 15px; font-weight: 600; line-height: 21px; color: var(--k-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .member-points { gap: 4px; margin-top: 0; color: var(--k-red-deep); }
+  .member-points__num { font-family: var(--k-sans); font-size: 13px; font-weight: 600; line-height: 18px; font-variant-numeric: tabular-nums; }
+  .member-points__unit { font-size: 12px; line-height: 18px; }
+  .member-actions { flex-direction: row; gap: 4px; }
+  .member-actions .member-cta { gap: 2px; padding: 0 8px; font-size: 12px; font-weight: 500; color: var(--k-red-deep); }
   .member-card .member-state { min-height: 44px; }
-  .grid-card { margin-top: 10px; padding: 10px 4px 8px; }
-  .grid-card__title { padding: 0 8px; font-size: 16px; font-weight: 600; line-height: 20px; }
-  .grid { margin-top: 6px; }
-  .cell { min-height: 48px; padding: 0; gap: 4px; }
-  .cell__icon, .cell__img { width: 28px; height: 28px; }
-  .cell__label { font-size: 14px; line-height: 20px; }
-  .extra-links { margin-top: 8px; }
+
+  // 常用入口卡（纠纷调解在宫格后面自己一组，样式在组件里）
+  .mine-links { margin-top: 8px; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+  .mrow { position: relative; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; }
+  .mrow + .mrow::before { content: ""; position: absolute; left: 40px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+  .mrow__label { flex: 0 0 auto; font-size: 14px; line-height: 20px; color: var(--k-ink); white-space: nowrap; }
+  .mrow__hint { flex: 1; min-width: 0; text-align: right; font-size: 12px; line-height: 17px; color: var(--k-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  // 四组宫格：卡头 15 / 600，四列等宽（不足 4 个的也只占四分之一宽、从左排，几块的图标上下对成一列）
+  .grid-wrap:first-of-type .grid-card, .mine-links + .grid-wrap .grid-card { margin-top: 20px; }
+  .grid-card { margin-top: 8px; padding: 14px 0 6px; }
+  .grid-card__title { display: block; padding: 0 12px; font-family: var(--k-sans); font-size: 15px; font-weight: 600; line-height: 21px; color: var(--k-ink); }
+  .grid { margin-top: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .grid--2 { grid-template-columns: repeat(2, 25%); }
+  .grid--3 { grid-template-columns: repeat(3, 25%); }
+  .cell { min-height: 44px; padding: 2px 0 8px; gap: 6px; }
+  .cell__icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: var(--k-red-soft); box-shadow: none; }
+  .cell__img { width: 24px; height: 24px; }
+  .cell__badge { top: -4px; left: 28px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; font-size: 11px; line-height: 16px; }
+  .cell__label { font-size: 12px; line-height: 17px; color: var(--k-ink2); }
+
+  // 11-18 第三轮返修：常用入口改成两行列表行（名字 14 / 下面 12 号灰字），说明不再挤在名字右边被截断；
+  //   纠纷调解和四组宫格合成一张白卡（.grid-card--all）：组标题 13 / 500 灰字，组和组之间发丝线 + 16 留白；
+  //   宫格列固定 64 宽、列间距平分剩下的宽度，第一个图标方块的左边对齐卡内边距线（卡边 + 12），最后一个的右边对齐箭头那条线。
+  .mine-links { margin-top: 20px; }
+  .mrow { min-height: 60px; }
+  .mrow__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  .mrow__text .mrow__label { flex: none; }
+  .mrow__text .mrow__hint { flex: none; text-align: left; }
+  .mrow__text .mrow__hint:empty { display: none; }
+  .extra-link { min-height: 52px; }
+  .grid-card--all { margin-top: 20px; padding: 0 0 8px; }
+  .grid-card--all .grid-group { position: relative; padding-top: 16px; }
+  .grid-card--all .grid-wrap .grid-group::before { content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+  .grid-card--all .grid-group { margin-top: 4px; }
+  .grid-card--all .grid-card__title { padding: 0 12px; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--k-muted); }
+  .grid-card--all .grid, .grid-card--all .grid--2, .grid-card--all .grid--3 { grid-template-columns: repeat(4, 64px); column-gap: calc((100% - 256px) / 3); justify-content: start; margin-top: 12px; padding: 0; }
+  .grid-card--all .cell { padding: 0 0 8px; }
+  .grid-card--all .cell__label { white-space: nowrap; }
+
+  // 员工工作台：和常用入口同一种行
+  .staff { gap: 10px; min-height: 48px; margin-top: 20px; padding: 0 12px; }
+  .staff__title { flex: 0 0 auto; font-family: var(--k-sans); font-size: 14px; font-weight: 400; line-height: 20px; color: var(--k-ink); }
+  .staff__state { flex: 1; min-width: 0; text-align: right; font-size: 12px; color: var(--k-muted); }
+
+  // 11-18 第三轮返修（第 2 轮）：
+  //   · 显示顺序：头像（焦点）→ 会员条 → 常用入口 → 四组宫格 → 纠纷调解 → 员工工作台。纠纷调解在源码里写在会员条前面（检查钉着），用 flex order 排到宫格后面；
+  //   · 常用入口两行列表行收成 52 高（上下 8，名字 14 / 20 + 灰字 12 / 16），第一屏能露出「订单与行程」「工作与成长」两组宫格；
+  //   · 发丝线统一：从文字那条线开始（列表 40、宫格组 12），右边都停在卡内边距线（右 12）；
+  //   · 宫格两边各让出 12：四列 64 宽、列间平分，五个字的标签不再贴着卡边；
+  //   · 会员条右边两个链接都只写字（不带勋章图标），12 / 500 二级墨，箭头灰色，链接间距 12。
+  display: flex;
+  flex-direction: column;
+  > .relogin { order: 0; }
+  > .me { order: 1; }
+  > .member-card { order: 2; }
+  > .mine-links { order: 3; }
+  > .grid-card { order: 4; }
+  > .mine-mediation { order: 5; margin-top: 20px; }
+  > .staff { order: 6; }
+  .mrow { min-height: 52px; padding: 8px 12px; box-sizing: border-box; }
+  .mrow__text { gap: 0; }
+  .mrow__text .mrow__label { line-height: 20px; }
+  .mrow__text .mrow__hint { line-height: 16px; }
+  .extra-link { min-height: 52px; }
+  .mrow + .mrow::before { right: 12px; }
+  .grid-card--all .grid, .grid-card--all .grid--2, .grid-card--all .grid--3 { padding: 0 12px; }
+  .grid-card--all .grid-wrap:first-child .grid-group::before { display: none; }
+  .member-actions { gap: 12px; padding-right: 8px; }
+  .member-actions .member-cta { gap: 2px; padding: 0; color: var(--k-ink2); }
+}
+@media (max-width: 359px) {
+  .mine {
+    .me { gap: 10px; padding: 10px 0 16px; }
+    .me__avatar { width: 56px; height: 56px; }
+    .me__name { font-size: 18px; line-height: 25px; }
+    .member-card { gap: 8px; padding-left: 10px; }
+    .member-mascot { flex-basis: 36px; width: 36px; height: 36px; }
+    .member-points { flex-wrap: nowrap; white-space: nowrap; }
+    .member-actions { gap: 0; padding-right: 0; }
+    .member-body { flex: 1; min-width: 0; }
+    .member-points__num { white-space: nowrap; }
+    .member-actions .member-cta { padding: 0 5px; }
+    .member-actions .member-cta > :deep(.k-icon:first-child:not(:last-child)) { display: none; }
+    .grid-card { padding-left: 0; padding-right: 0; }
+    .cell__label { font-size: 12px; }
+    .staff__title { font-size: 14px; }
+  }
 }
 @media (max-height: 700px) {
   .mine {
-    padding-top: 6px;
-    .me { padding: 6px 10px; }
-    .me__avatar { width: 40px; height: 40px; }
-    .me__name { font-size: 18px; }
-    .me__edit { padding-top: 0; padding-bottom: 0; min-height: 44px; }
-    .member-card { margin-top: 6px; padding-top: 6px; padding-bottom: 6px; }
-    .grid-card { margin-top: 4px; padding-top: 3px; padding-bottom: 3px; }
-    .grid-card__title { font-size: 14px; line-height: 18px; }
-    .grid { margin-top: 0; }
-    .cell { min-height: 44px; gap: 2px; justify-content: center; }
-    .cell__icon, .cell__img { width: 20px; height: 20px; }
+    .me { padding-top: 8px; padding-bottom: 16px; }
+    .me__avatar { width: 56px; height: 56px; }
   }
 }
-.mine .grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.mine {
-  .me { border:1px solid rgba(231,221,207,.65);border-radius:21px;background:#FFFEFC;box-shadow:0 5px 17px rgba(86,61,31,.065); }
-  .me__avatar { width:52px;height:52px;border:2px solid #F5E9D8; }
-  .me__edit-pill { border-color:#CCAE86;border-radius:999px;color:#916433; }
-  .member-card { background:linear-gradient(120deg,#F1DFC1,#F8ECD8 60%,#F0E0C9);box-shadow:inset 0 0 0 1px rgba(203,170,119,.3);border-radius:17px; }
-  .member-level { color:#775326; }
-  .member-cta { border-left:1px solid rgba(163,124,64,.25);padding-left:12px;min-height:30px; }
-  .grid-card { border-radius:20px;background:#FFFEFC;box-shadow:0 5px 15px rgba(86,61,31,.055); }
-  .grid-card__title { color:#49372B;letter-spacing:.2px; }
-  .cell__icon { border-radius:9px;background:#FAF2E5; }
-  .cell__img { padding:2px;box-sizing:border-box; }
-  .cell__label { color:#4C4035; }
+// 员工身份的「我的」：和普通用户同一种入口行（图标 18 + 名字 14 + 灰字 + 箭头），昵称 20 / 700
+.staff-account {
+  .card { border: 0; border-radius: 12px; box-shadow: none; }
+  .mine-links { margin-top: 12px; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+  .mine-links + .mine-links { margin-top: 8px; }
+  .mine-links--group { padding-bottom: 4px; }
+  .mrow { position: relative; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; font-size: 14px; color: var(--k-ink); }
+  .mrow + .mrow::before { content: ""; position: absolute; left: 40px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+  .mrow__label { flex: 1; min-width: 0; font-size: 14px; line-height: 20px; color: var(--k-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mrow__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  .mrow__hint { font-size: 12px; line-height: 17px; color: var(--k-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mrow { min-height: 60px; }
+  .staff-account__links .mrow { min-height: 52px; }
+  // 11-18 第三轮返修（第 2 轮）：纠纷调解自己一组（组名在卡片上方），两行列表行和「我的」一样 52 高；下面的工作台入口卡离它 20
+  .staff-mediation { margin-top: 20px; }
+  .staff-mediation + .mine-links { margin-top: 20px; }
+  .mrow { min-height: 52px; padding: 8px 12px; box-sizing: border-box; }
+  .mrow__text { gap: 0; }
+  .mrow__hint { line-height: 16px; }
+  .staff-account__links .mrow { padding-top: 0; padding-bottom: 0; }
+  .mrow + .mrow::before { right: 12px; }
 }
+// ---------------------------------------------------------------------------------------------------------------
+// 11-18 第三轮返修（第 3 轮）：第一屏要看得到宫格主体。
+//   · 显示顺序改成：头像（焦点）→ 会员条 → 纠纷调解（一张白卡，组名在卡里，和宫格组名同一种写法）→ 四组宫格 → 常用入口（团队报表 / 草稿箱 / 营地 / 大众评审）→ 员工工作台；
+//     390×844 第一屏能看到「订单与行程」「工作与成长」「发布与内容」三组宫格。源码顺序不动（检查钉着调解写在会员条前面），只改 flex order；
+//   · 区块之间一律 20；常用入口和调解卡同一种 52 高两行行；
+//   · 宫格组名左边缩进到图标方块那条线（卡边 + 24），组和组之间的发丝线也从这条线开始，3 个 / 2 个入口的组右边留空看着是有意对齐的。
+.mine {
+  > .mine-mediation { order: 3; margin-top: 20px; }
+  > .grid-card { order: 4; margin-top: 20px; }
+  > .mine-links { order: 5; margin-top: 20px; }
+  // 11-18 第 4 轮：宫格组名回到卡内边距那条线（卡边 + 12），和上面的纠纷调解卡、下面的常用入口卡同一条左线；图标仍按列居中
+  .grid-card--all .grid-card__title { padding: 0 12px; }
+  .grid-card--all .grid-wrap .grid-group::before { left: 12px; right: 12px; }
+}
+// 员工身份的「我的」：身份区和普通用户一样不装白卡，直接放在浅暖底上（头像 56、昵称 20 / 700），区块之间都是 20
+.staff-account {
+  background: linear-gradient(180deg, var(--k-red-soft) 0, var(--k-bg) 200px) no-repeat;
+  .staff-account__identity { padding: 12px 0 0; background: transparent; }
+  .staff-account__identity image { width: 56px; height: 56px; border: 2px solid var(--k-paper); box-sizing: border-box; }
+  .staff-account__identity + .mine-links { margin-top: 20px; }
+  .staff-account__links { margin-top: 20px; }
+  .staff-account__links .mrow { min-height: 52px; }
+}
+// 11-18 第三轮返修（第 5 轮）：
+//   · 顶栏和头部同色（index.vue 首屏顶栏传 bg=--k-red-soft），之前顶栏奶白、头部浅棕，交界处一条色带；
+//   · 头部浅棕往下 200 渐到 --k-page，和本组其它页同一种浅灰底，从「我的」点进二级页底色不再跳（员工身份同样）；
+//   · 320 宽会员条：等级图右下角的「02」角标和右边积分之间多让 6，不再只隔 2。
+.profile--home { --k-bg: var(--k-page); background: var(--k-page); }
+.mine, .staff-account { background: linear-gradient(180deg, var(--k-red-soft) 0, var(--k-page) 200px) no-repeat; }
+@media (max-width: 359px) {
+  .mine .member-mascot { margin-right: 6px; }
+}
+// ---------------------------------------------------------------------------------------------------------------
+// 11-18 第四轮（高级感）：首屏只剩「一块浅暖头部 + 一张白卡宫格」。
+//   · 会员条去掉渐变底卡，做成头像下面的一条数据带：吉祥物 44 + 等级名 13 / 500 二级墨 + 积分数字 20 / 700 等宽（全屏唯一的大数字）+「可用积分」12 灰；
+//     右边「会员权益 › | 我的勋章 ›」12 号，中间一道竖发丝线；
+//   · 显示顺序：头像 → 数据带 → 四组宫格 → 纠纷调解（组名在卡外）→ 常用入口 → 员工工作台（源码顺序不动，检查钉着）；
+//   · 宫格：组间不画发丝线、只靠 20 留白；组名 13 / 600 二级墨（比入口字重一档）；图标方块 46（12 圆角）；整卡一条左线 = 卡边 + 12（组名、第一列方块），右线 = 卡边 − 12。
+.mine {
+  > .grid-card { order: 3; margin-top: 12px; }
+  > .mine-mediation { order: 4; margin-top: 20px; }
+  > .mine-links { order: 5; margin-top: 20px; }
+  .me { padding-bottom: 8px; }
+  .member-card { min-height: 60px; gap: 10px; padding: 8px 0; border-radius: 0; background: transparent; }
+  .member-body { flex: 1; min-width: 0; gap: 0; }
+  .member-level { font-size: 13px; font-weight: 500; line-height: 18px; color: var(--k-ink2); }
+  .member-points { align-items: baseline; gap: 4px; color: var(--k-ink); }
+  .member-points__num { font-size: 20px; font-weight: 700; line-height: 28px; color: var(--k-ink); font-variant-numeric: tabular-nums; }
+  .member-points__unit { font-size: 12px; line-height: 17px; color: var(--k-muted); }
+  .member-actions { gap: 0; padding-right: 0; }
+  .member-actions .member-cta { position: relative; min-height: 44px; padding: 0; font-size: 12px; font-weight: 500; color: var(--k-ink2); }
+  .member-actions .member-cta + .member-cta { margin-left: 12px; padding-left: 12px; }
+  .member-actions .member-cta + .member-cta::before { content: ""; position: absolute; left: 0; top: 50%; width: 1px; height: 12px; margin-top: -6px; background: var(--k-line2); transform: scaleX(.5); }
+  .grid-card--all { padding: 0 0 8px; }
+  .grid-card--all .grid-group { margin-top: 0; padding-top: 16px; }
+  .grid-card--all .grid-wrap + .grid-wrap .grid-group { padding-top: 12px; }
+  .grid-card--all .grid-wrap .grid-group::before { display: none; }
+  .grid-card--all .grid-card__title { padding: 0 12px; font-size: 13px; font-weight: 600; line-height: 18px; color: var(--k-ink2); }
+  .grid-card--all .grid, .grid-card--all .grid--2, .grid-card--all .grid--3 { margin-top: 12px; padding: 0 3px; }
+  .cell__icon { width: 46px; height: 46px; border-radius: 12px; }
+  .cell__badge { left: 34px; }
+}
+@media (max-width: 359px) {
+  .mine .member-card { gap: 8px; }
+  .mine .member-actions .member-cta + .member-cta { margin-left: 8px; padding-left: 8px; }
+  .mine .grid-card--all .grid, .mine .grid-card--all .grid--2, .mine .grid-card--all .grid--3 { grid-template-columns: repeat(4, 60px); column-gap: calc((100% - 240px) / 3); padding: 0 1px; }
+}
+// 11-18 第四轮返修：宫格改成 4 等分列（左右各留 4，每列约 87），方块和标签在列里居中，5 个字的「简历与机会」离卡边也有 12 以上，微信字更宽也不出卡；组名仍是卡边 +12；320 宽左右各留 10（每列 67），「简历与机会」12 号字离卡边 12。
+.mine .grid-card--all .grid, .mine .grid-card--all .grid--2, .mine .grid-card--all .grid--3 { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 0; padding: 0 4px; }
+@media (max-width: 359px) {
+  .mine .grid-card--all .grid, .mine .grid-card--all .grid--2, .mine .grid-card--all .grid--3 { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 0; padding: 0 10px; }
+  .mine .grid-card--all .cell__label { font-size: 12px; }
+}
+
+// 11-19 微信实拍返修：
+//   · 宫格 13 个图标方块的底色再淡一档（--k-page 浅灰暖底，比 --k-red-soft 轻），一张卡里不再满是浅棕色块；
+//   · 会员条吉祥物往左让 8，可见边缘和头像左边、白卡左边同一条线；
+//   · 宫格卡 → 纠纷调解卡 → 常用入口卡，卡与卡之间一律 12（纠纷调解的组名已收进卡里，和宫格组名一种写法）。
+.mine {
+  .cell__icon { background: var(--k-page); }
+  .member-mascot { margin-left: -8px; }
+  > .mine-mediation { margin-top: 12px; }
+  > .mine-links { margin-top: 12px; }
+}
+// 首屏顶栏底色随滑动换成页面底色（index.vue navSolid），换色时 0.2 秒过渡，不是一下跳色
+.profile--home :deep(.k-topbar) { transition: background-color .2s; }

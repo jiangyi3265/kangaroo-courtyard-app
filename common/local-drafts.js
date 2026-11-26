@@ -18,7 +18,8 @@ export function saveLocalDraft(user, draft) {
     kind: draft.kind, label: draft.label || '', data: copy(draft.data), updatedAt: Date.now() }
   if (index < 0) rows.push(row)
   else rows[index] = row
-  uni.setStorageSync(key(user), rows)
+  try { uni.setStorageSync(key(user), rows) }
+  catch { throw new Error('草稿保存失败，请检查本机存储空间后重试') }
   return row
 }
 export function removeLocalDraft(user, id) {

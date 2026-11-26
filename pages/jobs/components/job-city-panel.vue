@@ -4,21 +4,21 @@
     <view class="cp-mask" @click="emit('close')" @touchmove.stop.prevent />
     <view class="cp" :style="{ paddingTop: topInset + 'px' }">
       <view class="cp__head" @touchmove.stop.prevent>
-        <view class="cp__back" hover-class="k-press" @click="emit('close')"><k-icon name="chevron-left" :size="22" color="ink" :stroke="1.8" /></view>
+        <view class="cp__back" hover-class="k-press" @click="emit('close')"><k-icon name="chevron-left" :size="22" color="ink" /></view>
         <view class="cp__heading"><text class="cp__title">选择城市</text><text class="cp__num">已选 {{ picked.length }}/{{ max }}</text></view>
         <view class="cp__done" hover-class="k-press" @click="confirm"><text>完成</text></view>
       </view>
       <view class="cp__search" @touchmove.stop.prevent>
-        <k-icon name="search" :size="16" color="muted" :stroke="1.8" />
+        <k-icon name="search" :size="16" color="muted" />
         <input v-model="keyword" class="cp__input" maxlength="20" confirm-type="search" :placeholder="searchPh" placeholder-class="cp__ph" @confirm="hideKeyboard" />
-        <view v-if="keyword" class="cp__clear" hover-class="k-press" @click="keyword = ''"><k-icon name="x" :size="14" color="muted" :stroke="2" /></view>
+        <view v-if="keyword" class="cp__clear" hover-class="k-press" @click="keyword = ''"><k-icon name="x" :size="14" color="muted" /></view>
       </view>
       <scroll-view scroll-y class="cp__picked" :style="{ height: pickedHeight + 'px' }">
         <view class="cp__selected-content">
         <text v-if="!picked.length" class="cp__none">不选城市，查看全国岗位</text>
         <view v-else class="cp__picked-scroll">
           <view class="cp__picked-inner">
-            <view v-for="pickedName in picked" :key="pickedName" class="cp-tag" hover-class="k-press-s" @click="toggle(pickedName)"><k-icon name="circle-check" :size="16" color="#8A603D" :stroke="2.2" /><text class="cp-tag__name">{{ shortCity(pickedName) }}</text><k-icon name="x" :size="12" color="muted" :stroke="2" /></view>
+            <view v-for="pickedName in picked" :key="pickedName" class="cp-tag" hover-class="k-press-s" @click="toggle(pickedName)"><k-icon name="circle-check" :size="16" color="red" /><text class="cp-tag__name">{{ shortCity(pickedName) }}</text><k-icon name="x" :size="12" color="muted" /></view>
           </view>
         </view>
         </view>
@@ -28,7 +28,7 @@
           <view v-for="rowItem in results" :key="rowItem.name" class="cp-row" hover-class="k-press" @click="toggle(rowItem.pick || rowItem.name)">
             <view class="cp-row__main"><view class="cp-row__line"><text class="cp-row__name" :class="{ on: picked.includes(rowItem.city) }">{{ rowItem.label }}</text><text v-if="rowItem.scenic" class="cp-row__kind">景区片区</text></view><text v-if="rowItem.region" class="cp-row__region">{{ rowItem.region }}</text></view>
             <text v-if="rowItem.count" class="cp-row__count">{{ rowItem.count }} 个岗位</text>
-            <view class="cp-check" :class="{ on: picked.includes(rowItem.city) }"><k-icon v-if="picked.includes(rowItem.city)" name="check" :size="11" color="white" :stroke="3" /></view>
+            <view class="cp-check" :class="{ on: picked.includes(rowItem.city) }"><k-icon v-if="picked.includes(rowItem.city)" name="check" :size="12" color="white" /></view>
           </view>
           <text v-if="!results.length" class="cp-state">{{ loading ? '正在加载城市…' : '没有找到「' + query + '」，试试城市全称、区县或拼音' }}</text>
         </template>
@@ -36,7 +36,7 @@
           <template v-if="hotCities.length">
             <text class="cp-head">热门城市</text>
             <view class="cp-cells">
-              <view v-for="hotName in hotCities" :key="'h' + hotName" class="cp-cell" :class="{ on: picked.includes(hotName) }" hover-class="k-press-s" @click="toggle(hotName)"><text class="cp-cell__name">{{ hotName }}</text></view>
+              <view v-for="hotName in hotCities" :key="'h' + hotName" class="cp-cell" :class="{ on: picked.includes(hotName), 'cp-cell--long': hotName.length > 5 }" hover-class="k-press-s" @click="toggle(hotName)"><text class="cp-cell__name">{{ hotName }}</text></view>
             </view>
           </template>
           <text v-if="letterGroups.length" class="cp-head">全部城市</text>
@@ -200,7 +200,7 @@ const jobCityCache = {}
 .cp-cell { min-height: 42px; min-width: 0; box-sizing: border-box; padding: 8px 5px; border: 1px solid transparent; border-radius: 10px; background: #F7F5F1; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px; font-weight: 400; color: #51483F; }
 .cp-cell.on { border-color: #B79772; background: #F4E9DB; color: #78512E; font-weight: 600; }
 .cp-cell__name { min-width: 0; white-space: normal; word-break: break-all; text-align: center; line-height: 1.4; }
-.cp-cell__prov { flex: 0 0 auto; font-size: 10px; color: #7A7570; }
+.cp-cell__prov { flex: 0 0 auto; font-size: 11px; color: #7A7570; }
 .cp-cell__count { flex: 0 0 auto; font-size: 11px; color: #7A7570; }
 .cp-all { margin-top: 12px; min-height: 42px; border-top: 1px solid #F1EDE7; border-bottom: 1px solid #F1EDE7; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #51483F; }
 .cp-all__right { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #7A7570; }
@@ -211,7 +211,7 @@ const jobCityCache = {}
 .cp-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .cp-row__line { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .cp-row__name { min-width: 0; font-size: 14px; color: #3A322B; line-height: 1.5; }
-.cp-row__kind { flex: 0 0 auto; height: 16px; padding: 0 5px; border-radius: 4px; background: #F4E9DB; color: #78512E; font-size: 10px; line-height: 16px; }
+.cp-row__kind { flex: 0 0 auto; height: 16px; padding: 0 5px; border-radius: 4px; background: #F4E9DB; color: #78512E; font-size: 11px; line-height: 16px; }
 .cp-row__name.on { color: #78512E; font-weight: 600; }
 .cp-row__region { margin-top: 2px; font-size: 11px; color: #7A7570; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .cp-row__count { flex: 0 0 auto; font-size: 11px; color: #557B69; }
@@ -233,4 +233,62 @@ const jobCityCache = {}
 .cp-index { position:absolute; right:5px; top:230px; bottom:85px; display:flex; flex-direction:column; justify-content:center; width:26px; }
 .cp-index button { flex:1; min-height:14px; max-height:23px; margin:0; padding:0; line-height:20px; width:26px; background:transparent; color:#78512E; font-size:11px; }
 .cp-index button::after { border:0; }
+/* 2026-11-17 改版「小而精」：搜索框照首页做成 36 高的浅色胶囊；城市格子 36 高、8 圆角的浅色块，选中是浅棕底 + 细棕边；
+   已选城市是浅棕小胶囊；底部「重置」白底细边、「确认城市」暖棕渐变胶囊。搜索、热门、按字母、右侧索引、已选 N/5 都照旧。 */
+.cp { background: var(--k-paper); box-shadow: none; color: var(--k-ink); }
+.cp__head { height: 46px; padding: 0 8px 0 4px; }
+.cp__title { font-size: 16px; font-weight: 700; }
+.cp__num { color: var(--k-muted); }
+.cp__done { font-size: 14px; font-weight: 600; color: var(--k-red-deep); }
+.cp__search { margin: 0 12px 2px; height: 36px; padding: 0 12px; gap: 6px; border: 0; border-radius: 18px; background: #F5F1EB; }
+.cp__input { height: 36px; color: var(--k-ink); }
+.cp__ph { color: var(--k-muted); }
+.cp__picked { padding: 8px 12px; }
+.cp__none { color: var(--k-muted); }
+.cp-tag { min-height: 32px; padding: 5px 8px; gap: 4px; border-radius: 16px; background: var(--k-red-soft); color: var(--k-red-deep); }
+.cp__body { padding: 0 12px; border-top-color: var(--k-line); }
+.cp-head { padding: 12px 0 8px; color: var(--k-ink); }
+.cp-cell { min-height: 36px; padding: 4px; border-radius: 8px; background: #F5F1EB; color: var(--k-ink2); }
+.cp-cell.on { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; }
+.cp-cell__prov, .cp-cell__count { color: var(--k-muted); }
+.cp-letter-head { padding: 12px 0 6px; font-size: 12px; color: var(--k-red-deep); }
+.cp-row { min-height: 52px; border-bottom-color: var(--k-line); }
+.cp-row__name { color: var(--k-ink); }
+.cp-row__name.on { color: var(--k-red-deep); }
+.cp-row__kind { height: 17px; padding: 0 5px; background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; line-height: 17px; }
+.cp-row__region { color: var(--k-muted); }
+.cp-row__count { color: var(--k-green); }
+.cp-check { border-color: var(--k-line2); }
+.cp-check.on { border-color: var(--k-red-deep); background: var(--k-red-deep); }
+.cp-state, .cp-tip { color: var(--k-muted); }
+.cp__foot { padding: 8px 12px calc(10px + var(--k-safe-bottom)); border-top-color: var(--k-line); }
+.cp__reset { border-color: var(--k-red-line); color: var(--k-red-deep); }
+.cp__ok { background: linear-gradient(135deg, #B5814D, #8E5E33); font-weight: 600; }
+.cp-index button { color: var(--k-red-deep); font-size: 11px; }
+@media (max-width: 359px) {
+  .cp__body { padding: 0 10px; }
+  .cp__search { margin-left: 10px; margin-right: 10px; }
+  .cp__picked, .cp__foot { padding-left: 10px; padding-right: 10px; }
+}
+/* 2026-11-18 第三轮返修第 4 轮：城市格固定 40 高（热门城市长名字占两格；字母分组长名字在格内均衡折两行），同排一样高；
+   没选中浅米实心无描边，选中浅棕底 + 深棕字 600 + 1px 暖棕描边（和筛选面板同一套）；左右边距 16（右边给 A–Z 索引让 24）；
+   「全部城市」到「A」8，字母小标题上 12 下 8，和热门城市标题到格子同一节奏。 */
+.cp__body { padding: 0 24px 0 16px; }
+.cp__search { margin-left: 16px; margin-right: 16px; }
+.cp__picked, .cp__foot { padding-left: 16px; padding-right: 16px; }
+.cp-head { display: block; padding: 12px 0 8px; font-size: 14px; font-weight: 600; line-height: 20px; }
+.cp-head + view > .cp-letter-head, .cp-head + view .cp-letter-head { padding-top: 0; }
+.cp-letter-head { display: block; padding: 12px 0 8px; font-size: 12px; font-weight: 600; line-height: 18px; }
+.cp-cell { height: 40px; min-height: 40px; padding: 0 8px; border: 0; background: var(--k-page); box-shadow: none; white-space: nowrap; overflow: hidden; }
+.cp-cell.on { background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; box-shadow: inset 0 0 0 1px var(--k-red); }
+.cp-cell__name { white-space: nowrap; word-break: keep-all; overflow: hidden; text-overflow: ellipsis; line-height: 18px; }
+.cp-cell--long { grid-column: span 2; }
+/* 字母分组里的长名字（检查钉着：不截断、折行）：格子仍是 40 高，名字均衡折成两行（「白沙黎 / 族自治」），不会掉一个字，也不把同排撑高 */
+.cp-cell--az { padding: 0 8px; white-space: normal; }
+.cp-cell--az .cp-cell__name { white-space: normal; overflow: visible; text-overflow: clip; word-break: break-all; text-wrap: balance; line-height: 16px; }
+@media (max-width: 359px) {
+  .cp__body { padding: 0 24px 0 12px; }
+  .cp__search { margin-left: 12px; margin-right: 12px; }
+  .cp__picked, .cp__foot { padding-left: 12px; padding-right: 12px; }
+}
 </style>

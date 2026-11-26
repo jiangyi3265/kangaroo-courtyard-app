@@ -37,18 +37,22 @@
 							:src="qr.image"
 							mode="aspectFit"
 						/>
-						<view v-else class="invite-method">
-							<k-icon name="door-open" :size="28" color="green" />
-							<text>在大厅输入房间号加入</text>
+						<view v-else class="invite-way" :class="{ 'invite-way--solo': !room.me }">
+							<view class="invite-method">
+								<view class="invite-method__icon"><k-icon name="door-open" :size="room.me ? 16 : 14" :color="room.me ? 'green' : 'muted'" /></view>
+								<text class="invite-method__text">在大厅输入房间号加入</text>
+							</view>
 							<button
 								v-if="room.me"
-								class="ww-link"
+								class="invite-qr-btn"
 								:disabled="qrLoading"
 								@click="loadQr"
 							>
-								{{ qrLoading ? '正在生成小程序码…' : '生成微信小程序码' }}
+								<view class="invite-method__icon"><k-icon name="qr-code" :size="16" color="green" /></view>
+								<text class="invite-method__text">{{ qrLoading ? '正在生成小程序码…' : '生成微信小程序码' }}</text>
+								<k-icon name="chevron-right" :size="12" color="muted" />
 							</button>
-							<text v-if="qrError" class="invite-code-error">{{ qrError }}</text>
+							<view v-if="qrError" class="invite-code-error"><k-icon name="info" :size="14" color="muted" /><text>{{ qrError }}</text></view>
 						</view>
 						<text v-if="qr?.state === 'ready'" class="ww-note">扫码加入房间</text>
 					</view>
@@ -78,6 +82,7 @@
 								block
 								type="outline"
 								size="md"
+								round
 								@click="copy(inviteText(code), '邀请已复制')"
 							>
 								复制邀请链接
@@ -88,6 +93,7 @@
 								block
 								type="outline"
 								size="md"
+								round
 								:disabled="saving"
 								@click="save"
 							>
@@ -95,7 +101,7 @@
 							</k-button>
 						</view>
 					</view>
-					<k-button v-if="room.me" block type="ghost" @click="go(routeFor(room))">
+					<k-button v-if="room.me" block type="ghost" size="md" class="invite-back" @click="go(routeFor(room))">
 						返回我的房间
 					</k-button>
 				</view>
@@ -190,54 +196,199 @@ onShow(showPublicShareMenu)
 @import './werewolf.scss';
 </style>
 <style scoped>
+/* 11-18 第三轮：邀请卡 12 圆角无投影；房间号 40 号等宽大字是这一屏唯一的焦点；按钮一主两次，44 / 40 两档 */
 .invite-card {
-	border-radius: 20px;
+	border-radius: 12px;
 	overflow: hidden;
 	background: var(--k-paper);
-	box-shadow: var(--k-sh1);
 }
 .invite-card__body {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding: 24px 16px;
+	padding: 20px 16px 24px;
 	text-align: center;
 }
 .invite-host {
-	font-size: 15px;
-	margin-bottom: 22px;
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--k-ink2);
+	margin-bottom: 16px;
+}
+.invite-card__body > .ww-muted {
+	font-size: 12px;
 }
 .invite-number {
-	color: #244b3c;
-	font-size: 48px;
+	color: var(--ww-deep);
+	font-size: 40px;
 	font-weight: 700;
-	letter-spacing: 6px;
-	padding: 8px 12px;
+	letter-spacing: 4px;
+	padding: 0 12px;
+	margin: 4px 0 8px;
 	line-height: 1.3;
 	font-variant-numeric: tabular-nums;
 }
 .invite-qr {
-	width: 180px;
-	height: 180px;
+	width: 168px;
+	height: 168px;
+	margin-top: 16px;
+}
+/* 返修第 1 轮：「在大厅输入房间号加入」收成一行（32 浅绿圆 + 13 号字），不再像空状态
+   返修第 2 轮：「生成微信小程序码」从这块里拿出来，做成下面单独一颗 40 高描边按钮；出错说明在按钮下 8 */
+/* 返修第 3 轮：「在大厅输入房间号加入」「生成微信小程序码」合成一组「其它加入方式」：同一块浅底，中间发丝线；小程序码是一行文字入口，不再是第二颗通栏描边按钮 */
+.invite-way {
+	width: 100%;
 	margin-top: 20px;
+	border-radius: 12px;
+	background: var(--k-page);
+	overflow: hidden;
 }
 .invite-method {
 	display: flex;
-	flex-direction: column;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
 	width: 100%;
-	margin-top: 20px;
-	padding: 18px 10px;
+	min-height: 48px;
+	padding: 8px 12px;
+	text-align: left;
 	box-sizing: border-box;
-	background: var(--k-green-soft);
-	border-radius: 12px;
-	font-size: 14px;
-	color: var(--k-green);
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--k-ink2);
 }
+.invite-method__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--k-green-soft);
+}
+.invite-method__text {
+	flex: 1;
+	min-width: 0;
+}
+.invite-qr-btn {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	min-height: 48px;
+	margin: 0;
+	padding: 8px 12px;
+	box-sizing: border-box;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	color: var(--k-ink);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.5;
+	text-align: left;
+}
+.invite-qr-btn::before {
+	content: '';
+	position: absolute;
+	left: 52px;
+	right: 0;
+	top: 0;
+	height: 1px;
+	background: var(--k-line);
+	transform: scaleY(0.5);
+}
+.invite-qr-btn::after {
+	border: 0;
+}
+.invite-qr-btn[disabled] {
+	color: var(--k-light);
+	background: transparent;
+}
+/* 返修第 4 轮：出错说明和上面两行文字同一条左边线（12 + 32 圆 + 8 = 52） */
 .invite-code-error {
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+	padding: 0 12px 12px 52px;
+	text-align: left;
 	color: var(--k-muted);
 	font-size: 12px;
 	line-height: 1.6;
+}
+.ww-bottom {
+	padding-top: 16px;
+}
+.ww-actions-row :deep(.k-button) {
+	height: 44px;
+	font-size: 14px;
+}
+/* 返修第 5 轮：主按钮 → 12 → 两颗次按钮（都 44 高）→ 8 → 文字按钮「返回我的房间」 */
+.ww-bottom > .ww-actions-row {
+	margin-top: 4px;
+}
+.ww-bottom .invite-back {
+	height: 40px;
+	color: var(--k-muted);
+	font-size: 13px;
+	font-weight: 500;
+}
+/* 返修第 4 轮：没加入时这一组只剩「在大厅输入房间号加入」一行且不能点——去掉浅底块，改成居中一行灰字说明 */
+.invite-way--solo {
+	margin-top: 12px;
+	border-radius: 0;
+	background: transparent;
+}
+.invite-way--solo .invite-method {
+	justify-content: center;
+	gap: 4px;
+	min-height: 0;
+	padding: 0;
+	font-size: 12px;
+	color: var(--k-muted);
+}
+.invite-way--solo .invite-method__icon {
+	width: auto;
+	height: auto;
+	background: transparent;
+}
+.invite-way--solo .invite-method__text {
+	flex: none;
+}
+/* 11-19：去掉卡中卡的灰底框，两行和卡片内容同一条左右线；组顶一根发丝线，两行之间一根（从文字起） */
+.invite-way {
+	position: relative;
+	margin-top: 16px;
+	border-radius: 0;
+	background: transparent;
+	overflow: visible;
+}
+.invite-way::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	height: 1px;
+	background: var(--k-line);
+	transform: scaleY(0.5);
+}
+.invite-way .invite-method,
+.invite-way .invite-qr-btn {
+	padding-left: 0;
+	padding-right: 0;
+}
+.invite-way .invite-qr-btn::before {
+	left: 40px;
+}
+.invite-way .invite-code-error {
+	padding: 0 0 8px 40px;
+}
+.invite-way--solo {
+	margin-top: 12px;
+}
+.invite-way--solo::before {
+	content: none;
 }
 </style>

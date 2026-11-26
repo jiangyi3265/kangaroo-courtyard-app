@@ -1,6 +1,9 @@
+/* 谁是卧底共用样式（11-18 第三轮精修）：保留豆绿的游戏气氛，只抠比例、间距、层次。
+   页边距 16；白卡 12 圆角无描边；主按钮 44 高；区块之间 24，标题到内容 12。 */
 .uc-page {
+  --k-bg: var(--k-page);
   min-height: 100vh;
-  background: var(--k-bg);
+  background: var(--k-page);
   color: var(--k-ink);
   font-family: var(--k-sans);
 }
@@ -9,7 +12,7 @@
   width: 100%;
   max-width: 560px;
   margin: 0 auto;
-  padding: 20px 20px calc(32px + env(safe-area-inset-bottom));
+  padding: 16px 16px calc(32px + env(safe-area-inset-bottom));
 }
 .uc-page button {
   font-family: var(--k-sans);
@@ -17,97 +20,274 @@
 .uc-page button::after { border: 0; }
 .uc-page button:focus-visible { outline: 2px solid var(--k-green); outline-offset: 3px; }
 .uc-page button[disabled] { opacity: .6; }
-.uc-title { display: block; font-size: 28px; line-height: 1.45; font-weight: 700; white-space: pre-line; }
-.uc-section-title { display: block; font-size: 18px; line-height: 1.5; font-weight: 600; }
-.uc-strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.5; }
-.uc-muted { display: block; font-size: 13px; line-height: 1.6; color: var(--k-muted); }
-.uc-copy { display: block; font-size: 15px; line-height: 1.75; overflow-wrap: anywhere; }
-.uc-row, .uc-heading { display: flex; align-items: center; gap: 12px; }
-.uc-heading { justify-content: space-between; margin: 0 0 8px; }
-.uc-intro { padding: 12px 0 28px; }
-.uc-intro__mark { display: inline-flex; align-items: center; justify-content: center; width: 66px; height: 66px; border-radius: 22px; background: var(--k-green-soft); margin-bottom: 22px; }
-.uc-intro .uc-muted { margin-top: 14px; }
-.uc-link { margin: 0; padding: 10px 0; min-height: 44px; background: transparent; color: var(--k-red-deep); font-size: 14px; line-height: 24px; flex-shrink: 0; }
-.uc-resume { display: flex; align-items: center; justify-content: space-between; text-align: left; width: 100%; background: var(--k-green-soft); padding: 14px 16px; margin-top: 16px; border-radius: 14px; }
-.uc-resume .uc-muted { margin-top: 4px; }
-.uc-join { margin: 32px 0 24px; }
+.uc-page .k-button.is-lg { height: 44px; font-size: 15px; }
+.uc-title { display: block; font-size: 22px; line-height: 1.3; font-weight: 700; white-space: pre-line; }
+.uc-section-title { display: block; font-size: 16px; line-height: 22px; font-weight: 700; }
+.uc-strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.4; }
+.uc-muted { display: block; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+.uc-copy { display: block; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.uc-row, .uc-heading { display: flex; align-items: center; gap: 8px; }
+.uc-heading { justify-content: space-between; margin: 0 0 12px; }
+.uc-intro { padding: 16px 0 24px; }
+.uc-intro__mark { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 16px; background: var(--k-green-soft); margin-bottom: 20px; }
+.uc-intro .uc-muted { margin-top: 8px; font-size: 13px; }
+/* 文字链：12 号灰字 + 12 号箭头（同全站「查看全部」） */
+.uc-link { display: inline-flex; align-items: center; justify-content: center; gap: 4px; margin: 0; padding: 0; min-height: 40px; background: transparent; color: var(--k-muted); font-size: 13px; line-height: 1.4; flex-shrink: 0; }
+.uc-heading .uc-link { font-size: 12px; min-height: 32px; }
+.uc-resume { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; background: var(--k-paper); padding: 14px 16px; margin: 12px 0 0; border-radius: 12px; line-height: 1.4; color: var(--k-ink); }
+.uc-resume__icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: var(--k-green-soft); }
+.uc-resume__copy { flex: 1; min-width: 0; }
+.uc-resume .uc-muted { margin-top: 2px; }
+.uc-join { margin: 24px 0 0; }
 .uc-join .uc-section-title { margin-bottom: 12px; }
-.uc-input { flex: 1; min-width: 0; height: 46px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--k-line2); border-radius: 12px; font-size: 16px; background: var(--k-paper); }
-.uc-how { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--k-line); }
-.uc-how__row { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; }
-.uc-how__row .uc-muted { margin-top: 5px; }
-.uc-error { background: var(--k-alert-soft); color: var(--k-alert); padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
-.uc-error .uc-link { color: var(--k-alert); text-align: left; }
-.uc-state { display: flex; flex-direction: column; gap: 18px; padding: 30px 0; }
-.uc-room-heading { padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--k-line); }
-.uc-code { display: flex; align-items: center; gap: 10px; padding: 0; margin: 0; background: transparent; font-size: 26px; line-height: 44px; font-weight: 700; letter-spacing: 3px; color: var(--k-ink); }
-.uc-count { font-size: 18px; color: var(--k-green); font-weight: 600; }
-.uc-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
-.uc-player { display: flex; align-items: center; gap: 9px; min-width: 0; box-sizing: border-box; padding: 12px 9px; background: var(--k-paper); border: 1px solid var(--k-line); border-radius: 13px; position: relative; }
-.uc-seat { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--k-paper2); color: var(--k-ink2); font-size: 15px; font-weight: 600; }
+.uc-join .uc-row { gap: 8px; }
+.uc-join .k-button { height: 44px; padding: 0 20px; border-radius: 22px; border-color: var(--k-line); font-size: 15px; }
+.uc-input { flex: 1; min-width: 0; height: 44px; box-sizing: border-box; padding: 0 16px; border: 1px solid var(--k-line); border-radius: 22px; font-size: 15px; background: var(--k-paper); }
+.uc-how { margin-top: 24px; }
+.uc-how__list { padding: 4px 16px; border-radius: 12px; background: var(--k-paper); }
+.uc-how__row { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+.uc-how__row + .uc-how__row::before { content: ''; position: absolute; left: 52px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.uc-how__icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: var(--k-green-soft); }
+.uc-how__row .uc-muted { margin-top: 2px; }
+.uc-error { background: var(--k-alert-soft); color: var(--k-alert); padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.6; margin: 12px 0; }
+.uc-error .uc-link { color: var(--k-alert); text-align: left; min-height: 32px; font-weight: 500; }
+.uc-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center; font-size: 14px; color: var(--k-ink2); }
+.uc-state .k-button { margin-top: 4px; }
+.uc-room-heading { align-items: center; padding: 4px 0 0; margin-bottom: 24px; }
+.uc-room-heading .uc-muted { font-size: 12px; }
+.uc-room-heading .uc-link { height: 28px; min-height: 28px; padding: 0 10px; gap: 4px; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); font-size: 12px; }
+.uc-code { display: flex; align-items: center; gap: 6px; padding: 0; margin: 0; background: transparent; font-size: 24px; line-height: 36px; font-weight: 700; letter-spacing: 2px; color: var(--k-ink); font-variant-numeric: tabular-nums; }
+.uc-count { font-size: 15px; color: var(--k-green); font-weight: 600; font-variant-numeric: tabular-nums; }
+.uc-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0 16px; }
+.uc-player { display: flex; align-items: center; gap: 10px; min-width: 0; box-sizing: border-box; padding: 12px; background: var(--k-paper); border: 1px solid transparent; border-radius: 12px; position: relative; }
+.uc-seat { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--k-green-soft); color: var(--k-green); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .uc-player__copy { flex: 1; min-width: 0; text-align: left; }
-.uc-player__name { display: block; font-size: 14px; line-height: 1.5; word-break: break-all; }
-.uc-player__status { display: block; font-size: 12px; color: var(--k-muted); line-height: 1.5; margin-top: 4px; }
+.uc-player__name { display: block; font-size: 14px; font-weight: 500; line-height: 1.4; word-break: break-all; }
+.uc-player__status { display: block; font-size: 11px; color: var(--k-muted); line-height: 1.5; margin-top: 2px; }
 .uc-success { color: var(--k-green); }
 .uc-spy { color: var(--k-red-deep); font-weight: 600; }
-.uc-remove { position: absolute; right: 3px; bottom: 2px; min-width: 44px; min-height: 44px; padding: 9px 4px; margin: 0; color: var(--k-alert); font-size: 12px; line-height: 26px; background: var(--k-paper); }
-.uc-share-row { display: flex; gap: 10px; margin-bottom: 22px; }
-.uc-secondary { flex: 1; min-width: 0; margin: 0; padding: 10px 8px; border-radius: 12px; color: var(--k-red-deep); background: var(--k-red-soft); font-size: 14px; line-height: 24px; }
-.uc-settings { padding: 22px 0 8px; border-top: 1px solid var(--k-line); }
-.uc-label { display: block; font-size: 14px; margin: 18px 0 9px; }
-.uc-options { display: flex; gap: 8px; margin-bottom: 14px; }
-.uc-options button { flex: 1; padding: 10px 3px; margin: 0; font-size: 14px; line-height: 24px; background: var(--k-paper2); color: var(--k-ink2); border-radius: 10px; border: 1px solid transparent; }
-.uc-options button.on { background: var(--k-green-soft); color: var(--k-green); border-color: var(--k-green); font-weight: 600; }
+.uc-remove { position: absolute; right: 0; top: 50%; transform: translateY(-50%); min-width: 44px; min-height: 44px; padding: 0 8px; margin: 0; color: var(--k-alert); font-size: 12px; line-height: 44px; background: transparent; }
+.uc-share-row { display: flex; gap: 8px; margin-bottom: 24px; }
+.uc-secondary { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; min-width: 0; height: 40px; margin: 0; padding: 0 8px; box-sizing: border-box; border: 1px solid var(--k-line); border-radius: 20px; color: var(--k-ink2); background: var(--k-paper); font-size: 13px; font-weight: 500; line-height: 38px; }
+.uc-settings { padding: 16px; border-radius: 12px; background: var(--k-paper); }
+.uc-label { display: block; font-size: 13px; color: var(--k-ink2); margin: 16px 0 8px; }
+/* 返修第 3 轮：选项胶囊等分一行（同狼人杀设置弹层），320 宽也不折出孤零零的一项 */
+.uc-options { display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 8px; }
+.uc-options button { flex: 1; min-width: 0; height: 32px; padding: 0; text-align: center; margin: 0; font-size: 13px; line-height: 32px; background: var(--k-page); color: var(--k-ink2); border-radius: 16px; border: 0; }
+.uc-options button.on { background: var(--k-green-soft); color: var(--k-green); font-weight: 600; }
 .uc-options button[disabled] { opacity: 1; }
-.uc-actions { display: flex; flex-direction: column; gap: 8px; margin: 22px 0 8px; }
-.uc-phase { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
-.uc-phase .uc-section-title { margin-top: 4px; }
-.uc-timer { flex-shrink: 0; color: var(--k-green); font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.uc-settings .uc-muted { margin-top: 4px; }
+.uc-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 24px 0 0; }
+.uc-actions .k-button { width: 100%; }
+.uc-actions .uc-success, .uc-actions > .uc-muted { font-size: 13px; padding: 4px 0; }
+.uc-phase { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.uc-phase .uc-section-title { margin-top: 2px; }
+.uc-timer { flex-shrink: 0; color: var(--k-green); font-size: 28px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .uc-timer.urgent { color: var(--k-alert); }
-.uc-timer__unit { font-size: 12px; font-weight: 400; margin-left: 4px; }
-.uc-secret { width: 100%; display: flex; gap: 16px; align-items: center; padding: 20px; margin: 0 0 18px; text-align: left; color: var(--k-ink); background: var(--k-green-soft); border-radius: 16px; }
-.uc-secret__word { display: block; font-size: 23px; line-height: 1.5; font-weight: 600; margin-bottom: 4px; }
-.uc-instruction { display: block; color: var(--k-ink2); font-size: 14px; line-height: 1.7; }
-.uc-player--button { width: 100%; margin: 0; line-height: 1.5; color: var(--k-ink); }
+.uc-timer__unit { font-size: 12px; font-weight: 400; margin-left: 2px; }
+.uc-secret { width: 100%; display: flex; gap: 12px; align-items: center; padding: 16px; margin: 0 0 12px; text-align: left; color: var(--k-ink); background: var(--k-green-soft); border-radius: 12px; line-height: 1.4; }
+.uc-secret__icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; background: var(--k-paper); }
+.uc-secret__word { display: block; font-size: 18px; line-height: 1.4; font-weight: 600; margin-bottom: 2px; }
+.uc-instruction { display: block; color: var(--k-ink2); font-size: 13px; line-height: 1.6; }
+.uc-player--button { width: 100%; margin: 0; line-height: 1.4; color: var(--k-ink); }
 .uc-page .uc-player--button[disabled] { opacity: 1; color: var(--k-ink); background: var(--k-paper); }
 .uc-player--button.selected { border-color: var(--k-red); background: var(--k-red-soft); }
 .uc-player--button.speaking { border-color: var(--k-green); background: var(--k-green-soft); }
 .uc-page .uc-player--button.eliminated { opacity: .55; }
-.uc-compose { margin-top: 24px; }
-.uc-description { width: 100%; height: 108px; box-sizing: border-box; padding: 13px; background: var(--k-paper); border: 1px solid var(--k-line2); border-radius: 12px; font-size: 15px; line-height: 1.6; }
-.uc-char-count { display: block; text-align: right; color: var(--k-muted); font-size: 12px; margin: 5px 0 12px; }
+.uc-compose { margin-top: 16px; }
+.uc-description { width: 100%; height: 96px; box-sizing: border-box; padding: 12px 14px; background: var(--k-paper); border: 1px solid var(--k-line); border-radius: 12px; font-size: 15px; line-height: 1.6; }
+.uc-char-count { display: block; text-align: right; color: var(--k-muted); font-size: 11px; margin: 4px 0 8px; font-variant-numeric: tabular-nums; }
 .uc-compose .uc-link { width: 100%; margin-top: 8px; }
-.uc-vote-status { display: flex; flex-direction: column; gap: 4px; color: var(--k-green); font-size: 14px; text-align: center; margin: 20px 0; }
-.uc-descriptions { margin-top: 28px; }
-.uc-message { padding: 14px 0; border-bottom: 1px solid var(--k-line); }
-.uc-message .uc-copy { margin-top: 6px; }
-.uc-log { margin-top: 26px; border-top: 1px solid var(--k-line); padding-top: 14px; }
-.uc-log-toggle { width: 100%; padding: 8px 0; margin: 0; background: transparent; color: var(--k-ink); }
-.uc-log__event { display: block; margin: 10px 0; font-size: 13px; line-height: 1.75; color: var(--k-muted); overflow-wrap: anywhere; }
-.uc-result { text-align: center; padding: 10px 0 24px; }
-.uc-result .uc-title { margin: 14px 0 8px; font-size: 26px; }
-.uc-word-pair { display: flex; gap: 1px; border-radius: 16px; overflow: hidden; background: var(--k-line); }
-.uc-word-pair > view { flex: 1; padding: 20px 12px; text-align: center; background: var(--k-green-soft); }
+/* 返修第 2 轮：「3/6人已投票 · 投票提交后无法修改」合成一行 12 号灰字，放在主按钮正上方 8（进度在前） */
+.uc-vote-status { display: flex; flex-direction: row-reverse; justify-content: center; flex-wrap: wrap; color: var(--k-muted); font-size: 12px; line-height: 1.6; text-align: center; margin: 16px 0 8px; }
+.uc-vote-status .uc-muted { display: inline; font-size: 12px; }
+.uc-vote-status .uc-muted::after { content: '·'; margin: 0 4px; }
+.uc-vote-status + .uc-actions, .uc-playing .uc-vote-status + .uc-actions { margin-top: 0; }
+.uc-descriptions { margin-top: 24px; }
+.uc-message { padding: 12px 0; border-bottom: 1px solid var(--k-line); }
+.uc-message .uc-copy { margin-top: 4px; }
+.uc-log { margin-top: 16px; padding: 0 16px; border-radius: 12px; background: var(--k-paper); }
+.uc-log-toggle { width: 100%; min-height: 48px; padding: 0; margin: 0; background: transparent; color: var(--k-ink); }
+.uc-log-toggle .uc-section-title { font-size: 15px; font-weight: 600; }
+.uc-log-title { gap: 6px; }
+.uc-log__event { display: block; margin: 0; padding: 10px 0; font-size: 13px; line-height: 1.6; color: var(--k-ink2); overflow-wrap: anywhere; border-top: 1px solid var(--k-line); }
+.uc-result { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 0 24px; }
+.uc-result__icon { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 16px; background: var(--k-green-soft); }
+.uc-result .uc-title { margin: 16px 0 4px; font-size: 22px; }
+.uc-word-pair { display: flex; gap: 0; border-radius: 12px; overflow: hidden; background: var(--k-paper); }
+.uc-word-pair > view { flex: 1; padding: 16px 12px; text-align: center; background: var(--k-green-soft); }
 .uc-word-pair > view:last-child { background: var(--k-red-soft); }
-.uc-word { display: block; font-size: 25px; line-height: 1.5; font-weight: 600; margin-top: 5px; }
-.uc-results { margin-top: 20px; }
-.uc-result-person { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--k-line); font-size: 14px; }
-.uc-rule { padding: 22px 0; border-bottom: 1px solid var(--k-line); }
-.uc-rule .uc-copy { color: var(--k-ink2); margin-top: 10px; }
+.uc-word { display: block; font-size: 22px; line-height: 1.4; font-weight: 700; margin-top: 4px; }
+.uc-results { margin-top: 12px; padding: 0 16px; border-radius: 12px; background: var(--k-paper); }
+.uc-result-person { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 0; font-size: 14px; }
+.uc-result-person + .uc-result-person::before { content: ''; position: absolute; left: 40px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.uc-result-person .uc-strong { font-size: 14px; }
+.uc-result-person .uc-muted { margin-top: 2px; }
+/* 返修第 3 轮：名单右侧「平民 / 卧底」改成 20 高阵营小标签（同狼人杀规则页） */
+.uc-result-person > text:last-child { flex-shrink: 0; height: 20px; padding: 0 8px; border-radius: 10px; font-size: 11px; font-weight: 600; line-height: 20px; }
+.uc-result-person > text.uc-success:last-child { background: var(--k-green-soft); }
+.uc-result-person > text.uc-spy:last-child { background: var(--k-red-soft); }
+/* 规则页：每节前一个 20 的序号圆点。返修第 2 轮：和狼人杀规则页同一套——7 节分成 3 张白卡
+   （准备 1–2 / 对局 3–5 / 结束 6–7），卡 12 圆角、内边距 16、卡间 12，卡内节与节之间发丝线，小标题 16/600 */
+.uc-rule { position: relative; padding: 16px 16px 16px 44px; margin: 0; background: var(--k-paper); }
+.uc-rule:nth-of-type(1), .uc-rule:nth-of-type(3), .uc-rule:nth-of-type(6) { margin-top: 12px; border-radius: 12px 12px 0 0; }
+.uc-rule:nth-of-type(1) { margin-top: 16px; }
+.uc-rule:nth-of-type(2), .uc-rule:nth-of-type(5), .uc-rule:nth-of-type(7) { border-radius: 0 0 12px 12px; }
+.uc-rule:nth-of-type(2)::before, .uc-rule:nth-of-type(4)::before, .uc-rule:nth-of-type(5)::before, .uc-rule:nth-of-type(7)::before { content: ''; position: absolute; left: 16px; right: 16px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.uc-rule .uc-section-title { font-weight: 600; }
+.uc-rule__no { position: absolute; left: 16px; top: 17px; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--k-red); color: var(--k-paper); font-size: 12px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.uc-rule .uc-copy { color: var(--k-ink2); margin-top: 6px; }
+.uc-rules .uc-title { font-size: 20px; margin: 4px 0 0; }
 .uc-rules .k-button { margin-top: 24px; }
-.uc-qr { display: flex; align-items: center; flex-direction: column; gap: 10px; margin: 8px 0 22px; text-align: center; }
-.uc-qr__image { width: 200px; height: 200px; }
+.uc-qr { display: flex; align-items: center; flex-direction: column; gap: 8px; margin: -8px 0 24px; padding: 16px; border-radius: 12px; background: var(--k-paper); text-align: center; }
+.uc-qr__image { width: 168px; height: 168px; }
 @media (max-width: 360px) {
-  .uc-body { padding-left: 14px; padding-right: 14px; }
-  .uc-title { font-size: 25px; }
-  .uc-player { gap: 6px; padding: 11px 7px; }
-  .uc-seat { width: 27px; height: 27px; }
+  .uc-title { font-size: 22px; }
+  .uc-player { gap: 6px; padding: 10px 8px; }
+  .uc-seat { width: 26px; height: 26px; }
   .uc-player__name { font-size: 13px; }
+  .uc-how__list { padding: 4px 12px; }
+  .uc-how__row { gap: 8px; }
+  .uc-how__icon { width: 32px; height: 32px; border-radius: 10px; }
+  .uc-how__row .uc-muted { font-size: 11px; }
+  .uc-how__row + .uc-how__row::before { left: 40px; }
 }
 
-.uc-playing .uc-body{padding-top:8px}.uc-playing .uc-phase{position:sticky;top:var(--uc-nav-top);z-index:30;padding:10px 0;background:var(--k-bg);margin-bottom:10px;border-bottom:1px solid var(--k-line)}
-.uc-cue{margin:0 0 0 auto;padding:6px;font-size:11px;line-height:24px;color:var(--k-green);background:var(--k-green-soft)}
-.uc-playing .uc-secret{padding:10px 14px;margin-bottom:10px}.uc-playing .uc-secret__word{font-size:18px}.uc-playing .uc-instruction{font-size:12px}.uc-playing .uc-players{gap:6px;margin:12px 0}.uc-playing .uc-player{padding:7px}.uc-playing .uc-player__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.uc-playing .uc-player__status{margin-top:0;font-size:11px}
-.uc-playing .uc-compose{margin-top:12px}.uc-playing .uc-description{height:72px}.uc-playing .uc-char-count{margin:3px 0 6px}.uc-done{width:100%;margin-top:8px;padding:10px;background:var(--k-green-soft);border:1px solid var(--k-green)!important;color:var(--k-green);font-size:16px;font-weight:600;line-height:24px;border-radius:12px}
-.uc-playing .uc-actions{margin-top:12px}.uc-descriptions{margin-top:14px}.uc-history{height:230px;margin-top:6px;border-top:1px solid var(--k-line)}.uc-history .uc-message{padding:9px 0}.uc-history .uc-copy{font-size:13px;line-height:1.5}.uc-history .uc-muted{display:inline;font-size:10px;margin-right:6px}
-.uc-page .uc-player--button.eliminated{opacity:1;background:#f6eeec;color:#8a7770;border-color:#d7aaa2}.uc-out{position:absolute;right:5px;top:7px;color:#b52d28;border:2px solid #b52d28;transform:rotate(-12deg);font-size:16px;font-weight:900;padding:1px 3px;line-height:20px;border-radius:3px;background:#fff8;pointer-events:none}.uc-playing .uc-log{margin-top:12px}.uc-playing .uc-log__event{font-size:12px}
+.uc-playing .uc-body{padding-top:8px}.uc-playing .uc-phase{position:sticky;top:var(--uc-nav-top);z-index:30;padding:8px 0;background:var(--k-page);margin-bottom:12px}
+.uc-cue{display:flex;flex-shrink:0;white-space:nowrap;align-items:center;gap:4px;height:28px;margin:0 0 0 auto;padding:0 10px;font-size:12px;line-height:28px;color:var(--k-green);background:var(--k-green-soft);border-radius:14px}
+.uc-playing .uc-secret{padding:10px 12px;margin-bottom:8px}.uc-playing .uc-secret__icon{width:36px;height:36px}.uc-playing .uc-secret__word{font-size:17px}.uc-playing .uc-instruction{font-size:12px}.uc-playing .uc-players{gap:8px;margin:12px 0}.uc-playing .uc-player{padding:8px 10px}.uc-playing .uc-player__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.uc-playing .uc-player__status{margin-top:0;font-size:11px}
+.uc-playing .uc-compose{margin-top:12px}.uc-playing .uc-description{height:72px}.uc-playing .uc-char-count{margin:4px 0 8px}.uc-done{width:100%;height:44px;margin-top:8px;padding:0;background:var(--k-paper);border:1px solid var(--k-line2)!important;color:var(--k-ink);font-size:15px;font-weight:600;line-height:42px;border-radius:22px;box-sizing:border-box}
+.uc-playing .uc-actions{margin-top:12px}.uc-descriptions{margin-top:16px}.uc-history{height:230px;margin-top:8px;border-top:1px solid var(--k-line)}.uc-history .uc-message{padding:8px 0}.uc-history .uc-copy{font-size:13px;line-height:1.5}.uc-history .uc-muted{display:inline;font-size:10px;margin-right:6px}
+.uc-page .uc-player--button.eliminated{opacity:1;background:var(--k-alert-soft);color:var(--k-muted);border-color:transparent}.uc-out{position:absolute;right:6px;top:6px;color:var(--k-alert);border:2px solid var(--k-alert);transform:rotate(-12deg);font-size:13px;font-weight:700;letter-spacing:1px;padding:0 4px;line-height:18px;border-radius:3px;background:var(--k-alert-soft);pointer-events:none}.uc-playing .uc-log{margin-top:16px}.uc-playing .uc-log__event{font-size:12px}
+.uc-voice-note{display:block;margin-top:8px;padding:0;text-align:left;font-size:11px}
+/* 受邀还没加入：一张邀请白卡（图标 + 标题 + 人数 + 座位点 + 加入按钮），不再是悬在底色上的几行字 */
+.uc-state.uc-invite { gap: 0; margin-top: 10vh; padding: 40px 20px 24px; border-radius: 12px; background: var(--k-paper); }
+.uc-invite__icon { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin-bottom: 16px; border-radius: 16px; background: var(--k-green-soft); }
+.uc-invite .uc-section-title { font-size: 18px; font-weight: 600; line-height: 1.4; color: var(--k-ink); }
+.uc-invite > .uc-muted { margin-top: 4px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.uc-invite__slots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 16px 0 24px; }
+.uc-invite__slot { width: 16px; height: 16px; border-radius: 50%; background: var(--k-line); }
+.uc-invite__slot.on { background: var(--k-green); }
+.uc-state.uc-invite .k-button { width: 100%; margin-top: 0; }
+.uc-invite .uc-link { margin-top: 8px; }
+/* 返修第 2 轮：320 宽对局中玩家卡收紧内边距，名字后面的「（我）」不被省略号截掉 */
+@media (max-width: 360px) {
+  .uc-playing .uc-player { gap: 6px; padding: 8px 6px; }
+  .uc-playing .uc-seat { width: 24px; height: 24px; font-size: 12px; }
+}
+/* 返修第 3 轮：区块间距统一 24；投票标题行标题可收缩、提示音胶囊不收缩不换行，≤360 宽时胶囊挪到倒计时下面一行右对齐 */
+.uc-resume + .uc-join { margin-top: 24px; }
+.uc-how .uc-heading .uc-link { margin: -5px 0; }
+.uc-phase > view:first-child { flex: 1; min-width: 0; }
+@media (max-width: 360px) {
+  .uc-phase { flex-wrap: wrap; row-gap: 4px; }
+  .uc-phase > view:first-child { flex: 1 1 auto; }
+}
+/* 「发言完毕 / 跳过」降成 40 高次按钮，首屏少一块重的 */
+.uc-done { height: 40px; line-height: 38px; font-size: 14px; }
+/* 返修第 4 轮：受邀还没加入——邀请卡不再撑高，房间号行和卡片作为一组在屏幕里竖向居中，卡片离房间号 24 */
+.uc-state.uc-invite { min-height: 0; justify-content: flex-start; margin-top: 24px; padding: 40px 24px 28px; box-sizing: border-box; }
+/* 返修第 5 轮：房间号头留在顶上，邀请卡在剩余空间里居中（底部多留 20vh，重心略偏上），卡离房间号至少 24 */
+.uc-body--guest { display: flex; flex-direction: column; justify-content: flex-start; min-height: calc(100vh - var(--uc-nav-top, 88px)); padding-bottom: calc(20vh + env(safe-area-inset-bottom)); }
+.uc-body--guest > .uc-room-heading { margin-bottom: 24px; }
+.uc-body--guest .uc-state.uc-invite { margin: auto 0; }
+/* 返修第 4 轮：玩法 7 节合成一张卡，节与节之间发丝线；序号圆只跟标题横排，正文和序号圆左边对齐；每节第一句段首加粗墨色，其余 14 ink2 */
+.uc-rules .uc-rule { margin-top: 0; padding: 16px; border-radius: 0; }
+.uc-rules .uc-rule:nth-of-type(1) { margin-top: 16px; border-radius: 12px 12px 0 0; }
+.uc-rules .uc-rule:nth-of-type(7) { border-radius: 0 0 12px 12px; }
+.uc-rules .uc-rule + .uc-rule::before { content: ''; position: absolute; left: 16px; right: 16px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.uc-rules .uc-rule .uc-section-title { padding-left: 28px; line-height: 22px; }
+.uc-rule__lead { font-weight: 600; color: var(--k-ink); }
+.uc-rules .uc-rule .uc-copy { margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--k-ink2); }
+/* 返修第 4 轮：轮到我描述时，发言记录（含「按住录音」）排到文字框后面、玩家格前面——只用 flex 排序，模板顺序和显示条件都不动 */
+.uc-playing .uc-body { display: flex; flex-direction: column; }
+.uc-playing .uc-players { margin: 12px 0 0; }
+.uc-compose ~ .uc-players, .uc-compose ~ .uc-vote-status, .uc-compose ~ .uc-actions, .uc-compose ~ .uc-log { order: 1; }
+/* 结算名单：卧底那几行的号码圆也换暖色，和右边「卧底」标签同色 */
+.uc-seat.uc-seat--spy { background: var(--k-red-soft); color: var(--k-red-deep); }
+/* 返修第 5 轮：段控件选中块的小阴影收成变量 */
+.uc-page { --uc-lift: 0 1px 2px rgba(58, 50, 43, 0.08); }
+/* 大厅开篇放进一张浅豆绿头卡（圆角 16、内边距 20），图标块白底；顶栏到头卡 16 */
+.uc-intro { margin-bottom: 24px; padding: 20px; border-radius: 16px; background: var(--k-green-soft); }
+.uc-intro .uc-intro__mark { margin-bottom: 16px; background: var(--k-paper); }
+/* 结算头部同样放进浅豆绿卡，和下面的词语对照卡连成一组 */
+.uc-result { margin-top: 8px; padding: 24px; border-radius: 16px; background: var(--k-green-soft); }
+.uc-result .uc-result__icon { background: var(--k-paper); }
+/* 规则页序号用 CSS 计数画出来（模板循环还原成改前写法），样式同原来的序号圆 */
+.uc-rules { counter-reset: uc-step; }
+.uc-rules .uc-rule::after { counter-increment: uc-step; content: counter(uc-step); position: absolute; left: 16px; top: 17px; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--k-green); color: var(--k-paper); font-size: 12px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+/* 320 宽描述框字号 14，占位文字不再把「案」单独挤到第二行 */
+@media (max-width: 360px) {
+  .uc-playing .uc-description { font-size: 14px; }
+  /* 标题长时计时折到第二行，仍贴右边线（一行放得下时标题会占满剩余宽度，这条不起作用） */
+  .uc-phase .uc-timer { margin-left: auto; }
+}
+
+/* ===== 11-18 第四轮（r6）===== */
+/* 主按钮不能点：用公共按钮的默认（原配色 + 60% 透明），不再压到 40% */
+/* 大厅：浅豆绿头卡是唯一主角——标题 24、说明 12、卡内通栏主按钮；搜索图标 28 不加底，放右上角 */
+.uc-intro { position: relative; margin-bottom: 0; padding: 20px; }
+.uc-intro .uc-intro__mark { position: absolute; top: 20px; right: 20px; width: auto; height: auto; margin: 0; background: transparent; border-radius: 0; }
+.uc-intro .uc-title { font-size: 24px; padding-right: 40px; }
+.uc-intro .uc-muted { margin-top: 8px; font-size: 12px; }
+.uc-intro .k-button { margin-top: 20px; }
+.uc-intro + .uc-resume { margin-top: 16px; }
+/* 加入：合成一根 44 高白胶囊，右端内嵌 36 高浅豆绿「加入」 */
+.uc-join__bar { height: 44px; padding: 0 4px 0 0; border-radius: 22px; background: var(--k-paper); box-sizing: border-box; }
+.uc-join__bar .uc-input { height: 44px; border: 0; background: transparent; }
+.uc-join .uc-join__bar .k-button { flex-shrink: 0; height: 36px; padding: 0 18px; border: 0; border-radius: 18px; background: var(--k-green-soft) !important; color: var(--k-green) !important; font-size: 15px; font-weight: 600; }
+.uc-join .uc-join__bar .k-button::after { border: 0; }
+/* 规则页：竖向时间线——左边 20 号绿色序号圆，圆和圆之间一根 1px 竖线；节与节之间留白 20，不再画发丝线；
+   标题 16/600，段首墨色（11-19 起 400，只用颜色区分），正文 14/1.6 ink2；每段末 4 个字连在一起，末行不会只剩一个字 */
+.uc-rules .uc-rule { padding: 0 20px 20px 52px; }
+.uc-rules .uc-rule:nth-of-type(1) { margin-top: 16px; padding-top: 20px; }
+.uc-rules .uc-rule::before, .uc-rules .uc-rule + .uc-rule::before { content: ''; position: absolute; left: 29px; right: auto; top: 25px; bottom: 3px; width: 1px; height: auto; transform: none; background: var(--k-line2); }
+.uc-rules .uc-rule:nth-of-type(1)::before { top: 45px; }
+.uc-rules .uc-rule:nth-of-type(7)::before { content: none; }
+.uc-rules .uc-rule::after { left: 20px; top: 1px; background: var(--k-green); }
+.uc-rules .uc-rule:nth-of-type(1)::after { top: 21px; }
+.uc-rules .uc-rule .uc-section-title { padding-left: 0; }
+.uc-rule__lead { font-weight: 400; }
+.uc-rule__tail { white-space: nowrap; }
+.uc-rules .uc-rule .uc-copy + .uc-copy { margin-top: 6px; }
+@media (max-width: 360px) {
+  .uc-rules .uc-rule { padding: 0 16px 20px 44px; }
+  .uc-rules .uc-rule::before, .uc-rules .uc-rule + .uc-rule::before { left: 25px; }
+  .uc-rules .uc-rule::after { left: 16px; }
+  .uc-rules .uc-rule:nth-of-type(1) { padding-top: 16px; }
+  .uc-rules .uc-rule:nth-of-type(1)::before { top: 41px; }
+  .uc-rules .uc-rule:nth-of-type(1)::after { top: 17px; }
+}
+
+/* ===== 11-19 第四轮返修 ===== */
+/* 大厅：头卡是唯一的豆绿块——三条玩法和继续房间的图标不加底（22 号绿色线性图标，占 24 宽）；搜索图标和标题首行对齐 */
+.uc-intro .uc-intro__mark { top: 24px; }
+.uc-how__icon, .uc-resume__icon { width: 24px; height: 24px; border-radius: 0; background: transparent; }
+.uc-how__row + .uc-how__row::before { left: 36px; }
+@media (max-width: 360px) {
+  .uc-how__icon { width: 24px; height: 24px; }
+  .uc-how__row + .uc-how__row::before { left: 32px; }
+}
+/* 受邀还没加入：房间号头下 64 就是邀请卡，卡不再竖着居中飘在半屏 */
+.uc-body--guest .uc-state.uc-invite { margin: 40px 0 auto; }
+
+/* ===== 11-19 微信复评 ===== */
+/* 大厅：标题 26 当主角；放大镜退成标题右侧一枚淡水印（40 号、透明、微斜、点不到），不再像右上角的「搜索」按钮；
+   区块之间 32（头卡 → 加入、加入 → 一看就会玩），三条玩法上下各 16，内容自然撑到屏幕下部 */
+.uc-intro .uc-intro__mark { top: 40px; right: 20px; opacity: .18; transform: rotate(-12deg); pointer-events: none; }
+.uc-intro .uc-title { position: relative; font-size: 26px; padding-right: 0; }
+.uc-join, .uc-resume + .uc-join, .uc-how { margin-top: 32px; }
+.uc-how__list { padding: 0 16px; }
+.uc-how__row { padding: 16px 0; }
+@media (max-width: 360px) {
+  .uc-intro .uc-title { font-size: 24px; }
+  .uc-intro .uc-intro__mark { right: 16px; }
+  .uc-how__list { padding: 0 12px; }
+}
+
+.uc-page.user-surface {
+  .uc-intro { background-color: #F0F3E9; border-radius: 13px; }
+  .uc-how, .uc-join { border-radius: 12px; }
+  .uc-join__bar:focus-within { box-shadow: inset 0 0 0 1px #8B9E79; }
+  .uc-how__row { align-items: baseline; }
+}

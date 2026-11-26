@@ -20,3 +20,11 @@ export function dateError(start, end, data) {
   if (days > 365) return '时间段最多 365 天'
   return ''
 }
+
+export function renewalDateError(end, plan) {
+  if (!dateDays(end, end)) return '请选择有效的新到期日'
+  if (!plan.minRenewalEnd || !plan.maxRenewalEnd) return '请刷新后重新选择续期日期'
+  if (end < plan.minRenewalEnd) return '新到期日最早可选 ' + plan.minRenewalEnd
+  if (end > plan.maxRenewalEnd) return '新到期日最晚可选 ' + plan.maxRenewalEnd
+  return ''
+}

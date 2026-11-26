@@ -150,7 +150,9 @@ export function request(options) {
   const opts = options || {}
   const url = API_BASE + opts.url + buildQuery(opts.params)
   const header = { 'Content-Type': 'application/json;charset=UTF-8' }
-  if (['/app/message/', '/app/insurance/', '/app/pay/'].some(prefix => String(opts.url).startsWith(prefix))) header['X-Message-Scope'] = messageScopeProvider()
+  const staffDates = /^\/app\/staff\/applications\/\d+\/dates$/.test(opts.url)
+  const scopedCityCases = opts.url === '/app/governance/cases' && opts.params?.mode === 'city' && opts.params.cityId != null
+  if (scopedCityCases || staffDates || opts.url === '/app/staff/insurance' || ['/app/staff/insurance/', '/app/message/', '/app/insurance/', '/app/pay/'].some(prefix => String(opts.url).startsWith(prefix))) header['X-Message-Scope'] = messageScopeProvider()
   if (String(opts.url).startsWith('/app/chat/')) header['X-Chat-Mode'] = messageScopeProvider() === 'user' ? 'user' : 'staff'
   const client = appClient()
   if (client) header['X-App-Client'] = client

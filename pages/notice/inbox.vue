@@ -1,28 +1,27 @@
 <template>
-  <view class="k-page inbox-page">
+  <view class="k-page inbox-page" :class="$userSurface">
     <k-topbar :title="personId ? '报名人的消息记录' : TITLES[type]" back />
     <view class="inbox-body k-pad-safe"><text v-if="type==='system'" class="inbox-explain">账号、内容审核、心愿处理与平台公告；报名、面试和订单请到对应分类查看。</text>
-      <view v-if="experience.account" class="inbox-tools"><text>历史消息保留，长按可删除</text><button @click="managing = !managing">{{ managing ? '完成' : '管理' }}</button></view>
       <!-- 公告（后台「小程序公告」发布，游客也能看）：列最新两条，点「全部」看完整列表 -->
       <view v-if="type === 'system' && notices.length" class="ann">
-        <view class="ann__head" hover-class="k-press" @click="go(R.notice + '?s=1')"><view class="ann__left"><k-icon name="bell-ring" :size="18" color="red" /><text class="ann__title">公告</text></view><view class="ann__left"><text class="ann__more">全部 {{ notices.length }} 条</text><k-icon name="chevron-right" :size="16" color="muted" /></view></view>
-        <view v-for="n in notices.slice(0, 2)" :key="n.noticeId" class="ann__row" hover-class="k-press" @click="go(R.notice + '?id=' + n.noticeId)"><text class="ann__name k-ellipsis">{{ n.title }}</text><text v-if="n.fresh" class="ann__dot" /><text class="ann__date">{{ n.date }}</text></view>
+        <view class="ann__head" hover-class="k-press" @click="go(R.notice + '?s=1')"><view class="ann__left"><k-icon name="bell-ring" :size="16" color="red" /><text class="ann__title">公告</text></view><view class="ann__left"><text class="ann__more">全部 {{ notices.length }} 条</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
+        <view v-for="n in notices.slice(0, 2)" :key="n.noticeId" class="ann__row" hover-class="k-press" @click="go(R.notice + '?id=' + n.noticeId)"><text class="ann__name k-ellipsis">{{ n.title }}</text><text v-if="n.fresh" class="inbox-count">1</text><text class="ann__date">{{ n.date }}</text></view>
       </view>
-
-      <view v-if="type === 'system' && experience.account" class="unread-summary">
+      <view class="inbox-intro"><view class="inbox-intro__copy"><view v-if="type === 'system' && experience.account" class="unread-summary" :class="{ 'is-zero': unreadCount === 0 }">
         <text>{{ unreadCount === null ? '未读消息' : `未读消息 ${unreadCount} 条` }}</text>
         <button v-if="unreadFailed" @click="loadUnreadCount">数量暂未获取，点此重试</button>
-      </view>
+      </view><text v-if="experience.account" class="inbox-tools">历史消息保留，长按可删除</text></view><button v-if="experience.account" class="inbox-manage" @click="managing = !managing">{{ managing ? '完成' : '管理' }}</button></view>
+
       <view v-for="sec in sections" :key="sec.name" class="sec">
         <text v-if="sec.name" class="sec__name">{{ sec.name }}</text>
         <view class="group">
           <view v-for="m in sec.rows" :key="m.id" class="it" hover-class="k-press" @click="open(m)" @longpress.stop="removeMessage(m)">
-            <text v-if="m.fresh" class="it__dot" />
             <!-- 评论 / 赞：对方头像（大多数账号没有头像，用昵称第一个字） + 动态首图 -->
             <template v-if="m.social">
+              <text v-if="m.fresh" class="inbox-count it__count">1</text>
               <image v-if="m.avatar" class="ava" :src="m.avatar" mode="aspectFill" />
               <view v-else-if="m.initial" class="ava ava--txt" :class="'c' + m.tint"><text>{{ m.initial }}</text></view>
-              <view v-else class="tile" :class="'t-' + m.k[1]"><k-icon :name="m.k[0]" :size="22" :color="m.k[1]" /></view>
+              <view v-else class="tile" :class="'t-' + m.k[1]"><k-icon :name="m.k[0]" :size="20" color="red" /></view>
               <view class="it__main">
                 <text class="it__name k-ellipsis">{{ m.name }}</text>
                 <text class="it__act">{{ m.action }}</text>
@@ -34,12 +33,13 @@
               <view v-else class="thumb thumb--txt"><text>{{ m.postTitle }}</text></view>
             </template>
             <template v-else>
-              <view class="tile" :class="'t-' + m.k[1]"><k-icon :name="m.k[0]" :size="22" :color="m.k[1]" /></view>
+              <view class="tile" :class="'t-' + m.k[1]"><k-icon :name="m.k[0]" :size="20" color="red" /></view>
               <view class="it__main">
-                <view class="it__top"><text class="it__title k-ellipsis">{{ m.title }}</text><text class="it__time">{{ m.time }}</text></view>
+                <text class="it__title k-ellipsis">{{ m.title }}</text>
                 <text class="it__desc">{{ m.desc }}</text>
                 <text v-if="m.wordingUpdated" class="wording-original" @click.stop="alert('消息原文', m.originalText)">称呼已更新 · 查看原文</text>
               </view>
+              <view class="it__side"><text class="it__time">{{ m.time }}</text><text v-if="m.fresh" class="inbox-count">{{ m.unread > 99 ? '99+' : m.unread }}</text></view>
             </template>
             <button v-if="managing" class="message-delete" :disabled="deleting" aria-label="删除消息" @click.stop="removeMessage(m)"><k-icon name="trash-2" :size="18" color="alert" /></button>
           </view>
@@ -50,8 +50,9 @@
       <text v-else-if="failed" class="more" @click="load(failed === 2)">加载失败，点这里重试</text>
       <text v-else-if="rows.length >= PAGE && !hasMore" class="more">没有更多了</text>
       <view v-else-if="ready && !rows.length" class="empty">
-        <view class="empty__ring"><k-icon :name="EMPTY[type][1]" :size="36" color="muted" /></view>
+        <view class="empty__ring"><k-icon :name="EMPTY[type][1]" :size="28" color="red" /></view>
         <text class="empty__title">{{ experience.account ? EMPTY[type][0] : '登录后查看消息' }}</text>
+        <text class="empty__copy">{{ EMPTY[type][2] }}</text>
         <k-button v-if="!experience.account" type="secondary" size="sm" label="去登录" @click="go(R.login)" />
         <k-button v-else-if="communityEnabled && type === 'comment'" type="secondary" size="sm" label="去社区发一条" @click="go(R.publish)" />
       </view>
@@ -73,7 +74,7 @@ import { onLoad, onShow, onHide, onUnload, onReachBottom } from '@dcloudio/uni-a
 import { go, toast } from '@/common/screen.js'
 import { apiMessages, apiMessageSummary, apiMarkRead, apiNotices } from '@/common/api.js'
 import { experience, ensureSession, refreshUnread, getMessageScopeKey } from '@/common/experience.js'
-import { readSeenNotices, rememberNoticeSeen, clearNoticeBadge } from '@/common/notice.js'
+import { readSeenNotices } from '@/common/notice.js'
 import { absUrl } from '@/common/upload.js'
 import R from '@/common/routes.js'
 import { removeInboxMessage } from '@/common/message-actions.js'
@@ -91,8 +92,8 @@ const messageScope = getMessageScopeKey
 const TITLES = { system: '平台通知', comment: '收到的评论', like: '收到的赞', apply: '报名', order: '订单' }
 // 空状态：[标题, 图标]
 const EMPTY = {
-  system: ['暂无系统通知', 'bell'], comment: ['还没有人评论你的动态', 'message-square-text'], like: ['还没有收到赞', 'heart'],
-  apply: ['暂无报名通知', 'clipboard-check'], order: ['暂无订单通知', 'receipt-text']
+  system: ['暂无系统通知', 'bell', '账号、内容审核与平台公告会出现在这里'], comment: ['还没有人评论你的动态', 'message-square-text', '别人评论你的动态会出现在这里'], like: ['还没有收到赞', 'heart', '别人点赞你的动态和评论会出现在这里'],
+  apply: ['暂无报名通知', 'clipboard-check', '报名、面试、签约进度会出现在这里'], order: ['暂无订单通知', 'receipt-text', '新订单和订单变动会出现在这里']
 }
 const PAGE = 20
 
@@ -168,7 +169,7 @@ const social = (m, time) => {
 const toRow = (m, fresh) => {
   const time = formatTime(m.createTime)
   const shown = messageWording(m)
-  const base = { personId:m.personId, threadCount:m.threadCount, id: m.id, route: m.route || '', fresh, read: !!m.read, expiresAt: m.expiresAt, wordingUpdated: shown.title !== (m.title || '') || shown.content !== (m.content || '') || shown.postTitle !== (m.postTitle || ''), originalText: [m.title, m.content, m.postTitle].filter(Boolean).join('\n\n') }
+  const base = { unread: Number(m.unreadCount || 1), personId:m.personId, threadCount:m.threadCount, id: m.id, route: m.route || '', fresh, read: !!m.read, expiresAt: m.expiresAt, wordingUpdated: shown.title !== (m.title || '') || shown.content !== (m.content || '') || shown.postTitle !== (m.postTitle || ''), originalText: [m.title, m.content, m.postTitle].filter(Boolean).join('\n\n') }
   if (m.category === 'comment' || m.category === 'like') return { ...base, ...social(m, time), body: m.category === 'comment' ? shown.content : '', postTitle: shown.postTitle || '动态' }
   // 标题只占一行：带换行的标题（聊天会话名、门店写的多行标题）之前会折成两行，和右边的时间错开
   return { ...base, title: String(m.personName||shown.title).replace(/[\s　]+/g, ' ').trim(), desc: (m.threadCount?`${m.threadCount}条记录 · `:'')+shown.content, time, k: kindOf(m) }
@@ -232,19 +233,19 @@ const sections = computed(() => {
   return [{ name: '新的', rows: fresh }, { name: '更早', rows: old }]
 })
 
-// 公告：没看过当前版本的标小红点。进「系统通知」就算看过（入口角标跟着清），
-// 但要弹窗提醒的公告（如「线上兼职须知」）不在这里记，留给首页弹窗或点开全文
+// 列表只显示当前账号对该版本的阅读状态，打开公告全文后才会标记已读。
 const notices = ref([])
+let noticeRequest = 0
 const loadNotices = async () => {
+  const request = ++noticeRequest, scope = messageScope()
+  const current = () => pageVisible && request === noticeRequest && scope === messageScope()
   try {
+    const {data} = await apiNotices()
+    if (!current()) return
     const seen = readSeenNotices()
-    notices.value = ((await apiNotices()).data || []).map(n => ({ ...n, fresh: !n.read && (Number(seen[String(n.noticeId)]) || 0) < (Number(n.version) || 1) }))
-    
-    // 要弹窗的公告这里不记「看过」（留给首页弹窗），但入口角标要清掉，否则弹窗没出来时角标一直是 1（2026-10-17 主人反馈）
-    
+    notices.value = (data || []).map(n => ({ ...n, fresh: !n.read && (Number(seen[String(n.noticeId)]) || 0) < (Number(n.version) || 1) }))
   } catch (e) {
-    // 公告取不到时卡片不显示，不影响下面的通知
-    notices.value = []
+    if (current()) notices.value = []
   }
 }
 
@@ -307,6 +308,10 @@ const open = (m) => {
       refreshUnread()
     }).catch(() => { m.marked = false })
   }
+  if (type.value === 'comment') {
+    if (m.route) return go(m.route)
+    return toast('这条评论没有可打开的详情')
+  }
   showMessagePreview({title:m.title||m.name,content:m.desc||m.body||m.quote,route:m.route})
 }
 
@@ -322,32 +327,37 @@ const removeMessage = async (m) => {
   } finally { deleting.value = false; suppressOpenUntil = Date.now() + 500 }
 }
 
+const reloadInbox = () => {
+  if (!pageVisible) return
+  if (type.value === 'system') loadNotices()
+  load(false)
+}
 onLoad(async (q) => {
   type.value = TITLES[q && q.type] ? q.type : 'system'
   personId.value=Number(q?.personId)||null
   await ensureSession()
-  if (type.value === 'system') loadNotices()
-  load(false)
+  reloadInbox()
 })
 onShow(() => {
   pageVisible = true
-  if (hasShown) load(false)
+  if (hasShown) reloadInbox()
   hasShown = true
 })
-const leave = () => { pageVisible = false; clearExpiry(); loadRequest++; unreadRequest++; paging.value = false }
+const leave = () => { pageVisible = false; clearExpiry(); loadRequest++; unreadRequest++; noticeRequest++; paging.value = false }
 watch(messageScope, () => {
   loadRequest++
   unreadRequest++
   unreadCount.value = null
   unreadFailed.value = false
   rows.value = []
+  notices.value = []
   hasMore.value = false
   ready.value = false
   failed.value = 0
   paging.value = false
   managing.value = false
   clearExpiry()
-  if (pageVisible) load(false)
+  reloadInbox()
 })
 onHide(leave)
 onUnload(leave)
@@ -355,52 +365,65 @@ onReachBottom(() => load(true))
 </script>
 
 <style scoped lang="scss">
-.wording-original { display: block; font-size: 11px; line-height: 18px; color: var(--k-muted); text-decoration: underline; margin-top: 3px; }
-.inbox-explain{display:block;margin:12px 16px;font-size:13px;line-height:1.7;color:var(--k-muted)}
-.inbox-page{background:var(--k-bg)}
+/* 2026-11-17 改版「小而精」：和消息页一个样子 —— 浅灰底，公告卡和消息列表都是白底 12 圆角、不加阴影。
+   11-18 返修：「未读消息 N 条」做开头一行、「管理」在它右边，说明合成一段 12 号灰字；图块、首字头像统一浅棕；分组标题统一 13 / 600、上 16 下 8；行内 14、图块 40、时间暖灰等宽；空状态 56 浅棕方块。
+   公告卡、未读数量、管理 / 长按删除、未读红点、查看原文、空状态按钮都在。 */
+.inbox-page{--k-bg:var(--k-page);background:var(--k-page)}
+.inbox-page :deep(.k-navbar__title){font-family:var(--k-sans);font-size:17px;font-weight:600}
+/* 「查看原文」不画下划线（像网页链接），改成灰色小字、后面带一个小箭头 */
+.wording-original { display: block; font-size: 11px; line-height: 16px; color: var(--k-muted); margin-top: 4px; }
+.wording-original::after { content: ''; display: inline-block; width: 10px; height: 10px; margin-left: 1px; vertical-align: -1px; background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNkY2QTY1IiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtOSA2IDYgNi02IDYiLz48L3N2Zz4=") center / contain no-repeat; }
 .inbox-body{padding-top:4px}
-.inbox-tools{display:flex;align-items:center;justify-content:space-between;margin:0 16px;gap:8px;color:var(--k-muted);font-size:11px}
-.inbox-tools button{margin:0 -6px 0 0;padding:10px 6px;background:transparent;color:#8A623E;font-size:12px;line-height:22px}
-.inbox-tools button::after,.message-delete::after{border:0}
-.unread-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 6px;font-size:14px;font-weight:600;color:var(--k-ink)}
+.inbox-intro{position:relative;margin:12px 16px 0}
+.inbox-intro__copy{flex:1;min-width:0;padding-right:48px;font-size:12px;line-height:1.6;color:var(--k-muted)}
+.inbox-explain{display:block;margin:12px 16px 0;font-size:12px;line-height:1.6;color:var(--k-muted)}.inbox-tools{display:block}
+.inbox-manage{position:absolute;right:-6px;top:-6px;margin:0;padding:6px;background:transparent;color:var(--k-red-deep);font-size:13px;font-weight:500;line-height:20px}
+.inbox-manage::after,.message-delete::after,.unread-summary button::after{border:0}
+/* 11-19 返修：「未读消息 N 条」恢复成 16 / 600 区块标题（紧贴未读组），和「已读消息」同一套 24 / 8 间距；「管理」在同一行右侧 */
+.unread-summary{display:flex;align-items:center;gap:8px;margin-bottom:2px;font-size:16px;line-height:22px;font-weight:600;color:var(--k-ink);font-variant-numeric:tabular-nums}
+.inbox-explain~.inbox-intro{margin-top:16px}.unread-summary.is-zero{font-size:14px;font-weight:500;color:var(--k-ink2)}.inbox-explain~.inbox-intro .inbox-manage{top:-5px}.inbox-explain~.sec .group:first-child{margin-top:8px}
 .unread-summary button{margin:0;padding:8px 0;background:transparent;color:var(--k-muted);font-size:11px;line-height:1.5;font-weight:400}
-.unread-summary button::after{border:0}
-.message-delete{display:flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:44px;margin:0;padding:0;background:transparent}
-.ann{margin:8px 16px 4px;padding:4px 14px 6px;border-radius:12px;background:var(--k-paper);box-shadow:var(--k-sh1)}
-.ann__head{min-height:42px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--k-line)}
+.message-delete{display:flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:44px;margin:0;padding:0;background:transparent;align-self:center}
+.ann{margin:12px 16px 0;padding:0 14px 2px;border-radius:12px;background:var(--k-paper)}
+.ann__head{position:relative;min-height:44px;display:flex;align-items:center;justify-content:space-between}
+.ann__head::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
 .ann__left{display:flex;align-items:center;gap:6px}
 .ann__title{font-size:15px;font-weight:600}
 .ann__more{font-size:12px;color:var(--k-muted)}
-.ann__row{min-height:40px;display:flex;align-items:center;gap:8px}
-.ann__row+.ann__row{border-top:1px dashed var(--k-line)}
-.ann__name{flex:1;min-width:0;font-size:14px}
+.ann__row{min-height:44px;display:flex;align-items:center;gap:6px}
+.ann__row+.ann__row{position:relative}
+.ann__row+.ann__row::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.ann__name{flex:0 1 auto;min-width:0;font-size:14px;color:var(--k-ink2)}
 .ann__dot{width:6px;height:6px;border-radius:50%;background:var(--k-alert);flex:none}
-.ann__date{flex:none;font-size:11px;color:var(--k-light)}
-.sec__name{display:block;padding:12px 16px 6px;font-size:12px;color:var(--k-light)}
-.group{margin-top:8px;background:var(--k-paper)}
+.ann__date{flex:none;margin-left:auto;padding-left:6px;font-size:11px;color:var(--k-muted);font-variant-numeric:tabular-nums}
+.sec__name{display:block;padding:24px 16px 8px;font-size:16px;line-height:22px;font-weight:600;color:var(--k-ink)}
+.group{margin:12px 16px 0;border-radius:12px;background:var(--k-paper);overflow:hidden}
 .sec__name+.group{margin-top:0}
-.it{position:relative;padding:14px 16px;display:flex;align-items:flex-start;gap:12px}
-.it+.it::before{content:'';position:absolute;left:68px;right:0;top:0;height:1px;background:var(--k-line2);transform:scaleY(.5)}
-.it__dot{position:absolute;left:8px;top:18px;width:6px;height:6px;border-radius:50%;background:var(--k-alert)}
+.it{position:relative;padding:14px;display:flex;align-items:flex-start;gap:12px}
+.it+.it::before{content:'';position:absolute;left:66px;right:14px;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.it__dot{position:absolute;z-index:1;left:45px;top:10px;width:10px;height:10px;border:2px solid var(--k-paper);border-radius:50%;background:var(--k-alert);box-sizing:border-box}
 .ava{width:40px;height:40px;border-radius:50%;flex:none}
-.ava--txt{display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600}
-.c0{background:var(--k-indigo-soft);color:var(--k-indigo)}.c1{background:var(--k-green-soft);color:var(--k-green)}.c2{background:var(--k-ochre-soft);color:#9B6A29}.c3{background:var(--k-red-soft);color:var(--k-red)}
-.it__main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.it__name{font-size:14px;font-weight:600}
-.it__act{font-size:13px;color:var(--k-muted)}
-.it__body{margin-top:3px;font-size:14px;line-height:1.55;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.it__quote{margin-top:3px;padding-left:8px;border-left:2px solid var(--k-line2);font-size:12px;color:var(--k-light)}
-.thumb{width:52px;height:52px;border-radius:8px;flex:none}
-.thumb--txt{padding:6px;background:var(--k-paper2);font-size:11px;line-height:1.4;color:var(--k-muted);overflow:hidden}
-.thumb--txt text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;word-break:break-all}
+.ava--txt{display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500}
+.ava--txt{background:var(--k-red-soft);color:var(--k-red-deep)}
+.it__main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.it__name{font-size:14px;font-weight:600;line-height:20px}
+.it__act{font-size:12px;color:var(--k-muted)}
+.it__body{margin-top:2px;font-size:13px;line-height:1.6;color:var(--k-ink2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.it__quote{margin-top:4px;padding-left:8px;border-left:2px solid var(--k-line2);font-size:12px;color:var(--k-muted)}
+.thumb{width:48px;height:48px;border-radius:8px;flex:none}
+.thumb--txt{box-sizing:border-box;padding:6px;background:var(--k-red-soft);overflow:hidden}
+.thumb--txt text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-size:11px;line-height:12px;color:var(--k-red-deep);word-break:break-all}
 .tile{width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center}
-.t-indigo{background:var(--k-indigo-soft)}.t-green{background:var(--k-green-soft)}.t-red{background:var(--k-red-soft)}.t-ochre{background:var(--k-ochre-soft)}
-.it__top{display:flex;align-items:center;gap:8px}
-.it__title{flex:1;min-width:0;font-size:15px;font-weight:600}
-.it__time{flex:none;font-size:11px;color:var(--k-light)}
-.it__desc{font-size:13px;line-height:1.5;color:var(--k-muted);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.more{display:block;padding:16px 0;text-align:center;font-size:12px;color:var(--k-light)}
-.empty{display:flex;flex-direction:column;align-items:center;gap:12px;padding:56px 24px;text-align:center}
-.empty__ring{width:80px;height:80px;border-radius:50%;background:var(--k-paper2);display:flex;align-items:center;justify-content:center}
-.empty__title{font-size:16px;font-weight:600}
+.tile{background:var(--k-red-soft)}
+.it__side{flex:none;min-width:32px;padding-top:2px;display:flex;flex-direction:column;align-items:flex-end;gap:4px}.it__new{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--k-muted)}.it__nd{width:6px;height:6px;border-radius:50%;background:var(--k-alert)}
+.it__title{min-width:0;font-size:14px;font-weight:600;line-height:20px}
+.it__time{flex:none;font-size:11px;color:var(--k-muted);font-variant-numeric:tabular-nums}
+.it__desc{font-size:13px;line-height:1.6;color:var(--k-muted);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.more{display:block;padding:16px 0;text-align:center;font-size:12px;color:var(--k-muted)}
+.empty{display:flex;flex-direction:column;align-items:center;gap:4px;margin:0;padding:96px 16px 0;text-align:center}
+.empty__ring{width:56px;height:56px;margin-bottom:8px;border-radius:16px;background:var(--k-red-soft);display:flex;align-items:center;justify-content:center}
+.empty__title{font-size:14px;font-weight:500;color:var(--k-ink2)}
+.empty__copy{font-size:12px;line-height:1.6;color:var(--k-muted)}
+.empty :deep(.k-button){margin-top:12px}
+.inbox-count{display:inline-block;align-self:flex-end;min-width:16px;padding:0 4px;box-sizing:border-box;border-radius:12px;background:var(--k-alert);color:white;text-align:center;font:600 11px/16px var(--k-sans)}.it__count{position:absolute;z-index:1;left:40px;top:8px}.ann__row .inbox-count{align-self:center}
 </style>

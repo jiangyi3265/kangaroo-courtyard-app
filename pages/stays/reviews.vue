@@ -1,6 +1,6 @@
 <template>
   <k-feature-gate feature="stay-booking">
-  <view class="k-page stay-reviews" :style="{ '--stay-paper': 'url(' + STAY_ART.paper + ')' }">
+  <view class="k-page stay-reviews" :class="$userSurface" :style="{ '--stay-paper': 'url(' + STAY_ART.paper + ')' }">
     <k-topbar title="住过的家人评价" back />
 
     <view class="sr-body">
@@ -17,7 +17,7 @@
               <text class="sum__num">{{ aiSummary.score || avgText }}</text>
               <view class="sum__score-side">
                 <text class="sum__cap">{{ aiSummary.ready ? 'AI综合评分' : '综合评分' }}</text>
-                <view v-if="!aiSummary.ready" class="sum__stars"><k-icon v-for="(lit, starIdx) in avgStars" :key="starIdx" name="star" :size="14" color="#E8913A" :stroke="1.6" :fill="lit" /></view>
+                <view v-if="!aiSummary.ready" class="sum__stars"><k-icon v-for="(lit, starIdx) in avgStars" :key="starIdx" name="star" :size="12" color="ochre" :fill="lit" /></view>
                 <text v-else class="sum__original">住客评分 {{ avgText }}</text>
               </view>
             </view>
@@ -53,13 +53,13 @@
             </view>
           </view>
           <view class="bar__filter" :class="{ on: panelOpen || filterN }" hover-class="k-press-s" @click="togglePanel">
-            <text>{{ filterN ? '筛选·' + filterN : '筛选' }}</text><k-icon :name="panelOpen ? 'chevron-up' : 'chevron-down'" :size="14" :color="panelOpen || filterN ? '#8A5E36' : 'ink'" :stroke="1.8" />
+            <text>{{ filterN ? '筛选·' + filterN : '筛选' }}</text><k-icon :name="panelOpen ? 'chevron-up' : 'chevron-down'" :size="12" :color="panelOpen || filterN ? 'red' : 'ink'" />
           </view>
 
         </view>
 
         <view v-if="actives.length" class="actives">
-          <view v-for="act in actives" :key="act.key" class="actives__chip" @click="clearFilter(act.key)"><text>{{ act.text }}</text><k-icon name="x" :size="12" color="#8A5E36" :stroke="2" /></view>
+          <view v-for="act in actives" :key="act.key" class="actives__chip" @click="clearFilter(act.key)"><text>{{ act.text }}</text><k-icon name="x" :size="12" color="red" /></view>
           <text class="actives__clear" @click="clearAll">清除</text>
         </view>
 
@@ -67,9 +67,9 @@
           <view class="rv__head">
             <image class="rv__avatar" :src="review.avatarSrc" mode="aspectFill" />
             <view class="rv__who">
-              <view class="rv__line"><text class="rv__name">{{ review.name }}</text><text v-if="review.roomType" class="rv__room">{{ review.roomType }}</text><text class="rv__date">{{ review.stayMonth || review.date }}</text></view>
+              <view class="rv__line"><text class="rv__name">{{ review.name }}</text><text v-if="review.roomType" class="rv__room">{{ review.roomType }}</text></view>
               <view class="rv__line">
-                <view class="rv__stars"><k-icon v-for="(lit, starIdx) in review.stars" :key="starIdx" name="star" :size="13" color="#E8913A" :stroke="1.6" :fill="lit" /></view>
+                <view class="rv__stars"><k-icon v-for="(lit, starIdx) in review.stars" :key="starIdx" name="star" :size="12" color="ochre" :fill="lit" /></view><text class="rv__date">{{ review.stayMonth || review.date }}</text>
               </view>
             </view>
             <text v-if="review.featured" class="rv__featured">精选</text>
@@ -80,7 +80,7 @@
           <!-- 评价视频（2026-10-17 R3）：review.videos 的第一段（一条评价最多 1 段），满宽 16:9 封面 + 播放按钮，点了全屏播放 -->
           <view v-if="review.video" class="rv__video" hover-class="k-press-s" @click="playVideo(review.video)">
             <image v-if="review.video.cover" class="rv__video-img" :src="review.video.cover" mode="aspectFill" />
-            <view class="rv__video-play"><k-icon name="play" :size="24" color="white" fill /></view>
+            <view class="rv__video-play"><k-icon name="play" :size="14" color="white" fill /></view>
             <text class="rv__video-tag">横屏全屏播放</text>
           </view>
           <!-- 参考稿三张缩略图同排；点任意照片查看原图。 -->
@@ -91,7 +91,7 @@
           <view v-if="review.reply" class="rv__reply"><text class="rv__reply-who">小院回复{{ review.replyDate ? ' · ' + review.replyDate : '' }}</text><text class="rv__reply-text">{{ review.reply }}</text></view>
         </view>
 
-        <view v-if="listError" class="sr-empty sr-empty--inline"><text class="sr-empty__sub">{{ listError }}</text><view class="sr-empty__btn" @click="retryList">重新加载评价</view></view>
+        <view v-if="listError" class="sr-empty sr-empty--inline"><text class="sr-empty__sub">{{ listError }}</text><view class="sr-empty__btn" hover-class="k-press-s" @click="retryList">重新加载评价</view></view>
         <view v-else-if="!rows.length && !listLoading" class="sr-empty sr-empty--inline">
           <text class="sr-empty__title">{{ filteredCopy.title }}</text>
           <text class="sr-empty__sub">{{ filteredCopy.sub }}</text>
@@ -106,7 +106,7 @@
     <k-tabbar active="home" theme="journal" />
           <view v-if="panelOpen" class="panel-mask" @click="panelOpen = false" @touchmove.stop.prevent="noop" />
           <view v-if="panelOpen" class="panel">
-            <view class="panel__head"><text class="panel__title">筛选评价</text><view class="panel__close" @click="panelOpen = false"><k-icon name="x" :size="20" color="ink2" /><text>关闭</text></view></view>
+            <view class="panel__head"><text class="panel__title">筛选评价</text><view class="panel__close" @click="panelOpen = false"><k-icon name="x" :size="16" color="ink2" /><text>关闭</text></view></view>
             <scroll-view class="panel__scroll" scroll-y><view class="panel__content">
             <!-- 房型和入住月份分别选择，确认后才应用。 -->
             <text class="panel__sub">房型</text>
@@ -315,60 +315,60 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) reload() })
 
 <style scoped lang="scss">
 
-.stay-reviews { --k-bg: #FCF9F3; background: #FCF9F3; color: #3A322B; font-family: var(--k-sans); }
+.stay-reviews { background: var(--k-bg); color: var(--k-ink); font-family: var(--k-sans); }
 .sr-body { padding: 8px 16px calc(110px + var(--k-safe-bottom)); }
-.sum { padding: 18px 16px 14px; border-radius: 16px; background: #fff; border: 1px solid #EEE7DE; box-shadow: 0 4px 16px rgba(58, 50, 43, .04); }
-.sum__stay { display: block; margin-bottom: 18px; font-size: 13px; color: #6F6A65; }
+.sum { padding: 18px 16px 14px; border-radius: 16px; background: var(--k-paper); border: 1px solid #EEE7DE; box-shadow: 0 4px 16px rgba(58, 50, 43, .04); }
+.sum__stay { display: block; margin-bottom: 18px; font-size: 13px; color: var(--k-muted); }
 .sum__top { display: flex; align-items: flex-start; }
 .sum__score, .sum__stat { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .sum__num, .sum__big { font-size: 34px; font-weight: 700; line-height: 1.15; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
-.sum__num { color: #8A5E36; }
+.sum__num { color: var(--k-red-deep); }
 .sum__score-side { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .sum__stars { display: flex; gap: 1px; }
-.sum__cap { font-size: 12px; color: #6F6A65; white-space: nowrap; }
+.sum__cap { font-size: 12px; color: var(--k-muted); white-space: nowrap; }
 .sum__div { width: 1px; height: 42px; margin: 10px 4px 0; background: #EEE7DE; flex: 0 0 auto; }
 .sum__dims { display: flex; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #EEE7DE; }
 .sum__dim { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.sum__dim-label { font-size: 12px; color: #5A5149; }
-.sum__dim-num { font-size: 16px; font-weight: 600; color: #8A5E36; }
+.sum__dim-label { font-size: 12px; color: var(--k-ink2); }
+.sum__dim-num { font-size: 16px; font-weight: 600; color: var(--k-red-deep); }
 .sum__bar { width: 100%; height: 3px; border-radius: 3px; background: #F2EBE2; overflow: hidden; }
 .sum__bar-fill { height: 100%; background: #B58B61; }
-.sum__note { display: block; margin-top: 14px; font-size: 11px; color: #6F6A65; text-align: center; }
+.sum__note { display: block; margin-top: 14px; font-size: 11px; color: var(--k-muted); text-align: center; }
 .mention { margin-top: 24px; }
 .mention__title { display: block; font-size: 18px; font-weight: 700; }
 .mention__chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.mention__chip { min-height: 40px; padding: 0 12px; border-radius: 12px; background: #fff; border: 1px solid #D8C5B0; color: #795331; font-size: 13px; display: flex; align-items: center; gap: 6px; box-sizing: border-box; }
-.mention__chip.on { background: #F3E5D2; border-color: #9A6B3F; font-weight: 600; }
-.mention__count { font-size: 11px; color: #6F6A65; }
+.mention__chip { min-height: 40px; padding: 0 12px; border-radius: 12px; background: var(--k-paper); border: 1px solid #D8C5B0; color: #795331; font-size: 13px; display: flex; align-items: center; gap: 6px; box-sizing: border-box; }
+.mention__chip.on { background: #F3E5D2; border-color: var(--k-red); font-weight: 600; }
+.mention__count { font-size: 11px; color: var(--k-muted); }
 .bar { margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .bar__tabs { display: flex; align-items: center; gap: 4px; min-width: 0; }
-.bar__tab { min-height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 14px; white-space: nowrap; color: #5A5149; }
+.bar__tab { min-height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 14px; white-space: nowrap; color: var(--k-ink2); }
 .bar__tab.on { background: #F3E5D2; color: #795331; font-weight: 700; }
-.bar__filter { flex: 0 0 auto; min-height: 44px; padding: 0 10px; border: 1px solid #D8C5B0; border-radius: 12px; display: flex; align-items: center; gap: 4px; color: #795331; font-size: 13px; background: #fff; box-sizing: border-box; }
-.bar__filter.on { background: #F3E5D2; border-color: #9A6B3F; }
+.bar__filter { flex: 0 0 auto; min-height: 44px; padding: 0 10px; border: 1px solid #D8C5B0; border-radius: 12px; display: flex; align-items: center; gap: 4px; color: #795331; font-size: 13px; background: var(--k-paper); box-sizing: border-box; }
+.bar__filter.on { background: #F3E5D2; border-color: var(--k-red); }
 .panel-mask { position: fixed; inset: 0; z-index: 800; background: rgba(38, 32, 27, .35); }
-.panel { position: fixed; z-index: 801; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 20px 20px 0 0; overflow: hidden; }
+.panel { position: fixed; z-index: 801; left: 0; right: 0; bottom: 0; background: var(--k-paper); border-radius: 20px 20px 0 0; overflow: hidden; }
 .panel__head { padding: 12px 20px 4px; display: flex; align-items: center; justify-content: space-between; }
 .panel__title { font-size: 19px; font-weight: 700; }
-.panel__close { min-height: 44px; padding-left: 12px; display: flex; align-items: center; gap: 4px; font-size: 13px; color: #5A5149; }
+.panel__close { min-height: 44px; padding-left: 12px; display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--k-ink2); }
 .panel__scroll { height: 48vh; }
 .panel__content { padding: 8px 20px 20px; }
 .panel__sub { display: block; margin: 8px 0 12px; font-size: 15px; font-weight: 600; }
 .panel__opts { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; }
-.opt { min-width: 0; min-height: 44px; padding: 10px 8px; border-radius: 12px; background: #F7F4EF; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #5A5149; box-sizing: border-box; }
+.opt { min-width: 0; min-height: 44px; padding: 10px 8px; border-radius: 12px; background: #F7F4EF; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--k-ink2); box-sizing: border-box; }
 .opt text { text-align: center; line-height: 1.5; overflow-wrap: anywhere; }
-.opt.on { background: #F3E5D2; border-color: #9A6B3F; color: #795331; font-weight: 600; }
-.panel__none { display: block; margin-top: 8px; font-size: 12px; color: #6F6A65; }
+.opt.on { background: #F3E5D2; border-color: var(--k-red); color: #795331; font-weight: 600; }
+.panel__none { display: block; margin-top: 8px; font-size: 12px; color: var(--k-muted); }
 .panel__line { height: 1px; margin: 24px 0; background: #EEE7DE; }
 .panel__foot { padding: 12px 20px calc(16px + var(--k-safe-bottom)); display: flex; align-items: center; gap: 12px; border-top: 1px solid #EEE7DE; }
 .panel__reset, .panel__ok { min-height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; box-sizing: border-box; }
 .panel__reset { flex: 1; border: 1px solid #D8C5B0; color: #795331; }
-.panel__ok { flex: 2; background: #9A6B3F; color: #fff; font-weight: 600; }
+.panel__ok { flex: 2; background: var(--k-red); color: var(--k-paper); font-weight: 600; }
 .actives { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .actives__chip { min-height: 36px; padding: 6px 10px; border-radius: 10px; background: #F3E5D2; color: #795331; font-size: 12px; display: flex; align-items: center; gap: 6px; box-sizing: border-box; }
 .actives__chip text { min-width: 0; overflow-wrap: anywhere; }
-.actives__clear { font-size: 12px; color: #6F6A65; padding: 12px 4px; }
-.rv { margin-top: 14px; padding: 16px; border-radius: 16px; background: #fff; border: 1px solid #EEE7DE; box-shadow: 0 4px 16px rgba(58, 50, 43, .035); }
+.actives__clear { font-size: 12px; color: var(--k-muted); padding: 12px 4px; }
+.rv { margin-top: 14px; padding: 16px; border-radius: 16px; background: var(--k-paper); border: 1px solid #EEE7DE; box-shadow: 0 4px 16px rgba(58, 50, 43, .035); }
 .rv__head { display: flex; align-items: flex-start; gap: 10px; }
 .rv__avatar { width: 36px; height: 36px; border-radius: 50%; flex: 0 0 auto; background: #F7F4EF; }
 .rv__who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
@@ -376,11 +376,11 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) reload() })
 .rv__name { max-width: 100%; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
 .rv__room { min-width: 0; padding: 3px 7px; border-radius: 6px; background: #F3E5D2; color: #795331; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
 .rv__stars { display: flex; gap: 1px; flex: 0 0 auto; }
-.rv__date { font-size: 11px; color: #6F6A65; }
+.rv__date { font-size: 11px; color: var(--k-muted); }
 .rv__featured { flex: 0 0 auto; padding: 3px 6px; border-radius: 6px; background: #F3E5D2; color: #795331; font-size: 11px; }
 .rv__text { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
-.rv__para { font-size: 15px; line-height: 1.75; color: #3A322B; overflow-wrap: anywhere; }
-.rv__label { margin-right: 6px; font-size: 12px; font-weight: 600; color: #8A5E36; }
+.rv__para { font-size: 15px; line-height: 1.75; color: var(--k-ink); overflow-wrap: anywhere; }
+.rv__label { margin-right: 6px; font-size: 12px; font-weight: 600; color: var(--k-red-deep); }
 .rv__copy { white-space: pre-wrap; }
 .rv__pics { margin-top: 12px; display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rv__pics--one { grid-template-columns: minmax(0, 1fr); }
@@ -388,22 +388,22 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) reload() })
 .rv__pics--one .rv__cell { padding-bottom: 75%; }
 .rv__cell--lead { grid-column: span 2; padding-bottom: 66.67%; }
 .rv__pic { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.rv__video { position: relative; margin-top: 12px; width: 100%; height: 0; padding-bottom: 56.25%; border-radius: 10px; overflow: hidden; background: #3A322B; }
+.rv__video { position: relative; margin-top: 12px; width: 100%; height: 0; padding-bottom: 56.25%; border-radius: 10px; overflow: hidden; background: var(--k-ink); }
 .rv__video-img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 .rv__video-play { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: rgba(38, 32, 27, .55); border: 1px solid rgba(255, 255, 255, .8); display: flex; align-items: center; justify-content: center; }
-.rv__video-tag { position: absolute; left: 10px; bottom: 10px; padding: 4px 8px; border-radius: 6px; background: rgba(38, 32, 27, .65); color: #fff; font-size: 11px; }
+.rv__video-tag { position: absolute; left: 10px; bottom: 10px; padding: 4px 8px; border-radius: 6px; background: rgba(38, 32, 27, .65); color: var(--k-paper); font-size: 11px; }
 .rv__chips { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
-.rv__chip { padding: 4px 8px; border-radius: 6px; background: #F7F4EF; color: #5A5149; font-size: 11px; }
+.rv__chip { padding: 4px 8px; border-radius: 6px; background: #F7F4EF; color: var(--k-ink2); font-size: 11px; }
 .rv__reply { margin-top: 14px; padding: 12px; border-radius: 10px; background: #F7F4EF; display: flex; flex-direction: column; gap: 6px; }
-.rv__reply-who { font-size: 12px; font-weight: 600; color: #8A5E36; }
-.rv__reply-text { font-size: 13px; line-height: 1.7; color: #5A5149; white-space: pre-wrap; overflow-wrap: anywhere; }
+.rv__reply-who { font-size: 12px; font-weight: 600; color: var(--k-red-deep); }
+.rv__reply-text { font-size: 13px; line-height: 1.7; color: var(--k-ink2); white-space: pre-wrap; overflow-wrap: anywhere; }
 .sr-empty { margin-top: 40px; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .sr-empty--inline { margin-top: 28px; }
 .sr-empty__img { width: 150px; height: 100px; }
 .sr-empty__title { margin-top: 12px; font-size: 18px; font-weight: 600; }
-.sr-empty__sub { margin-top: 8px; font-size: 13px; line-height: 1.7; color: #6F6A65; white-space: pre-line; }
-.sr-empty__btn { margin-top: 18px; min-height: 44px; padding: 0 22px; border-radius: 12px; background: #9A6B3F; display: flex; align-items: center; color: #fff; font-size: 14px; font-weight: 600; }
-.sr-more { display: block; margin-top: 20px; text-align: center; font-size: 12px; color: #6F6A65; }
+.sr-empty__sub { margin-top: 8px; font-size: 13px; line-height: 1.7; color: var(--k-muted); white-space: pre-line; }
+.sr-empty__btn { margin-top: 18px; min-height: 44px; padding: 0 22px; border-radius: 12px; background: var(--k-red); display: flex; align-items: center; color: var(--k-paper); font-size: 14px; font-weight: 600; }
+.sr-more { display: block; margin-top: 20px; text-align: center; font-size: 12px; color: var(--k-muted); }
 @media (max-width: 359px) {
   .sr-body { padding-left: 12px; padding-right: 12px; }
   .sum { padding-left: 12px; padding-right: 12px; }
@@ -428,7 +428,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) reload() })
 .sum__dim-label { color: var(--k-ink); font-size: 12px; font-weight: 600; }
 .sum__dim-num { font-size: 14px; }
 .sum__note { margin-top: 10px; font-size: 10px; }
-.ai-summary { margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: #F6EDE2; }
+.ai-summary { margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: var(--k-red-soft); }
 .ai-summary__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 5px; color: var(--k-red-deep); font-size: 14px; font-weight: 600; }
 .ai-summary__head>text:last-child { font-size: 11px; font-weight: 400; color: var(--k-muted); }
 .ai-summary__copy { display: block; margin-top: 7px; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
@@ -466,7 +466,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) reload() })
 /* 原稿的暖色评分卡、同一行作者信息与右侧星级。 */
 @import './stays-premium.scss';
 .stay-reviews { @include stays-surface; background: linear-gradient(155deg,#F4E4D2 0,#FFFBF7 320px,#F5F5F4 620px); }
-.sum { background: linear-gradient(125deg,#FFFFFF,#FFF9F2); border: 1px solid white; box-shadow: 0 3px 9px rgba(111,75,42,.15); }
+.sum { background: linear-gradient(125deg,var(--k-paper),#FFF9F2); border: 1px solid white; box-shadow: 0 3px 9px rgba(111,75,42,.15); }
 .sum__score { align-items: flex-start; }
 .sum__num,.sum__big { color: #452C1C; }
 .sum__dim-num { color: #80512D; }
@@ -528,4 +528,137 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) reload() })
  .rv__video { width: 100%; padding-bottom: 56.25%; }
 }
 @import './reviews-reference.scss';
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底 + 纯白卡，不用阴影、不描边、不铺纸纹；评分总览、提到的词、页签、评价卡、筛选面板都收小一档，
+   评价正文从加粗改回常规字重。功能和文字一样不少；上面几轮的规则保留不动，这里统一用 .stay-reviews 开头的规则盖过去。 */
+.stay-reviews { @include stays-fine; background-image: none; }
+.stay-reviews :deep(.k-topbar) { background-image: none; }
+.stay-reviews .sr-body { padding: 8px 12px calc(110px + var(--k-safe-bottom)); }
+.stay-reviews .sum { padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+.stay-reviews .sum__num, .stay-reviews .sum__big { color: var(--k-ink); font-family: var(--k-sans); font-size: 24px; font-weight: 700; line-height: 30px; letter-spacing: 0; }
+.stay-reviews .sum__num { color: var(--k-red-deep); }
+.stay-reviews .sum__percent { font-size: 12px; }
+.stay-reviews .sum__cap { color: var(--k-muted); font-size: 11px; }
+.stay-reviews .sum__div { height: 28px; background: var(--k-line); }
+.stay-reviews .sum__dims { margin-top: 10px; padding-top: 10px; border-top-color: var(--k-line); }
+.stay-reviews .sum__dim-label { color: var(--k-muted); font-size: 12px; font-weight: 400; }
+.stay-reviews .sum__dim-num { color: var(--k-ink); font-size: 13px; font-weight: 600; }
+.stay-reviews .sum__note { margin-top: 8px; color: var(--k-muted); font-size: 10px; }
+.stay-reviews .ai-summary { margin-top: 8px; padding: 12px; border-radius: 12px; background: var(--k-paper); }
+.stay-reviews .ai-summary__head { color: var(--k-ink); font-size: 14px; font-weight: 600; }
+.stay-reviews .ai-summary__copy { margin-top: 6px; color: var(--k-ink2); font-size: 13px; line-height: 20px; }
+.stay-reviews .ai-summary__line { margin-top: 6px; font-size: 12px; line-height: 18px; }
+.stay-reviews .mention { margin-top: 14px; }
+.stay-reviews .mention__title { color: var(--k-ink); font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 21px; }
+.stay-reviews .mention__chips { gap: 6px; margin-top: 8px; }
+.stay-reviews .mention__chip { min-height: 28px; padding: 0 12px; border: 1px solid transparent; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); font-size: 12px; font-weight: 400; }
+.stay-reviews .mention__chip.on { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; }
+.stay-reviews .bar { margin-top: 12px; }
+.stay-reviews .bar__tabs { gap: 2px; }
+.stay-reviews .bar__tab { min-height: 28px; padding: 0 12px; border-radius: 14px; color: var(--k-ink2); font-size: 13px; font-weight: 400; }
+.stay-reviews .bar__tab.on { background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; }
+.stay-reviews .bar__filter { min-height: 28px; padding: 0 8px 0 12px; gap: 2px; border: 0; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); font-size: 12px; }
+.stay-reviews .bar__filter.on { background: var(--k-red-soft); color: var(--k-red-deep); }
+
+.stay-reviews .actives { margin-top: 8px; }
+.stay-reviews .actives__chip { min-height: 28px; padding: 0 8px 0 10px; gap: 4px; border-radius: 14px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 12px; }
+.stay-reviews .actives__clear { padding: 8px 6px; color: var(--k-muted); }
+.stay-reviews .rv { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+.stay-reviews .rv__avatar { width: 28px; height: 28px; background: var(--k-paper2); }
+.stay-reviews .rv__name { color: var(--k-ink); font-size: 13px; font-weight: 600; line-height: 18px; }
+.stay-reviews .rv__room { height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-fill); color: var(--k-ink2); font-size: 10px; font-weight: 500; line-height: 17px; }
+.stay-reviews .rv__date { color: var(--k-muted); font-size: 11px; }
+.stay-reviews .rv__featured { height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 10px; font-weight: 500; line-height: 17px; }
+.stay-reviews .rv__para { color: var(--k-ink); font-size: 13px; font-weight: 400; line-height: 20px; }
+.stay-reviews .rv__label { color: var(--k-red-deep); font-size: 12px; font-weight: 600; }
+.stay-reviews .rv__cell, .stay-reviews .rv__pics--one .rv__cell { border-radius: 8px; background: var(--k-paper2); }
+.stay-reviews .rv__video { border-radius: 8px; background: var(--k-ink); }
+.stay-reviews .rv__video-play { width: 32px; height: 32px; margin: -16px 0 0 -16px; border: 0; border-radius: 50%; background: rgba(20,14,10,.5); }
+
+.stay-reviews .rv__video-tag { left: 4px; bottom: 4px; height: 16px; padding: 0 5px; border-radius: 8px; background: rgba(20,14,10,.5); font-size: 10px; line-height: 16px; }
+.stay-reviews .rv__chips { gap: 4px; }
+.stay-reviews .rv__chip { height: 17px; padding: 0 5px; border: 0; border-radius: 4px; background: var(--k-fill); color: var(--k-ink2); font-size: 10px; font-weight: 500; line-height: 17px; }
+.stay-reviews .rv__reply { margin-top: 10px; padding: 10px; gap: 4px; border-radius: 8px; background: var(--k-page); }
+.stay-reviews .rv__reply-who { color: var(--k-red-deep); font-size: 12px; font-weight: 600; }
+.stay-reviews .rv__reply-text { color: var(--k-ink2); font-size: 12px; line-height: 18px; }
+.stay-reviews .sr-empty__img { width: 120px; height: 80px; border-radius: 12px; }
+.stay-reviews .sr-empty__title { color: var(--k-ink); font-size: 15px; font-weight: 600; }
+.stay-reviews .sr-empty__sub { margin-top: 6px; color: var(--k-muted); font-size: 12px; line-height: 18px; }
+.stay-reviews .sr-empty__btn { min-height: 36px; margin-top: 14px; padding: 0 18px; border-radius: 18px; background: linear-gradient(135deg,#B5814D,#8E5E33); font-size: 13px; font-weight: 600; }
+.stay-reviews .sr-more { margin-top: 14px; color: var(--k-muted); font-size: 11px; }
+/* 筛选面板：16 圆角的底部弹层，选项 36 高浅灰块，底部两颗 42 高的胶囊钮 */
+.stay-reviews .panel-mask { background: rgba(20,14,10,.4); }
+.stay-reviews .panel { border-radius: 16px 16px 0 0; }
+.stay-reviews .panel__head { padding: 8px 12px 0; }
+.stay-reviews .panel__title { font-size: 16px; font-weight: 700; }
+.stay-reviews .panel__close { color: var(--k-muted); font-size: 12px; }
+
+.stay-reviews .panel__content { padding: 4px 12px 16px; }
+.stay-reviews .panel__sub { margin: 8px 0; font-size: 13px; font-weight: 600; }
+.stay-reviews .opt { min-height: 36px; padding: 6px; border-radius: 8px; background: var(--k-fill); color: var(--k-ink2); font-size: 13px; }
+.stay-reviews .opt.on { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; }
+.stay-reviews .panel__line { margin: 16px 0 8px; background: var(--k-line); }
+.stay-reviews .panel__foot { padding: 8px 12px calc(8px + var(--k-safe-bottom)); gap: 8px; border-top-color: var(--k-line); }
+.stay-reviews .panel__reset, .stay-reviews .panel__ok { min-height: 42px; border-radius: 21px; font-size: 14px; }
+.stay-reviews .panel__reset { border-color: var(--k-red-line); color: var(--k-red-deep); }
+.stay-reviews .panel__ok { background: linear-gradient(135deg,#B5814D,#8E5E33); font-weight: 600; }
+/* 2026-11-18 第二轮精修：评分总览只留总分一个重点（24 / 700 暖棕），评价数、推荐率收成 18 / 700 深墨，数字都等宽；星星和全组统一成赭黄 var(--k-ochre)；
+   「大家提到」选中的胶囊留细棕边（放在浅灰页面底上，没边就和没选中分不开）、字重 500；评价列表为空时放进白卡，「清除筛选 / 回去看看小院 / 重新加载」改成 32 高的次按钮小胶囊（上下各多 4px 透明可点范围）。 */
+.stay-reviews .sum__num { color: var(--k-red); font-variant-numeric: tabular-nums; }
+.stay-reviews .sum__big { font-size: 18px; line-height: 30px; font-variant-numeric: tabular-nums; }
+.stay-reviews .sum__dim-num { font-variant-numeric: tabular-nums; }
+.stay-reviews .mention__chip.on { border-color: var(--k-red-line); font-weight: 500; }
+.stay-reviews .sr-empty--inline { margin-top: 8px; padding: 28px 12px; border-radius: 12px; background: var(--k-paper); }
+.stay-reviews .sr-empty--inline .sr-empty__title { margin-top: 0; color: var(--k-ink2); font-size: 14px; font-weight: 500; }
+.stay-reviews .sr-empty--inline .sr-empty__sub { margin-top: 4px; line-height: 1.6; }
+.stay-reviews .sr-empty__btn { position: relative; min-height: 32px; height: 32px; margin-top: 12px; padding: 0 14px; border: 1px solid var(--k-red-line); border-radius: 16px; background: var(--k-paper); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+.stay-reviews .sr-empty__btn::after { content: ''; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
+@media (max-width: 359px) {
+  .stay-reviews .sum__num { font-size: 22px; }
+  .stay-reviews .bar__tab { padding: 0 8px; font-size: 12px; }
+}
+/* 2026-11-18 第三轮逐页精修：
+   · 总评卡：内边距 16，综合分 28 / 700，星星固定 12、间距 1，和「综合评分」垂直居中；分项与上面空 12；
+   · 「全部 / 有图·视频 / 差评」和「筛选」同一种 28 高胶囊：未选白底 12 二级墨，选中浅棕底深棕字；
+   · 评价里的视频和照片对齐到同一套三列网格：照片 1:1 方格、间距 4；视频占两列宽、16:9，左边缘和照片一条线；
+   · 卡与卡 8、卡内 16 / 12。 */
+.stay-reviews .sum { padding: 16px 12px 14px; }
+.stay-reviews .sum__num { font-size: 28px; line-height: 34px; }
+.stay-reviews .sum__big { font-size: 20px; line-height: 34px; }
+.stay-reviews .sum__score-side { gap: 2px; }
+.stay-reviews .sum__stars { gap: 1px; align-items: center; }
+
+.stay-reviews .sum__dims { margin-top: 12px; padding-top: 12px; }
+.stay-reviews .bar { margin: 16px 0 4px; align-items: center; }
+.stay-reviews .bar__tabs { gap: 8px; }
+.stay-reviews .bar__tab { height: 28px; min-height: 28px; padding: 0 12px; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); font-size: 12px; font-weight: 400; display: flex; align-items: center; }
+.stay-reviews .bar__tab.on { background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; }
+.stay-reviews .bar__filter { height: 28px; padding: 0 10px 0 12px; gap: 4px; }
+.stay-reviews .rv { padding: 14px 12px; }
+.stay-reviews .rv__pics, .stay-reviews .rv__pics--one, .stay-reviews .rv__pics--two { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+.stay-reviews .rv__cell, .stay-reviews .rv__pics--one .rv__cell, .stay-reviews .rv__cell--lead { grid-column: auto; padding-bottom: 100%; border-radius: 8px; }
+.stay-reviews .rv__video { margin: 10px 0 0 37px; width: calc((100% - 45px) * 2 / 3 + 4px); padding-bottom: calc(((100% - 45px) * 2 / 3 + 4px) * .5625); border-radius: 8px; }
+.stay-reviews .rv__video + .rv__pics { margin-top: 4px; }
+.stay-reviews .sr-more { padding: 16px 0 8px; }
+@media (max-width: 359px) {
+  .stay-reviews .bar__tabs { gap: 4px; }
+  .stay-reviews .bar__tab { padding: 0 10px; }
+}
+/* 11-19 独立复评返修：320 宽评价里的视频和正文、照片对齐到同一条左线（不再缩进 37），宽度仍是三列网格里的两列 + 一个间距，16:9 */
+@media (max-width: 359px) {
+  .stay-reviews .rv__video { margin-left: 0; width: calc((100% - 8px) * 2 / 3 + 4px); padding-bottom: calc(((100% - 8px) * 2 / 3 + 4px) * .5625); }
+}
+/* 11-19 微信实拍返修：
+   · 评价卡头：第一行只放名字 + 房型；入住月份挪到第二行跟在星星后面（隔 8），头像 28 和两行字上下居中；
+   · 评价视频做主角：正文列满宽 16:9（375 宽约 290×163），照片在下面三列方格、间距 4，和视频左右边对齐，不再单独掉一行留一大块空；
+   · 分项名「卫生 / 设施相符…」改二级墨 12/500，和正文隔 8；暖棕只留给大分数和选中胶囊。 */
+.stay-reviews .rv__head { align-items: center; }
+.stay-reviews .rv__who>.rv__line:first-child { padding-right: 0; }
+.stay-reviews .rv__who>.rv__line:last-child { position: static; margin: 4px 0 0; gap: 8px; }
+.stay-reviews .rv__who>.rv__line:last-child>.rv__date { margin-left: 0; }
+.stay-reviews .rv__video { width: calc(100% - 37px); padding-bottom: calc((100% - 37px) * .5625); }
+.stay-reviews .rv__label { margin-right: 8px; color: var(--k-ink2); font-size: 12px; font-weight: 500; }
+@media (max-width: 359px) {
+  .stay-reviews .rv__video { width: 100%; padding-bottom: 56.25%; }
+}
 </style>

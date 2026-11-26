@@ -48,6 +48,6 @@ test('full storage and write failures never delete old drafts during migration',
   assert.equal(data.get('wish:draft:12').title,'unmigrated')
   const before=listDrafts(12)
   uni.setStorageSync=()=>{throw new Error('storage full')}
-  assert.throws(()=>saveLocalDraft(12,{...before[0],data:{title:'lost?'}}),/storage full/)
+  assert.throws(()=>saveLocalDraft(12,{...before[0],data:{title:'lost?'}}),/草稿保存失败，请检查本机存储空间后重试/)
   assert.deepEqual(listDrafts(12),before)
 })

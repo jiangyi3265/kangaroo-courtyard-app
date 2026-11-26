@@ -1,19 +1,19 @@
 <template>
-  <view class="k-page follows">
+  <view class="k-page follows" :class="$userSurface">
     <k-topbar :title="storeId ? (store.storeName || '门店在招岗位') : '收藏与关注'" back custom-back @back="onBack" />
 
     <!-- 2026-10-18 主人：「我的收藏」「我的关注」合成「收藏与关注」，顶部下拉选看哪一个；下面一排页签跟着换：
          我的收藏 = 岗位 / 房源 / 服务 / 帖子 / 活动，我的关注 = 门店 / 用户（2026-10-11 起社区里关注的人也在这里） -->
     <view v-if="!storeId" class="modebar">
       <view class="mode" hover-class="k-press" @click="modeOpen = !modeOpen">
-        <view class="mode__pill"><text>{{ mode === 'fav' ? '我的收藏' : '我的关注' }}</text><k-icon :name="modeOpen ? 'chevron-up' : 'chevron-down'" :size="15" color="red" :stroke="2" /></view>
+        <view class="mode__pill"><text>{{ mode === 'fav' ? '我的收藏' : '我的关注' }}</text><k-icon :name="modeOpen ? 'chevron-up' : 'chevron-down'" :size="12" color="muted" /></view>
       </view>
-      <view class="k-tabs k-tabs--left tabs">
+      <scroll-view scroll-x enhanced :show-scrollbar="false" class="tabs-scroll"><view class="k-tabs k-tabs--left tabs">
         <view v-for="t in (mode === 'fav' ? FAV_TABS : TABS)" :key="t.key" class="k-tabs__item" :class="{ active: (mode === 'fav' ? favTab : tab) === t.key }" @click="pickTab(t.key)"><text>{{ t.label }}</text></view>
-      </view>
+      </view></scroll-view>
       <view v-if="modeOpen" class="mode-menu">
         <view v-for="modeItem in MODES" :key="modeItem.key" class="mode-menu__item" :class="{ on: mode === modeItem.key }" hover-class="k-press" @click="setMode(modeItem.key)">
-          <text>{{ modeItem.label }}</text><k-icon v-if="mode === modeItem.key" name="check" :size="16" color="red" :stroke="2.2" />
+          <text>{{ modeItem.label }}</text><k-icon v-if="mode === modeItem.key" name="check" :size="16" color="red" />
         </view>
       </view>
     </view>
@@ -21,7 +21,7 @@
 
     <view v-if="!storeId && !sessionReady" class="k-body k-pad-safe state"><text class="k-meta">正在确认登录状态…</text></view>
     <view v-else-if="!storeId && !experience.account?.id" class="k-body k-pad-safe state auth-state">
-      <k-icon :name="mode === 'fav' ? 'bookmark' : 'users'" :size="34" color="muted" />
+      <view class="state__ico"><k-icon :name="mode === 'fav' ? 'bookmark' : 'users'" :size="32" color="red" /></view>
       <text class="state__title">登录后查看{{ mode === 'fav' ? '收藏' : '关注' }}</text>
       <text class="k-meta">{{ mode === 'fav' ? '收藏过的岗位、房源等，会保存在你的账号里。' : '登录后查看你关注的门店和用户。' }}</text>
       <k-button type="secondary" size="sm" label="去登录" @click="go(R.login)" />
@@ -32,33 +32,35 @@
       <view v-if="favLoading && !favRows.length" class="state"><text class="k-meta">正在读取收藏…</text></view>
       <view v-else-if="favError" class="state"><text>{{ favError }}</text><k-button type="ghost" size="sm" label="重新加载" @click="loadFav" /></view>
       <view v-else-if="!favRows.length" class="state">
-        <k-icon name="bookmark" :size="34" color="muted" />
+        <view class="state__ico"><k-icon name="bookmark" :size="32" color="red" /></view>
         <text class="state__title">还没有收藏的{{ favLabel }}</text>
         <text class="k-meta">在详情页点收藏，就会出现在这里。</text>
       </view>
-      <view v-for="favItem in favRows" :key="favItem.key" class="store-row fav-row" hover-class="k-press-s" @click="openFav(favItem)">
+      <view v-for="favItem in favRows" :key="favItem.key" class="store-row fav-row" :class="{ 'fav-row--job': favItem.kind === 'job' }" hover-class="k-press-s" @click="openFav(favItem)">
         <image v-if="favItem.cover" class="store-row__cover" :src="favItem.cover" mode="aspectFill" />
-        <view v-else class="store-row__cover store-row__cover--empty"><k-icon :name="favIcon" :size="24" color="green" /></view>
+        <view v-else class="store-row__cover store-row__cover--empty"><k-icon :name="favIcon" :size="24" color="red" /></view>
         <view class="store-row__main">
           <k-job-urgency v-if="favItem.kind === 'job'" :job="favItem.urgency" />
           <text class="store-row__name">{{ favItem.title }}</text>
           <text v-if="favItem.meta" class="store-row__jobs">{{ favItem.meta }}</text>
           <text v-if="favItem.note" class="k-tiny">{{ favItem.note }}</text>
+          <view class="fav-row__foot">
           <text v-if="favItem.status" class="fav-row__status" :class="{ off: favItem.off }">{{ favItem.status }}</text>
           <button v-if="favItem.kind === 'job'" class="fav-row__cancel" role="button" :disabled="!!cancelingJobs[favItem.id]" :loading="!!cancelingJobs[favItem.id]" :aria-label="'取消收藏：' + favItem.title" @click.stop="cancelFavJob(favItem)">{{ cancelingJobs[favItem.id] ? '取消中' : '取消收藏' }}</button>
+          </view>
         </view>
-        <k-icon name="chevron-right" :size="16" color="muted" />
+        <k-icon name="chevron-right" :size="12" color="muted" />
       </view>
       <text v-if="favRows.length" class="k-tiny footnote">共 {{ favRows.length }} 个收藏的{{ favLabel }}</text>
     </view>
 
     <!-- 1b 我关注的用户：点一行进 TA 的个人主页，可取消关注 -->
     <view v-else-if="!storeId && tab === 'user'" class="k-body k-pad-safe">
-      <view class="note"><k-icon name="users" :size="15" color="ochre" /><text>在社区点作者头像进 TA 的主页就能关注；信息流选「已关注」只看这些人发的动态。</text></view>
+      <view class="note"><k-icon name="users" :size="14" color="red" /><text>在社区点作者头像进 TA 的主页就能关注；信息流选「已关注」只看这些人发的动态。</text></view>
       <view v-if="userLoading && !users.length" class="state"><text class="k-meta">正在读取关注的人…</text></view>
       <view v-else-if="userError" class="state"><text>{{ userError }}</text><k-button type="ghost" size="sm" label="重新加载" @click="loadUsers" /></view>
       <view v-else-if="!users.length" class="state">
-        <k-icon name="users" :size="34" color="muted" />
+        <view class="state__ico"><k-icon name="users" :size="32" color="red" /></view>
         <text class="state__title">还没有关注的人</text>
         <text class="k-meta">在社区里点帖子作者的头像，进 TA 的主页点「关注」。</text>
         <k-button v-if="communityEnabled" type="secondary" size="sm" label="去社区看看" @click="go(R.community)" />
@@ -77,18 +79,18 @@
 
     <!-- 1 我关注的门店 -->
     <view v-else-if="!storeId" class="k-body k-pad-safe">
-      <view class="note"><k-icon name="bell" :size="15" color="ochre" /><text>{{ note }}</text></view>
+      <view class="note"><k-icon name="bell" :size="14" color="red" /><text>{{ note }}</text></view>
       <view v-if="loading && !rows.length" class="state"><text class="k-meta">正在读取关注的门店…</text></view>
       <view v-else-if="error" class="state"><text>{{ error }}</text><k-button type="ghost" size="sm" label="重新加载" @click="loadList" /></view>
       <view v-else-if="!rows.length" class="state">
-        <k-icon name="store" :size="34" color="muted" />
+        <view class="state__ico"><k-icon name="store" :size="32" color="red" /></view>
         <text class="state__title">还没有关注的门店</text>
         <text class="k-meta">在岗位详情的门店卡片上点「关注」，这家店发布新岗位时会在消息中心通知你。</text>
         <k-button type="secondary" size="sm" label="去看看岗位" @click="go(R.jobsList)" />
       </view>
       <view v-for="storeRow in rows" :key="storeRow.storeId" class="store-row" @click="openStore(storeRow)">
         <image v-if="storeRow.cover" class="store-row__cover" :src="absUrl(storeRow.cover)" mode="aspectFill" />
-        <view v-else class="store-row__cover store-row__cover--empty"><k-icon name="store" :size="24" color="green" /></view>
+        <view v-else class="store-row__cover store-row__cover--empty"><k-icon name="store" :size="24" color="red" /></view>
         <view class="store-row__main">
           <text class="store-row__name">{{ storeRow.storeName }}</text>
           <text class="store-row__jobs" :class="{ 'is-open': storeRow.openJobs > 0 }">{{ storeRow.city ? storeRow.city + ' · ' : '' }}{{ storeRow.jobsText }}</text>
@@ -107,7 +109,7 @@
       <template v-else>
         <view class="store-head">
           <image v-if="store.cover" class="store-head__cover" :src="absUrl(store.cover)" mode="aspectFill" />
-          <view v-else class="store-head__cover store-row__cover--empty"><k-icon name="store" :size="26" color="green" /></view>
+          <view v-else class="store-head__cover store-row__cover--empty"><k-icon name="store" :size="28" color="red" /></view>
           <view class="store-head__main">
             <text class="store-head__name">{{ store.storeName }}</text>
             <text class="k-meta">{{ storeMeta }}</text>
@@ -118,7 +120,7 @@
         <text v-if="store.intro" class="intro">{{ store.intro }}</text>
         <view class="section"><text class="section__title">在招岗位</text><text class="k-meta">{{ jobs.length }} 个</text></view>
         <view v-if="!jobs.length" class="state">
-          <k-icon name="briefcase" :size="30" color="muted" />
+          <view class="state__ico"><k-icon name="briefcase" :size="32" color="red" /></view>
           <text class="k-meta">{{ store.active === false ? '这家店暂停营业，暂时看不到它的岗位。' : '这家店暂时没有在招的岗位' + (following ? '，有新岗位会通知你。' : '，关注后有新岗位会通知你。') }}</text>
         </view>
         <view v-for="jobRow in jobs" :key="jobRow.jobId" class="job-row" @click="openJob(jobRow)">
@@ -128,7 +130,7 @@
             <text class="k-meta">{{ jobMeta(jobRow) }}</text>
           </view>
           <view class="job-row__price"><text class="job-row__num">{{ jobRow.price }}</text><text class="k-tiny">{{ jobRow.unit }}</text></view>
-          <k-icon name="chevron-right" :size="16" color="muted" />
+          <k-icon name="chevron-right" :size="12" color="muted" />
         </view>
       </template>
     </view>
@@ -539,7 +541,7 @@ async function toggleFollow() {
    2026-10-19 一比一还原（全局视觉语言）：暖米渐变页面底、白卡圆角 20 + 柔阴影 + 细边、标题用标题字体（700 / 900）、主按钮暖棕渐变。只改样式
    --------------------------------------------------------------------------------------------------------------- */
 .follows { --k-bg: #{$look-bg-top}; background: $look-bg; }
-.store-row, .store-head, .job-row { border: $look-hairline; border-radius: 20px; background: #fff; box-shadow: $look-shadow; }
+.store-row, .store-head, .job-row { border: $look-hairline; border-radius: 20px; background: var(--k-paper); box-shadow: $look-shadow; }
 .store-row__cover, .store-head__cover { border-radius: 14px; }
 .mode__pill { border-color: $look-chip-on-line; background: $look-chip-on-bg; color: $look-chip-on-ink; font-family: var(--k-display-font); font-weight: 700; }
 .mode-menu { border-radius: 18px; }
@@ -558,4 +560,170 @@ async function toggleFollow() {
 .fav-row__status { align-self:flex-start; }
 @media (max-width:350px) { .fav-row .store-row__cover { width:64px; height:64px; } }
 
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：收藏与关注、门店在招岗位 —— 浅灰底、白卡 12 圆角、不描边不加阴影，图、字收小一档。
+   功能和文字不变：我的收藏 / 我的关注下拉、各类页签、每一行、取消收藏 / 取消关注、关注门店、在招岗位都在；下拉菜单是弹层，保留一点阴影 */
+.follows { --k-bg:var(--k-page); --k-radius:12px; background:var(--k-page); font-size:13px; }
+.follows :deep(.k-navbar__title) { font-family:var(--k-sans); font-size:16px; font-weight:600; }
+.follows .k-body { padding-left:12px; padding-right:12px; }
+.follows :deep(.k-button) { border-radius:999px; }
+/* 不能点的按钮：11-18 第二轮起交给公共组件 —— 原配色整体 .45，不再盖成冷灰块 */
+.modebar { padding-top:4px; }
+.mode { padding:0 12px; }
+.mode__pill { height:28px; padding:0 10px 0 12px; background:var(--k-paper); color:var(--k-red-deep); font-family:var(--k-sans); font-size:13px; font-weight:600; }
+.mode-menu { left:12px; top:46px; width:148px; border-radius:12px; box-shadow:0 6px 20px rgba(58,50,43,.12); }
+.mode-menu__item { font-size:14px; }
+.mode-menu__item.on { color:var(--k-red-deep); }
+.tabs { padding:0 4px; border-bottom:0; }
+.tabs .k-tabs__item { padding:10px 12px; font-size:13px; }
+.tabs .k-tabs__item.active { color:var(--k-red-deep); }
+.note { padding:8px 12px; border-radius:8px; background:#FFF8EE; font-size:12px; color:var(--k-ink2); }
+.state { gap:8px; padding:44px 20px; }
+.state__title { font-family:var(--k-sans); font-size:15px; font-weight:600; }
+.store-row,.store-head,.job-row { border:0; border-radius:12px; box-shadow:none; }
+.store-row { gap:10px; margin-top:8px; padding:12px; }
+.store-row__cover { width:64px; height:64px; border-radius:8px; }
+.store-row__name { font-family:var(--k-sans); font-size:14px; font-weight:600; line-height:20px; }
+.store-row__jobs { font-size:12px; line-height:1.5; }
+/* 「取消收藏」看着是 28 高的小胶囊，四周留 4 的透明边，点按高度 36；细边画在 ::after 上，贴着里面那圈 */
+.fav-row__cancel { min-width:0; min-height:36px; margin:2px 0 -4px -4px; padding:0 12px; border:4px solid transparent; border-radius:18px; background:var(--k-paper) padding-box; color:var(--k-red-deep); line-height:28px; }
+.fav-row__cancel[disabled] { background:#F5F1EC padding-box; }
+.fav-row__cancel::after { border-color:var(--k-red-line); border-radius:28px; }
+.fav-row__status { font-size:11px; }
+.user-row__avatar { width:44px; height:44px; }
+.footnote { margin-top:12px; }
+.store-head { gap:10px; padding:12px; }
+.store-head__cover { width:56px; height:56px; border-radius:8px; }
+.store-head__name { font-family:var(--k-sans); font-size:16px; }
+.hint { padding:0 2px; font-size:11px; line-height:1.6; }
+.intro { margin-top:8px; padding:0 2px; color:var(--k-ink2); }
+.section { margin:16px 2px 0; }
+.section__title { font-family:var(--k-sans); font-size:15px; }
+.job-row { gap:8px; padding:12px; }
+.job-row__title { font-family:var(--k-sans); font-size:14px; font-weight:600; }
+.job-row__num { font-family:var(--k-sans); font-size:15px; font-weight:700; color:var(--k-red-deep); }
+/* 11-18 第二轮精修（只动样子） */
+/* 1) 没有封面时的占位：和全站一样的浅暖色渐变 + 暖棕图标（之前是浅绿底绿图标） */
+.store-row__cover--empty { background:linear-gradient(145deg,#FCF4E8,#F4E4CC); }
+/* 2) 「取消收藏」「取消关注」统一成小次按钮：看着 28 高、圆角 14、12 / 500，白底细棕边深棕字；不可点时原样整体变淡 .45 */
+.fav-row__cancel { font-weight:500; }
+.fav-row__cancel[disabled] { background:var(--k-paper) padding-box; color:var(--k-red-deep); opacity:.45; }
+.row-action :deep(.k-button.is-xs) { height:28px; padding:0 12px; border-radius:14px; font-size:12px; font-weight:500; border-color:var(--k-red-line) !important; background:var(--k-paper) !important; color:var(--k-red-deep) !important; }
+/* 3) 页签（下划线式）：字 14，没选 400 灰、选中 600 墨色，下面 16×3 暖棕短条，整行 40 高 */
+.tabs .k-tabs__item { padding:9px 12px; font-size:14px; font-weight:400; line-height:22px; color:var(--k-muted); }
+.tabs .k-tabs__item.active { color:var(--k-ink); font-weight:600; }
+.tabs .k-tabs__item.active::after { width:16px; height:3px; margin-left:-8px; border-radius:2px; background:var(--k-red); }
+/* 4) 读取中 / 出错 / 没有内容：放进白卡里居中（图标 36 灰、标题 14 / 500 二级墨、说明 12 灰行高 1.6），按钮是 32 高的次按钮小胶囊 */
+.k-body > .state, .follows .k-body.state { margin-top:8px; padding:28px 12px; border-radius:12px; background:var(--k-paper); }
+.follows .k-body.state { margin-left:12px; margin-right:12px; }
+.state__title { font-size:14px; font-weight:500; color:var(--k-ink2); }
+.state > text:not(.state__title):not(.k-meta) { font-size:14px; font-weight:500; line-height:1.6; color:var(--k-ink2); }
+.state .k-meta { font-size:12px; line-height:1.6; }
+.state :deep(.k-button) { height:32px; padding:0 16px; border-radius:16px; border-color:var(--k-red-line); background:var(--k-paper); color:var(--k-red-deep); font-size:13px; font-weight:500; }
+
+/* 11-18 第三轮：页边距 16；门店卡第三行（关注时间 · 提醒频率）单行省略，不再折出一个「知」字；城市 · 在招岗位改 12 二级墨（绿色在全站是「安心 / 成功」）；
+   空状态的图标放进 56 的浅棕方块（32 号暖棕线性图标）；顶部提示条 12 二级墨、图标 14 暖棕 */
+.follows .k-body { padding-left:16px; padding-right:16px; }
+.follows .k-body.state { margin-left:16px; margin-right:16px; }
+.mode { padding:0 16px; }
+.store-row { align-items:center; gap:12px; }
+.store-row__main { min-width:0; gap:2px; }
+.store-row__main > .store-row__name { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.store-row__jobs, .store-row__jobs.is-open { color:var(--k-ink2); }
+.store-row__main > .k-tiny { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:11px; color:var(--k-muted); }
+.note { display:flex; align-items:center; gap:6px; }
+.state { gap:0; padding-top:32px; }
+.state__ico { display:flex; align-items:center; justify-content:center; width:56px; height:56px; margin-bottom:12px; border-radius:16px; background:var(--k-red-soft); }
+.state__title { margin-bottom:4px; }
+.state :deep(.k-button) { margin-top:12px; }
+.store-row__main > .store-row__jobs { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+/* 11-18 第三轮返修：门店第三行（关注时间 · 提醒频率）放得下就一行、放不下按整句均衡折成两行（不再截成「有新岗位马…」，也不会只剩一个字）；
+   320 宽：封面缩到 56，「取消关注」12 号、左右 10，给文字让出宽度 */
+.store-row__main > .k-tiny { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; word-break:keep-all; line-height:16px; }
+@media (max-width:359px) {
+  .store-row { gap:10px; }
+  .store-row__cover, .fav-row .store-row__cover { width:56px; height:56px; }
+  .row-action :deep(.k-button.is-xs) { padding:0 10px; }
+  .store-row__main > .store-row__jobs { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; }
+}
+/* 11-18 返修（第 2 轮）：
+   1) 门店第三行（关注时间 · 提醒频率）回到单行、放不下省略 —— 折两行时分隔点「·」会挂在第一行末尾；
+   2) 「取消关注」看着 28 高、左右 10、12 号字，给店名和第三行让出宽度；
+   3) 320 宽顶部提示条左右 10、图标和字间距 4，「…会在消息中心通知你。」一行放得下，不再剩「你。」两个字 */
+.store-row__main > .k-tiny { display:block; -webkit-line-clamp:unset; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; word-break:normal; }
+.row-action :deep(.k-button.is-xs) { height:28px; padding:0 10px; font-size:12px; }
+/*    「取消关注」挪到右上角（和店名同一行，不再占住第三行的宽度）：店名、城市行右边让出 80，第三行占满整行，「2026-10-24 关注 · 有新岗位马上通知」390 和 320 宽都整句放得下 */
+.store-row { position:relative; }
+.store-row > .row-action { position:absolute; top:10px; right:12px; }
+.store-row:not(.fav-row) .store-row__main > .store-row__name, .store-row:not(.fav-row) .store-row__main > .store-row__jobs { padding-right:80px; }
+@media (max-width:359px) {
+  .note { gap:4px; padding-left:8px; padding-right:8px; }
+  .note > text { text-wrap:balance; }
+}
+/* 11-18 第三轮返修（第 3 轮）收藏行：「图 + 两行字 + 箭头」——
+   · 给门店行右上角「取消关注」让出的 80 只管门店 / 用户行，收藏行不让（之前标题被截短、箭头前空着一截，320 宽说明断成「平 / 潭」）；
+   · 封面 64 顶对齐标题；标题 14 / 600 一行、说明 12 二级墨一行、补充 11 灰字一行，放不下省略；
+   · 最下面一行：左边状态（招募中 / 已结束），右边「取消收藏」28 高描边小胶囊（和「取消关注」同一种），右边对齐文字区右边线；
+   · 箭头 12 灰色，在整行竖直居中。顶部提示条和第一张卡间距 12。 */
+.store-row.fav-row { align-items: center; gap: 12px; }
+.fav-row .store-row__main { align-self: flex-start; }
+.fav-row .store-row__cover { align-self: flex-start; width: 64px; height: 64px; }
+.store-row.fav-row .store-row__main > .store-row__name, .store-row.fav-row .store-row__main > .store-row__jobs { padding-right: 0; }
+.fav-row .store-row__main { gap: 2px; }
+.fav-row .store-row__main > .store-row__name { display: block; -webkit-line-clamp: unset; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-row .store-row__main > .store-row__jobs { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+.fav-row__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; margin-top: 4px; }
+.fav-row__foot:empty { display: none; }
+.fav-row__foot .fav-row__status { align-self: center; line-height: 16px; }
+.fav-row__foot .fav-row__cancel { flex: 0 0 auto; margin: -4px -4px -4px auto; }
+@media (max-width:359px) {
+  .fav-row .store-row__cover { width: 56px; height: 56px; }
+}
+.note + .store-row, .note + .state { margin-top: 12px; }
+/* 11-18 第三轮返修（第 4 轮）：
+   · 「用户」页签：昵称那一行（昵称 + 互相关注）右边也让出 80 给右上角「取消关注」，长昵称在按钮前面省略，不再钻到按钮底下；
+   · 提示条折两行时，前面的图标对齐第一行（12 号字行高 19，14 号图标往下 2）；
+   · 收藏行右边一条竖线：箭头挪到右上角（和标题第一行齐），「取消收藏」右边伸到箭头那一列，和箭头右边对齐 */
+.user-row__name-line { padding-right: 80px; min-width: 0; }
+.user-row__name-line > .store-row__name { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.user-row__name-line > .k-chip { flex: 0 0 auto; }
+.note { align-items: flex-start; }
+.note > :deep(.k-icon) { flex: 0 0 auto; margin-top: 2px; }
+.store-row.fav-row > :deep(.k-icon) { align-self: flex-start; margin-top: 4px; }
+.fav-row__foot .fav-row__cancel { margin-right: -28px; }
+/* 11-18 第三轮返修（第 5 轮）：收藏的岗位卡右下已有「取消收藏」，右上角的装饰箭头不显示（整张卡可点，和门店卡一样右边只有一个操作点）；
+   「取消收藏」右边回到文字区右边线。房源 / 服务 / 帖子 / 活动卡没有按钮，箭头照常显示 */
+.store-row.fav-row--job > :deep(.k-icon) { display: none; }
+.fav-row--job .fav-row__foot .fav-row__cancel { margin-right: -4px; }
+/* 11-18 第四轮（高级感）：顶部三层控件压成一行 —— 左边「门店 用户」（收藏时是五类）下划线页签，右边「我的关注 ⌄」白底小胶囊（28 高、13 / 500 二级墨、12 号灰箭头），
+   放不下时（320 宽收藏五个页签）胶囊自动换到下一行；下拉菜单从右边弹出。提醒说明不再是浅杏色块：无底色 12 灰字一行、14 号图标。
+   「取消关注」「取消收藏」是可撤销的状态按钮：浅灰底 + 灰字，不再描边（全端卡片小按钮的写法）。 */
+.modebar { display: flex; flex-wrap: wrap; align-items: center; padding-top: 4px; }
+.modebar > .tabs { order: 1; flex: 0 1 auto; min-width: 0; }
+.modebar > .mode { order: 2; margin-left: auto; min-height: 44px; padding: 0 16px 0 8px; }
+.mode__pill { height: 28px; padding: 0 10px 0 12px; border: 0; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); font-family: var(--k-sans); font-size: 13px; font-weight: 500; }
+.mode-menu { left: auto; right: 16px; top: 48px; }
+.note { padding: 0 4px; border-radius: 0; background: transparent; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+.row-action :deep(.k-button.is-xs) { border: 0 !important; border-color: transparent !important; background: var(--k-fill) !important; box-shadow: none !important; color: var(--k-muted) !important; }
+.row-action :deep(.k-button.is-xs)::after { border: 0; }
+/* 11-18 第四轮返修：
+   · 「取消收藏」和「取消关注」同一种写法：浅灰底 + 灰字，不描边（::after 也去掉）；
+   · 页签行横滑（320 宽收藏五个页签不再把「我的收藏」挤到下一行、凭空多出一截空行），胶囊固定在同一行右边，窄屏右边渐隐；
+   · 门店名、收藏标题最多两行（门店卡右边照旧让出 80 给「取消关注」），不再被省略号吃掉 */
+.fav-row__cancel, .fav-row__cancel[disabled] { background: var(--k-fill) padding-box; color: var(--k-muted); }
+.fav-row__cancel::after { border: 0; }
+.modebar { flex-wrap: nowrap; }
+.modebar > .tabs-scroll { order: 1; flex: 1 1 0; min-width: 0; white-space: nowrap; }
+.tabs-scroll > .tabs { display: inline-flex; flex-wrap: nowrap; vertical-align: top; }
+.tabs-scroll > .tabs .k-tabs__item { flex: 0 0 auto; }
+.tabs-scroll ::-webkit-scrollbar { display: none; width: 0; height: 0; color: transparent; }
+@media (max-width: 359px) {
+  .modebar > .tabs-scroll { -webkit-mask-image: linear-gradient(90deg, black 84%, transparent); mask-image: linear-gradient(90deg, black 84%, transparent); }
+  .tabs-scroll > .tabs { padding-right: 36px; } /* 11-19 核对：滑到底时最后一个页签移出渐隐区 */
+}
+.store-row .store-row__main > .store-row__name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow: hidden; text-overflow: clip; overflow-wrap: anywhere; }
+/* 11-19 微信实拍返修：
+   · 铃铛提示只在逗号、分号处折行，「可以」这类词不再拆到两行；
+   · 「我的关注 ⌄」去掉白底，做成 13 / 500 二级墨纯文字下拉 + 12 号灰箭头，和左边无底色的页签同一种做法；外层仍是 44 高点按区 */
+.note > text { word-break: keep-all; overflow-wrap: anywhere; }
+.modebar > .mode .mode__pill { height: 28px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--k-ink2); font-size: 13px; font-weight: 500; }
 </style>

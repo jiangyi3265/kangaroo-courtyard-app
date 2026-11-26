@@ -5,6 +5,7 @@
 //   · 交付记录、门店验收页两处都一个一个显示，不止一个时标「链接 1 / 2 / 3」，各自「复制链接」「复制全文」。
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import vm from 'node:vm'
 import { readFile } from 'node:fs/promises'
 
 const read = async (p) => (await readFile(new URL(p, import.meta.url), 'utf8')).replace(/\r\n/g, '\n')
@@ -49,7 +50,8 @@ test('交付页：成果链接换成三栏面板，textarea 不限字数、在 f
   assert.match(deliver, /<text class="lsheet__label">\{\{ boxLabel \}\}<\/text>/)
   const areas = deliver.match(/<textarea [^>]*>/g) || []
   assert.equal(areas.length, 1, '一个 textarea 跟着 LINK_LABELS 画三栏')
-  assert.match(areas[0], /v-model="linkBoxes\[boxIndex\]"/)
+  assert.match(areas[0], /:value="linkInitial\[boxIndex\]"/)
+  for (const event of ['input', 'blur']) assert.ok(areas[0].includes('@' + event + '="editLink(boxIndex, $event)"'))
   assert.match(areas[0], /:maxlength="-1"/, '粘贴长口令不被悄悄截断')
   assert.match(areas[0], / auto-height /)
   assert.match(areas[0], /:fixed="true"/, 'position: fixed 的面板里要 fixed，不然小程序里输入框位置不对')
@@ -57,7 +59,7 @@ test('交付页：成果链接换成三栏面板，textarea 不限字数、在 f
   assert.match(deliver, /const LINK_HINT = '粘贴作品链接，或小红书、抖音复制的分享口令'/)
   assert.match(deliver, /const linkBoxes = ref\(\['', '', ''\]\)/)
   assert.match(deliver, /<text class="lsheet__title">成果链接或分享口令（选填）<\/text>/)
-  assert.match(deliver, /<text class="lsheet__hint">发了几篇就填几个，每个一栏/)
+  assert.match(deliver, /<text class="lsheet__hint">可填写成果合集链接，或分栏填写；只交图片的可留空/)
   assert.match(deliver, /@click="closeLinks\(null\)"><text>取消<\/text><\/view>/)
   assert.match(deliver, /<k-button block label="下一步" @click="nextLinks" \/>/)
   // 锁页面滚动：遮罩拦 touchmove；小程序 page-meta 放在第一个节点，H5 自己锁 body
@@ -77,9 +79,9 @@ function panelHarness() {
   const ref = (v) => ({ value: v })
   const linkPanel = ref(false)
   const linkBoxes = ref(['', '', ''])
-  const make = new Function('linkPanel', 'linkBoxes', 'toast', 'oneLine', 'LINK_MAX',
+  const make = new Function('linkPanel', 'linkBoxes', 'linkInitial', 'a', 'submittedCount', 'toast', 'oneLine', 'LINK_MAX',
     deliver.slice(start, end) + '\nreturn { askLinks, closeLinks, nextLinks }')
-  return { ...make(linkPanel, linkBoxes, (t) => toasts.push(t), jobs.oneLine, jobs.LINK_MAX), linkPanel, linkBoxes, toasts }
+  return { ...make(linkPanel, linkBoxes, ref([]), ref({}), ref(''), (t) => toasts.push(t), jobs.oneLine, jobs.LINK_MAX), linkPanel, linkBoxes, toasts }
 }
 
 test('面板：下一步交回去掉空栏的列表；有一栏超过 500 字提示第几个、面板不关；取消交回 null（busy 能松开）', async () => {
@@ -112,12 +114,47 @@ test('面板：下一步交回去掉空栏的列表；有一栏超过 500 字提
   assert.equal(await second, null)
 })
 
-test('交付页提交：至少有链接或图片，带上 links 和连好的 link；提交成功清空三栏；连点仍只走一次', () => {
-  assert.match(deliver, /const links = await askLinks\(\)\n  if \(links === null\) return\n/)
-  assert.match(deliver, /if \(!links\.length && !images\.length\) return toast\('请至少提交链接或图片'\)/)
-  assert.match(deliver, /apiOnlineSubmit\(appId\.value, \{ link: links\.join\('\\n'\), links, images, note: note\.trim\(\)\.slice\(0, 300\) \}\)/)
-  assert.match(deliver, /linkBoxes\.value = \['', '', ''\]\n    toast\('已提交，等待门店验收'\)/)
-  assert.match(deliver, /const submit = \(\) => withBusy\(doSubmit\)/)
+function deliveryFixture(stubs = {}) {
+  const writes = [], notices = []
+  const scope = {
+    ref: value => ({value}), computed: fn => ({get value(){return fn()}}), watch(){},
+    onLoad(){}, onUnload(){}, onShow(){}, onHide(){}, onUnmounted(){}, setInterval(){},
+    fileEnv:()=>({}), absUrl:v=>v, splitLink:jobs.splitLink, oneLine:jobs.oneLine, LINK_MAX:jobs.LINK_MAX,
+    experience:{account:{id:5}}, prompt:async()=>'  完成  ', confirm:async()=>false,
+    apiOnlineSubmit:async(id,body)=>{writes.push({id,body});return {data:{stateLabel:'待验收'}}},
+    toast:v=>notices.push(v), errText:(e,f)=>e?.message||f, ...stubs
+  }
+  const js = deliver.split('<script setup>')[1].split('</script>')[0].replace(/^import .*$/gm,'')
+  vm.runInNewContext(js+';this.form={submit, confirmPaid, nextLinks, appId, a, linkBoxes, submittedCount, busy}',scope)
+  scope.form.appId.value=63
+  scope.form.a.value={canSubmit:true,rewardMode:'per_item',itemsPerPerson:3}
+  return {...scope,...scope.form,writes,notices}
+}
+
+test('交付连点只提交一轮，条数、图片和两份口令保存在同一份成果', async () => {
+  const h=deliveryFixture({confirm:async()=>true,chooseImages:async()=>['a'],uploadTo:async()=>({data:{url:'/photo.jpg'}})})
+  const first=h.submit(), second=h.submit()
+  h.linkBoxes.value=['  第一篇 ','','第二篇'];h.submittedCount.value='2';h.nextLinks()
+  await Promise.all([first,second])
+  assert.deepEqual(JSON.parse(JSON.stringify(h.writes)),[{id:63,body:{submittedCount:2,link:'第一篇\n第二篇',links:['第一篇','第二篇'],images:['/photo.jpg'],note:'完成'}}])
+  assert.deepEqual(Array.from(h.linkBoxes.value),['','',''])
+})
+
+test('选了两张图而第二张上传失败时保留口令，整份成果可重试', async () => {
+  const h=deliveryFixture({confirm:async()=>true,chooseImages:async()=>['a','b'],uploadTo:async(_,p)=>{
+    if(p==='b')throw Error('图片未上传');return {data:{url:'/a.jpg'}}
+  }})
+  const pending=h.submit();h.linkBoxes.value=['口令','',''];h.submittedCount.value='1';h.nextLinks();await pending
+  assert.deepEqual(h.writes,[]);assert.deepEqual(h.notices,['图片未上传'])
+  assert.equal(h.linkBoxes.value[0],'口令');assert.equal(h.busy.value,false)
+})
+
+test('收款确认框打开后切换账号，原弹窗不会提交', async () => {
+  let finish
+  const h=deliveryFixture({confirm:()=>new Promise(resolve=>{finish=resolve}),apiOnlineConfirm:()=>assert.fail('不应确认旧账单')})
+  h.a.value={settlement:{amount:'12.00',canConfirm:true}}
+  const pending=h.confirmPaid();h.experience.account.id=9;finish(true);await pending
+  assert.deepEqual(h.notices,[])
 })
 
 test('交付记录：每个链接各一块，不止一个时标「链接 N」，各自复制；老后端没有 links 时自己拆', () => {

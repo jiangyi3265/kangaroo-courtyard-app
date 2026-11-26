@@ -31,6 +31,7 @@ function harness(overrides={}) {
     uni:{getStorageSync(){},setStorageSync(){}},
     apiStayCities:async()=>({data:[{city:'丽江',count:1}]}),
     locateCity:async()=>null,
+    stayBookingEnabled:vue.ref(true),refreshFeatures:async()=>({stayBookingEnabled:true}),
     apiStayAreas:async()=>({data:[]}),
     get:async url=>({data:url==='/app/cities'?{all:directory}:{districts:[],all:0}}),
     apiStayList:async p=>{calls.push(p);return {data:{rows:[],total:0,hasMore:false}}},

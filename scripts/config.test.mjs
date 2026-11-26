@@ -31,7 +31,7 @@ async function productionConfig(apiBase, source = entry) {
   // Execute with only CommonJS exports, like the mini-program config module:
   // Node globals/require must not be needed to discover the deployed API URL.
   const exports = {}
-  runInNewContext(chunk.code, { exports })
+  runInNewContext(chunk.code, { exports, URL })
   return exports
 }
 

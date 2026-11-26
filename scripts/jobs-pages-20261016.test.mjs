@@ -69,7 +69,7 @@ test('列表页选城市：半屏面板多选（最多 5 个），文字联想 +
   // 主人 10-15 要求的「拼音首字母分组」：不搜索时热门下面按字母分组列出全部城市（不含区县），字母条点了跳到那一组
   assert.match(cityPanel, /const letterGroups = computed\(\(\) => \(dirTick\.value > 0 \? groupCities\(dirRows\.filter\(row => row\.level !== 'district'\)\)\.map\(/)
   assert.match(t, /<scroll-view scroll-y class="cp__body" :scroll-into-view="intoView">/)
-  assert.match(t, /class="cp-letter" hover-class="k-press" @click="jumpLetter\(groupItem\.letter\)"/)
+  assert.match(t, /<button v-for="(\w+) in letterGroups"[^>]*@click="jumpLetter\(\1\.letter\)"/)
   assert.match(t, /:id="'cpl-' \+ groupItem\.letter"/)
   assert.match(cityPanel, /intoView\.value = 'cpl-' \+ letter/)
   assert.match(cityPanel, /import \{ toggleCitySelection \} from '@\/common\/city-picker-model\.js'/)

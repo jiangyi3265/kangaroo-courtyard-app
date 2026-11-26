@@ -7,7 +7,7 @@
       <view class="section-head"><text>{{ d.sectionTitle || '系统数据（自动同步）' }}</text><k-icon name="circle-help" :size="16" color="muted" @click="explainSystem" /></view>
       <view class="metric-list">
         <view v-for="item in dailyItems" :key="item.name" class="metric" @click="onMetric(item)">
-          <view class="metric__icon" :class="'metric__icon--' + item.tone"><k-icon :name="item.icon" :size="29" color="white" /></view>
+          <view class="metric__icon" :class="'metric__icon--' + item.tone"><k-icon :name="item.icon" :size="18" color="ink2" /></view>
           <view class="metric__main"><view class="metric__name"><text>{{ item.name }}</text><text class="metric__source">（{{ item.source }}）</text></view><text class="metric__detail">{{ item.detail }}</text></view>
           <view class="metric__right"><text class="metric__amount">{{ item.amount }}</text><text class="metric__delta">较昨日 <text :class="item.trend.cls">{{ item.trend.text }}</text></text></view>
         </view>
@@ -32,7 +32,7 @@
       <view class="date-box summary-date" @click="pickDate"><text>{{ d.dateText }}</text><k-icon name="calendar-days" :size="20" color="ink" /></view>
       <view class="source-legend"><text>数据来源：</text><template v-if="!isRecruit"><view class="legend-dot legend-dot--green" /><text>系统自动</text></template><view class="legend-dot legend-dot--ochre" /><text>手动录入</text></view>
       <view class="summary-cards"><view v-for="card in summaries" :key="card.label" class="summary-card"><text>{{ card.label }}</text><text class="summary-card__amount" :class="card.green ? 'k-green' : 'k-red'">{{ card.amount }}</text><text class="summary-card__delta">较昨日 <text :class="card.trend.cls">{{ card.trend.text }}</text></text></view></view>
-      <view v-if="d.warning" class="warning" @click="openTrend"><k-icon name="triangle-alert" :size="19" color="ochre" /><text>异常提示：{{ d.warning }}</text><k-icon name="chevron-right" :size="19" color="ink" /></view>
+      <view v-if="d.warning" class="warning" @click="openTrend"><k-icon name="triangle-alert" :size="19" color="ochre" /><text>异常提示：{{ d.warning }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
       <text class="table-title">明细列表</text>
       <view class="filter-tabs"><view class="filter-tabs__item active" :style="filter === 'all' ? '' : neutralFilter" @click="filter = 'all'"><text>全部</text></view><view class="filter-tabs__item" :class="{ active: filter === 'income' }" @click="filter = 'income'"><text>收入</text></view><view class="filter-tabs__item" :class="{ active: filter === 'expense' }" @click="filter = 'expense'"><text>支出</text></view></view>
       <view class="details-table"><view class="details-row details-row--head"><text>项目 / 分类</text><text>金额（元）</text><text>来源</text><text>操作</text></view><view v-for="(row, ri) in detailRows" :key="row.name + ri" class="details-row" @click="onRow(row)"><text>{{ row.name }}</text><text>{{ row.amount }}</text><view class="source-cell"><view class="legend-dot" :class="row.system ? 'legend-dot--green' : 'legend-dot--ochre'" /><text>{{ row.system ? '系统' : '手动' }}</text></view><k-icon name="eye" :size="18" color="ink" /></view></view>
@@ -48,7 +48,7 @@
         <view class="signature"><text>主理人签名：</text><view class="signature__line" /><text>日期：</text><view class="signature__line signature__line--date" /></view><text class="paper__note">备注：本报表由袋鼠全球青年系统生成，仅供内部经营参考。</text>
       </view>
       <text class="recipient-title">{{ d.recipientTitle || '发送给换工主理人' }}</text>
-      <view class="recipient"><image :src="managerAvatar" mode="aspectFill" /><view class="k-flex1"><text class="recipient__name">{{ managerName }}</text><text class="recipient__wechat">{{ managerNote }}</text></view><k-button size="sm" type="green" icon="message-circle" @click="sendReport" label="发送" /></view>
+      <view class="recipient"><image :src="managerAvatar" mode="aspectFill" /><view class="k-flex1"><text class="recipient__name">{{ managerName }}</text><text class="recipient__wechat">{{ managerNote }}</text></view><k-button v-if="manager" size="sm" type="green" icon="message-circle" @click="sendReport" label="发送" /></view>
       <k-button block size="md" class="download" @click="download" label="下载 Excel" />
     </view>
 
@@ -357,4 +357,147 @@ async function download() {
 .paper-table { border: 1px solid #BFB8AD; }.paper-row { min-height: 19px; display: grid; grid-template-columns: 1.15fr 1.25fr .8fr 1.2fr; border-top: 1px solid #CBC4B9; font-size: 9px; }.paper-row:first-child { border-top: 0; }.paper-row text { display: flex; align-items: center; justify-content: center; border-left: 1px solid #CBC4B9; }.paper-row text:first-child { border-left: 0; }.paper-row--head { background: #F2EEE6; font-weight: 700; }.paper-table--totals .paper-row { grid-template-columns: repeat(3,1fr); }.paper-table--totals .paper-row:last-child { font-family: var(--k-sans); font-size: 12px; font-weight: 700; }
 .signature { display: flex; align-items: flex-end; gap: 7px; margin-top: 9px; font-size: 9px; }.signature__line { width: 98px; border-bottom: 1px solid #777; }.signature__line--date { width: 70px; }.paper__note { display: block; margin-top: 6px; color: var(--k-muted); font-size: 8px; }
 .recipient-title { display: block; margin-top: 9px; font-family: var(--k-serif); font-size: 17px; font-weight: 700; }.recipient { height: 50px; margin-top: 5px; padding: 0 10px; border: 1px solid var(--k-line); border-radius: 9px; background: var(--k-paper); display: flex; align-items: center; gap: 9px; }.recipient__name, .recipient__wechat { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }.recipient image { width: 34px; height: 34px; border-radius: 50%; }.recipient__name { display: block; font-family: var(--k-serif); font-size: 15px; font-weight: 700; }.recipient__wechat { display: block; margin-top: 3px; color: var(--k-muted); font-size: 11px; }.download { margin-top: 6px; }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底 + 白卡 12 圆角、不描边不加阴影；金额 18–24 / 700，标签和说明 11–12 灰字。
+   只改样子：日期、问号说明、各项指标、新增明细表单、汇总、明细表、导出 / 发送 / 下载都在；「较昨日」的颜色和箭头仍由脚本里的 trend() 定，这里只管字号。
+   新增明细是填写页，字不改小，只统一底色和圆角。下面每条都带 .daily，盖住上面的旧值（上面的旧规则有检查脚本盯着，原样留着）。 */
+@import './manage-refine.scss';
+.daily .date-box { height: 36px; padding: 0 10px 0 12px; border: 0; border-radius: 10px; font-family: var(--k-sans); font-size: 15px; font-weight: 600; }
+.daily .date-box :deep(.k-icon) { width: 16px !important; height: 16px !important; }
+.daily .synced { gap: 4px; font-size: 11px; }
+.daily .synced :deep(.k-icon) { width: 13px !important; height: 13px !important; }
+.daily .section-head { margin: 14px 0 8px; font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 22px; }
+.daily .section-head :deep(.k-icon) { width: 14px !important; height: 14px !important; }
+/* 指标行：图标是 40 的渐变圆（和消息页入口一个做法），名称 14 / 600，金额 20 / 700 */
+.daily .metric { min-height: 64px; padding: 12px; border: 0; border-radius: 12px; gap: 10px; }
+.daily .metric__icon { width: 40px; height: 40px; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+.daily .metric__icon :deep(.k-icon) { width: 20px !important; height: 20px !important; }
+.daily .metric__icon--green { background: linear-gradient(145deg, #9CC4A6, #5F8F6F); }
+.daily .metric__icon--ochre { background: linear-gradient(145deg, #F3C76C, #D0902A); }
+.daily .metric__icon--green-dark { background: linear-gradient(145deg, #8FBA78, #527D42); }
+.daily .metric__icon--blue { background: linear-gradient(145deg, #8DB4D6, #4F7EA8); }
+.daily .metric__name { font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; }
+.daily .metric__source { font-size: 11px; font-weight: 400; color: var(--k-muted); }
+.daily .metric__detail { margin-top: 2px; font-size: 11px; line-height: 16px; }
+.daily .metric__amount { color: var(--k-ink); font-size: 20px; font-weight: 700; line-height: 24px; }
+.daily .metric__delta { margin-top: 2px; font-size: 11px; line-height: 16px; }
+.daily .profit { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; background: linear-gradient(180deg, #FFF8EE, var(--k-paper) 72%); }
+.daily .profit__label { font-size: 12px; color: var(--k-muted); }
+.daily .profit__amount { margin-top: 2px; font-size: 24px; font-weight: 700; line-height: 30px; }
+.daily .profit__delta { font-size: 11px; }
+.daily .data-note { align-items: flex-start; margin-top: 10px; line-height: 16px; }
+.daily .data-note :deep(.k-icon) { width: 12px !important; height: 12px !important; margin-top: 2px; }
+/* 新增明细（填写页）：字号不动，输入框白底、10 圆角、高 44 */
+.daily .type-tabs { height: 44px; padding: 3px; border: 0; border-radius: 12px; background: var(--k-paper); }
+.daily .type-tabs__item { border: 1px solid transparent; border-radius: 9px; }
+.daily .type-tabs__item.active { color: var(--k-red-deep); border-color: var(--k-red-line); font-weight: 600; }
+.daily .field-group { margin-top: 16px; }
+.daily .field-label { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+.daily .field-label .k-meta { font-weight: 400; }
+.daily .field { height: 44px; border: 0; border-radius: 10px; }
+.daily .field :deep(.k-icon) { margin-left: auto; }
+.daily .placeholder { font-size: 14px; }
+.daily .pay { height: 40px; border-color: transparent; border-radius: 10px; font-size: 14px; }
+.daily .pay.active { color: var(--k-red-deep); border-color: var(--k-red-line); background: var(--k-red-soft); font-weight: 600; }
+.daily .upload { width: 76px; border-radius: 10px; background: var(--k-paper); }
+.daily .add-where { margin-top: 20px; }
+.daily .add-actions { gap: 10px; margin-top: 12px; }
+/* 汇总 */
+.daily .source-legend { gap: 6px; margin: 10px 0 8px; font-size: 11px; }
+.daily .legend-dot { width: 6px; height: 6px; }
+.daily .legend-dot--ochre { background: var(--k-ochre); }
+.daily .summary-cards { gap: 8px; }
+.daily .summary-card { min-height: 0; padding: 12px 4px; border: 0; border-radius: 12px; font-size: 12px; color: var(--k-muted); }
+.daily .summary-card__amount { margin-top: 4px; font-size: 18px; font-weight: 700; line-height: 24px; }
+.daily .summary-card__delta { margin-top: 2px; line-height: 16px; }
+.daily .warning { height: auto; min-height: 36px; margin-top: 8px; padding: 8px 10px; border: 0; border-radius: 10px; color: var(--k-ochre-deep); font-size: 12px; line-height: 18px; }
+.daily .warning :deep(.k-icon) { width: 14px !important; height: 14px !important; }
+.daily .table-title { margin-top: 16px; font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 22px; }
+.daily .filter-tabs { gap: 6px; margin: 8px 0; }
+.daily .filter-tabs__item { width: auto; min-width: 56px; height: 28px; padding: 0 12px; border-radius: 14px; background: var(--k-paper); font-size: 12px; }
+.daily .filter-tabs__item.active { color: var(--k-red-deep); border-color: var(--k-red-line); }
+.daily .details-table { border: 0; border-radius: 12px; background: var(--k-paper); }
+.daily .details-row { height: 40px; }
+.daily .details-row--head { height: 34px; background: transparent; font-size: 11px; font-weight: 400; }
+.daily .details-row :deep(.k-icon) { width: 15px !important; height: 15px !important; opacity: .65; }
+.daily .summary-actions { gap: 10px; margin-top: 12px; }
+/* 导出：报表预览是一张白纸，去掉阴影和灰褐色表格线，小字放大到看得清 */
+.daily .paper { padding: 14px 14px 10px; border: 0; border-radius: 12px; box-shadow: none; }
+.daily .paper__title { margin: 0 0 6px; font-family: var(--k-sans); font-size: 18px; font-weight: 700; line-height: 26px; }
+.daily .paper__meta { margin-top: 2px; font-size: 11px; line-height: 16px; color: var(--k-ink2); }
+/* 袋鼠小图自带一层米灰底，摆在白纸上是一块灰框：提亮一点，底色就并进白纸了 */
+.daily .paper__logo image { filter: brightness(1.05); }
+.daily .paper__section { margin: 10px 0 4px; font-family: var(--k-sans); font-size: 13px; font-weight: 700; }
+.daily .paper-table { border-color: var(--k-line2); border-radius: 6px; overflow: hidden; }
+.daily .paper-row { min-height: 24px; border-top-color: var(--k-line); font-size: 11px; }
+.daily .paper-row text { border-left-color: var(--k-line); padding: 2px; text-align: center; }
+.daily .paper-row--head { background: var(--k-bg); font-weight: 600; }
+.daily .signature { margin-top: 12px; font-size: 11px; }
+.daily .signature__line { border-bottom-color: var(--k-light); }
+.daily .paper__note { margin-top: 8px; font-size: 10px; }
+.daily .recipient-title { margin-top: 16px; font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 22px; }
+.daily .recipient { height: 56px; margin-top: 8px; padding: 0 12px; border: 0; border-radius: 12px; gap: 10px; }
+.daily .recipient image { width: 36px; height: 36px; }
+.daily .recipient__name { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.daily .recipient__wechat { margin-top: 2px; }
+.daily .download { margin-top: 12px; }
+/* 2026-11-18 复查 */
+/* 1) 问号和明细筛选胶囊看着小，手指能点的范围补到 36：问号是图标自己在接点击，用透明内边距撑大（负外边距抵掉，位置和大小都不变）；胶囊上下各补一截透明的可点区 */
+.daily .section-head :deep(.k-icon) { box-sizing: content-box; padding: 11px; margin: -11px; }
+.daily .filter-tabs__item { position: relative; }
+.daily .filter-tabs__item::after { content: ""; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
+/* 2) 汇总三张卡：窄屏（320）金额从数字中间断成两行、箭头单独掉到下一行。屏越窄金额越收小一号（390 以下 16、340 以下 14）；「+10.2% ↑」整段不拆 */
+.daily .summary-card { min-width: 0; }
+.daily .summary-card__delta text { white-space: nowrap; }
+@media (max-width: 389px) { .daily .summary-card__amount { font-size: 16px; } }
+@media (max-width: 340px) { .daily .summary-card { padding-left: 2px; padding-right: 2px; } .daily .summary-card__amount { font-size: 14px; line-height: 22px; } .daily .summary-card__delta { font-size: 10px; } }
+/* 3) 导出预览的签名行：字放大后窄屏「主理人签名：」「日期：」被挤成两行。字不折，让两条横线去缩 */
+.daily .signature text { flex-shrink: 0; white-space: nowrap; }
+.daily .signature__line { min-width: 24px; }
+/* 4) 收件人下面那行说明（站内消息 · 本店换工主理人 1 人）窄屏被截成省略号：放不下就折到第二行，卡片跟着长高 */
+.daily .recipient { height: auto; min-height: 56px; padding-top: 8px; padding-bottom: 8px; }
+.daily .recipient__wechat { white-space: normal; line-height: 16px; }
+/* 2026-11-18 第二轮精修（精修词典：同一种东西全站一个样子；只改样子，日期、问号、各项指标、录入、汇总、明细、导出 / 发送 / 下载都在） */
+/* 1) 区块标题统一 16 / 700 */
+.daily .section-head, .daily .table-title, .daily .recipient-title { font-size: 16px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
+/* 2) 当日数据四行合成一张白卡，行与行之间用发丝线（从名称的左边缘画起：12 + 图标 36 + 间距 10） */
+.daily .metric-list { gap: 0; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.daily .metric { position: relative; border-radius: 0; background: transparent; }
+.daily .metric + .metric::before { content: ""; position: absolute; left: 58px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+/* 3) 指标图标：彩色实心圆换成浅色圆角方块 + 18 号线条图标（图标颜色在模板里从白改成 ink2），数字成为这一行的重点 */
+.daily .metric__icon { width: 36px; height: 36px; border-radius: 10px; background: #F5F1EB; box-shadow: none; }
+.daily .metric__icon :deep(.k-icon) { width: 18px !important; height: 18px !important; }
+.daily .metric__icon--green { background: var(--k-green-soft); }
+.daily .metric__icon--ochre { background: var(--k-ochre-soft); }
+.daily .metric__icon--green-dark { background: #E4EDDA; }
+.daily .metric__icon--blue { background: var(--k-indigo-soft); }
+/* 4) 汇总三格合成一张白卡 + 发丝竖线（同看板的合计卡） */
+.daily .summary-cards { gap: 0; border-radius: 12px; background: var(--k-paper); }
+.daily .summary-card { position: relative; border-radius: 0; background: transparent; }
+.daily .summary-card + .summary-card::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 1px; background: var(--k-line); transform: scaleX(.5); }
+/* 5) 异常提示右边的箭头 12 号灰色（模板里从 ink 19 改成 muted 12） */
+.daily .warning :deep(.k-icon:last-child) { width: 12px !important; height: 12px !important; }
+/* 6) 明细筛选胶囊按词典：不描边，选中浅棕底 + 深棕字。
+      「全部」那颗一直带着 active，没选中时靠脚本里的行内样式只重设字色和边框色（border-color: var(--k-line)）盖回去，
+      所以这里不能给 .active 加底色：(a) 在这一组里把 --k-line 换成白色，行内那句边框色就看不见了；(b) 用 14px 粗边框画出胶囊的底色，
+      没选中 = 白边（白底），选中 = 浅棕边（浅棕底），行内样式会把没选中的「全部」重设回白边。字重不动，免得漏到「全部」上。
+      内容区只剩中间一条线，透明可点区跟着往外扩到整颗胶囊、上下凑够 36 */
+.daily .filter-tabs { --k-line: var(--k-paper); }
+.daily .filter-tabs__item { box-sizing: border-box; height: 28px; min-width: 56px; padding: 0; border: 14px solid var(--k-paper); border-radius: 14px; }
+.daily .filter-tabs__item.active { border-color: var(--k-red-soft); color: var(--k-red-deep); }
+.daily .filter-tabs__item::after { left: -14px; right: -14px; top: -18px; bottom: -18px; }
+/* 7) 明细表：行线改发丝线（左右各缩 12），第一列和卡片内边距 12 对齐，金额等宽 */
+.daily .details-row { position: relative; border-top: 0; }
+.daily .details-row + .details-row::before { content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.daily .details-row > text:first-child { padding-left: 12px; }
+.daily .details-row > text:nth-child(2) { font-variant-numeric: tabular-nums; }
+/* 8) 新增明细（填写页，字号 16 和高度 44 都不动）：收入 / 支出改成分段控件的样子——灰米色轨道 + 白色选中块。
+      「收入」也一直带着 active，没选中时行内样式把边框色设成透明、字重设回 400；所以选中块用 19px 粗边框画（选中 = 白边），不会漏到「收入」上 */
+.daily .type-tabs { padding: 3px; border-radius: 22px; background: #F0EBE4; }
+.daily .type-tabs__item { box-sizing: border-box; height: 38px; border: 19px solid transparent; border-radius: 19px; }
+.daily .type-tabs__item.active { border-color: var(--k-paper); color: var(--k-ink); }
+/* 支付方式选中不描边（浅棕底 + 深棕字照旧；字号 14、高 40 不动） */
+.daily .pay.active { border-color: transparent; }
+/* 9) 导出页「发送」收小一档（28 高的小胶囊），让下面的「下载 Excel」做一屏的主按钮 */
+.daily .recipient :deep(.k-button) { height: 28px; padding: 0 12px; border-radius: 14px; font-size: 12px; }
 </style>

@@ -31,6 +31,18 @@ test('only form fields persist; a draft cannot assert phone verification or appr
   assert.equal(readMerchantDraft(7).phoneVerified, undefined)
   assert.throws(() => saveMerchantDraft(null, {}), /先登录/)
 })
+test('reopening a previous draft retains the application fields and discards the obsolete phone entry', () => {
+  const storage = setup()
+  storage.set('kangaroo:merchant-application:v1:7', {
+    version: 1, data: { storeName: '旧草稿中的小院', phone: '13800000000', phoneVerified: true }
+  })
+  const draft = readMerchantDraft(7)
+  assert.equal(draft.storeName, '旧草稿中的小院')
+  assert.equal(draft.phone, undefined)
+  assert.equal(draft.phoneVerified, undefined)
+  saveMerchantDraft(7, draft)
+  assert.equal(storage.get('kangaroo:merchant-application:v1:7').data.phone, undefined)
+})
 test('clearing and corrupt data do not restore stale values; failed saves propagate', () => {
   const data = setup()
   saveMerchantDraft(7, { intro: '保留旧稿' })

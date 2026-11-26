@@ -10,3 +10,21 @@
  background: linear-gradient(180deg, #F5E8DA 0, #FBF5EE 360px, #FCFAF6 720px);
  color: var(--k-ink);
 }
+
+// 2026-11-17 改版「小而精」（主人按样张第三版拍板）：旅居各页共用的底色。浅灰底 + 纯白卡，卡片不用阴影、不描边。
+// 上面 stays-surface 单独调过的深棕字、亮绿不再用：写 inherit 让它们回到 theme.scss 里全站的值（--k-sans 同理，详情 / 评价 / 生活碎片页之前换成了偏粗的 KG Detail）。
+// 各页在自己样式的最后 @include，盖住前面几轮的底色。
+@mixin stays-fine {
+ --k-bg: #F7F5F2;
+ --k-paper: #FFFFFF;
+ --k-paper2: var(--k-fill);
+ --k-ink: inherit;
+ --k-ink2: inherit;
+ --k-red: inherit;
+ --k-red-deep: inherit;
+ --k-green: inherit;
+ --k-sans: inherit;
+ background: var(--k-page);
+ color: var(--k-ink);
+ font-family: var(--k-sans);
+}

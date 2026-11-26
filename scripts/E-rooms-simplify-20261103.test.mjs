@@ -107,17 +107,22 @@ test('房态屏：?s=3 直接进来，自动选第一个房型、拉这个月 + 
   assert.equal(rows[0].date, '2026-11-03', '今天是 11-03，前两天不列')
   assert.deepEqual(rows[0], { date: '2026-11-03', label: '11-03 周二', weekend: false, priceFen: 19800, price: '198', stock: 3, occupied: 2, left: 1, closed: false })
   assert.equal(rows[3].closed, true)
+  assert.equal(h.run("dayStatus({ closed: false, left: 0 })"), '无余量')
+  assert.equal(h.run("dayStatus({ closed: false, left: 1 })"), '可订')
+  assert.equal(h.run("dayStatus({ closed: true, left: 1 })"), '已关房')
   assert.deepEqual(plain(h.run('[range.from, range.to, range.price]')), ['2026-11-03', '2026-11-09', ''], '整段改价默认从今天起 7 晚')
   h.run('pickCalRoom(rooms.value[1])')
   await flush(); await flush()
   assert.equal(h.run('calRoom.value.roomTypeId'), 8)
   assert.deepEqual(h.log.calendars.slice(2), [[8, '2026-11'], [8, '2026-12']])
   assert.equal(h.run('unitOf(calRoom.value)'), '床位')
+  h.run("calRoom.value.status = '1'")
+  assert.equal(h.run("dayStatus({ closed: false, left: 1 })"), '已停用')
   // 模板：房型格子、14 天表、底部面板、页内日历都在第三屏里；能点的都有 hover-class；没有系统菜单
   const cal = noComments(h.template.slice(h.template.indexOf('<view v-else-if="s === 3" class="fc-form cal-form">')))
   assert.match(cal, /<view v-for="room in rooms" :key="room\.roomTypeId" class="cal-type"[^>]*@click="pickCalRoom\(room\)">/)
   assert.match(cal, /<view v-for="dayRow in calDays" :key="dayRow\.date" class="cal-tr"[^>]*@click="openDay\(dayRow\)">/)
-  for (const w of ['未来 14 天', '整段改价', '{{ dayRow.label }}', '¥{{ dayRow.price }}', '{{ dayRow.left }} / {{ dayRow.stock }}', "dayRow.closed ? '已关房' : '可订'", '@click="pickRangeDate(\'from\')"', '@click="pickRangeDate(\'to\')"', 'v-model="range.price"', '@click="applyRangePrice"', '@click="applyRangeClosed(true)"', '@click="applyRangeClosed(false)"']) assert.ok(cal.includes(w), w)
+  for (const w of ['未来 14 天', '整段改价', '{{ dayRow.label }}', '¥{{ dayRow.price }}', '{{ dayRow.left }} / {{ dayRow.stock }}', "dayStatus(dayRow)", '@click="pickRangeDate(\'from\')"', '@click="pickRangeDate(\'to\')"', 'v-model="range.price"', '@click="applyRangePrice"', '@click="applyRangeClosed(true)"', '@click="applyRangeClosed(false)"']) assert.ok(cal.includes(w), w)
   assert.match(cal, /<view v-if="dayEdit" class="cal-sheet">[\s\S]*v-model="dayEdit\.price"[\s\S]*@click="stepDayStock\(-1\)"[\s\S]*@click="toggleDayClosed"[\s\S]*@click="saveDay"/)
   assert.match(cal, /<k-date-picker v-if="datePick"/)
   noBareClicks(h.template, '房型页')
@@ -160,6 +165,28 @@ test('房态屏：点一天出面板 → 改价 + 改库存一次保存（from =
   assert.equal(h.log.back, 1)
 })
 
+test('切换房型或刷新房态失败，无法用上次显示的价格和库存打开编辑器；重试恢复', async t => {
+  let fail = true
+  const h = roomTypes({ apiStaffRoomCalendar: async (id, ym) => {
+    if (id === 8 && fail) throw { msg: '断网' }
+    return { data: { days: monthDays(ym, () => false).map(day => ({ ...day, priceFen: id * 100 })) } }
+  } })
+  t.after(h.stop)
+  await h.load()
+  h.run('globalThis.oldRow = calDays.value[0]; pickCalRoom(rooms.value[1])')
+  assert.equal(h.run('calDays.value.length'), 0)
+  h.run('openDay(oldRow)')
+  assert.equal(h.run('dayEdit.value'), null)
+  await flush()
+  assert.equal(h.run('calError.value'), '断网')
+  h.run('openDay(oldRow)')
+  assert.equal(h.run('dayEdit.value'), null)
+  fail = false
+  await h.run('loadCalendar()')
+  assert.equal(h.run('calDays.value[0].priceFen'), 800)
+  assert.equal(h.run('calError.value'), '')
+})
+
 test('房态屏（2026-11-09）：点一天只发这次改了的字段——只改库存不带价格（不把那天价格钉死），只改价不带库存，没改不发', async (t) => {
   const h = roomTypes()
   t.after(h.stop)
@@ -181,6 +208,18 @@ test('房态屏（2026-11-09）：点一天只发这次改了的字段——只�
   assert.equal(h.log.sets.length, before, '价格写法变了但数没变、库存没动：不发')
   assert.equal(h.log.toasts.at(-1), '没有改动')
   assert.equal(h.run('dayEdit.value'), null)
+})
+
+test('点关房确认时的房型或范围发生改变，原确认不对新房型生效', async t => {
+  let confirm
+  const h = roomTypes({ confirm: () => new Promise(resolve => { confirm = resolve }) })
+  t.after(h.stop)
+  await h.load()
+  const pending = h.run('applyRangeClosed(true)')
+  h.run('pickCalRoom(rooms.value[1])')
+  confirm(true)
+  await pending
+  assert.equal(h.log.sets.length, 0)
 })
 
 test('房态屏：整段改价「从…到…」+ 一个数字框 + 应用；日期反了 / 没填价不发；整段关房问一句、开房不问', async (t) => {

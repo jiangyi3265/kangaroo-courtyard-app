@@ -2,11 +2,52 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 const server = await createServer({configFile:false,server:{middlewareMode:true,hmr:false}})
-const {createAccountLogin,loginAccount}=await server.ssrLoadModule('/common/account-login.js')
+const {createAccountLogin,loginAccount}=await server.ssrLoadModule('/pages/auth/account-login.js')
 const session=await server.ssrLoadModule('/common/experience.js')
 const request=await server.ssrLoadModule('/common/request.js')
 await server.close()
 const versions={termsVersion:'1111111111111111',privacyVersion:'2222222222222222'},options={agreed:true,versions}
+
+test('断网恢复失败后保留有效令牌，下一次操作共用一次重试；失效令牌只处理一次', async t => {
+  const storage = new Map()
+  let online = false, expired = false, calls = 0
+  globalThis.uni = {
+    getStorageSync: key => storage.get(key),
+    setStorageSync: (key, value) => storage.set(key, value),
+    removeStorageSync: key => storage.delete(key),
+    request(opts) {
+      assert.equal(new URL(opts.url).pathname, '/app/auth/account')
+      calls++
+      if (!online) return opts.fail({ errMsg: 'request:fail network disconnected' })
+      opts.success({ statusCode: expired ? 401 : 200, data: expired
+        ? { code: 401, msg: '登录已过期' }
+        : { code: 200, data: { id: 'recovered-user', staffGrants: [] } } })
+    }
+  }
+  t.after(() => { session.logout(); delete globalThis.uni })
+  session.logout()
+  request.setToken('local-recovery-token')
+  await session.ensureSession()
+  assert.equal(session.experience.account, null)
+  assert.equal(request.getToken(), 'local-recovery-token')
+  const before = calls
+  online = true
+  await Promise.all([session.ensureSession(), session.ensureSession()])
+  assert.equal(calls, before + 1)
+  assert.equal(session.experience.account.id, 'recovered-user')
+  await session.ensureSession()
+  assert.equal(calls, before + 1)
+
+  session.logout()
+  expired = true
+  request.setToken('local-expired-token')
+  await session.ensureSession()
+  await session.ensureSession()
+  assert.equal(calls, before + 2)
+  assert.ok(!request.getToken())
+  assert.equal(session.experience.account, null)
+})
+
 function fixture(overrides={}) {
  const calls=[],state={account:null,rev:0}
  const enter=createAccountLogin({restore:async()=>calls.push('restore'),login:async()=>{calls.push('login');state.account={id:'u1',phoneBound:false,staffGrants:[]}},account:()=>state.account,consent:async v=>calls.push(['consent',v]),revision:()=>state.rev,...overrides})

@@ -1,8 +1,8 @@
 <template>
   <view class="evidence-box">
     <view v-for="(file,i) in modelValue" :key="file.fileId" class="file-row"><text>{{ file.name }}</text><button :disabled="busy" @click="remove(i)">移除</button></view>
-    <view class="file-actions"><button :disabled="busy||modelValue.length>=9" @click="chooseMedia">{{ busy ? '正在上传…' : '图片 / 视频' }}</button><button :disabled="busy||modelValue.length>=9" @click="chooseFile">录音 / 文件</button></view>
-    <text class="hint">最多9项，每项不超过20MB。{{ redacted ? '请上传已遮盖姓名、电话、店名等身份信息的副本。' : '原始证据仅供你与有权限的处理人员查看。' }}</text>
+    <view class="file-actions"><button :disabled="busy||modelValue.length>=9" @click="chooseMedia"><k-icon name="image" :size="16" color="red"/><text>{{ busy ? '正在上传…' : '图片 / 视频' }}</text></button><button :disabled="busy||modelValue.length>=9" @click="chooseFile"><k-icon name="paperclip" :size="16" color="red"/><text>录音 / 文件</text></button></view>
+    <text class="hint">最多9项，每项不超过20MB。{{ redacted ? '请上传已遮盖姓名、电话、店名等身份信息' : '原始证据仅供你与有权限的处理' }}<text class="hint-nw">{{ redacted ? '的副本。' : '人员查看。' }}</text></text>
     <text v-if="error" class="error">{{ error }}</text>
   </view>
 </template>
@@ -33,4 +33,10 @@ function chooseFile(){
   // #endif
 }
 </script>
-<style scoped>.file-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e8e1d6;font-size:13px}.file-row text{flex:1;word-break:break-all}.file-actions{display:flex;gap:10px;margin:12px 0}button{font-size:13px;line-height:1.4;padding:10px 14px;margin:0;color:#89613c;background:#f2e7d7;border-radius:10px}button::after{border:0}.hint,.error{display:block;font-size:12px;line-height:1.7;color:#8c8277}.error{color:#ae4939}</style>
+<style scoped>/* 2026-11-17 改版「小而精」：上传 / 移除按钮是白底细棕边的小胶囊，文件行用细线分开，说明 11 号字 */
+.file-row{position:relative;display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px}.file-row::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--k-line);transform:scaleY(.5)}.file-row text{flex:1;word-break:break-all}.file-actions{display:flex;gap:8px;margin:8px 0}button{font-size:13px;line-height:20px;padding:8px 14px;margin:0;color:var(--k-red-deep);background:var(--k-paper);border-radius:18px;box-shadow:inset 0 0 0 1px var(--k-red-line)}button::after{border:0}.file-row button{margin:-4px;padding:4px 12px;border:4px solid transparent;border-radius:18px;background-clip:padding-box;font-size:13px;font-weight:500}.hint,.error{display:block;font-size:11px;line-height:1.65;color:var(--k-muted)}.error{color:var(--k-alert)}/* 11-18 第三轮返修（评审第 3 轮）：上传按钮带图标 —— 36 高浅棕实底、不描边，16 号图片 / 回形针图标 + 13/500 深棕字，间距 6；和表单里的选项胶囊（浅灰 / 浅棕描边）分开 */
+.file-actions button{display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;background:var(--k-red-soft);box-shadow:none;font-size:13px;font-weight:500;line-height:36px}
+.file-actions button[disabled]{opacity:.5}
+/* 2026-11-19 第四轮返修：说明最后几个字不断行（字不变），不再剩「查看。」两字一行 */
+.hint-nw { white-space: nowrap; }
+</style>

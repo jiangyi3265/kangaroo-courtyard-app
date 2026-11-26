@@ -1,0 +1,176 @@
+// 2026-11-17 改版「小而精」（主人按样张第三版拍板）：「我的」里首屏以外的几屏 —— 编辑资料、设置、员工 / 商家身份的首屏，
+// 跟首屏同一套：浅灰底、白卡 12 圆角、不用阴影和描边，行和字收小一档。功能、文字都不变，能点的行仍 ≥ 44 高；输入框保持 44 高、字 14。
+// 会员信息屏的新样式在 membership.scss 末尾；本文件排在 profile-home.scss 前面引入，首屏的规则仍以 profile-home.scss 为准。
+.profile { --k-radius: 12px; }
+.profile :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+.profile .k-body { padding-left: 12px; padding-right: 12px; }
+// 这条故意不加 .profile 前缀：只盖过 index.vue 里同级的旧 .card 规则，不压过会员信息屏（.profile--membership .xx）拼接卡的圆角
+.card { border: 0; border-radius: 12px; box-shadow: none; }
+.profile .card.k-mt12 { margin-top: 8px; }
+.profile :deep(.k-button.is-lg) { height: 44px; font-size: 15px; box-shadow: none; }
+.profile :deep(.k-button.is-secondary) { color: var(--k-red-deep); border-radius: 999px; }
+// 不能点的按钮（认证中 / 保存中）：11-18 第二轮起交给公共组件 —— 原配色整体 .45，不再在页面里盖成冷灰块
+// 编辑资料、设置这两屏第一张卡离顶栏 8（和首屏一样），不改 .k-body 的上边距，免得盖掉首屏小屏幕时的 6
+.k-body > .card--tight:first-child { margin-top: -4px; }
+.profile .card--tight { padding: 0 12px; }
+.profile .card--group { padding: 12px 12px 0; }
+
+// 员工 / 商家身份的首屏：入口行（团队报表、保险账户）模板里写了行内的内外边距，这里用 !important 收成细行；其余在 index.vue 末尾那段
+.staff-account { padding-top: 8px; }
+.staff-account .card.k-between { min-height: 48px; margin-top: 8px !important; padding: 6px 12px !important; font-size: 14px; }
+// 链接行的箭头在模板里已是 12 号灰色（11-18 第二轮），不再在这里压尺寸和透明度
+
+// 编辑资料：头像 64、账号资料标题 15 / 700、各行 48 高 14 字，行与行之间一道细线
+.avatar-box { padding: 16px 0 10px; border-bottom: 0; }
+.avatar-box__img { width: 64px; height: 64px; }
+.avatar-box .k-small { font-size: 12px; }
+// 账号资料这一块是 form：网页版里 form 多包一层，flex 的 gap 不生效，所以间距改用各项自己的外边距，小程序和网页版一个样
+.acct { gap: 0; padding: 6px 0 14px; }
+.acct__title { display: block; font-family: var(--k-sans); font-size: 15px; line-height: 21px; }
+.acct .acct__row { margin-top: 8px; }
+.acct .acct__save { margin-top: 12px; }
+.acct__label { flex-basis: 64px; font-size: 14px; }
+.acct__count { font-size: 11px; }
+.frow { min-height: 48px; }
+.frow__label, .frow__value { font-size: 14px; }
+.real { gap: 8px; }
+.real__hint { font-size: 12px; line-height: 1.6; }
+.resume-link { margin-top: 4px; font-size: 12px; color: var(--k-muted); }
+
+// 设置：行 48 高（带说明的 60），名字 14 / 500，右边说明 12；分组标题 14 / 600
+.srow { min-height: 48px; }
+.srow--tall { min-height: 60px; }
+.srow__label { font-family: var(--k-sans); font-weight: 500; font-size: 14px; }
+.srow .k-small { font-size: 12px; }
+.card--group > .k-title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.logout { font-family: var(--k-sans); font-weight: 600; font-size: 15px; }
+// 320 宽：右边的说明整句放得下（「注销后将无法恢复，请谨慎操作」之前被截成「请谨…」）—— 图标 20、间距 6、说明 11
+@media (max-width: 340px) {
+  .srow { gap: 6px; }
+  .srow .srow__hint { font-size: 11px; }
+}
+// 2026-11-18 评审修正：设置各行左边的图标从 22 的黑色粗线收成 18、颜色降一档（模板里 ink → ink2），不再比右边的字重；
+// 「手机号」那行的图标从「纸加笔」换成手机。放在上面 320 宽那条后面，窄屏也是 18
+
+// ---------------------------------------------------------------------------------------------------------------
+// 2026-11-18 第三轮：「我的」各屏页边距统一 16（和首屏同一条左线）
+.profile .k-body { padding-left: 16px; padding-right: 16px; }
+// 编辑资料：两张卡 —— 上卡头像 + 账号资料，「保存」是右下角 32 高的描边小胶囊；下卡是一列 48 高的行。
+// 输入框平底（浅棕 --k-red-soft）、无描边、40 高、8 圆角；左边名字 14 / 400 二级墨，和输入框里的字基线对齐
+.prof .prof__fields { margin-top: 12px; }
+.prof .acct { padding: 4px 0 12px; }
+.prof .acct::after { display: none; }
+.prof .acct__title { font-size: 15px; font-weight: 600; line-height: 21px; color: var(--k-ink); }
+.prof .acct__label { flex: 0 0 64px; font-size: 14px; line-height: 40px; color: var(--k-ink2); }
+.prof .acct__input { min-height: 40px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--k-red-soft); box-shadow: none; font-size: 14px; }
+.prof .acct__input input { height: 40px; font-size: 14px; }
+.prof .acct__area { padding: 10px 12px 8px; }
+.prof .acct__textarea, .prof .acct__idle { min-height: 60px; font-size: 14px; line-height: 1.6; }
+.prof .acct .acct__save { display: flex; justify-content: flex-end; margin-top: 12px; }
+.prof .profile-save { width: auto; height: 32px; margin: 0; padding: 0 16px; border: 0; border-radius: 16px; background: var(--k-red); color: var(--k-paper); font-size: 13px; font-weight: 600; line-height: 32px; }
+.prof .profile-save::after { border: 0; }
+.prof .frow__label { font-size: 14px; font-weight: 400; color: var(--k-ink2); }
+.prof .frow__value { font-size: 14px; color: var(--k-ink); }
+.prof .frow__value--empty { color: var(--k-muted); }
+.prof .real .acct__row { margin-top: 0; }
+.prof .resume-link { margin-top: 8px; }
+// 设置：分组名在卡片上方（12 / 500 灰字，上 20 下 8，左边和卡里的字同一条线），卡里只留行
+.settings .set-group { display: block; margin: 20px 12px 8px; font-size: 12px; font-weight: 500; line-height: 17px; color: var(--k-muted); }
+.settings .card--group { margin-top: 0; padding: 0 12px; }
+.settings .card--group .srow:first-of-type { margin-top: 0; }
+.settings .srow { gap: 12px; }
+.settings .srow__label { font-weight: 400; color: var(--k-ink); }
+.settings .logout { margin-top: 24px; }
+// 行间发丝线从名字那一列开始（左边让出 18 的图标 + 12 的间距），和「我的」首屏的入口行一个写法
+.settings .srow.has-line::after { left: 30px; }
+// 320 宽：行内间距收回 6，「注销后将无法恢复，请谨慎操作」整句放得下（和上面 340 那条一样）
+@media (max-width: 340px) { .settings .srow { gap: 6px; } }
+// 11-18 返修（第 2 轮）：320 宽「保存账号资料」和 390 一样右对齐到卡内边距线（之前左边让出 64，胶囊既不对齐输入框也不靠右，看着放歪了）
+@media (max-width: 359px) { .prof .acct .acct__save { justify-content: flex-end; padding-left: 0; } }
+// 编辑资料（第 2 轮）：
+//   · 头像 56 靠左，右边「更换头像」13 / 500 暖棕文字按钮，和下面「账号资料」标题共用卡内左边线，一张卡只有一条对齐轴；
+//   · 输入框和「成为商家」等填写页同一种：白底 + 1px 浅线描边、12 圆角、44 高（之前是浅棕平底，和选中块同色，看着不像能输入的地方）。
+.prof .avatar-box { flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; margin: 0; padding: 16px 0 8px; text-align: left; }
+.prof .avatar-box__img { flex: 0 0 56px; width: 56px; height: 56px; }
+.prof .avatar-box .k-small { margin-top: 0; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--k-red); }
+.prof .acct__label { line-height: 44px; }
+.prof .acct__input { min-height: 44px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); }
+.prof .acct__input input { height: 42px; }
+.avatar-album { margin: 4px auto; padding: 0 12px; width: fit-content; line-height: 36px; font-size: 13px; color: var(--k-red-deep); background: transparent; }
+.avatar-album::after { border: 0; }
+// ---------------------------------------------------------------------------------------------------------------
+// 11-18 第三轮返修（第 3 轮）编辑资料：按精修词典的表单写法重排，报告和实际一致 ——
+//   · 上卡：卡头「账号资料」15 / 600 在最上面，下面一句 12 号灰字说明；再下面一行头像 56 +「更换头像」；卡内边距四周 16；
+//   · 字段名放在输入框上面（13 / 500 二级墨，下 8），输入框整宽、44 高、无描边、浅灰平底（--k-page）、10 圆角，字 14；字段之间 16；
+//   · 「保存账号资料」是右下角 32 高的描边小胶囊（白底、--k-red-line 细边、13 / 500 深棕字），不再是实心块；
+//   · 下卡最后一行是「报名用的简历资料，去简历里修改」（和上面的行一样 48 高，左字右箭头），不再单独飘在卡片下面。
+.prof .prof__account { padding: 16px; }
+.prof .acct__head { display: flex; flex-direction: column; gap: 4px; }
+.prof .acct__head .acct__title { font-size: 15px; font-weight: 600; line-height: 21px; color: var(--k-ink); }
+.prof .acct__head .wechat-profile-hint { margin: 0; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+.prof .avatar-box { padding: 16px 0 0; }
+.prof .acct { padding: 0; }
+.prof .acct .acct__row, .prof .real .acct__row { display: block; margin-top: 16px; }
+.prof .acct__label, .prof .acct .acct__label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--k-ink2); }
+.prof .acct__input { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--k-page); box-sizing: border-box; }
+.prof .acct__input input { flex: 1; height: 44px; font-size: 14px; }
+.prof .acct__area { display: block; padding: 10px 12px 8px; }
+.prof .acct .acct__save { display: flex; justify-content: flex-end; margin-top: 16px; }
+.prof .profile-save { height: 32px; padding: 0 16px; border-radius: 16px; background: var(--k-paper); color: var(--k-red-deep); font-size: 13px; font-weight: 500; line-height: 32px; }
+.prof .profile-save::after { border: 1px solid var(--k-red-line); border-radius: 32px; }
+.prof .profile-save[disabled] { opacity: .45; }
+.prof .prof__fields { margin-top: 20px; }
+.prof .prof__fields > .resume-link { justify-content: space-between; gap: 8px; min-height: 48px; margin: 0; font-size: 14px; line-height: 20px; color: var(--k-ink2); }
+.prof .real { padding-bottom: 16px; }
+.prof .real .acct__save { margin-top: 16px; }
+.prof .acct__area .acct__count { display: block; margin-top: 4px; text-align: right; font-size: 11px; }
+// 11-18 第三轮返修（第 3 轮）设置：行高统一 56（带说明的两行行和单行行一样高），页面顶部和第一张卡之间 12
+.settings .srow, .settings .srow--tall { min-height: 56px; }
+.settings > .card--tight:first-child { margin-top: 0; }
+.prof .prof__fields { padding: 0 16px; }
+
+// 11-18 第三轮返修（第 4 轮）：编辑资料（s=2）、设置（s=4）和会员信息、本组其它页同一种浅灰页面底（--k-page），白卡才分得出来；
+// 第一张卡离顶栏 12；卡头说明最宽 18 个字：第一行排到「点击昵称输入框」，第二行是整句「使用微信昵称；昵称填写后请保存。」，不再只剩几个字掉到第二行
+.profile--plain { --k-bg: var(--k-page); background: var(--k-page); }
+.profile--plain .prof > .card:first-child { margin-top: 0; }
+.prof .wechat-profile-hint { max-width: 18em; }
+
+// 11-18 第三轮返修（第 5 轮）：设置第一张卡上面也是 20（下面三组都是「卡上 20 + 组名」），整页节奏一致
+.settings > .card--tight:first-child { margin-top: 8px; }
+
+// 11-18 第四轮（高级感）：
+//   · 编辑资料：头像是这一屏的主角 —— 72 圆形、外圈一道发丝环、居中，下面 12 号暖棕「选择微信头像」；「保存账号资料」是这页唯一的实心按钮（36 高暖棕渐变小胶囊，右对齐）；
+//     下卡资料行 52 高，名字 15 墨色、值 14（已填二级墨、未填灰）；
+//   · 设置：全页一种行 —— 名字 14 墨色，说明一律放在名字下面（12 灰），右边只放真实的值（13 灰）+ 箭头；单行 48、两行 56；组名 13 / 500 灰字。
+.prof .avatar-box { flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px 0 4px; text-align: center; }
+.prof .avatar-box__img { flex: 0 0 72px; width: 72px; height: 72px; border-radius: 50%; box-shadow: 0 0 0 1px var(--k-line); }
+.prof .avatar-box .k-small { margin-top: 0; font-size: 12px; font-weight: 500; line-height: 17px; color: var(--k-red); }
+// 上下透明边各 4px 算入原生按钮的点击范围，暖棕色胶囊仍为 36px 高。
+.prof .profile-save { box-sizing: border-box; height: 44px; min-height: 44px; margin: -4px 0; padding: 0 16px; border: 0 solid transparent; border-width: 4px 0; border-radius: 18px / 22px; background: var(--k-grad-brown) padding-box; color: var(--k-paper); font-size: 13px; font-weight: 600; line-height: 36px; }
+.prof .profile-save::after { border: 0; }
+.prof .frow { min-height: 52px; }
+.prof .frow__label { font-size: 15px; font-weight: 400; color: var(--k-ink); }
+.prof .frow__value { font-size: 14px; color: var(--k-ink2); }
+.prof .frow__value--empty { color: var(--k-muted); }
+.settings .set-group { font-size: 13px; line-height: 18px; }
+.settings .srow { min-height: 48px; }
+.settings .srow.srow--tall, .settings .srow.srow--desc { min-height: 56px; }
+.settings .srow__main { display: flex; flex: 1; align-items: center; gap: 12px; min-width: 0; }
+.settings .srow__main > .srow__label { flex: 1; min-width: 0; }
+.settings .srow__main > .srow__hint { flex: 0 0 auto; font-size: 13px; }
+.settings .srow__main .k-green { font-size: 13px; }
+.settings .srow--desc .srow__main { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; }
+.settings .srow--desc .srow__main > .srow__label { flex: none; }
+.settings .srow--desc .srow__main > .srow__hint { font-size: 12px; line-height: 17px; text-align: left; }
+
+// 11-18 第四轮返修：编辑资料头卡三段对齐统一 ——「账号资料」标题和两行说明也居中，和下面居中的头像合成一个居中的头部；昵称、自我介绍字段仍左对齐
+.prof .acct__head { align-items: center; text-align: center; }
+.prof .acct__head .wechat-profile-hint { max-width: 18em; text-align: center; }
+.prof .avatar-wechat { border-radius: 0; line-height: 17px; overflow: visible; }
+
+// 11-19 微信实拍返修：编辑资料头卡 ——「账号资料」标题和说明左对齐（和其它屏的卡标题一样），只有头像和「选择微信头像」居中；
+// 昵称、自我介绍输入框改成和成为商家页同一种：白底 + 1px 输入框描边、12 圆角（「只有输入框有描边」），同一端只留一种输入框
+.prof .acct__head { align-items: flex-start; text-align: left; }
+.prof .acct__head .wechat-profile-hint { max-width: none; text-align: left; word-break: keep-all; overflow-wrap: anywhere; }
+.prof .acct__input { border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); }
+.prof .acct__input input { height: 42px; }

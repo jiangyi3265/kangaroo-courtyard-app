@@ -4,6 +4,7 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { saveLocalDraft } from '../common/local-drafts.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const PAGES_DIR = join(ROOT, 'pages')
@@ -787,6 +788,7 @@ const whyFor = (seg, i, anyWrite, deepCut) => {
 // 存本机的那几条还要求 setStorageSync 失败时如实提示失败（staff/rooms 的 Vlog 草稿原来吞掉失败照样说"已保存"，已改）。
 // 登记项在代码里消失时下面有一条断言会报出来，免得清单变成永远不收缩的豁免池。
 const LOCAL_ONLY = {
+  'pages/profile/merchant.vue#saveDraft(true)': '入驻表单的本机草稿，存储失败时显示错误。',
   'pages/community/publish.vue#saveDraft': '草稿存本机（setStorageSync），文案写明「仅本机」，失败时提示「草稿保存失败」',
   'pages/wish/publish.vue#saveDraft': '心愿草稿存本机，写入完成后提示「草稿已保存到本机」，失败时明确提示保存失败；下方运行时测试覆盖成功和失败',
   'pages/staff/activities.vue#saveDraft': '同上：活动草稿存本机，文案写明「仅本机」',
@@ -891,33 +893,38 @@ test('只改本机状态的登记项都还指向真实存在的点击处理', ()
   assert.deepEqual(stale, [], `LOCAL_ONLY 里这些登记项在页面上已经找不到了，请删掉：\n  ${stale.join('\n  ')}`)
 })
 
-test('心愿草稿只在本机写入完成后提示保存，未登录和存储失败都如实提示', () => {
+test('心愿草稿只在本机写入完成后提示保存，未登录和存储失败都如实提示', t => {
   const { script } = splitSfc(readFileSync(join(ROOT, 'pages/wish/publish.vue'), 'utf8'))
-  const saveDraft = new Function('draftKey', 'form', 'uni', 'toast', functionBody(script, 'saveDraft').code)
+  const saveDraft = new Function('saveLocalDraft', 'experience', 'form', 'toast', 'activeDraftId', functionBody(script, 'saveDraft').code)
   const form = { title: '帮我寄一张明信片', images: ['/uploads/wish.jpg'] }
   const events = []
-  saveDraft('wish:draft:7', form, {
-    setStorageSync(key, value) {
-      assert.equal(key, 'wish:draft:7')
-      assert.deepEqual(value, form)
-      assert.notEqual(value, form)
-      assert.notEqual(value.images, form.images)
+  const experience = {account: {id: 7}}
+  const previous = globalThis.uni
+  t.after(() => { if (previous === undefined) delete globalThis.uni; else globalThis.uni = previous })
+  globalThis.uni = {
+    getStorageSync: () => [],
+    setStorageSync(key, [row]) {
+      assert.equal(key, 'kangaroo:drafts:v2:7')
+      assert.equal(row.kind, 'wish')
+      assert.deepEqual(row.data, {...form, agreed: false})
+      assert.notEqual(row.data.images, form.images)
       events.push('stored')
     }
-  }, message => events.push(message))
-  assert.deepEqual(events, ['stored', '草稿已保存到本机'])
+  }
+  const save = () => saveDraft(saveLocalDraft, experience, form, message => events.push(message), '')
+  save()
+  assert.deepEqual(events, ['stored', '已保存，可在发布页的草稿箱继续编辑'])
 
   events.length = 0
-  saveDraft('wish:draft:7', form, {
-    setStorageSync() { throw new Error('storage full') }
-  }, message => events.push(message))
+  globalThis.uni.setStorageSync = () => { throw new Error('storage full') }
+  save()
   assert.deepEqual(events, ['草稿保存失败，请检查本机存储空间后重试'])
 
   events.length = 0
-  saveDraft('', form, {
-    setStorageSync() { assert.fail('未登录不能写入草稿') }
-  }, message => events.push(message))
-  assert.deepEqual(events, ['请先登录后保存草稿'])
+  experience.account = null
+  globalThis.uni.setStorageSync = () => assert.fail('未登录不能写入草稿')
+  save()
+  assert.deepEqual(events, ['请先登录后使用草稿箱'])
 })
 
 // ---------------- 2. api.js 死导出 ----------------
@@ -1147,6 +1154,9 @@ test('已接线页面用的后端状态与分类取值都在后端枚举里', ()
   const extStatus = migrationStatusTokens()
   if (!extStatus.size) assert.fail(`未能从 ${MIGRATION_DIR} 读出任何 status 列注释，扩展页面的状态取值无法校验`)
   const extVocab = new Set([...vocab.status, ...extStatus])
+  const extSource = name => readFileSync(join(BACKEND_ENUM_DIR, '..', 'ext', name), 'utf8')
+  const completedStates = [...extSource('staff/KgWorkEndService.java').matchAll(/"(\w+)"\.equals\(app\.get\("status"\)\)/g)].map(match => match[1])
+  const progressStates = [...extSource('operations/OpsDaily.java').matchAll(/"(\w+)"\.equals\(target\.get\("status"\)\)/g)].map(match => match[1])
   const wishCategoryVocab = new Set([...wishCategories(), ''])
   const bad = []
   for (const rel of WIRED_PAGES) {
@@ -1154,6 +1164,8 @@ test('已接线页面用的后端状态与分类取值都在后端枚举里', ()
     for (const key of Object.keys(vocab)) {
       let allowed = vocab[key]
       if (key === 'status' && !CORE_STATUS_PAGES.includes(rel)) allowed = extVocab
+      if (key === 'status' && rel === 'pages/jobs/interview.vue') allowed = new Set([...allowed, ...completedStates])
+      if (key === 'status' && rel === 'pages/staff/operations.vue') allowed = new Set([...allowed, ...progressStates])
       if (key === 'category' && rel.startsWith('pages/wish/')) allowed = wishCategoryVocab
       for (const value of enumLiteralsAt(script, key)) {
         // 中文字面量是给人看的文案，不是机器取值；只校验 ASCII 小写取值。

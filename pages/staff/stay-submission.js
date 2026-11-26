@@ -16,11 +16,14 @@ export function roomTypePayload(form) {
   if (!['whole', 'private', 'shared'].includes(form.roomKind)) throw new Error('请选择房型类别')
   const capacity = Number(form.capacity)
   const stock = Number(form.stock)
+  const unchangedStock = Boolean(form.roomTypeId) && stock === form.originalStock
   if (!Number.isInteger(capacity) || capacity < 1 || capacity > 20) throw new Error('可住人数请填写 1–20 的整数')
-  if (!Number.isInteger(stock) || stock < 1 || stock > 999) throw new Error('每晚库存请填写 1–999 的整数')
+  if (!Number.isInteger(stock) || stock < (unchangedStock ? 0 : 1) || stock > 999) throw new Error('每晚库存请填写 1–999 的整数')
   const price = String(form.price || '').trim()
   if (!/^\d+(\.\d{1,2})?$/.test(price) || Number(price) < 1 || Number(price) > 100000) throw new Error('每晚价格请填写 1–100000 元，最多两位小数')
-  return { typeName, roomKind: form.roomKind, capacity, stock, basePriceFen: Math.round(Number(price) * 100), status: form.status === '1' ? '1' : '0' }
+  const room = { typeName, roomKind: form.roomKind, capacity, basePriceFen: Math.round(Number(price) * 100), status: form.status === '1' ? '1' : '0' }
+  if (!unchangedStock) room.stock = stock
+  return room
 }
 
 // ---------------- 房型 7 天价（2026-11-03 主人：「必须7天，填写7天的价格页面优化一下不要弹窗」，V70） ----------------

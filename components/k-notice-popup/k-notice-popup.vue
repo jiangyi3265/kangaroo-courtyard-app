@@ -7,7 +7,7 @@
         <text class="k-notice-popup__title">{{ noticePopup.notice.title }}</text>
       </view>
       <scroll-view scroll-y class="k-notice-popup__body"><text class="k-notice-popup__text">{{ noticePopup.notice.content }}</text></scroll-view>
-      <text class="k-notice-popup__tip" @touchmove.stop.prevent="noop">以后可以在「消息 → 系统通知」里再看</text>
+      <text class="k-notice-popup__tip" @touchmove.stop.prevent="noop">以后可以在「消息 → 平台通知」里再看</text>
       <view class="k-notice-popup__foot" @touchmove.stop.prevent="noop"><k-button block label="我知道了" @click="dismissNoticePopup" /></view>
     </view>
   </view>

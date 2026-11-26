@@ -1,6 +1,6 @@
 <template>
   <k-feature-gate feature="stay-booking" :bypass="source?.kind === 'job'">
-  <view class="k-page diary-page" :class="{ 'diary-page--store': source && source.kind === 'job', 'diary-page--stay': stayEntry }" :style="{ '--stay-paper': 'url(' + STAY_ART.paper + ')' }">
+  <view class="k-page diary-page" :class="[$userSurface, { 'diary-page--store': source && source.kind === 'job', 'diary-page--stay': stayEntry }]" :style="{ '--stay-paper': 'url(' + STAY_ART.paper + ')' }">
     <k-topbar :title="source ? source.title : '近期生活碎片'" back />
 
     <!-- 「近期生活碎片」（2026-10-17 旅居改版 R3，主人效果图）：顶部是员工端上传的背景图，上面一张磨砂卡（叶子 + 小院日记 + 副标题 + 两三行文案）；
@@ -10,7 +10,7 @@
       <image v-if="header.bg" class="dh__bg" :src="absUrl(header.bg)" mode="aspectFill" />
       <view class="dh__shade" />
       <view class="dh__card">
-        <view class="dh__head"><view class="dh__leaf"><k-icon name="leaf" :size="28" color="#9A835F" :stroke="0.8" /></view><text class="dh__title">{{ header.title }}</text></view>
+        <view class="dh__head"><view class="dh__leaf"><k-icon name="leaf" :size="20" color="muted" /></view><text class="dh__title">{{ header.title }}</text></view>
         <text class="dh__sub">{{ header.subtitle }}</text>
         <view v-if="header.lines.length" class="dh__lines"><text v-for="(lineText, lineIdx) in header.lines" :key="lineIdx" class="dh__line">{{ lineText }}</text></view>
       </view>
@@ -30,7 +30,7 @@
       </view>
       <view v-else-if="!commentLoaded" class="dg-empty"><text class="dg-empty__sub">正在加载评论…</text></view>
       <view v-else-if="!comments.length" class="dg-empty">
-        <image class="dg-empty__img" src="/static/media/stays-kangaroo-stamp.png" mode="aspectFit" />
+        <view class="dg-empty__ic"><k-icon name="message-square" :size="32" color="muted" /></view>
         <text class="dg-empty__title">还没有小伙伴写评论</text>
         <text class="dg-empty__sub">住过、做过换工，或者来过这里，都可以写一写</text>
       </view>
@@ -38,7 +38,7 @@
         <view v-for="cmt in comments" :key="cmt.commentId" class="cc" :class="{ 'cc--hold': cmt.notice }">
           <view class="cc__head">
             <image v-if="cmt.avatar" class="cc__avatar" :src="absUrl(cmt.avatar)" mode="aspectFill" />
-            <view v-else class="cc__avatar cc__avatar--none"><k-icon name="user" :size="16" color="#9A835F" :stroke="1.8" /></view>
+            <view v-else class="cc__avatar cc__avatar--none"><k-icon name="user" :size="16" color="muted" /></view>
             <view class="cc__who">
               <view class="cc__line"><text class="cc__name">{{ cmt.name }}</text><text class="cc__tag" :class="'cc__tag--' + cmt.identity">{{ cmt.identityText }}</text></view>
               <text class="cc__date">{{ cmt.dateText }}</text>
@@ -69,7 +69,7 @@
       </view>
       <view v-else-if="!loaded" class="dg-empty"><text class="dg-empty__sub">正在加载日常…</text></view>
       <view v-else-if="!cards.length" class="dg-empty">
-        <image class="dg-empty__img" src="/static/media/stays-kangaroo-stamp.png" mode="aspectFit" />
+        <view class="dg-empty__ic"><k-icon name="camera" :size="32" color="muted" /></view>
         <text class="dg-empty__title">主理人还没有更新生活碎片</text>
         <text class="dg-empty__sub">过几天再来看看小院的日常吧～</text>
       </view>
@@ -87,7 +87,7 @@
       </view>
       <text v-if="cards.length || listLoading" class="dg-more">{{ listLoading ? '加载中…' : (hasMore ? '上滑加载更多' : '没有更多了') }}</text>
     </view>
-    <view v-if="stayEntry" class="dw" role="button" aria-label="写评论" hover-class="k-press-s" @click="writeComment"><k-icon name="pencil" :size="16" color="white" :stroke="2" /><text>写评论</text></view>
+    <view v-if="stayEntry" class="dw" role="button" aria-label="写评论" hover-class="k-press-s" @click="writeComment"><k-icon name="pencil" :size="16" color="red" /><text>写评论</text></view>
     <stay-video-player :src="playing.url" :poster="playing.cover" :title="header.title" @close="closeVideo" />
     <k-tabbar active="home" theme="journal" />
   </view>
@@ -294,7 +294,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 <style scoped lang="scss">
 @import '../../styles/look.scss';
 @import './reference-font.scss';
-.diary-page { --k-sans: 'KG Detail', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-family: var(--k-sans); --k-bg: #FCF9F3; background: var(--k-bg); }
+.diary-page { --k-sans: 'KG Detail', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-family: var(--k-sans); background: var(--k-bg); }
 /* 图文高度随员工文案展开，长标题和三行长文案不会被固定高度裁掉。 */
 .dh { position: relative; min-height: 220px; padding: 20px 14px; box-sizing: border-box; display: flex; align-items: center; background: #E9E0D3; }
 .dh__bg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -314,9 +314,9 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .dg__col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .dc { border-radius: 16px; background: var(--k-paper); border: 1px solid #ECE3D9; box-shadow: 0 3px 12px rgba(58,50,43,.06); overflow: hidden; }
 .dc__media { position: relative; background: var(--k-paper2); }
-.dc__media--empty { height: 0; padding-bottom: 75%; background: #3A322B; }
+.dc__media--empty { height: 0; padding-bottom: 75%; background: var(--k-ink); }
 .dc__img { display: block; width: 100%; }
-.dc__date { position: absolute; left: 8px; top: 8px; height: 22px; padding: 0 9px; border-radius: 11px; background: #8A5E36; color: #fff; font-family: var(--k-sans); font-size: 11px; font-weight: 700; line-height: 22px; letter-spacing: .3px; } /* 参考图 11：左上暖棕日期胶囊 */
+.dc__date { position: absolute; left: 8px; top: 8px; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--k-red-deep); color: var(--k-paper); font-family: var(--k-sans); font-size: 11px; font-weight: 700; line-height: 22px; letter-spacing: .3px; } /* 参考图 11：左上暖棕日期胶囊 */
 .dc__play { position: absolute; left: 8px; bottom: 8px; width: 28px; height: 28px; border-radius: 50%; background: rgba(255, 255, 255, .94); box-shadow: 0 2px 8px rgba(36, 27, 23, .22); display: flex; align-items: center; justify-content: center; } /* 视频：左下白色小播放圆钮 */
 .dc__cap { display: block; padding: 10px 12px 12px; font-size: 15px; font-weight: 700; color: $look-ink; line-height: 1.55; word-break: break-all; }
 
@@ -324,7 +324,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .dg-empty__img { width: 150px; height: 100px; }
 .dg-empty__title { margin-top: 12px; font-size: 16px; font-weight: 700; color: var(--k-ink); }
 .dg-empty__sub { margin-top: 6px; font-size: 13px; color: var(--k-muted); }
-.dg-empty__btn { margin-top: 16px; height: 38px; padding: 0 20px; border-radius: 999px; background: $look-grad-brown; display: flex; align-items: center; color: #fff; font-size: 14px; font-weight: 700; }
+.dg-empty__btn { margin-top: 16px; height: 38px; padding: 0 20px; border-radius: 999px; background: $look-grad-brown; display: flex; align-items: center; color: var(--k-paper); font-size: 14px; font-weight: 700; }
 .dg-more { display: block; margin-top: 16px; text-align: center; font-size: 12px; color: var(--k-muted); }
 /* 两列封面遵循参考稿的交错比例；打开后仍为员工上传原图。 */
 @import './stays-premium.scss';
@@ -369,7 +369,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .dt__tab.on { font-weight: 700; color: #714429; }
 .dt__tab.on::after { content: ''; position: absolute; left: 0; right: 0; bottom: 2px; height: 3px; border-radius: 2px; background: #AA743D; }
 .diary-page--stay .dg-body { padding-bottom: calc(136px + var(--k-safe-bottom)); }
-.dw { position: fixed; right: 14px; bottom: calc(70px + var(--k-safe-bottom)); z-index: 45; height: 44px; padding: 0 18px; border-radius: 22px; background: $look-grad-brown; box-shadow: 0 4px 12px rgba(89, 57, 31, .28); display: flex; align-items: center; gap: 6px; color: #fff; font-size: 15px; font-weight: 700; }
+.dw { position: fixed; right: 14px; bottom: calc(70px + var(--k-safe-bottom)); z-index: 45; height: 44px; padding: 0 18px; border-radius: 22px; background: $look-grad-brown; box-shadow: 0 4px 12px rgba(89, 57, 31, .28); display: flex; align-items: center; gap: 6px; color: var(--k-paper); font-size: 15px; font-weight: 700; }
 
 .cm-tip { display: block; margin-bottom: 10px; font-size: 12px; line-height: 1.6; color: #7A6A5C; }
 .cc { margin-bottom: 10px; padding: 12px; border-radius: 12px; background: var(--k-paper); border: 1px solid #E9DFD3; box-shadow: 0 2px 5px rgba(89, 57, 31, .08); }
@@ -392,11 +392,98 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .cc__cell { position: relative; height: 0; padding-bottom: 100%; border-radius: 8px; overflow: hidden; background: #F1E8DC; }
 .cc__pics--one .cc__cell { padding-bottom: 75%; }
 .cc__pic { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.cc__video { position: relative; margin-top: 8px; width: 100%; height: 0; padding-bottom: 56.25%; border-radius: 8px; overflow: hidden; background: #3A322B; }
+.cc__video { position: relative; margin-top: 8px; width: 100%; height: 0; padding-bottom: 56.25%; border-radius: 8px; overflow: hidden; background: var(--k-ink); }
 .cc__play { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: rgba(38, 32, 27, .55); display: flex; align-items: center; justify-content: center; }
 .cc__notice { margin-top: 8px; padding: 6px 10px; border-radius: 8px; font-size: 13px; line-height: 1.55; background: #F4E6D3; color: #7A4D26; }
 .cc__notice--rejected, .cc__notice--offline { background: #F8E7E3; color: #A33A2C; }
 .cc__foot { display: flex; justify-content: flex-end; min-height: 8px; }
 .cc__act { margin: 2px -6px -6px 0; padding: 8px 6px; font-size: 13px; color: #7A6A5C; }
 
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板，参考小红书）：浅灰底 + 纯白卡，不用阴影、不描边、不铺纸纹。
+   顶部背景图完整露出：之前盖在图上的半透明奶白卡去掉，标题和文案改成白字，用底部往上的黑色渐变托住（没有背景图时是一张白卡、深色字）。
+   两列日常卡、评论卡、页签、「写评论」钮都收小一档。功能和文字一样不少；上面几轮的规则保留不动，这里统一用 .diary-page 开头的规则盖过去。 */
+.diary-page { @include stays-fine; background-image: none; }
+.diary-page :deep(.k-topbar) { background-image: none; }
+.diary-page .dh, .diary-page--store .dh { min-height: 0; padding: 0; display: block; background: var(--k-paper); }
+.diary-page .dh__shade { background: transparent; }
+.diary-page .dh__card, .diary-page--store .dh__card { width: 100%; max-width: none; padding: 12px; border: 0; border-radius: 0; background: transparent; }
+.diary-page .dh__head { align-items: center; gap: 6px; }
+.diary-page .dh__leaf { width: 20px; height: 24px; }
+
+.diary-page .dh__title { color: var(--k-ink); font-size: 17px; font-weight: 700; line-height: 24px; letter-spacing: 0; }
+.diary-page .dh__sub { margin: 4px 0 0; color: var(--k-ink2); font-size: 12px; font-weight: 400; line-height: 18px; }
+.diary-page .dh__lines { margin-top: 6px; padding-left: 0; gap: 0; }
+.diary-page .dh__line { color: var(--k-ink2); font-size: 12px; line-height: 18px; }
+/* 有背景图时：图铺满，文字压在图的下半截 */
+.diary-page .dh__bg ~ .dh__shade { background: linear-gradient(180deg, rgba(20,14,10,0) 25%, rgba(20,14,10,.62)); }
+.diary-page .dh__bg ~ .dh__card { position: relative; min-height: 188px; padding-top: 72px; display: flex; flex-direction: column; justify-content: flex-end; }
+.diary-page .dh__bg ~ .dh__card .dh__title { color: var(--k-paper); }
+.diary-page .dh__bg ~ .dh__card .dh__sub, .diary-page .dh__bg ~ .dh__card .dh__line { color: rgba(255,255,255,.9); }
+.diary-page .dh__bg ~ .dh__card .dh__leaf :deep(.k-icon) { filter: brightness(0) invert(1); }
+/* 页签：文字 + 一小段暖棕下划线 */
+.diary-page .dt { gap: 20px; padding: 4px 12px 0; }
+.diary-page .dt__tab { min-height: 36px; padding: 8px 0; color: var(--k-muted); font-size: 14px; font-weight: 400; line-height: 20px; }
+.diary-page .dt__tab.on { color: var(--k-ink); font-size: 15px; font-weight: 700; }
+.diary-page .dt__tab.on::after { left: 50%; right: auto; bottom: 3px; width: 16px; height: 3px; margin-left: -8px; background: var(--k-red); }
+.diary-page .dg-body { padding: 8px 12px calc(95px + var(--k-safe-bottom)); }
+.diary-page--stay .dg-body { padding-bottom: calc(136px + var(--k-safe-bottom)); }
+.diary-page .dg, .diary-page .dg__col { gap: 8px; }
+.diary-page .dc { border: 0; border-radius: 12px; box-shadow: none; }
+.diary-page .dc__media { background: var(--k-paper2); }
+.diary-page .dc__media--empty { background: var(--k-ink); }
+.diary-page .dc__date { left: 6px; top: 6px; height: 19px; padding: 0 7px; border-radius: 10px; background: rgba(255,255,255,.94); color: var(--k-ink2); font-size: 10px; font-weight: 600; line-height: 19px; letter-spacing: 0; }
+.diary-page .dc__play { left: 6px; bottom: 6px; width: 24px; height: 24px; background: rgba(255,255,255,.94); box-shadow: none; }
+.diary-page .dc__cap, .diary-page--store .dc__cap { padding: 8px 10px 10px; color: var(--k-ink); font-size: 13px; font-weight: 500; line-height: 19px; }
+.diary-page .dg-empty__img { width: 120px; height: 80px; border-radius: 12px; }
+.diary-page .dg-empty__title { font-size: 15px; font-weight: 600; }
+.diary-page .dg-empty__sub { font-size: 12px; }
+.diary-page .dg-empty__btn { height: 36px; padding: 0 18px; background: linear-gradient(135deg,#B5814D,#8E5E33); font-size: 13px; font-weight: 600; }
+.diary-page .dg-more { margin-top: 14px; font-size: 11px; }
+.diary-page .dw { right: 12px; height: 40px; padding: 0 16px; border-radius: 20px; background: linear-gradient(135deg,#B5814D,#8E5E33); box-shadow: 0 4px 10px rgba(138,90,48,.22); font-size: 14px; font-weight: 600; }
+.diary-page .cm-tip { margin-bottom: 8px; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.diary-page .cc { margin-bottom: 8px; padding: 12px; border: 0; border-radius: 12px; box-shadow: none; }
+.diary-page .cc--hold { background: #FFFBF4; }
+.diary-page .cc__avatar { width: 32px; height: 32px; background: var(--k-paper2); }
+.diary-page .cc__name { font-size: 13px; font-weight: 600; line-height: 18px; }
+.diary-page .cc__tag { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 500; line-height: 17px; }
+.diary-page .cc__tag--guest { background: var(--k-green-soft); color: var(--k-green); }
+.diary-page .cc__tag--volunteer { background: var(--k-red-soft); color: var(--k-red-deep); }
+.diary-page .cc__tag--unverified { background: var(--k-fill); color: var(--k-ink2); }
+.diary-page .cc__date { color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.diary-page .cc__text { font-size: 13px; line-height: 20px; }
+.diary-page .cc__pics { gap: 4px; }
+.diary-page .cc__cell { background: var(--k-paper2); }
+.diary-page .cc__video { background: var(--k-ink); }
+.diary-page .cc__play { width: 36px; height: 36px; margin: -18px 0 0 -18px; background: rgba(20,14,10,.5); }
+.diary-page .cc__notice { font-size: 12px; line-height: 18px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); }
+.diary-page .cc__notice--rejected, .diary-page .cc__notice--offline { background: var(--k-alert-soft); color: var(--k-alert); }
+.diary-page .cc__act { color: var(--k-muted); font-size: 12px; }
+.diary-page .dw { box-shadow: 0 1px 4px rgba(138,90,48,.12); }
+.diary-page .dh__bg ~ .dh__shade { background: linear-gradient(180deg, rgba(20,14,10,0) 8%, rgba(20,14,10,.48) 52%, rgba(20,14,10,.66)); }
+/* 2026-11-18 第二轮精修：页签选中和未选中一样 14 号字（切换时不再跳大小），选中 600 深墨 + 暖棕短条，页签行高 40；
+   「重新加载」改成 32 高的次按钮小胶囊（白底细棕边、深棕字 12 / 500，上下各多 4px 透明可点范围）。 */
+.diary-page .dt__tab { min-height: 40px; padding: 10px 0; }
+.diary-page .dt__tab.on { font-size: 14px; font-weight: 600; }
+.diary-page .dt__tab.on::after { bottom: 4px; }
+.diary-page .dg-empty__btn { position: relative; height: 32px; margin-top: 12px; padding: 0 14px; border: 1px solid var(--k-red-line); border-radius: 16px; background: var(--k-paper); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+.diary-page .dg-empty__btn::after { content: ''; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
+
+/* 2026-11-18 第三轮逐页精修：头图底部渐变加深（亮色天空 / 楼房上的白字看得清），标题 18 / 700、说明 12 / 1.5，左右 16 一条线；
+   空状态的「重新加载」改成 32 高次按钮小胶囊（主按钮只留给「写评论」）。 */
+.diary-page { --dy-shade: rgba(20,14,10,.66); --dy-shade-mid: rgba(20,14,10,.42); --dy-shade-0: rgba(20,14,10,0); }
+.diary-page .dh__bg ~ .dh__shade { background: linear-gradient(to top, var(--dy-shade) 0%, var(--dy-shade-mid) 45%, var(--dy-shade-0) 75%); }
+.diary-page .dg-empty__btn { position: relative; height: 32px; margin-top: 8px; padding: 0 14px; border: 1px solid var(--k-red-line); border-radius: 16px; background: var(--k-paper); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+/* 11-18 第三轮返修（评审第 3 轮）：评论 / 日常空状态和本组别的空状态一套 —— 56 浅棕方块 + 32 线性图标 + 14/500 标题 + 12 说明（原来的袋鼠印章图带米白底，会露出方框） */
+.diary-page .dg-empty__ic { width: 56px; height: 56px; margin: 0 auto 10px; border-radius: 16px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+.diary-page .dg-empty__title { font-size: 14px; font-weight: 500; line-height: 20px; }
+.diary-page .dg-empty__sub { margin-top: 4px; font-size: 12px; line-height: 18px; }
+/* 11-19 微信实拍返修：
+   · 右下「写评论」改白底 + 暖棕细边 + 深棕字（底栏「发布」已是暖棕实心，一屏只留一处实心）；
+   · 头图文字分两档：副标题 13/500 白 .95，下面的文案行 12/400 白 .8、间隔 4；遮罩底部加深到 .72，靠下那行不再发灰。 */
+.diary-page .dw { background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-red-line), 0 4px 12px rgba(20,14,10,.12); color: var(--k-red-deep); }
+.diary-page .dw > text { color: var(--k-red-deep); font-size: 14px; font-weight: 600; }
+.diary-page { --dy-shade: rgba(20,14,10,.72); }
+.diary-page .dh__bg ~ .dh__card .dh__sub { color: rgba(255,255,255,.95); font-size: 13px; font-weight: 500; line-height: 19px; }
+.diary-page .dh__bg ~ .dh__card .dh__lines { margin-top: 4px; }
+.diary-page .dh__bg ~ .dh__card .dh__line { color: rgba(255,255,255,.8); font-size: 12px; font-weight: 400; line-height: 18px; }
 </style>

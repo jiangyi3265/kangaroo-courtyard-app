@@ -1,6 +1,6 @@
 <template>
   <view v-if="urgency" class="job-urgency" :class="['job-urgency--' + urgency.level, { 'job-urgency--detail': expanded }]" :aria-label="urgency.label">
-    <view class="job-urgency__label"><k-icon name="flag" :size="expanded ? 19 : 13" :color="['', '#47633D', '#875813', '#9B3528', '#FFF7EE'][urgency.level]" fill /><text>{{ urgency.label }}</text></view>
+    <view class="job-urgency__label"><k-icon name="flag" :size="expanded ? 14 : 12" :color="['', '#47633D', '#875813', '#9B3528', '#FFF7EE'][urgency.level]" fill /><text>{{ urgency.label }}</text></view>
     <text v-if="expanded && urgency.deadlineText" class="job-urgency__deadline">{{ urgency.deadlineText }} 截止（北京时间）</text>
   </view>
 </template>

@@ -1,10 +1,29 @@
 <template>
   <view class="ad-card">
-    <view class="ad-head"><view class="ad-heading"><k-icon name="calendar-check" :size="20" color="red" /><text>确认时间</text></view><text v-if="data" class="ad-status" :class="{ 'ad-status--done': data.state === 'confirmed' }">{{ stateLabel }}</text></view>
+    <view class="ad-head"><view class="ad-heading"><k-icon name="calendar-check" :size="20" color="red" /><text>{{ renewal ? '换工续期' : '确认时间' }}</text></view><text v-if="data && stateLabel" class="ad-status" :class="{ 'ad-status--done': data.state === 'confirmed' }">{{ stateLabel }}</text></view>
     <view v-if="error" class="ad-empty"><text>{{ error }}</text><k-button type="outline" size="sm" :disabled="loading" @click="load">重新加载</k-button></view>
     <text v-else-if="!data" class="ad-note">正在读取时间安排…</text>
     <template v-else>
-      <template v-if="editing">
+      <template v-if="renewal">
+        <view class="ad-dates">
+          <view class="ad-date"><text class="ad-label">当前到期日</text><text class="ad-date-value">{{ data.applicationEnd || '待补充' }}</text></view>
+          <view v-if="renewalPending && !editing" class="ad-date"><text class="ad-label">申请续至</text><text class="ad-date-value">{{ data.endDate }}</text></view>
+        </view>
+        <template v-if="editing">
+          <button class="ad-renew-date" :disabled="saving" @click="calendar = 'renewal'"><text>新到期日</text><text>{{ end || '请选择日期' }} ›</text></button>
+          <text v-if="formError" class="ad-form-error">{{ formError }}</text>
+          <view class="ad-actions"><view class="ad-action"><k-button block type="outline" :disabled="saving" @click="cancelEdit">取消</k-button></view><view class="ad-action ad-action--main"><k-button block :disabled="saving || !end" @click="submitRenewal">{{ saving ? '发送中…' : '发送给报名人确认' }}</k-button></view></view>
+        </template>
+        <template v-else>
+          <text v-if="renewalNote" class="ad-note">{{ renewalNote }}</text>
+          <k-button v-if="merchant && data.canRenew" class="ad-button" block :disabled="loading || saving" @click="editRenewal">{{ renewalPending ? '调整续期日期' : '申请续期' }}</k-button>
+          <template v-if="!merchant && renewalPending && data.canConfirm">
+            <k-button class="ad-button" block :disabled="loading || saving" @click="accept">{{ saving ? '确认中…' : '确认续期' }}</k-button>
+            <button class="ad-contact" :disabled="saving" @click="contact">日期不合适，联系商家<k-icon name="chevron-right" :size="14" color="red" /></button>
+          </template>
+        </template>
+      </template>
+      <template v-else-if="editing">
         <text class="ad-note">设置到岗／入住的起止日期，提交后由报名人核对确认。</text>
         <view class="ad-dates ad-dates--edit">
           <button class="ad-date" :disabled="saving" @click="calendar = 'start'"><text class="ad-label">到岗／入住日期</text><text class="ad-date-value">{{ start || '选择日期' }}</text><k-icon name="calendar-days" :size="18" color="red" /></button>
@@ -27,7 +46,8 @@
         <button v-else-if="!merchant && !data.closed" class="ad-contact" @click="contact">联系商家确认安排<k-icon name="chevron-right" :size="14" color="red" /></button>
       </template>
     </template>
-    <k-date-picker v-if="calendar && data" :title="calendar === 'start' ? '选择到岗／入住日期' : '选择结束日期'" :value="calendar === 'start' ? start : end" :min-date="calendar === 'start' ? data.minDate : endMin" :max-date="calendar === 'end' && start ? shiftDate(start, 364) : ''" @cancel="calendar = ''" @confirm="pickDate" />
+    <k-date-picker v-if="calendar === 'renewal' && data" title="选择续期到期日" :value="end || data.minRenewalEnd" :min-date="data.minRenewalEnd" :max-date="data.maxRenewalEnd" @cancel="calendar = ''" @confirm="pickDate" />
+    <k-date-picker v-else-if="calendar && data" :title="calendar === 'start' ? '选择到岗／入住日期' : '选择结束日期'" :value="calendar === 'start' ? start : end" :min-date="calendar === 'start' ? data.minDate : endMin" :max-date="calendar === 'end' && start ? shiftDate(start, 364) : ''" @cancel="calendar = ''" @confirm="pickDate" />
   </view>
 </template>
 
@@ -35,19 +55,35 @@
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { onShow, onHide } from '@dcloudio/uni-app'
 import { apiApplicationDates, apiProposeApplicationDates, apiConfirmApplicationDates } from '@/common/api.js'
-import { experience, getSessionRevision } from '@/common/experience.js'
+import { experience, getSessionRevision, getMessageScopeKey } from '@/common/experience.js'
 import { getToken } from '@/common/request.js'
 import { errText, shiftDate } from '@/common/ui.js'
 import { go, toast } from '@/common/screen.js'
 import R from '@/common/routes.js'
-import { datePlan, dateDays, dateError } from './dates.js'
+import { datePlan, dateDays, dateError, renewalDateError } from './dates.js'
 const props = defineProps({ appId: { type: [Number, String], required: true }, merchant: Boolean })
 const emit = defineEmits(['updated', 'navigate'])
 const data = ref(null), loading = ref(false), saving = ref(false), error = ref(''), formError = ref('')
 const editing = ref(false), start = ref(''), end = ref(''), calendar = ref('')
 const draftDays = computed(() => dateDays(start.value, end.value))
 const endMin = computed(() => start.value ? shiftDate(start.value, Number(data.value?.minDays || 1) - 1) : data.value?.minDate)
-const stateLabel = computed(() => ({ not_set: '待商家设置', pending: '待确认', confirmed: '已确认' })[data.value?.state] || '')
+const renewal = computed(() => data.value?.renewalMode === true || data.value?.kind === 'renewal')
+const renewalPending = computed(() => data.value?.kind === 'renewal' && data.value.state === 'pending')
+const renewalNote = computed(() => {
+  const plan = data.value
+  if (!renewal.value || !plan) return ''
+  if (plan.renewalHint) return plan.renewalHint
+  if (plan.closed) return '这份报名已不能续期。'
+  if (props.merchant && !plan.canRenew) return '当前身份可查看续期记录，请联系有权限的门店负责人办理。'
+  if (!renewalPending.value) return ''
+  if (props.merchant) return '等待报名人确认。确认后才更新到期日。'
+  return plan.canConfirm ? '请核对新到期日，确认后更新换工期限。' : '这次续期申请无法确认，请联系商家核对。'
+})
+const stateLabel = computed(() => {
+  if (!renewal.value) return ({ not_set: '待商家设置', pending: '待确认', confirmed: '已确认' })[data.value?.state] || ''
+  if (renewalPending.value) return data.value.renewalHint || data.value.closed || (!props.merchant && !data.value.canConfirm) ? '' : '待确认'
+  return data.value?.kind === 'renewal' && data.value.state === 'confirmed' ? '已续期' : ''
+})
 let version = 0, visible = true, timer = null
 function scope() {
   const ticket = ++version, id = props.appId, merchant = props.merchant, account = experience.account?.id, session = getSessionRevision(), token = getToken()
@@ -61,17 +97,30 @@ async function load() {
   catch (e) { if (current()) { data.value = null; error.value = errText(e, '时间信息暂时加载失败') } }
   finally { if (current()) loading.value = false }
 }
-watch(() => [props.appId, props.merchant, experience.account?.id], () => { version++; data.value = null; loading.value = false; saving.value = false; editing.value = false; calendar.value = ''; error.value = ''; load(); poll() }, { immediate: true, flush: 'sync' })
+watch(() => [props.appId, props.merchant, experience.account?.id, props.merchant && getMessageScopeKey()], () => { version++; data.value = null; loading.value = false; saving.value = false; editing.value = false; calendar.value = ''; error.value = ''; load(); poll() }, { immediate: true, flush: 'sync' })
 onShow(() => { visible = true; load(); poll() })
 onHide(() => { visible = false; version++; loading.value = false; saving.value = false; editing.value = false; calendar.value = ''; clearInterval(timer) })
 onUnmounted(() => { visible = false; version++; clearInterval(timer) })
 function edit() {
-  if (!data.value?.canEdit || loading.value || saving.value) return
+  if (renewal.value || !data.value?.canEdit || loading.value || saving.value) return
   start.value = data.value.startDate || data.value.applicationStart || data.value.minDate
   if (start.value < data.value.minDate) start.value = data.value.minDate
   end.value = data.value.endDate || data.value.applicationEnd || shiftDate(start.value, Number(data.value.minDays || 1) - 1)
   if (end.value < endMin.value) end.value = endMin.value
   formError.value = ''; editing.value = true
+}
+function editRenewal() {
+  if (!props.merchant || !data.value?.canRenew || loading.value || saving.value) return
+  end.value = renewalPending.value && !renewalDateError(data.value.endDate, data.value) ? data.value.endDate : ''
+  formError.value = ''
+  editing.value = true
+  calendar.value = 'renewal'
+}
+function submitRenewal() {
+  if (!editing.value || !props.merchant || !data.value?.canRenew) return
+  formError.value = renewalDateError(end.value, data.value)
+  if (formError.value) return
+  return save(() => apiProposeApplicationDates(props.appId, { kind: 'renewal', revision: data.value.revision, endDate: end.value }))
 }
 function cancelEdit() { editing.value = false; calendar.value = ''; load() }
 function pickDate(value) {
@@ -87,7 +136,9 @@ async function save(action) {
     const response = await action()
     if (!current()) return
     data.value = datePlan(response.data, props.appId); editing.value = false; formError.value = ''
-    emit('updated', data.value); toast(props.merchant ? (data.value.state === 'confirmed' ? '此时间已确认' : '已发送，等待报名人确认') : '时间已确认')
+    emit('updated', data.value)
+    if (data.value.kind === 'renewal') toast(data.value.state === 'confirmed' ? '续期已确认' : '已发送，等待报名人确认')
+    else toast(props.merchant ? (data.value.state === 'confirmed' ? '此时间已确认' : '已发送，等待报名人确认') : '时间已确认')
   } catch (e) {
     if (current()) {
       formError.value = errText(e, '操作未完成，请重试'); toast(formError.value)
@@ -97,21 +148,22 @@ async function save(action) {
   } finally { if (current()) { saving.value = false; if (reload) load() } }
 }
 function submit() {
-  if (!data.value?.canEdit) return
+  if (renewal.value || !data.value?.canEdit) return
   formError.value = dateError(start.value, end.value, data.value)
   if (formError.value) return
   const body = { revision: data.value.revision, startDate: start.value, endDate: end.value }
   return save(() => apiProposeApplicationDates(props.appId, body))
 }
 function accept() {
-  if (!data.value?.canConfirm) return
+  if (!data.value?.canConfirm || (renewal.value && !renewalPending.value)) return
   const revision = data.value.revision
-  return save(() => apiConfirmApplicationDates(props.appId, revision))
+  return save(() => renewalPending.value ? apiConfirmApplicationDates(props.appId, revision, 'renewal') : apiConfirmApplicationDates(props.appId, revision))
 }
 function contact() { const url = R.chat + '?appId=' + Number(props.appId); if (props.merchant) go(url); else emit('navigate', url) }
 </script>
 
 <style scoped>
+.ad-renew-date { margin-top: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; background: var(--k-paper2); color: var(--k-ink); font-size: 14px; line-height: 1.5; border-radius: 10px; }
 .ad-card { margin-top: 18px; padding: 16px; border: 1px solid var(--k-line); border-radius: 16px; background: var(--k-paper); }
 .ad-head { padding-right: 8px; }
 .ad-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }.ad-heading { display: flex; align-items: center; gap: 7px; font-size: 17px; font-weight: 700; }.ad-status { flex-shrink: 0; padding: 4px 8px; border-radius: 6px; font-size: 11px; color: var(--k-red-deep); background: var(--k-paper2); }.ad-status--done { background: var(--k-green-soft); color: var(--k-green); }

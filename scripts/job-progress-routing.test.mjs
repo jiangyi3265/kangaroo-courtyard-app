@@ -8,9 +8,90 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile } from 'node:fs/promises'
+import vm from 'node:vm'
+import * as vue from 'vue'
+import { parse, babelParse } from '@vue/compiler-sfc'
 
 const read = async (p) => (await readFile(new URL(p, import.meta.url), 'utf8')).replace(/\r\n/g, '\n')
 const progress = await read('../pages/jobs/progress.vue')
+function progressPage(api = {}) {
+  const script = parse(progress).descriptor.scriptSetup.content
+  const nodes = babelParse(script, {sourceType:'module'}).program.body
+  const hooks = {}, routes = [], writes = [], toasts = []
+  const ctx = { ...vue,
+    useScreen:(_,options)=>{hooks.load=options.onLoad;return vue.ref(1)},
+    onShow:f=>{hooks.show=f}, onHide:f=>{hooks.hide=f}, onUnload:f=>{hooks.unload=f}, onShareAppMessage(){},
+    getMessageScopeKey:()=> 'test-user', R:{jobInterview:'/interview'}, replace:url=>routes.push(url), toast:t=>toasts.push(t),
+    apiUrgentInfo:async()=>({data:null}), apiInterviewSlots:async()=>({data:[]}),
+    apiBookInterview:async(id,slot)=>writes.push([id,slot]),
+    ...api
+  }
+  vm.createContext(ctx)
+  vm.runInContext(nodes.filter(n=>n.type!=='ImportDeclaration').map(n=>script.slice(n.start,n.end)).join('\n'),ctx)
+  return {hooks,routes,writes,toasts,run:js=>vm.runInContext(js,ctx)}
+}
+const settlePage = () => new Promise(resolve=>setImmediate(resolve))
+const app = status => ({data:{appId:7,jobType:'parttime',status}})
+
+test('从联系门店页返回，报名已约面试则直接显示当前进度',async()=>{
+  let state='submitted'
+  const page=progressPage({apiApplicationDetail:async()=>app(state)})
+  page.hooks.load({appId:7}); page.hooks.show(); await settlePage()
+  assert.equal(page.run('detail.value.status'),'submitted')
+  page.hooks.hide?.()
+  state='interview_booked';page.hooks.show();await settlePage()
+  assert.deepEqual(page.routes,['/interview?appId=7'])
+})
+test('离开报名进度后，迟到的详情不会把用户带回面试页',async()=>{
+  let finish
+  const page=progressPage({apiApplicationDetail:()=>new Promise(resolve=>{finish=resolve})})
+  page.hooks.load({appId:7});page.hooks.show();await settlePage()
+  page.hooks.unload?.();finish(app('interview_booked'));await settlePage()
+  assert.deepEqual(page.routes,[])
+})
+test('门店时段刷新期间不能确认已经选过的旧时段',async()=>{
+  let finish,first=true
+  const page=progressPage({apiApplicationDetail:async()=>app('review_passed'),
+    apiInterviewSlots:()=>{if(first){first=false;return Promise.resolve({data:[{slotId:8}]})}
+      return new Promise(resolve=>{finish=resolve})}})
+  page.hooks.load({appId:7});page.hooks.show();await settlePage()
+  page.run('openSlots()');await settlePage();page.run('picked.value=0')
+  const pending=page.run('loadSlots()');await page.run('confirmTime()')
+  assert.deepEqual(page.writes,[])
+  finish({data:[{slotId:9}]});await pending
+  assert.equal(page.run('picked.value'),-1)
+})
+test('返回选时段页仍可继续选号，再次读取失败后允许重试',async()=>{
+  let fail=false,count=0
+  const page=progressPage({apiApplicationDetail:async()=>{if(fail)throw Error('断网');return app('review_passed')},
+    apiInterviewSlots:async()=>({data:[{slotId:++count}]})})
+  page.hooks.load({appId:7});page.hooks.show();await settlePage()
+  page.run('openSlots()');await settlePage()
+  page.hooks.hide();page.hooks.show();await settlePage()
+  assert.equal(page.run('s.value'),4)
+  assert.equal(page.run('options.value[0].slotId'),2)
+  page.run('onBack()')
+  assert.equal(page.run('s.value'),2)
+  fail=true;page.hooks.hide();page.hooks.show();await settlePage()
+  assert.equal(page.run('loadState.value'),'failed')
+  assert.equal(page.run('canWithdraw.value'),false)
+  fail=false;await page.run('loadDetail()')
+  assert.equal(page.run('s.value'),2)
+})
+test('离开页面后旧撤回弹窗失效；停在当前报名连续点只提交一次',async()=>{
+  let confirmation, finish, writes=0
+  const page=progressPage({apiApplicationDetail:async()=>app('submitted'),
+    uni:{showModal:opts=>{confirmation=opts.success}},
+    apiWithdrawApplication:()=>{writes++;return new Promise(resolve=>{finish=resolve})}})
+  page.hooks.load({appId:7});page.hooks.show();await settlePage()
+  page.run('withdraw()');page.hooks.hide();confirmation({confirm:true})
+  assert.equal(writes,0)
+  page.hooks.show();await settlePage()
+  page.run('withdraw()');confirmation({confirm:true})
+  page.run('withdraw()');confirmation({confirm:true})
+  assert.equal(writes,1)
+  finish({});await settlePage()
+})
 const interview = await read('../pages/jobs/interview.vue')
 const list = await read('../pages/jobs/list.vue')
 const filter = await read('../pages/jobs/filter.vue')

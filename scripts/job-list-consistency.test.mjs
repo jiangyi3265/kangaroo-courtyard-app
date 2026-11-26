@@ -91,8 +91,10 @@ test('转给门店同事：非线上岗位的报名不算线上任务专员；�
   // 同一个人有两条授权时只算一次
   assert.match(body, /!targets\.contains\(uid\)/)
   // 跨店：收件人和可选门店都不算线上任务专员（他们看不到这类站内信，也打不开脱敏简历）
-  assert.match(share, /select distinct app_user_id from kg_staff_grant where store_id=:s and status='0' and del_flag='0' and app_user_id<>:u and role_code not in \('online_staff','merchant_service','city_lead'\)/)
-  assert.match(share, /g\.app_user_id<>:u and g\.role_code not in \('online_staff','merchant_service','city_lead'\)\)/)
+  assert.match(share, /roles = RolePhase.isNew\(\) \? Arrays.asList\("manager", "keeper"\) : Arrays.asList\("manager", "keeper", "staff"\)/)
+  assert.match(share, /g\.role_code in \(:roles\)/)
+  assert.match(share, /ids\.removeAll\(Arrays\.asList\(sender, applicant, null\)\)/)
+  assert.match(share, /Recipients eligible = recipients\(after, c\.uid\(\), applicant\)/)
 })
 
 test('我的评价：举报成立隐藏的显示「已被平台隐藏」', () => {
@@ -104,7 +106,7 @@ test('我的评价：举报成立隐藏的显示「已被平台隐藏」', () =>
 test('后台客服工单：来源认得员工身份', () => {
   // 员工身份提交的工单：来源仍记页面，身份记在摘要开头的【员工身份】（KgSupportService.createTicket）；
   // 改之前提交的旧工单 context 是 staff，后台仍要认得
-  assert.match(support, /row\.put\("context", StaffSupport\.cut\(str\(b\.get\("context"\)\), 16\)\)/)
+  assert.match(support, /row\.put\("context", StaffSupport\.cut\(str\(source\.get\("context"\)\), 16\)\)/)
   assert.match(support, /staff \? STAFF_MARK \+ sum : sum/)
   const ticket = userModule.slice(userModule.indexOf('ExtEntity ticket'), userModule.indexOf('ExtEntity sub'))
   assert.match(ticket, /ExtField\.of\("context", "来源", "select"\)\.options\("[^"]*,staff:员工身份(,[^"]*)?"\)/)

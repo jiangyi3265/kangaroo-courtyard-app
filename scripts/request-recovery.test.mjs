@@ -11,6 +11,20 @@ globalThis.uni = {
 }
 function setup(items) { responses = [...items]; calls = 0; cleared = 0; api.setToken('original'); api.setUnauthorizedHandler(() => cleared++) }
 const ok = { statusCode: 200, data: { code: 200, data: { title: '平潭小院' } } }
+test('城市纠纷按当前所选身份查询，个人调解沿用个人入口', async () => {
+  const heard = []
+  const record = opts => { heard.push(opts.header['X-Message-Scope']); opts.success(ok) }
+  setup([record, record, record])
+  let identity = 'city:8:city_lead'
+  api.setMessageScopeProvider(() => identity)
+  try {
+    await api.get('/app/governance/cases', { mode: 'city', overdue: 1, cityId: 8 })
+    identity = 'store:41:city_lead'
+    await api.get('/app/governance/cases', { mode: 'city', cityId: 8 })
+    await api.get('/app/governance/cases', { mode: 'user' })
+    assert.deepEqual(heard, ['city:8:city_lead', 'store:41:city_lead', undefined])
+  } finally { api.setMessageScopeProvider(() => '') }
+})
 test('a temporary HTML 502 recovers without clearing the login', async () => {
   setup([{ statusCode: 502, data: '<html>Bad Gateway</html>' }, ok])
   assert.deepEqual((await api.get('/app/home/feed')).data, ok.data.data)

@@ -4,7 +4,7 @@
   <!-- page-meta 必须是页面第一个节点：AI袋鼠弹层开着时锁住页面滚动（网页版由弹层自己锁 body） -->
   <!-- #endif -->
   <k-feature-gate feature="recruitment">
-  <view class="k-page filter-page">
+  <view class="k-page filter-page" :class="$userSurface">
     <template v-if="s === 1">
       <k-topbar title="筛选条件" back custom-back @back="back" />
     <k-subscribe scenes="job_new" label="订阅新机会提醒" />
@@ -14,10 +14,10 @@
       <view class="filter-body">
         <text v-if="isOnline" class="nationwide-note">线上任务全国可接，无需选择城市</text>
         <view class="sheet">
-          <view v-if="!isOnline" class="sec"><view class="sec-head"><text class="sec-head__title">城市</text><view class="sec-head__meta" hover-class="k-press" @click="pickMoreCity"><text class="filter-head__meta">{{ cityMeta }}</text><k-icon name="chevron-right" :size="14" color="muted" /></view></view><view class="pills pills--5"><view v-for="item in cityOptions" :key="item" class="pill" hover-class="k-press-s" :class="{ on: f.cities.includes(item) }" @click="tapCity(item)"><text>{{ item }}</text></view></view></view>
-          <view v-if="!isOnline && !tabMode" class="sec sec--line" hover-class="k-press" @click="pickFrom"><text class="sec-head__title">可到岗日期</text><view class="sec-head__meta"><text class="sec-line__value">{{ fromLabel }}</text><k-icon name="chevron-right" :size="14" color="muted" /></view></view>
-          <view v-for="group in filterGroups" :key="group.title" class="sec"><view class="sec-head"><text class="sec-head__title">{{ group.title }}</text><view v-if="group.meta" class="sec-head__meta" hover-class="k-press" @click="tapGroupMeta(group)"><text class="filter-head__meta">{{ group.meta }}</text><k-icon name="chevron-right" :size="14" color="muted" /></view></view><view class="pills" :class="'pills--' + (group.cols || 5)"><view v-for="(item,i) in group.options" :key="item" class="pill" hover-class="k-press-s" :class="{ on: isSelected(group.selected, i) }" @click="tapOption(group, i)"><text>{{ item }}</text></view></view></view>
-          <view v-if="!isOnline && !tabMode" class="sec"><view class="sec-head"><text class="sec-head__title">安心保障</text></view><view class="pills pills--assure"><view class="pill pill--assured" hover-class="k-press-s" :class="{ on: f.safe && f.insured }" @click="toggleAssured"><image class="pill__icon" src="/static/media/brand-kangaroo.png" mode="aspectFit" /><text>经袋鼠实地拍摄并含保险</text></view><view class="pill" hover-class="k-press-s" :class="{ on: f.monthBonus }" @click="f.monthBonus = !f.monthBonus"><text>满月红包</text></view></view></view>
+          <view v-if="!isOnline" class="sec"><view class="sec-head"><text class="sec-head__title">城市</text><view class="sec-head__meta" hover-class="k-press" @click="pickMoreCity"><text class="filter-head__meta">{{ cityMeta }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><view class="pills pills--5"><view v-for="item in cityOptions" :key="item" class="pill" hover-class="k-press-s" :class="{ on: f.cities.includes(item), 'pill--more': item === '更多' }" @click="tapCity(item)"><text>{{ item }}</text><k-icon v-if="item === '更多'" name="chevron-down" :size="12" color="red" /></view></view></view>
+          <view v-if="!isOnline && !tabMode" class="sec sec--line" hover-class="k-press" @click="pickFrom"><text class="sec-head__title">可到岗日期</text><view class="sec-head__meta"><text class="sec-line__value">{{ fromLabel }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
+          <view v-for="group in filterGroups" :key="group.title" class="sec"><view class="sec-head"><text class="sec-head__title">{{ group.title }}</text><view v-if="group.meta" class="sec-head__meta" hover-class="k-press" @click="tapGroupMeta(group)"><text class="filter-head__meta">{{ group.meta }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><view class="pills" :class="'pills--' + (group.cols || 5)"><view v-for="(item,i) in group.options" :key="item" class="pill" hover-class="k-press-s" :class="{ on: isSelected(group.selected, i) }" @click="tapOption(group, i)"><text>{{ item }}</text></view></view></view>
+          <view v-if="!isOnline && !tabMode" class="sec"><view class="sec-head"><text class="sec-head__title">安心保障</text></view><view class="pills pills--assure"><view class="pill pill--assured" hover-class="k-press-s" :class="{ on: f.safe && f.insured }" @click="toggleAssured"><k-icon name="shield-check" :size="14" :color="f.safe && f.insured ? 'green' : 'red'" /><text>经袋鼠实地拍摄并含保险</text></view><view class="pill" hover-class="k-press-s" :class="{ on: f.monthBonus }" @click="f.monthBonus = !f.monthBonus"><text>满月红包</text></view></view></view>
         </view>
       </view>
       <k-bottom><view class="foot-reset" hover-class="k-press" @click="reset"><text>重置</text></view><view class="foot-main"><k-button block @click="runSearch(true)">{{ countLabel }}</k-button></view></k-bottom>
@@ -27,35 +27,38 @@
       <k-topbar :title="currentSubId || (subLoading && expectCurrent) ? '当前订阅' : '新机会订阅'" back custom-back @back="subBack" />
       <view class="subscribe-body k-pad-safe">
         <text v-if="sub.jobType === 'online'" class="nationwide-note">接收全国线上任务提醒，不限所在城市</text>
-        <view v-for="group in subscriptionGroups" :key="group.title" class="subscribe-card"><view class="filter-head"><view class="k-row k-gap8"><k-icon :name="group.icon" :size="21" color="ink" /><text>{{ group.title }}</text><text class="subscribe-card__hint">{{ group.hint }}</text></view><view class="k-row k-gap4" hover-class="k-press" @click="addSubItem(group)"><text class="filter-head__meta">已选 {{ group.items.length }} 个</text><k-icon name="chevron-right" :size="17" color="muted" /></view></view><view class="selected-row"><view v-for="item in group.items" :key="item" class="selected-chip" hover-class="k-press-s" @click="removeSubItem(group, item)"><text>{{ item }}</text><k-icon name="x" :size="13" color="muted" /></view><view class="selected-chip" hover-class="k-press-s" @click="addSubItem(group)"><k-icon name="plus" :size="14" color="muted" /><text>{{ group.add }}</text></view></view></view>
-        <view v-if="sub.jobType !== 'online'" class="subscribe-line" hover-class="k-press" @click="pickSubFrom"><view class="k-row k-gap10"><k-icon name="calendar-days" :size="21" color="ink" /><text>可到岗日期</text></view><view class="k-row k-gap6"><text>{{ subFromLabel }}</text><k-icon name="chevron-right" :size="17" color="muted" /></view></view>
-        <view class="match-slider"><view class="k-row k-gap10"><k-icon name="heart" :size="21" color="ink" /><text>最低匹配度</text></view><view class="slider"><view class="slider__active" :style="{ width: matchPos }" /><view class="slider__knob" :style="{ left: matchPos }"><text>{{ sub.minMatch }}%</text></view><view v-for="n in [60,70,80,90,95]" :key="n" class="slider__mark" hover-class="k-press" @click="sub.minMatch = n"><view /><text>{{ n }}%</text></view></view></view>
-        <view class="message-switch"><view class="k-row k-gap10"><k-icon name="bell" :size="21" color="ink" /><view><text class="message-switch__title">微信订阅消息</text><text class="message-switch__sub">微信订阅消息待平台配置模板，目前通过消息中心提醒</text></view></view><view class="k-switch" hover-class="k-press" @click="wxTip" /></view>
-        <view class="frequency"><view class="k-row k-gap10"><k-icon name="list-checks" :size="21" color="ink" /><text>推送频率</text></view><view class="frequency__choices"><view class="frequency__item" hover-class="k-press" @click="sub.freq = 'instant'"><view class="k-radio" :class="{ checked: sub.freq === 'instant' }" /><view><text>即时推送</text><text>有新机会立即通知你</text></view></view><view class="frequency__item" hover-class="k-press" @click="sub.freq = 'daily'"><view class="k-radio" :class="{ checked: sub.freq === 'daily' }" /><view><text>每日汇总</text><text>每天上午 9:00 汇总推送</text></view></view></view></view>
-        <view v-if="subLoadError" class="manage-note" @click="retrySubscription"><text>{{ subLoadError }}，{{ subNeedsLogin ? '点击登录' : '点击重试' }}</text></view><view class="save-button"><k-button block :disabled="savingSub || subLoading || !!subLoadError" :label="savingSub ? '保存中…' : subLoading ? '加载中…' : currentSubId ? '保存修改' : '保存订阅'" @click="saveSub" /></view><view class="manage-note"><k-icon name="lock-keyhole" :size="15" color="muted" /><text>有新机会时通过消息中心通知你，可在「我的 → 设置 → 通知管理」里暂停</text></view><view class="k-home-indicator" />
+        <view class="sub-group"><view v-for="group in subscriptionGroups" :key="group.title" class="subscribe-card"><view class="filter-head"><view class="k-row k-gap8"><k-icon :name="group.icon" :size="18" color="ink2" /><text>{{ group.title }}</text><text class="subscribe-card__hint">{{ group.hint }}</text></view><view class="k-row k-gap4" hover-class="k-press" @click="addSubItem(group)"><text class="filter-head__meta">已选 {{ group.items.length }} 个</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><view class="selected-row"><view v-for="item in group.items" :key="item" class="selected-chip" hover-class="k-press-s" @click="removeSubItem(group, item)"><text>{{ item }}</text><k-icon name="x" :size="12" color="muted" /></view><view class="selected-chip selected-chip--add" hover-class="k-press-s" @click="addSubItem(group)"><k-icon name="plus" :size="12" color="red" /><text>{{ group.add }}</text></view></view></view>
+        <view v-if="sub.jobType !== 'online'" class="subscribe-line" hover-class="k-press" @click="pickSubFrom"><view class="k-row k-gap10"><k-icon name="calendar-days" :size="18" color="ink2" /><text>可到岗日期</text></view><view class="k-row k-gap6"><text>{{ subFromLabel }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view></view>
+        <view class="sub-group"><view class="match-slider"><view class="k-row k-gap10"><k-icon name="target" :size="18" color="ink2" /><text>最低匹配度</text></view><view class="slider"><view class="slider__active" :style="{ width: matchPos }" /><view class="slider__knob" :style="{ left: matchPos }"><text>{{ sub.minMatch }}%</text></view><view v-for="n in [60,70,80,90,95]" :key="n" class="slider__mark" hover-class="k-press" @click="sub.minMatch = n"><view /><text>{{ n }}%</text></view></view></view>
+        <view class="message-switch"><view class="k-row k-gap10"><k-icon name="bell" :size="18" color="ink2" /><view><text class="message-switch__title">微信订阅消息</text><text class="message-switch__sub">统一管理本端的微信提醒</text></view></view><view class="k-switch" hover-class="k-press" @click="wxTip" /></view>
+        <view class="frequency"><view class="k-row k-gap10"><k-icon name="list-checks" :size="18" color="ink2" /><text>推送频率</text></view><view class="frequency__choices"><view class="frequency__item" hover-class="k-press" @click="sub.freq = 'instant'"><k-icon name="circle" :art="sub.freq === 'instant' ? 'radio-on' : 'circle'" :size="18" /><view><text>即时推送</text><text>有新机会立即通知你</text></view></view><view class="frequency__item" hover-class="k-press" @click="sub.freq = 'daily'"><k-icon name="circle" :art="sub.freq === 'daily' ? 'radio-on' : 'circle'" :size="18" /><view><text>每日汇总</text><text>每天上午 9:00 汇总推送</text></view></view></view></view></view>
+        <view v-if="subLoadError" class="manage-note" @click="retrySubscription"><text>{{ subLoadError }}，{{ subNeedsLogin ? '点击登录' : '点击重试' }}</text></view><k-bottom flat pad="8px 12px"><view class="k-flex1 save-button"><view class="manage-note manage-note--bar"><k-icon name="lock-keyhole" :size="14" color="muted" /><text>有新机会时通过消息中心通知你，可在「我的 → 设置 → 通知管理」里暂停</text></view><k-button block :disabled="savingSub || subLoading || !!subLoadError" :label="savingSub ? '保存中…' : subLoading ? '加载中…' : currentSubId ? '保存修改' : '保存订阅'" @click="saveSub" /></view></k-bottom><view class="k-home-indicator" />
       </view>
     </template>
 
     <template v-else-if="s === 3">
       <k-topbar :title="title" back custom-back @back="s = 1" />
       <view class="result-body k-pad-safe">
-        <view class="chosen"><view v-for="item in chips" :key="item.label" hover-class="k-press" @click="dropChip(item)"><text>{{ item.label }}</text></view><view hover-class="k-press" @click="s = 1"><k-icon name="filter" :size="14" color="ink" /><text>筛选</text></view></view>
+        <view class="chosen-wrap"><view class="chosen"><view hover-class="k-press" @click="s = 1"><k-icon name="filter" :size="14" color="red" /><text>筛选</text></view><view v-for="item in chips" :key="item.label" hover-class="k-press" @click="dropChip(item)"><text>{{ item.label.slice(0, -2) }}</text><k-icon name="x" :size="12" color="red" /></view></view></view>
         <text class="result-count">共 {{ res.total || 0 }} 个机会</text>
-        <view v-for="job in jobs" :key="job.jobId" class="job-card" hover-class="k-press-s" @click="openJob(job)"><view class="job-card__cover"><image class="job-card__image" :src="job.image" mode="aspectFill" /><view v-if="job.assured" class="job-card__badge"><job-badge size="card" /></view></view><view class="job-card__copy"><view class="k-between"><text class="job-card__title">{{ job.title }}</text><k-chip v-if="job.match" tone="green"><text>{{ job.match }}%匹配</text></k-chip></view><view class="job-card__tags"><k-chip v-for="tag in job.tags" :key="tag"><text>{{ tag }}</text></k-chip></view><view v-if="job.place" class="job-card__meta"><k-icon name="store" :size="13" color="muted" /><text>{{ job.place }}</text></view><view v-if="job.date" class="job-card__meta"><k-icon name="map-pin" :size="13" color="muted" /><text>{{ job.date }}</text></view><view class="job-card__bottom"><view class="k-row k-gap4"><k-icon name="shield-check" :size="14" color="ochre" /><text>{{ job.badge }}</text></view><view class="job-card__price"><text class="k-price">{{ job.price }}</text><text>{{ job.unit }}</text></view></view></view><view class="job-card__star" @click.stop><k-icon name="star" :size="20" :color="favs[job.jobId] ? 'ochre' : 'muted'" @click="star(job)" /></view></view>
+        <view v-for="job in jobs" :key="job.jobId" class="job-card" hover-class="k-press-s" @click="openJob(job)"><view class="job-card__cover"><image class="job-card__image" :src="job.image" mode="aspectFill" /></view><view class="job-card__copy"><view class="k-between"><text class="job-card__title">{{ job.title }}</text></view><view class="job-card__tags"><view v-if="job.assured" class="job-card__badge"><k-icon name="shield-check" :size="12" color="green" /><job-badge size="card" /></view><k-chip v-if="job.match" tone="green"><text>{{ job.match }}%匹配</text></k-chip><k-chip v-for="tag in job.tags" :key="tag"><text>{{ tag }}</text></k-chip></view><view v-if="job.place" class="job-card__meta"><k-icon name="store" :size="12" color="light" /><text>{{ job.place }}</text></view><view v-if="job.date" class="job-card__meta"><k-icon name="map-pin" :size="12" color="light" /><text>{{ job.date }}</text></view><view class="job-card__bottom"><view class="k-row k-gap4"><k-icon :name="job.badge.includes('安心') || job.badge.includes('保险') ? 'shield-check' : job.badge.includes('红包') ? 'gift' : job.badge.includes('食') || job.badge.includes('住') ? 'utensils' : 'info'" :size="14" :color="job.badge.includes('安心') || job.badge.includes('保险') ? 'green' : 'muted'" /><text>{{ job.badge }}</text></view><view class="job-card__price" :class="{ 'job-card__price--word': isNaN(parseFloat(job.price)) }"><text class="k-price">{{ job.price }}</text><text>{{ job.unit }}</text></view></view></view><view class="job-card__star" @click.stop><k-icon name="star" :size="16" :color="favs[job.jobId] ? 'red' : 'ink2'" @click="star(job)" /></view></view>
         <view v-if="counting" class="skeleton"><view class="skeleton__image" /><view class="skeleton__lines"><view class="skeleton__line is-long" /><view class="skeleton__line is-short" /><view class="skeleton__line" /><view class="skeleton__line is-mid" /></view></view>
-        <view v-if="counting" class="loading"><view class="loading__spinner" /><text>正在加载...</text></view><view class="k-home-indicator" />
+        <view v-if="counting" class="loading"><view class="loading__spinner"><k-icon name="loader-circle" :size="20" color="red" /></view><text>正在加载...</text></view><view class="k-home-indicator" />
       </view>
     </template>
 
     <template v-else>
       <k-topbar :title="title" back custom-back @back="s = 1" />
-      <view class="empty-body k-pad-safe">
-        <view class="chosen"><view v-for="item in chips" :key="item.label" hover-class="k-press" @click="dropChip(item)"><text>{{ item.label }}</text></view><view hover-class="k-press" @click="s = 1"><k-icon name="filter" :size="14" color="ink" /><text>筛选</text></view></view>
-        <image class="empty-image" src="/static/media/jobs-empty.png" mode="aspectFit" />
+      <view class="empty-body k-pad-safe" :class="{ 'empty-body--bare': !conflicts.length && !relax.length }">
+        <view class="chosen-wrap"><view class="chosen"><view hover-class="k-press" @click="s = 1"><k-icon name="filter" :size="14" color="red" /><text>筛选</text></view><view v-for="item in chips" :key="item.label" hover-class="k-press" @click="dropChip(item)"><text>{{ item.label.slice(0, -2) }}</text><k-icon name="x" :size="12" color="red" /></view></view></view>
+        <view class="empty-image empty-icon"><k-icon name="search" :size="32" color="muted" /></view>
         <text class="empty-title">没有符合条件的机会</text><text class="empty-desc">当前筛选条件过于严格，或时间与部分机会冲突</text>
-        <view class="conflict"><text class="conflict__title">条件冲突</text><text v-if="conflicts[0]">· {{ conflicts[0] }}</text><text v-if="conflicts[1]">· {{ conflicts[1] }}</text></view>
-        <view class="suggestions"><text class="conflict__title">放宽建议（共 {{ relax.length }} 条）</text><view v-for="item in relax" :key="item.key" class="suggestion"><text>{{ item.label }}</text><k-button type="outline" size="xs" @click="applyRelax(item)">调整</k-button></view></view>
-        <k-button block class="adjust" @click="s = 1">调整筛选</k-button><k-button type="outline" block icon="bell" class="subscribe-btn" @click="openSubscribe">订阅新机会</k-button><view class="service" hover-class="k-press-s" @click="contact"><k-icon name="headphones" :size="18" color="ink" /><text>联系袋鼠全球青年（工作日 9:00-18:00）</text></view><view class="k-home-indicator" />
+        <!-- 第三轮（11-18）：「条件冲突」「放宽建议」合成一张白卡、两段列表（返修 5：和改前一样总是显示，不另加显示条件） -->
+        <view class="advice">
+          <view class="conflict"><text class="conflict__title">条件冲突</text><text v-if="conflicts[0]">· {{ conflicts[0] }}</text><text v-if="conflicts[1]">· {{ conflicts[1] }}</text></view>
+          <view class="suggestions"><text class="conflict__title">放宽建议（共 {{ relax.length }} 条）</text><view v-for="item in relax" :key="item.key" class="suggestion"><text>{{ item.label }}</text><k-button type="outline" size="xs" @click="applyRelax(item)">调整</k-button></view></view>
+        </view>
+        <view class="adjust-wrap"><k-button block class="adjust" @click="s = 1">调整筛选</k-button></view><view class="subscribe-wrap"><k-button type="outline" block class="subscribe-btn" @click="openSubscribe"><k-icon name="bell" :size="14" color="red" /><text>订阅新机会</text></k-button></view><view class="service" hover-class="k-press-s" @click="contact"><k-icon name="headphones" :size="14" color="muted" /><text>联系袋鼠全球青年（工作日 9:00-18:00）</text></view><view class="k-home-indicator" />
       </view>
     </template>
     <!-- 可到岗日期之前是 60 天的分页菜单（「下一页…」翻好几页）；改成日历点选，「不限日期」也在日历里 -->
@@ -140,7 +143,7 @@ const s = useScreen(4, {
 const home = (experience.cities && experience.cities[0]) || '大理'
 // jobType 是岗位大类（kg_job.job_type：volunteer / parttime / fulltime / online），和下面「岗位类型」那组关键词胶囊是两回事：
 // 关键词按标题 / 标签模糊匹配，大类按列精确匹配。空串 = 不限（后端此时只返回到店岗位）
-const JOB_TYPE_NAMES = { volunteer: '换宿旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' }
+const JOB_TYPE_NAMES = { volunteer: '换工旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' }
 const JOB_TYPE_CODES = Object.keys(JOB_TYPE_NAMES)
 // 只认这四个代码（不用 JOB_TYPE_NAMES[t] 判断：?type=constructor 这类原型属性名会被当成真值）
 const isJobType = (t) => JOB_TYPE_CODES.indexOf(t) >= 0
@@ -352,7 +355,7 @@ async function addSubItem(group) {
 }
 const subFromLabel = computed(() => (sub.fromDate ? `${sub.fromDate} 及以后` : '不限'))
 const pickSubFrom = () => { fromPick.value = 'sub' }
-const wxTip = () => toast('微信订阅消息需要平台在微信后台配置模板，配置前提醒都发到消息中心')
+const wxTip = () => go('/pages/profile/subscriptions')
 // 保存订阅要等服务端返回：连点会建两条一样的订阅
 const currentSubId = ref(null)
 const subLoading = ref(false)
@@ -567,7 +570,8 @@ const contact = () => { aiOpen.value = true }
 .skeleton__line { height: 12px; margin-bottom: 12px; border-radius: 6px; background: var(--k-paper2); width: 80%; }
 .skeleton__line.is-long { width: 72%; } .skeleton__line.is-short { width: 36%; } .skeleton__line.is-mid { width: 60%; }
 .loading { margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--k-muted); font-size: 12px; }
-.loading__spinner { width: 20px; height: 20px; border: 3px dotted var(--k-red); border-radius: 50%; }
+.loading__spinner { display: flex; animation: filter-loading .9s linear infinite; }
+@keyframes filter-loading { to { transform: rotate(360deg); } }
 .empty-body { position: relative; min-height: calc(100vh - 88px); padding: 8px 14px calc(18px + var(--k-safe-bottom)); }
 .empty-image { width: 160px; height: 160px; margin: 48px auto 0; }
 .empty-title { display: block; margin-top: 6px; text-align: center; font-size: 20px; font-weight: 700; }
@@ -579,4 +583,388 @@ const contact = () => { aiOpen.value = true }
 .subscribe-btn { margin-top: 10px; }
 .service { height: 48px; margin-top: 10px; border-radius: var(--k-radius); background: var(--k-paper); box-shadow: var(--k-sh1); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; }
 @import "flow-premium.scss";
+/* ==== r3jobsb 第三轮 start ==== */
+/* 第三轮（11-18 主人：每页抠到最精致）——只管本页，放在 flow-premium 后面盖过去。
+   s=1 筛选：原来七组挤在上半屏（每组上下 6、标题到胶囊 5、胶囊间 5）、底下空 1/4 屏、分隔线时有时无。
+   改成页边距 16、卡内 16；每组上下 14、标题 15/600、标题到胶囊 12、胶囊 32 高全圆角、间距 8；组与组之间一条发丝线（伪元素画，每条都看得见）。 */
+.filter-page .filter-body { padding: 8px 16px calc(88px + var(--k-safe-bottom)); }
+.filter-page :deep(.subscribe-entry) { padding: 8px 16px 0; }
+.filter-page :deep(.subscribe-entry button) { min-height: 40px; border-radius: 12px; font-size: 13px; font-weight: 500; }
+.filter-page .nationwide-note { margin: 4px 4px 12px; font-size: 12px; line-height: 1.6; }
+.filter-page .sheet { padding: 0 16px; border-radius: 12px; }
+.filter-page .sec { position: relative; padding: 14px 0; background-image: none; }
+.filter-page .sec + .sec::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+.filter-page .sec-head { height: 20px; }
+.filter-page .sec-head__title { font-size: 15px; font-weight: 600; line-height: 20px; color: var(--k-ink); }
+.filter-page .sec-head__meta { height: 20px; gap: 4px; }
+.filter-page .filter-head__meta { font-size: 12px; color: var(--k-muted); }
+.filter-page .sec--line { height: 52px; padding: 0; }
+.filter-page .sec-line__value { font-size: 13px; color: var(--k-ink2); }
+.filter-page .pills { gap: 8px; margin-top: 12px; }
+.filter-page .pill { height: 32px; padding: 0 4px; border: 1px solid transparent; border-radius: 16px; background: var(--k-fill); font-size: 13px; font-weight: 400; color: var(--k-ink2); }
+.filter-page .pill.on { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; }
+.filter-page .pill--assured { gap: 4px; padding: 0 12px; }
+.filter-page .pill__icon { width: 14px; height: 14px; }
+.filter-page .pills--assure .pill:last-child { padding: 0 16px; }
+/* 「重置」：检查钉着下划线；做细——14 / 500 墨色字，下划线是浅灰细线、离字 4 */
+.filter-page .foot-reset { padding: 0 16px 0 4px; font-size: 14px; font-weight: 500; color: var(--k-ink); text-decoration-color: var(--k-line2); text-decoration-thickness: 1px; text-underline-offset: 5px; }
+
+/* s=2 订阅：滑块右边原来钻到「客服」小钮底下（95% 被盖一半），实心深棕气泡太重 */
+.filter-page .match-slider { padding-right: 32px; }
+.filter-page .slider { margin-left: 8px; margin-top: 32px; height: 52px; }
+.filter-page .slider__knob { width: 16px; height: 16px; margin-left: -8px; top: 9px; box-sizing: border-box; }
+.filter-page .slider__knob text { bottom: 22px; height: 20px; padding: 0 8px; border-radius: 10px; background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-size: 12px; font-weight: 600; line-height: 20px; font-variant-numeric: tabular-nums; }
+.filter-page .slider__mark { font-size: 11px; font-variant-numeric: tabular-nums; }
+
+.filter-page .subscribe-card__hint { margin-left: -2px; font-size: 12px; }
+.filter-page .selected-row { margin-top: 8px; }
+.filter-page .selected-chip { color: var(--k-ink2); }
+.filter-page .manage-note { gap: 4px; margin-top: 12px; padding: 0 8px; align-items: flex-start; line-height: 1.6; }
+.filter-page .manage-note :deep(.k-icon) { flex: 0 0 auto; margin-top: 2px; }
+
+/* s=3 结果：已选条件胶囊的「×」换成图标后，字和图标隔 4；角标挪到封面底部，黑色渐变托住白字，不再盖住照片上半截 */
+.filter-page .chosen view { gap: 4px; }
+.filter-page .result-count { margin: 12px 4px 8px; }
+.filter-page .job-card__badge { left: 0; right: 0; top: auto; bottom: 0; padding: 20px 6px 6px; }
+.filter-page .job-card__badge :deep(.jb--card) { padding: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--k-paper); }
+.filter-page .job-card__badge :deep(.jb--card .jb__text) { font-size: 10px; font-weight: 500; line-height: 13px; color: var(--k-paper); }
+.filter-page .job-card__copy { padding: 10px 12px 10px 10px; }
+.filter-page .job-card__title { font-size: 14px; font-weight: 600; line-height: 20px; }
+/* 卡片行内小图标直接写 :size="12"（返修 3 删掉 :deep 压尺寸） */
+.filter-page .job-card__meta { gap: 4px; }
+.filter-page .job-card__bottom { align-items: center; margin-top: 6px; }
+.filter-page .job-card__price { display: flex; align-items: baseline; gap: 2px; color: var(--k-muted); font-size: 11px; }
+.filter-page .job-card__price .k-price { margin-right: 0; font-size: 18px; font-weight: 700; color: var(--k-red); font-variant-numeric: tabular-nums; }
+.filter-page .job-card__price--word .k-price { font-size: 13px; font-weight: 500; color: var(--k-red-deep); }
+.filter-page .job-card__star { right: 10px; bottom: 10px; }
+
+/* s=4 无结果：插画 → 标题 → 说明；有冲突 / 放宽建议时一张白卡两段列表；「调整筛选」44 主按钮；
+   「订阅新机会」36 高、随字宽的次按钮小胶囊居中；「联系袋鼠全球青年」是居中的一行灰字 + 14 号耳机图标（不再是白卡） */
+.filter-page .empty-image { width: 128px; height: 128px; margin-top: 40px; }
+.filter-page .empty-title { margin-top: 12px; font-size: 16px; font-weight: 600; line-height: 22px; color: var(--k-ink); }
+.filter-page .empty-desc { margin-top: 4px; font-size: 12px; line-height: 1.6; }
+.filter-page .advice { margin-top: 20px; padding: 0 16px; border-radius: 12px; background: var(--k-paper); }
+.filter-page .advice .conflict, .filter-page .advice .suggestions { position: relative; margin: 0; padding: 14px 0; gap: 6px; border-radius: 0; background: transparent; box-shadow: none; font-size: 13px; line-height: 1.6; color: var(--k-ink2); }
+.filter-page .advice .conflict + .suggestions::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+.filter-page .advice .conflict__title { margin-bottom: 2px; font-size: 14px; font-weight: 600; line-height: 20px; color: var(--k-ink); }
+.filter-page .advice .suggestion { min-height: 36px; gap: 12px; color: var(--k-ink2); }
+.filter-page .advice .suggestion > text { flex: 1; min-width: 0; }
+.filter-page .advice .suggestion :deep(.k-button) { flex: 0 0 auto; height: 28px; padding: 0 12px; border-radius: 14px; border-color: var(--k-red-line); font-size: 12px; font-weight: 500; color: var(--k-red-deep); }
+.filter-page .adjust { margin-top: 24px; }
+.filter-page .subscribe-wrap { margin-top: 12px; display: flex; justify-content: center; }
+.filter-page .subscribe-wrap :deep(.k-button) { width: auto; height: 36px; padding: 0 16px; gap: 4px; border-radius: 18px; border-color: var(--k-red-line); font-size: 13px; font-weight: 500; color: var(--k-red-deep); }
+
+.filter-page .service { height: 32px; margin-top: 16px; gap: 4px; border-radius: 0; background: transparent; box-shadow: none; font-size: 12px; color: var(--k-muted); }
+
+@media (max-width: 359px) {
+  .filter-page .filter-body { padding-left: 12px; padding-right: 12px; }
+  .filter-page :deep(.subscribe-entry) { padding-left: 12px; padding-right: 12px; }
+  .filter-page .sheet { padding: 0 12px; }
+  .filter-page .sec { padding: 12px 0; }
+  .filter-page .sec--line { padding: 0; height: 48px; }
+  .filter-page .pills { gap: 6px; margin-top: 10px; }
+  .filter-page .pill { font-size: 12px; padding: 0 2px; }
+  .filter-page .pill--assured { padding: 0 8px; }
+  .filter-page .pills--assure .pill:last-child { padding: 0 10px; }
+  /* 320 宽：结果卡封面收成 88（仍 1:1），右边文字多一点地方，标题少折一行 */
+  .filter-page .job-card__cover { width: 88px; height: 88px; }
+  .filter-page .job-card__image { width: 88px; height: 88px; }
+  .filter-page .advice .suggestion { font-size: 12px; }
+}
+
+/* —— 返修 1（独立评审第 1 轮）—— */
+/* s=1：第一屏要露出「安心保障」的胶囊——每组上下 12、标题到胶囊 10、日期行 48；「更多」不是城市，改成无底色的深棕字 + 向下小箭头；
+   「经袋鼠实地拍摄」的袋鼠标没选时收成单色（和线性图标一个分量），选中才显出品牌色 */
+.filter-page .sec { padding: 12px 0; }
+.filter-page .pills { margin-top: 10px; }
+.filter-page .sec--line { height: 48px; }
+.filter-page .pill--more { gap: 2px; background: transparent; color: var(--k-red-deep); font-weight: 500; }
+.filter-page .pill__icon { filter: grayscale(1); opacity: .7; }
+.filter-page .pill.on .pill__icon { filter: none; opacity: 1; }
+/* s=2：六张设置卡合成两张分组卡（城市 / 岗位类型 / 到岗日期；匹配度 / 微信消息 / 推送频率），卡内 16、卡间 20、行间发丝线；页边距和 s=1 一样 16；
+   图标到字统一 8；铃铛对齐标题行；底部说明限宽居中 */
+.filter-page .subscribe-body { padding: 8px 16px calc(24px + var(--k-safe-bottom)); }
+.filter-page .sub-group { margin-bottom: 20px; padding: 0 16px; border-radius: 12px; background: var(--k-paper); }
+.filter-page .sub-group > .subscribe-card, .filter-page .sub-group > .subscribe-line, .filter-page .sub-group > .match-slider, .filter-page .sub-group > .message-switch, .filter-page .sub-group > .frequency { position: relative; margin: 0; padding: 16px 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.filter-page .sub-group > .subscribe-card { padding: 14px 0 16px; }
+.filter-page .sub-group > .subscribe-line { height: 52px; padding: 0; box-sizing: border-box; }
+.filter-page .sub-group > view + view::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+.filter-page .sub-group > .match-slider { padding-right: 24px; }
+.filter-page .filter-head { min-height: 20px; }
+.filter-page .subscribe-body .k-gap10 { gap: 8px; }
+.filter-page .subscribe-body .k-gap8 > :deep(.k-icon), .filter-page .subscribe-body .k-gap10 > :deep(.k-icon) { flex: 0 0 auto; }
+.filter-page .slider { margin-left: 12px; }
+.filter-page .message-switch > .k-row { align-items: flex-start; }
+.filter-page .message-switch > .k-row > :deep(.k-icon) { margin-top: 1px; }
+.filter-page .message-switch__sub { padding-right: 12px; }
+.filter-page .save-button { margin-top: 0; }
+.filter-page .subscribe-body .manage-note { max-width: 300px; margin: 12px auto 0; }
+/* s=3 / s=4：已选条件一行横向滑动，「筛选」固定排第一个，右边渐隐；页边距 16 */
+.filter-page .result-body, .filter-page .empty-body { padding-left: 16px; padding-right: 16px; }
+.filter-page .chosen { flex-wrap: nowrap; gap: 8px; margin-right: -16px; padding-right: 24px; overflow-x: auto; -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent); mask-image: linear-gradient(to right, black calc(100% - 28px), transparent); }
+.filter-page .chosen::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.filter-page .chosen view { flex: 0 0 auto; max-width: none; }
+/* 结果卡：卡内 12、封面 96 方图（320 宽 84）、图文间距 12；收藏星挪到封面右上角的白色小圆里（右侧「客服」悬浮钮再也压不到它）；
+   日期 / 门店行只显示一行（之前「每天 6 小 / 时」拆两行） */
+.filter-page .job-card { min-height: 0; padding: 12px; gap: 12px; align-items: flex-start; }
+.filter-page .job-card__cover { width: 96px; height: 96px; margin: 0; }
+.filter-page .job-card__image { width: 96px; height: 96px; }
+.filter-page .job-card__copy { padding: 0; }
+.filter-page .job-card__tags { padding-right: 0; }
+.filter-page .job-card__meta > text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.filter-page .job-card__meta :deep(.k-icon) { flex: 0 0 auto; }
+.filter-page .job-card__bottom { padding-right: 0; }
+.filter-page .job-card__star { left: 80px; right: auto; top: 16px; bottom: auto; width: 24px; height: 24px; border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; }
+
+/* s=4：没有冲突和建议时整组下移，「没有符合条件的机会」落在屏高约 40% 处；冲突两条悬挂缩进（圆点挂在左边，字和放宽建议对齐） */
+.filter-page .empty-body--bare .empty-image { margin-top: 72px; }
+.filter-page .advice .conflict > text:not(.conflict__title) { display: block; margin-left: -1.3em; padding-left: 1.3em; text-indent: -1.3em; }
+
+@media (max-width: 359px) {
+  .filter-page .subscribe-body { padding-left: 12px; padding-right: 12px; }
+  .filter-page .sub-group { padding: 0 12px; }
+  .filter-page .frequency__choices { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .filter-page .result-body, .filter-page .empty-body { padding-left: 12px; padding-right: 12px; }
+  .filter-page .chosen { margin-right: -12px; }
+  .filter-page .job-card__cover, .filter-page .job-card__image { width: 84px; height: 84px; }
+  .filter-page .job-card__star { left: 68px; }
+  .filter-page .advice .suggestion > text, .filter-page .advice .conflict > text:not(.conflict__title) { word-break: keep-all; overflow-wrap: anywhere; line-height: 1.5; }
+}
+/* —— 返修 2 start —— */
+/* s=1：「订阅新机会提醒」白条和下面的筛选卡隔 12（原来 8 像粘在一起），字用深棕 */
+.filter-page .filter-body { padding-top: 12px; }
+.filter-page :deep(.subscribe-entry button) { color: var(--k-red-deep); }
+/* 「更多 ∨」收到格子右边（和别的行胶囊右边缘同一条线），箭头和字同为暖棕 */
+.filter-page .pill--more { justify-content: flex-end; padding-right: 0; }
+/* 袋鼠小标不再灰掉（14px 的灰图像一块脏斑），原色 16 */
+.filter-page .pill__icon { width: 16px; height: 16px; filter: none; opacity: 1; }
+/* s=2：底部说明限宽 280、左对齐，锁图标顶对齐第一行，字两行均分 */
+.filter-page .subscribe-body .manage-note { max-width: 280px; }
+.filter-page .subscribe-body .manage-note > text { flex: 1; min-width: 0; text-wrap: balance; }
+/* 「+ 添加城市 / 类型」：白底 + 虚线框 + 深棕字，一眼看出是「加」 */
+.filter-page .selected-chip--add { position: relative; background: var(--k-paper) padding-box; color: var(--k-red-deep); }
+.filter-page .selected-chip--add::after { content: ''; position: absolute; left: 0; top: 0; right: 0; bottom: 0; border: 1px dashed var(--k-line2); border-radius: 14px; pointer-events: none; }
+/* s=3 / s=4：已选条件胶囊一律浅棕底深棕字（flow-premium 旧规则把最后一颗刷成白底墨字）；「筛选」排第一，白底深棕字做区分 */
+.filter-page .chosen view:last-child { background: var(--k-red-soft) padding-box; color: var(--k-red-deep); }
+.filter-page .chosen view:first-child { background: var(--k-paper) padding-box; color: var(--k-red-deep); font-weight: 500; }
+/* 胶囊之间只靠 4px 透明边留出 8 的间距（原来再加 gap 8，看上去隔 16） */
+.filter-page .chosen { gap: 0; }
+/* 「共 15 个机会」和胶囊、结果卡左边同一条线 */
+.filter-page .result-count { margin: 12px 0 8px; }
+/* 封面角标：字 11/600、加一点字影；渐变只托住字那一截、颜色更浅，不再把照片下半截压暗 */
+.filter-page .job-card__badge { padding: 12px 6px 6px; }
+.filter-page .job-card__badge :deep(.jb--card .jb__text) { font-size: 11px; font-weight: 600; line-height: 14px; text-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
+/* 卡内标签 11 号（公共默认 10 低于 11 档） */
+.filter-page .job-card :deep(.k-chip) { height: 18px; font-size: 11px; }
+/* s=4：没有冲突和建议时整组再往下放，标题落在屏高约 45% */
+.filter-page .empty-body--bare .empty-image { margin-top: 104px; }
+/* 「订阅新机会」按钮里的铃铛和字隔 4 */
+.filter-page .subscribe-wrap :deep(.k-button__label) { display: flex; align-items: center; gap: 4px; }
+/* 冲突两条：圆点落在内容线上，折行的字缩进 12 */
+.filter-page .advice .conflict > text:not(.conflict__title) { margin-left: 0; padding-left: 12px; text-indent: -12px; }
+@media (max-width: 359px) {
+  /* 320 宽：「调整」固定 52 宽，建议文字多一点地方，数字和量词不拆行 */
+  .filter-page .advice .suggestion { gap: 8px; }
+  .filter-page .advice .suggestion :deep(.k-button) { width: 52px; padding: 0; }
+  .filter-page .advice .suggestion > text { text-wrap: pretty; }
+}
+/* —— 返修 2 end —— */
+/* —— 返修 3 start（11-18 晚）—— */
+/* s=1：滑到底时卡片底边和底栏之间清楚空开 24；底栏左右 16、「重置」点击区 44 宽靠左、到主按钮 12 */
+.filter-page .filter-body { padding-bottom: calc(92px + var(--k-safe-bottom)); }
+.filter-page :deep(.k-bottom__inner) { padding: 12px 16px !important; gap: 12px; }
+.filter-page .foot-reset { min-width: 44px; padding: 0; text-align: left; }
+/* 「经袋鼠实地拍摄并含保险」：线性盾牌 14、和字隔 4 */
+.filter-page .pill--assured { gap: 4px; }
+/* s=2：订阅说明右边只让开关 + 16，不剩两个字一行；匹配度滑块：轨道 6、圆点 20 白底暖棕边、已选段至少画到圆点中心 */
+.filter-page .message-switch__sub { padding-right: 0; font-size: 12px; line-height: 18px; }
+.filter-page .message-switch > .k-row { flex: 1; min-width: 0; margin-right: 16px; }
+.filter-page .slider__active { top: 15px; height: 6px; border-radius: 3px; }
+.filter-page .slider__knob { top: 8px; width: 20px; height: 20px; margin-left: -10px; border: 2px solid var(--k-red); background: var(--k-paper); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+/* s=4 有冲突：横滑条右边留 16 收尾 */
+.filter-page .chips-scroll, .filter-page .summary-chips { padding-right: 16px; }
+/* —— 返修 3 end —— */
+/* —— 返修 4 start（11-18 夜）—— */
+/* s=2：保存按钮下面的说明左对齐，左边和卡片内容同一条线，锁图标跟着第一行 */
+.filter-page .subscribe-body .manage-note { max-width: none; margin: 12px 16px 0; padding: 0; justify-content: flex-start; align-items: flex-start; text-align: left; }
+.filter-page .subscribe-body .manage-note > text { flex: 1; min-width: 0; font-size: 12px; text-wrap: wrap; }
+/* s=3：匹配度挪到标签行第一个，标题独占整行、最多两行 */
+.filter-page .job-card__title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; overflow: hidden; text-overflow: clip; overflow-wrap: anywhere; }
+/* 「经袋鼠实地拍摄并含保险」不再压在封面上：挪到封面正下方，两行 11/500 豆绿字（和底部「安心」同一种颜色），照片完整露出 */
+.filter-page .job-card__cover { height: auto; overflow: visible; border-radius: 0; }
+.filter-page .job-card__image { border-radius: 8px; background: var(--k-paper2); }
+.filter-page .job-card__cover { background: none; }
+.filter-page .job-card__badge { position: static; margin-top: 6px; padding: 0; background: none; }
+.filter-page .job-card__badge :deep(.jb--card) { display: flex; padding: 0; border-radius: 0; background: none; box-shadow: none; }
+.filter-page .job-card__badge :deep(.jb__fold), .filter-page .job-card__badge :deep(.jb__seal) { display: none; }
+.filter-page .job-card__badge :deep(.jb--card .jb__text) { font-size: 11px; font-weight: 500; line-height: 16px; letter-spacing: 0; color: var(--k-green); text-shadow: none; }
+/* s=3 / s=4：已选条件横滑条外面包一层定位，右边 24 渐隐到页面底色 */
+.filter-page .chosen-wrap { position: relative; margin-right: -16px; }
+.filter-page .chosen { margin-right: 0; -webkit-mask-image: none; mask-image: none; }
+.filter-page .chosen-wrap::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 24px; background: linear-gradient(to right, transparent, var(--k-page)); pointer-events: none; }
+/* s=4：「放宽建议」每条前面也是和「条件冲突」一样的小圆点，两段列表同一种写法 */
+.filter-page .advice .suggestion > text { position: relative; padding-left: 12px; }
+.filter-page .advice .suggestion > text::before { content: ''; position: absolute; left: 2px; top: 9px; width: 3px; height: 3px; border-radius: 50%; background: var(--k-ink2); }
+/* s=4 没有冲突和建议：整组上移 24，中心落在约 45% 屏高 */
+.filter-page .empty-body--bare .empty-image { margin-top: 80px; }
+@media (max-width: 359px) {
+  .filter-page .subscribe-body .manage-note { margin-left: 12px; margin-right: 12px; }
+  .filter-page .chosen-wrap { margin-right: -12px; }
+  .filter-page .chosen { margin-right: 0; }
+  .filter-page .advice .suggestion > text::before { top: 8px; }
+  /* 320 宽：卡片里的地点 / 日期行放不下时折到第二行写全，不省略 */
+  .filter-page .job-card__meta { align-items: flex-start; }
+  .filter-page .job-card__meta > text { white-space: normal; overflow: visible; text-overflow: clip; line-height: 16px; }
+}
+/* —— 返修 4 end —— */
+/* —— 返修 5 start（11-18 深夜）—— */
+/* s=1：每组上下 10、标题到胶囊 8，首屏「安心保障」胶囊和底栏之间空得开 */
+.filter-page .sec { padding-top: 10px; padding-bottom: 10px; }
+.filter-page .sec-head { margin-bottom: 8px; }
+/* s=2：匹配度轨道用深一档的线色，看得出是一条轨道；刻度点 6 */
+.filter-page .slider::before { height: 4px; border-radius: 2px; background: var(--k-line2); }
+/* 「所在城市 （可多选）」：全角括号自带留白，和标题只隔 2 */
+.filter-page .subscribe-card__hint { margin-left: -6px; }
+/* s=3：「经袋鼠实地拍摄并含保险」改成标签行里的豆绿小标签（一行写完），封面固定 96 方图 */
+.filter-page .job-card__cover { height: 96px; }
+.filter-page .job-card__tags > .job-card__badge { position: static; margin: 0; padding: 0 6px; height: 18px; border-radius: 4px; background: var(--k-green-soft); display: flex; align-items: center; }
+.filter-page .job-card__tags > .job-card__badge :deep(.jb__lines) { flex-direction: row; }
+.filter-page .job-card__tags > .job-card__badge :deep(.jb--card .jb__text) { font-size: 11px; font-weight: 500; line-height: 18px; color: var(--k-green); }
+/* s=4：空状态和本组其它空状态同一种做法：56 浅棕方块 + 32 线性图标；整组上移 */
+.filter-page .empty-icon { width: 56px; height: 56px; margin: 40px auto 0; border-radius: 16px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+.filter-page .empty-body--bare .empty-image { margin-top: 48px; }
+.filter-page .empty-title { margin-top: 16px; }
+.filter-page .empty-desc { text-wrap: balance; }
+/* 冲突和建议：只在空格和标点处折行、两行均分，数字和量词（「6 个」）不拆开 */
+.filter-page .advice .conflict > text, .filter-page .advice .suggestion > text { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; }
+@media (max-width: 359px) {
+  .filter-page .job-card__cover, .filter-page .job-card__image { width: 64px; height: 64px; }
+  .filter-page .job-card__star { left: 48px; }
+  /* 320 宽：日期 · 天数 · 时长一行写完（11 号），实在放不下才省略，不再把「6 小时」拆两行 */
+  .filter-page .job-card__meta { align-items: center; }
+  .filter-page .job-card__meta > text { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .filter-page .advice .conflict > text, .filter-page .advice .suggestion > text { font-size: 13px; }
+}
+/* —— 返修 5 end —— */
+/* ==== r3jobsb 第四轮 start（11-18 夜，以微信实拍为准）==== */
+/* s=1 顶部订阅：不再单独占一张白卡，改成筛选卡上方一行暖棕文字（高 32） */
+.filter-page :deep(.subscribe-entry) { padding: 4px 16px 0; }
+.filter-page :deep(.subscribe-entry button) { min-height: 32px; height: 32px; padding: 0; border-radius: 0; background: transparent; font-size: 13px; font-weight: 500; line-height: 32px; }
+.filter-page .filter-body { padding-top: 4px; }
+/* 选项胶囊：统一流式（宽度随字数、间距 8、高 32），没选 --k-fill 底；选中加实线暖棕边 + 600，一眼分得开 */
+.filter-page .pills { display: flex; flex-wrap: wrap; gap: 8px; grid-template-columns: none; }
+.filter-page .pill { flex: 0 0 auto; min-width: 56px; height: 32px; padding: 0 14px; border: 1px solid transparent; border-radius: 16px; background: var(--k-fill); font-size: 13px; font-weight: 400; color: var(--k-ink2); }
+.filter-page .pill.on { border-color: var(--k-red); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; }
+.filter-page .pill--more { min-width: 0; margin-left: auto; padding: 0 0 0 4px; border-color: transparent; background: transparent; color: var(--k-muted); font-weight: 400; }
+.filter-page .pills--assure .pill:last-child, .filter-page .pill--assured { padding: 0 14px; }
+.filter-page .sec { padding-top: 16px; padding-bottom: 16px; }
+.filter-page .sec--line { padding-top: 14px; padding-bottom: 14px; }
+.filter-page .sec-head { margin-bottom: 12px; }
+/* 底栏「重置」：和旅居筛选一样的次按钮，宽 96、高 44 */
+.filter-page .foot-reset { flex: 0 0 96px; width: 96px; min-width: 0; height: 44px; box-sizing: border-box; padding: 0; border: 1px solid var(--k-red-line); border-radius: 22px; background: var(--k-paper); font-size: 15px; font-weight: 600; line-height: 42px; color: var(--k-red-deep); text-decoration: none; text-align: center; }
+.filter-page :deep(.k-bottom__inner) { padding: 8px 12px !important; gap: 12px; }
+.filter-page :deep(.k-bottom) { background: var(--k-paper); }
+/* s=2：「+ 添加」改成不带框的暖棕文字按钮；匹配度气泡去掉底和边；保存进底栏后页面底部留出底栏高 */
+.filter-page .selected-chip--add { height: 28px; min-height: 28px; margin: 4px 0; padding: 0 4px; gap: 4px; border: 0; background: transparent; color: var(--k-red); font-size: 13px; font-weight: 500; }
+.filter-page .selected-chip--add::after { display: none; border: 0; }
+.filter-page .slider__knob text { padding: 0; background: transparent; box-shadow: none; color: var(--k-red-deep); font-size: 13px; font-weight: 600; }
+.filter-page .subscribe-body { padding-bottom: calc(84px + var(--k-safe-bottom)); }
+.filter-page .save-button { margin: 0; padding: 0; }
+.filter-page .subscribe-body .manage-note { margin: 12px 16px 0; font-size: 13px; color: var(--k-muted); }
+/* s=3：保障单独一行（无底色绿字 + 盾牌），其它标签保持中性底；信息行图标退成浅灰；放不下时换行，不再被省略号吃掉；价格行贴卡底 */
+.filter-page .job-card__tags > .job-card__badge { flex: 0 0 100%; order: -1; height: 16px; margin: 0 0 2px; padding: 0; gap: 4px; border-radius: 0; background: none; display: flex; align-items: center; }
+.filter-page .job-card__tags > .job-card__badge :deep(.jb--card .jb__text) { line-height: 16px; }
+.filter-page .job-card__copy { align-self: stretch; display: flex; flex-direction: column; min-height: 96px; }
+.filter-page .job-card__bottom { margin-top: auto; padding-top: 6px; }
+.filter-page .job-card__meta > text { white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; overflow-wrap: anywhere; line-height: 18px; }
+.filter-page .job-card__meta { align-items: flex-start; }
+.filter-page .job-card__meta :deep(.k-icon) { margin-top: 3px; }
+/* s=4：空状态整组按约 40% 屏高放；没冲突没建议时不套白卡，两行灰色说明 + 发丝线；两颗按钮同宽 240、居中，让开右侧客服竖条 */
+.filter-page .empty-icon { margin-top: 14vh; }
+.filter-page .empty-body--bare .advice { margin: 16px 24px 0; padding: 0; background: transparent; }
+.filter-page .empty-body--bare .advice .conflict, .filter-page .empty-body--bare .advice .suggestions { padding: 10px 0; text-align: center; }
+.filter-page .empty-body--bare .advice .conflict__title { margin: 0; font-size: 14px; font-weight: 500; color: var(--k-ink2); }
+.filter-page .adjust-wrap { width: 240px; margin: 24px auto 0; }
+.filter-page .adjust { margin-top: 0; }
+.filter-page .adjust-wrap :deep(.k-button) { height: 40px; border-radius: 20px; font-size: 15px; }
+.filter-page .subscribe-wrap { margin: 12px auto 0; width: 240px; }
+.filter-page .subscribe-wrap :deep(.k-button) { width: 240px; height: 40px; border-radius: 20px; font-size: 15px; font-weight: 600; }
+.filter-page .service { margin-top: 16px; }
+@media (max-width: 359px) {
+  .filter-page .pill { min-width: 48px; padding: 0 12px; }
+  .filter-page .job-card__meta > text { font-size: 11px; white-space: normal; overflow: visible; text-overflow: clip; }
+  .filter-page .adjust-wrap, .filter-page .subscribe-wrap, .filter-page .subscribe-wrap :deep(.k-button) { width: 220px; }
+}
+/* ==== r3jobsb 第四轮 end ==== */
+/* ==== r3jobsb 第四轮返修 start（11-19，复评遗留）==== */
+/* s=1 城市 / 在店时长 / 每天工时 / 食宿（pills--5）：改回 5 格等分网格，一行 5 颗不再掉字；岗位类型等其它组仍按字数流式 */
+.filter-page .pills--5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.filter-page .pills--5 .pill { min-width: 0; padding: 0; }
+/* 「更多 ⌄」留在第 5 格里靠右，不再被顶到下一行 */
+.filter-page .pills--5 .pill--more { margin-left: 0; justify-content: flex-end; }
+/* s=3 匹配度：无底绿字 12/600，和上一行「经袋鼠实地拍摄并含保险」同一种做法，一行只剩一种底色 */
+.filter-page .job-card__tags :deep(.k-chip.is-green) { padding-left: 0; padding-right: 4px; background: transparent; font-size: 12px; font-weight: 600; }
+/* s=3 价格：数字 20/700，文字价（面议 / 奖金）16/600，层级差一档而不是差一截 */
+.filter-page .job-card__price .k-price { font-size: 20px; line-height: 24px; }
+.filter-page .job-card__price--word .k-price { font-size: 16px; font-weight: 600; line-height: 24px; color: var(--k-red); }
+/* s=4 没有冲突也没有建议：两行灰标题合成居中一行 12 号浅灰（中间 3px 圆点），去掉发丝线 */
+.filter-page .empty-body--bare .advice { display: flex; justify-content: center; align-items: center; gap: 0 16px; margin: 12px 24px 0; }
+.filter-page .empty-body--bare .advice .conflict, .filter-page .empty-body--bare .advice .suggestions { position: relative; padding: 0; }
+.filter-page .empty-body--bare .advice .conflict__title { font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-light); }
+.filter-page .empty-body--bare .advice .conflict + .suggestions::before { left: -10px; right: auto; top: 8px; width: 3px; height: 3px; border-radius: 50%; background: var(--k-line2); transform: none; }
+/* s=4 有冲突 / 建议：图标上方只留 32，「调整筛选」回到首屏里；14vh 只给没内容的那种 */
+.filter-page .empty-body:not(.empty-body--bare) .empty-icon { margin-top: 32px; }
+/* 320 宽：5 格每格约 46，字退到 12 号给微信字宽留余量 */
+@media (max-width: 359px) { .filter-page .pills--5 .pill { font-size: 12px; } }
+/* ==== r3jobsb 第四轮返修 end ==== */
+/* ==== r3jobsb 第五轮 start（11-19，按微信实拍复评）==== */
+/* s=1 选项胶囊：没选中的不再是一面灰底墙——透明底 + 0.5px 线色细边（高 32、圆角 16 不变）；选中保持暖棕实线边 + 浅棕底 + 600 */
+.filter-page .pill { border: 0.5px solid var(--k-line2); background: transparent; }
+.filter-page .pill.on { border: 1px solid var(--k-red); background: var(--k-red-soft); }
+.filter-page .pill--more { border-color: transparent; background: transparent; }
+/* 各组标题右侧「已选 0 个 ›」「不限 ›」和「更多 ⌄」：箭头字形和胶囊行右边缘对在同一条线（图标自带的右侧留白用负边距抵掉） */
+.filter-page .sec-head__meta { margin-right: -4px; }
+.filter-page .pill--more :deep(.k-icon) { margin-right: -3px; }
+/* s=2：页尾说明挪进底栏、按钮上方（12 号灰字居中、锁图标跟着第一行、下距 8），一直看得见，不再被固定底栏拦腰盖住 */
+.filter-page .subscribe-body .manage-note--bar { display: block; margin: 0 0 8px; padding: 0 8px; text-align: center; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.filter-page .subscribe-body .manage-note--bar > text { display: inline; font-size: 12px; line-height: 18px; }
+.filter-page .manage-note--bar :deep(.k-icon) { display: inline-block; margin: 0 4px 0 0; vertical-align: -2px; }
+.filter-page .subscribe-body { padding-bottom: calc(132px + var(--k-safe-bottom)); }
+/* s=3 结果卡：封面改 104×128 竖图（4:5、圆角 8），右栏最小高度跟着 128，图片下面不再各空一截；收藏星跟着封面右上角 */
+.filter-page .job-card__cover { flex: 0 0 104px; width: 104px; height: 128px; }
+.filter-page .job-card__image { width: 104px; height: 128px; border-radius: 8px; }
+.filter-page .job-card__copy { min-height: 128px; overflow: hidden; }
+.filter-page .job-card__star { left: 88px; }
+/* 标签不再是一排灰底小块：12 号次墨色文字、用「·」隔开（和信息行同一种写法）；折行时行首的圆点落在右栏左边外面、被裁掉 */
+.filter-page .job-card__tags { margin-left: -12px; column-gap: 0; row-gap: 2px; }
+.filter-page .job-card__tags > .job-card__badge { flex-basis: calc(100% - 12px); margin-left: 12px; }
+.filter-page .job-card__tags :deep(.k-chip) { position: relative; height: 18px; margin-left: 12px; padding: 0; border: 0; border-radius: 0; background: transparent; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-ink2); }
+.filter-page .job-card__tags :deep(.k-chip)::before { content: '·'; position: absolute; left: -9px; top: 0; width: 6px; text-align: center; color: var(--k-light); }
+.filter-page .job-card__tags :deep(.k-chip.is-green) { padding: 0; font-weight: 600; color: var(--k-green); }
+/* s=4：没有冲突也没有建议时那一行「条件冲突 · 放宽建议（共 0 条）」改成 13 号灰字，不再像没删干净的浅灰残留；空状态方块用本组统一的中性浅底 + 灰色图标 */
+.filter-page .empty-body--bare .advice .conflict__title { font-size: 13px; line-height: 20px; color: var(--k-muted); }
+.filter-page .empty-body--bare .advice .conflict + .suggestions::before { top: 9px; }
+.filter-page .empty-icon { background: var(--k-fill); }
+@media (max-width: 359px) {
+  .filter-page .job-card__cover { flex-basis: 80px; }
+  .filter-page .job-card__cover, .filter-page .job-card__image { width: 80px; height: 100px; }
+  .filter-page .job-card__copy { min-height: 100px; }
+  .filter-page .job-card__star { left: 64px; }
+}
+/* ==== r3jobsb 第五轮 end ==== */
+/* ==== r3jobsb 第六轮 start（11-19，复评收尾）==== */
+/* s=3 标签之间的「·」：圆点放在 12 宽的格子里居中（以前格子只有 6 宽，系统字的圆点比格子宽、往右溢出，贴着下一个标签），前后空隙一样 */
+.filter-page .job-card__tags :deep(.k-chip)::before { left: -12px; width: 12px; }
+/* s=3 封面加宽到 104 后右栏窄了 8：两行信息（门店、日期·时长·工时）退一档到 11 号、行高 16，「…· 每天 6 小时」在 375 宽微信里也留得出 8 以上余量，不再把「小时」挤到下一行 */
+.filter-page .job-card__meta > text { font-size: 11px; line-height: 16px; }
+.filter-page .job-card__meta :deep(.k-icon) { margin-top: 2px; }
+/* ==== r3jobsb 第六轮 end ==== */
+/* ==== r3jobsb 第三轮 end ==== */
+
+.filter-page.user-surface {
+  .sheet, .subscribe-card { border-radius: 12px; }
+  .sec-head { align-items: baseline; gap: 8px; }
+  .pill.on:not(.pill--assured), .frequency__item.on { background: var(--k-red-soft); color: var(--k-red-deep); border-color: var(--k-red-line); }
+  .foot-main, .foot-reset { min-height: 44px; border-radius: 10px; }
+}
 </style>

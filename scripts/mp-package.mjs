@@ -81,11 +81,16 @@ export function checkMpPackage(outputDirectory, root = projectRoot) {
 
   let checkedAssets = 0
   let assetBytes = 0
-  for (const source of filesIn(resolve(root, 'static'))) {
+  const assetRoots = [
+    resolve(root, 'static'),
+    ...(sourceConfig.subPackages || sourceConfig.subpackages || [])
+      .map(pack => resolve(root, pack.root, 'static')).filter(path => existsSync(path))
+  ]
+  for (const source of assetRoots.flatMap(filesIn)) {
     const name = normalize(relative(root, source))
     if (excluded.has(name)) continue
     // static/<平台>/ 只进对应平台（uni-app 规则）：static/h5/（网页版和小程序从线上加载的标题字体）本来就不进小程序包
-    if (/^static\/(h5|web|app|app-plus|app-harmony|mp-(?!weixin\/)[a-z-]+)\//.test(name)) continue
+    if (/(?:^|\/)static\/(h5|web|app|app-plus|app-harmony|mp-(?!weixin\/)[a-z-]+)\//.test(name)) continue
     const target = resolve(output, name)
     if (!existsSync(target)) problems.push(`Missing asset: ${name}`)
     else if (hash(source) !== hash(target)) problems.push(`Asset changed: ${name}`)
@@ -108,12 +113,24 @@ export function checkMpPackage(outputDirectory, root = projectRoot) {
   ]
   let excludedBytes = 0
   const mainCode = { js: 0, wxss: 0, wxml: 0 }
+  const packageOf = name => packages.find(pack => pack.root && name.startsWith(pack.root)) || packages[0]
   for (const file of filesIn(output)) {
     const name = normalize(relative(output, file))
     const bytes = statSync(file).size
     if (excluded.has(name)) { excludedBytes += bytes; continue }
     if (name.endsWith('.map')) problems.push(`Source map included in package: ${name}`)
-    const pack = packages.slice(1).find((pack) => name.startsWith(pack.root)) || packages[0]
+    const pack = packageOf(name)
+    if (extname(file) === '.json' && existsSync(file.slice(0, -5) + '.wxml')) {
+      const definition = readJson(file)
+      for (const [component, location] of Object.entries(definition.usingComponents || {})) {
+        if (!location.startsWith('.') && !location.startsWith('/')) continue
+        const target = location.startsWith('/') ? resolve(output, '.' + location) : resolve(dirname(file), location)
+        const targetPack = packageOf(normalize(relative(output, target)))
+        if (targetPack.root && targetPack !== pack && !definition.componentPlaceholder?.[component]) {
+          problems.push(`Missing componentPlaceholder for cross-package component: ${name} -> ${component}`)
+        }
+      }
+    }
     pack.bytes += bytes
     pack.files++
     const type = extname(name).slice(1)

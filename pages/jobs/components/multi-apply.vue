@@ -18,7 +18,7 @@
           <text v-else-if="rowItem.state === 'skipped'" class="ma-result__plan">{{ rowItem.stateText }}</text>
         </view>
         <view v-if="rowItem.canRetry" class="ma-retry" role="button" hover-class="k-press-s" @click.stop="retry(rowItem)"><text>重试</text></view>
-        <view v-else-if="rowItem.state === 'done'" class="ma-result__state"><text>{{ rowItem.stateText }}</text><k-icon name="chevron-right" :size="15" color="#4A6E3A" :stroke="2" /></view>
+        <view v-else-if="rowItem.state === 'done'" class="ma-result__state"><text>{{ rowItem.stateText }}</text><k-icon name="chevron-right" :size="12" color="green" /></view>
         <text v-else class="ma-result__state">{{ rowItem.stateText }}</text>
       </view>
     </view>
@@ -26,7 +26,7 @@
 
     <template v-if="listOpen">
       <view class="ma-filters">
-        <view class="ma-city" role="button" :aria-label="'选择城市，现在是' + (city || '全部城市')" hover-class="k-press-s" @click="pickCity"><k-icon name="map-pin" :size="16" color="#8A5E36" :stroke="1.8" /><text class="ma-city__name">{{ city || '全部城市' }}</text><k-icon name="chevron-down" :size="15" color="#8A5E36" :stroke="2" /></view>
+        <view class="ma-city" role="button" :aria-label="'选择城市，现在是' + (city || '全部城市')" hover-class="k-press-s" @click="pickCity"><k-icon name="map-pin" :size="14" color="muted" /><text class="ma-city__name">{{ city || '全部城市' }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view>
         <view class="ma-types"><view v-for="chip in TYPE_CHIPS" :key="chip[1]" class="ma-type" :class="{ on: type === chip[1] }" role="button" :aria-pressed="type === chip[1]" hover-class="k-press-s" @click="pickType(chip[1])"><text>{{ chip[0] }}</text></view></view>
       </view>
 
@@ -39,7 +39,7 @@
             <image class="ma-card__img" :src="jobItem.img" mode="aspectFill" />
             <view class="ma-card__text"><text class="ma-card__name">{{ displayWording(jobItem.title, [jobItem.storeName]) }}</text><text class="ma-card__meta">{{ jobItem.meta }}</text></view>
           </view>
-          <view class="ma-card__pick" role="checkbox" :aria-checked="jobItem.picked" :aria-label="(jobItem.picked ? '取消选择' : '选择') + jobItem.title" hover-class="k-press-s" @click.stop="toggle(jobItem)"><view class="ma-dot" :class="{ on: jobItem.picked }"><k-icon v-if="jobItem.picked" name="check" :size="15" color="white" :stroke="3" /></view></view>
+          <view class="ma-card__pick" role="checkbox" :aria-checked="jobItem.picked" :aria-label="(jobItem.picked ? '取消选择' : '选择') + jobItem.title" hover-class="k-press-s" @click.stop="toggle(jobItem)"><view class="ma-dot" :class="{ on: jobItem.picked }"><k-icon v-if="jobItem.picked" name="check" :size="14" color="white" /></view></view>
         </view>
       </view>
       <view v-if="canMore" class="ma-more" role="button" hover-class="k-press-s" @click="more"><text>{{ loadingMore ? '正在读取…' : '再看看' }}</text></view>
@@ -67,6 +67,7 @@
 <script setup>
 import { displayWording } from '@/common/display-wording.js'
 import { computed, onUnmounted, ref, watch } from 'vue'
+import { experience } from '@/common/experience.js'
 import { onShow } from '@dcloudio/uni-app'
 import { apiJobList, apiMyApplications, apiSubmitApplication } from '@/common/api.js'
 import { bindShareAfterApply } from '@/common/share.js'
@@ -155,6 +156,7 @@ onShow(async () => {
   rows.value = keep(rows.value)
   setPicks(picks.value.filter(j => !applied.has(String(j.jobId))))
 })
+watch(() => experience.account?.id, () => { left = true }, { flush: 'sync' })
 onUnmounted(() => { left = true })
 
 const cards = computed(() => {
@@ -201,14 +203,14 @@ const runRows = async (list) => {
   try {
     r = await submitAll(list, submitOne, viewRow, () => left)
   } finally {
-    setBusy(false)
+    if (!left) setBusy(false)
   }
+  if (left) return r
   for (const row of list) {
     if (row.state === 'done' || row.state === 'applied') applied.add(String(row.jobId))
     if (row.state === 'done' && row.appId) bindShareAfterApply(row.jobId, row.appId)
   }
   rows.value = keep(rows.value)
-  if (left) return r
   if (r.stopped === 'login') { emit('login'); return r }
   toast(summaryText(r))
   return r
@@ -300,4 +302,49 @@ watch(() => props.submitTick, (now, before) => { if (now !== before) submit() })
   .ma-city { max-width: 40%; font-size: 13px; }
   .ma-type { font-size: 13px; }
 }
+/* 2026-11-17 改版「小而精」：白卡 12 圆角、不描边；城市和类型两个选择器收到 36 高；岗位行封面 8 圆角、标题 14 / 600；
+   勾选圆圈的可点范围不变（整行高、52 宽）。选城市、三种类型、勾选、再看看、重试、确认弹层都照旧。 */
+.ma { margin-top: 16px; }
+.ma-head { padding: 0 2px; }
+.ma-title { font-family: var(--k-sans); font-size: 15px; color: var(--k-ink); }
+.ma-count { font-size: 12px; font-weight: 600; }
+.ma-sub { padding: 0 2px; font-size: 11px; line-height: 16px; }
+.ma-filters { margin-top: 8px; }
+.ma-city { height: 36px; padding: 0 8px 0 10px; border: 0; border-radius: 18px; gap: 4px; font-size: 13px; font-weight: 500; }
+/* 三种类型：白底的一条，选中的是里面一颗 30 高的暖棕胶囊；每一格用透明边把可点范围撑满 36（原来 34，不能缩） */
+.ma-types { height: 36px; padding: 0; gap: 0; border-radius: 18px; background: var(--k-paper); }
+.ma-type { border: 3px solid transparent; border-radius: 18px; font-size: 13px; }
+.ma-type.on { background: linear-gradient(135deg, #B5814D, #8E5E33) padding-box; font-weight: 600; }
+.ma-group { margin-top: 8px; border: 0; border-radius: 12px; }
+.ma-card.on { background: #FFFBF6; }
+.ma-card__main { min-height: 68px; padding: 10px 0 10px 12px; }
+.ma-card__img { width: 48px; height: 48px; border-radius: 8px; background: #F5F1EB; }
+.ma-card__name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.ma-card__meta { font-size: 11px; line-height: 16px; }
+.ma-dot { width: 22px; height: 22px; border-width: 1.5px; border-color: var(--k-line2); }
+.ma-dot.on { border-color: var(--k-red-deep); background: var(--k-red-deep); }
+.ma-state { margin-top: 8px; min-height: 68px; border: 0; border-radius: 12px; font-size: 13px; line-height: 20px; color: var(--k-muted); }
+.ma-more { margin-top: 8px; height: 40px; border-radius: 20px; background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-red-line); font-size: 13px; font-weight: 500; }
+.ma-foot { margin-top: 8px; padding: 0 2px; font-size: 11px; line-height: 16px; }
+.ma-result { min-height: 56px; padding: 8px 12px; }
+.ma-result__name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.ma-result__plan, .ma-result__msg { font-size: 11px; line-height: 16px; }
+.ma-result__state { font-size: 12px; font-weight: 500; }
+.ma-retry { height: 36px; font-size: 13px; font-weight: 500; }
+.ma-sheet__title { font-family: var(--k-sans); font-size: 16px; line-height: 24px; color: var(--k-ink); }
+.ma-sheet__name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.ma-sheet__plan { font-size: 12px; line-height: 18px; }
+.ma-sheet__moved { padding: 0 5px; background: var(--k-red-soft); font-size: 10px; line-height: 17px; }
+.ma-sheet__foot { font-size: 11px; line-height: 16px; }
+.ma-sheet__btns :deep(.k-button) { height: 44px; border-radius: 22px; font-size: 15px; }
+.ma-sheet__btns :deep(.k-button.is-primary) { background: linear-gradient(135deg, #B5814D, #8E5E33); box-shadow: none; }
+/* —— 第二轮精修（11-18）—— */
+.ma-title { font-size: 16px; line-height: 22px; }
+/* 类型切换按分段控件：浅灰底槽 + 白色选中块，不再是实心棕胶囊（可点高度仍 36） */
+.ma-types { background: #F0EBE4; }
+.ma-type { border-width: 2px; border-radius: 18px; font-size: 13px; font-weight: 400; color: var(--k-ink2); }
+.ma-type.on { background: #FFFFFF padding-box; color: var(--k-ink); font-weight: 600; }
+/* 分隔线改发丝线 */
+.ma-card + .ma-card, .ma-result + .ma-result { border-top: 0; background-image: linear-gradient(to bottom, var(--k-line) 50%, transparent 50%); background-size: 100% 1px; background-repeat: no-repeat; background-position: left top; }
+.ma-sheet__row { border-bottom: 0; background-image: linear-gradient(to top, var(--k-line) 50%, transparent 50%); background-size: 100% 1px; background-repeat: no-repeat; background-position: left bottom; }
 </style>

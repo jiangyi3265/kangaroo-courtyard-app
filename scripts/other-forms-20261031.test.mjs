@@ -76,7 +76,7 @@ test('创建活动：字段一个不少、版式换成 fc-*；顶栏不出浮动
   const block = between(t, '<template v-else-if="s === 2">', '<!-- 3 报名数据 -->')
   formRules(block, '创建活动')
   // 2026-11-03 主人：介绍挪到标题上面；地点和地图位置合成一行；费用改成「免费 / 收费 / AA制」三选一
-  assert.deepEqual(labels(block), ['基本信息', '发布内容', '活动类型', '活动封面', '活动介绍', '活动标题', '时间与地点', '开始时间', '结束时间', '活动地点', '人数与费用', '招募人数', '费用设置'])
+  assert.deepEqual(labels(block), ['粘贴活动文案', '基本信息', '发布内容', '活动类型', '活动封面', '活动介绍', '活动标题', '时间与地点', '开始时间', '结束时间', '活动地点', '人数与费用', '招募人数', '费用设置'])
   assert.match(block, /最多 50 人/)
   assert.match(block, /<view v-for="k in FEE_KINDS" :key="k\[0\]" class="fc-seg__item" :class="\{ on: feeKind === k\[0\] \}" hover-class="k-press" @click="feeKind = k\[0\]">/)
   assert.match(block, /横图、竖图都可以，整张显示不裁剪/)
@@ -201,13 +201,13 @@ test('创建活动：草稿照旧存本机一份，恢复时带回；介绍超�
 const FAC = [{ value: 'ac', label: '空调' }, { value: 'wifi', label: 'Wi-Fi' }, { value: 'hotwater', label: '热水' }, { value: 'washer', label: '洗衣机' }]
 const STAY = { stayId: 66, stayName: '小院', address: '平潭', status: 'draft', operateModeLabel: '直营', hostStory: '简介', tags: '', hostName: '', latitude: null, longitude: null, district: '', hostAge: '', hostHometown: '', hostSkills: '', travelPros: '', travelCons: '', travelAirport: '', travelRail: '', facilities: 'ac,legacy', cookable: '1', quals: [] }
 function rooms(stubs = {}) {
-  const log = { created: [], edited: [], toasts: [], scrolls: [], locks: [] }
+  const log = { created: [], edited: [], toasts: [], scrolls: [], locks: [], routes: [] }
   const s = vue.ref(1)
   const h = runSetup('pages/staff/rooms.vue', {
-    useScreen: () => s, ensureSession: async () => {}, hasStaffAccess: { value: true }, currentStaffStoreId: () => 102, experience: { account: { phone: '13800001234' } }, toast: m => log.toasts.push(m), errText: (e, d) => d, absUrl: x => x, back() {}, go() {}, coordinates: () => null,
+    useScreen: () => s, ensureSession: async () => {}, hasStaffAccess: { value: true }, currentStaffStoreId: () => 102, experience: { account: { phone: '13800001234' } }, toast: m => log.toasts.push(m), errText: (e, d) => d, absUrl: x => x, back() {}, go: url => log.routes.push(url), coordinates: () => null,
     scrollToField: x => log.scrolls.push(x), lockPageScroll: x => log.locks.push(x), todayCn: () => '2026-11-01', shiftDate: () => '2026-11-08', isYmd: () => true,
     apiStaffStays: async () => ({ data: { rows: [], stats: {}, tabs: {}, operateModeLabel: '直营' } }), apiStaffStay: async () => ({ data: { ...STAY } }), get: async () => ({ data: { districts: ['流水镇'], facilities: FAC } }),
-    apiStaffCreateStay: async (id, p) => { log.created.push([id, plain(p)]); return { data: { stayId: 88 }, msg: '已保存' } }, apiStaffEditStay: async (id, p) => { log.edited.push([id, plain(p)]); return { data: { stayId: id }, msg: '已保存' } },
+    apiStaffCreateStay: async (id, p) => { log.created.push([id, plain(p)]); return { data: { stayId: 88, status: 'draft' }, msg: '已保存' } }, apiStaffEditStay: async (id, p) => { log.edited.push([id, plain(p)]); return { data: { stayId: id }, msg: '已保存' } },
     uni: { getStorageSync: () => '', setStorageSync() {}, removeStorageSync() {} },
     ...stubs
   })
@@ -225,8 +225,7 @@ test('新增房源：字段一个不少；五个假圈换成一句话，步数�
   assert.deepEqual(plain(h.run('HOST_FIELDS')).map(f => f.label), ['年龄', '籍贯', '擅长'])
   assert.deepEqual(plain(h.run('TRAVEL_FIELDS')).map(f => f.label), ['优点', '缺点', '机场怎么到', '高铁怎么到'])
   for (const w of ['选好后住客可以导航到店', '更多选填', '标签、主理人年龄籍贯擅长、出行参考', '下面四段是出行参考，住客在房源详情页能看到，没填的不显示。', 'f.placeholder', '{{ editableTip }}', '添加标签', '{{ hostPhone }}']) assert.ok(block.includes(w), w)
-  assert.match(block, /<view class="fc-steps"><text class="fc-steps__t">第 1 步：\{\{ steps3\[0\] \}\}<\/text><text>下一步填写房型、上传封面与资质<\/text><\/view>/)
-  assert.equal(h.run('steps3.length'), 4)
+  assert.match(block, /<text class="fc-steps__t">1 \/ 3 · 基本信息<\/text><text>下一步设置房型与价格<\/text>/)
   assert.doesNotMatch(h.script, /steps2|steps4|opChoices/, '假的步骤、假的选项删掉了')
   assert.doesNotMatch(block, /profile-avatar|rooms-host/, '写死的默认头像去掉（2026-11-03 起表单里的 <image> 是房源封面，不是头像）')
   assert.match(block, /<view class="fc-row" hover-class="k-press" @click="typeTip"><text class="fc-row__k">来源类型<\/text><text class="fc-row__v fc-row__v--plain">\{\{ form\.type \|\| '—' \}\}<\/text><\/view>/)
@@ -261,7 +260,8 @@ test('新增房源：名称、地址没填就地标红并滚过去，提示和�
   await flush()
   // 2026-11-03：多带 area / areaDesc / cover（商圈、位置描述、封面并进表单）
   assert.deepEqual(h.log.created, [[102, { stayName: '小院', address: '平潭', hostStory: '简介', tags: '海景', hostName: '阿东', latitude: null, longitude: null, district: '流水镇', hostAge: '90后', hostHometown: '', hostSkills: '', travelPros: '', travelCons: '', travelAirport: '', travelRail: '公交', facilities: 'wifi', cookable: '1', area: '', areaDesc: '', cover: '' }]])
-  assert.equal(h.s.value, 3, '下一步进资质屏')
+  assert.deepEqual(h.log.routes, ['/pages/staff/room-types?stayId=88&flow=listing'], '草稿保存后进入房型和价格')
+  assert.equal(h.s.value, 3, '完成房型页后返回资质屏')
   assert.deepEqual(plain(h.run('rerr.value')), {})
 })
 
@@ -310,7 +310,7 @@ test('房源更多选填：新建收起；打开时里面有内容就展开并�
   assert.equal(filled.run('moreFilled.value'), 3, '标签算一项')
 })
 
-test('资质屏：每份两行，已传显示文件和状态，过期标红；驳回用提醒色，别的状态不用；提交按钮进操作条；第 2 步按真实流程', async (t) => {
+test('资质屏：每份两行，已传显示文件和状态，过期标红；驳回用提醒色，别的状态不用；第 3 步统一提交', async (t) => {
   const quals = [
     { type: 'license', title: '营业执照', required: true, uploaded: true, expired: false, file: 'a.jpg', size: '1MB', expire: '2029-06-30', url: '/a.jpg', isPdf: false },
     { type: 'fire', title: '消防', required: true, uploaded: true, expired: true, file: 'b.pdf', size: '2MB', expire: '2025-01-01', url: '/b.pdf', isPdf: true },
@@ -336,8 +336,8 @@ test('资质屏：每份两行，已传显示文件和状态，过期标红；�
   assert.equal(rejected.run('rejectBox.value.btn'), '重新提交')
   const block = between(h.template, '<template v-else-if="s === 3">', '<!-- 5 视频与生活碎片')
   formRules(block, '资质屏')
-  assert.match(block, /<text class="fc-steps__t">第 2 步：\{\{ steps3\[1\] \}\}<\/text><text>补齐后统一提交审核<\/text>/)
-  assert.match(block, /请上传清晰、完整的资质图片或PDF，支持 JPG\/PNG\/PDF 格式，单个文件不超过 10MB。/)
+  assert.match(block, /<text class="fc-steps__t">3 \/ 3 · 资质与提交<\/text><text>补齐后统一提交审核<\/text>/)
+  assert.match(block, /请上传清晰、完整的资质图片或PDF，支持 JPG\/PNG\/PDF 格式，图片不超过20MB、PDF不超过10MB。/)
   assert.match(block, /@click="tapDoc\(d\)"/)
   assert.match(block, /@click="editExpire\(d\)"/)
   assert.match(block, /:class="\{ 'fc-notice--alert': rejectBox\.alert \}"/)
@@ -382,15 +382,14 @@ test('发布线上任务：字段一个不少、四组 + 更多选填；提交�
   const tpl = h.template
   const block = between(tpl, '<view v-if="s === 1" class="fc-form publish-page">', '<view v-else-if="s === 2"')
   formRules(block, '线上任务')
-  assert.deepEqual(labels(block), ['发布费用', '任务信息', '任务标题', '任务类型', '交付与截止', '交付物', '预计完成时间', '报酬与名额', '单人佣金', '名额', '验收', '验收标准', '预计耗时', '我们希望你', '任务描述'])
-  for (const w of ['至少晚于现在 2 小时', '验收通过后由门店线下结算给接单人', '元 / 人', '预计耗时、我们希望你、任务描述', '最多 3 条，每条 40 字以内', '/3 条', '按模板生成（非 AI）', '/300', '退回原因：{{ resubmit.reason }}']) assert.ok(block.includes(w), w)
+  assert.deepEqual(labels(block), ['发布费用', '任务信息', '任务标题', '任务类型', '交付与截止', '交付物', '预计完成时间', '报酬与名额', '接单人报酬', '每人交付条数上限', '单人佣金', '名额', '验收', '验收标准', '账号与参与要求', '预计耗时', '任务描述'])
+  for (const w of ['至少晚于现在2小时', '验收通过后由门店线下结算给接单人', '元 / 人', '预计耗时、任务描述', '最多 3 条，每条 40 字以内', '/3 条', '按模板生成（非 AI）', '/300', '退回原因：{{ resubmit.reason }}']) assert.ok(block.includes(w), w)
   assert.match(block, /<text class="fc-footnote">拍摄要点、参考图、文件等素材，接单后在「交付记录」里发给接单人（文字、图片、文件都行），这里不用传。<\/text>/)
   assert.match(tpl, /<k-topbar :title="titles\[s - 1\]" back custom-back :fab="s !== 1" @back="onBack" \/>/)
   // 2026-11-03 简化：操作条按钮上面一行一直写着还差什么 / 可以提交（和招募表一样），提交不再弹确认框
   assert.match(tpl, /<view v-if="s === 1" class="fc-bar"><view class="fc-bar__todo"[^>]*@click="showTodo"><text>\{\{ todoText \}\}<\/text><\/view><view class="fc-bar__btns"><fc-kefu \/><view class="fc-btn" hover-class="k-press-s" @click="publish"><text>\{\{ merchantStaff \? '提交' : '提交审核' \}\}<\/text><\/view><\/view><\/view>/)
   assert.match(tpl, /<k-tabbar v-if="s !== 1" mode="staff" :active="onlineStaff \? 'work' : 'business'" \/>/)
-  // 2026-11-03 简化：预计完成时间改成系统滚轮（picker），没有日历弹层要锁
-  assert.match(tpl, /^\s*<!-- #ifdef MP-WEIXIN -->\s*<page-meta :page-style="s === 1 && sheetKey \? 'overflow: hidden' : ''" \/>/)
+  assert.match(tpl, /^\s*<!-- #ifdef MP-WEIXIN -->\s*<page-meta :page-style="publishOverlayOpen \? 'overflow: hidden' : ''" \/>/)
   for (const id of ['of-title', 'of-deliverables', 'of-commission', 'of-criteria']) assert.ok(block.includes('id="' + id + '"'), id)
   // 接待设置（换工主理人、小院主理人才看得到）：功能还在，发布屏排到表单最后，别的屏还在最上面
   assert.match(tpl, /<k-chat-reception v-if="s !== 1" :store-id="taskStore \|\| sid\(\)" \/>/)
@@ -399,8 +398,9 @@ test('发布线上任务：字段一个不少、四组 + 更多选填；提交�
   assert.match(h.styles, /\.deadline\.is-over\{color:var\(--k-alert\)\}/)
 })
 
-test('线上任务：任务类型、预计耗时从底部弹层选，点一项就定；预计耗时能不选、能自己写；截止时间只改显示', (t) => {
-  const h = online()
+test('线上任务：任务类型、预计耗时和截止日历；弹层打开时返回先关弹层', async (t) => {
+  let backs = 0
+  const h = online({ back: () => backs++ })
   t.after(h.stop)
   assert.equal(h.run('sheetConf.value'), null)
   h.run("openSheet('taskType')")
@@ -409,6 +409,16 @@ test('线上任务：任务类型、预计耗时从底部弹层选，点一项�
   h.run("confirmSheet('视频剪辑')")
   assert.equal(h.run('form.value.taskType'), '视频剪辑')
   assert.equal(h.run('sheetKey.value'), '')
+  h.run('deadlineCalendar.value = true')
+  await flush()
+  assert.equal(h.log.locks.at(-1), true)
+  h.run('onBack()')
+  await flush()
+  assert.equal(h.run('deadlineCalendar.value'), false)
+  assert.equal(h.log.locks.at(-1), false)
+  assert.equal(backs, 0)
+  h.run('onBack()')
+  assert.equal(backs, 1)
   h.run("openSheet('estHours')")
   const est = plain(h.run('sheetConf.value'))
   assert.deepEqual(est.options.map(o => o.value), ['1 小时内', '约 2 小时', '半天', '1 天', '2–3 天'])
@@ -447,24 +457,34 @@ test('线上任务：提交报错滚到从上往下第一个错，提示和拦�
   assert.equal(h.log.toasts.at(-1), '请填写佣金')
   assert.equal(h.log.created.length, 0)
   h.run("setCommission('12.5'); moreOpen.value = true; form.value.estHours = '半天'")
+  for (const field of ['title', 'deliverables', 'criteria']) {
+    const original = h.run(`form.value.${field}`)
+    h.run(`form.value.${field} = '   '`)
+    await h.run('publish()')
+    assert.equal(h.log.scrolls.at(-1), '#of-' + field)
+    assert.equal(h.log.created.length, 0)
+    h.run(`form.value.${field} = ${JSON.stringify(original)}`)
+  }
   await h.run('publish()')
   await flush()
-  assert.deepEqual(h.log.created, [[102, { title: '探店', taskType: '内容写作', deliverables: '图文', deadline: '2026-11-08 18:00', commissionFen: 1250, quota: 3, criteria: '原创', description: '', estHours: '半天', requirements: [] }]])
+  assert.deepEqual(h.log.created, [[102, { title: '探店', taskType: '内容写作', deliverables: '图文', deadline: '2026-11-08 18:00', commissionFen: 1250, itemsPerPerson: 1, quota: 3, criteria: '原创', description: '', estHours: '半天', requirements: [] }]])
   assert.equal(h.run('moreOpen.value'), false)
   assert.equal(h.s.value, 2)
 })
 
 test('线上任务：改被退回的任务，折叠区有内容就展开；都没有就收起', async (t) => {
-  const task = { requestId: 5, canEdit: true, title: '推文', returnReason: '佣金不对', job: { taskType: '内容写作', deliverables: '推文', criteria: '原创', commissionFen: 500, headcount: 2, content: '推文', requirement: '', estHours: '', deadlineTime: '2026-11-20 18:00:00' } }
+  const task = { requestId: 5, canEdit: true, title: '推文', returnReason: '佣金不对', job: { taskType: '内容写作', deliverables: '推文', criteria: '原创', commissionFen: 500, headcount: 2, content: '推文', requirement: '有账号', estHours: '', deadlineTime: '2026-11-20 18:00:00' } }
   const empty = online({ get: async () => ({ data: task }) })
   t.after(empty.stop)
   await empty.load({ s: '1', requestId: '5', storeId: '102' })
   assert.equal(empty.run('moreOpen.value'), false, '任务描述和交付物一样、算没填')
+  assert.deepEqual(plain(empty.run('form.value.requirements')), ['有账号'])
   const filled = online({ get: async () => ({ data: { ...task, job: { ...task.job, content: '描述', requirement: '有账号\n会排版', estHours: '半天' } } }) })
   t.after(filled.stop)
   await filled.load({ s: '1', requestId: '5', storeId: '102' })
   assert.equal(filled.run('moreOpen.value'), true)
-  assert.equal(filled.run('moreFilled.value'), 3)
+  assert.equal(filled.run('moreFilled.value'), 2)
+  assert.deepEqual(plain(filled.run('form.value.requirements')), ['有账号', '会排版'])
   assert.equal(filled.run('resubmit.value.reason'), '佣金不对')
 })
 

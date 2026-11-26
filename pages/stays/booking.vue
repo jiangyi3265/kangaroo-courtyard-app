@@ -1,6 +1,6 @@
 <template>
   <k-feature-gate feature="stay-booking">
-  <view class="k-page booking-page">
+  <view class="k-page booking-page" :class="$userSurface">
     <k-topbar :title="titles[s - 1]" back custom-back @back="onBack" />
     <k-subscribe scenes="order" label="订阅预订后续提醒" />
 
@@ -12,9 +12,9 @@
     </view>
     <view v-else-if="s === 1" class="type-body">
       <!-- 2026-11-03 主人：简化 —— 房型不超过 5 个时不出筛选条（几张卡一眼就看完了，筛选只会多一步） -->
-      <view v-if="allRoomTypes.length > 5" class="filters"><view v-for="(item, i) in roomFilterLabels" :key="i" @click="filterRooms(i)"><text>{{ item }}</text><k-icon name="chevron-down" :size="16" color="ink" /></view></view>
+      <view v-if="allRoomTypes.length > 5" class="filters"><view v-for="(item, i) in roomFilterLabels" :key="i" @click="filterRooms(i)"><text>{{ item }}</text><k-icon name="chevron-down" :size="12" color="ink" /></view></view>
       <view v-if="roomsLoading" class="rooms-empty">正在加载房型价格与余量…</view><view v-else-if="roomsError" class="rooms-empty"><text>{{ roomsError }}</text><view class="booking-retry" role="button" @click="loadRooms">重新加载</view></view>
-      <view v-if="roomsLoaded && !roomTypes.length" class="rooms-empty"><text>{{ allRoomTypes.length ? '没有符合筛选条件的房型，请调整筛选' : '该房源暂未上架可订房型' }}</text></view><view class="type-list"><view v-for="room in roomTypes" :key="room.roomTypeId" class="type-card" :style="selRoomId === room.roomTypeId ? 'border-color: var(--k-red)' : ''" @click="selectRoom(room)"><view class="type-media"><image :src="absUrl(room.image) || '/static/media/cover-empty.png'" mode="aspectFill" /><view v-if="room.features.length" class="type-features"><view v-for="item in room.features" :key="item"><k-icon :name="iconOf(item)" :size="15" color="muted" /><text>{{ item }}</text></view></view></view><view class="type-main"><view class="type-title"><text>{{ room.name }}</text><k-chip v-if="room.promo" tone="ochre"><text>早鸟价</text></k-chip><k-chip v-if="stay.safeCert" tone="green"><text>安心住</text></k-chip></view><text class="type-desc">{{ room.desc }}</text><text>床型： {{ room.bed }}</text><text>面积： {{ room.area }}</text><text>入住： {{ room.people }}</text><view class="type-pricing">
+      <view v-if="roomsLoaded && !roomTypes.length" class="rooms-empty"><text>{{ allRoomTypes.length ? '没有符合筛选条件的房型，请调整筛选' : '该房源暂未上架可订房型' }}</text></view><view class="type-list"><view v-for="room in roomTypes" :key="room.roomTypeId" class="type-card" :style="selRoomId === room.roomTypeId ? 'border-color: var(--k-red)' : ''" @click="selectRoom(room)"><view class="type-media"><image :src="absUrl(room.image) || '/static/media/cover-empty.png'" mode="aspectFill" :class="{ 'type-img--empty': !room.image }" /><view v-if="room.features.length" class="type-features"><view v-for="item in room.features" :key="item"><k-icon :name="iconOf(item)" :size="12" color="muted" /><text>{{ item }}</text></view></view></view><view class="type-main"><view v-if="!room.image" class="type-media__ph"><k-icon name="image" :size="32" color="muted" /></view><view class="type-title"><text>{{ room.name }}</text><k-chip v-if="room.promo" tone="ochre"><text>早鸟价</text></k-chip><k-chip v-if="stay.safeCert" tone="green"><text>安心住</text></k-chip></view><text class="type-desc">{{ room.desc }}</text><text :class="{ 'is-empty': room.bed === '—' }">床型： {{ room.bed }}</text><text :class="{ 'is-empty': room.area === '—' }">面积： {{ room.area }}</text><text>入住： {{ room.people }}</text><view class="type-pricing">
           <view class="type-period-price">
             <text class="type-price-label">7天总价（7晚）</text>
             <view class="type-price" :class="{ 'is-long': room.price.length > 5 }"><text>{{ room.price === '--' ? '待查询' : '¥' + room.price }}</text></view>
@@ -28,22 +28,27 @@
             <text v-if="!room.bookable" class="type-price-note">所选日期不可订</text>
           </view>
         </view><view class="type-foot"><text v-if="room.remainText" class="remain">{{ room.remainText }}</text><view class="type-select" :class="{ selected: selRoomId === room.roomTypeId, unavailable: !room.bookable }"><text>{{ selRoomId === room.roomTypeId ? '已选' : (room.bookable ? '选择' : '换个日期') }}</text></view></view></view></view></view>
-      <view class="selected" @click="next1"><k-icon name="calendar-check" :size="20" color="ink" /><text class="selected__text">已选 {{ inText }} — {{ outText }} · {{ nightCount }}晚 · {{ state.guests }}人</text><text class="selected__edit">改日期</text><k-icon name="chevron-right" :size="14" color="red" /></view><!-- 每一步的「下一步」固定在屏幕底部：房型、日历一长，按钮就落到屏幕外，用户以为没有下一步 -->
+      <view class="selected" @click="next1"><k-icon name="calendar-check" :size="16" color="ink" /><view class="selected__copy"><text class="selected__text">已选 {{ inText }} — {{ outText }}</text><text class="selected__meta">· {{ nightCount }}晚 · {{ state.guests }}人</text></view><text class="selected__edit">改日期</text><k-icon name="chevron-right" :size="16" color="red" /></view><!-- 每一步的「下一步」固定在屏幕底部：房型、日历一长，按钮就落到屏幕外，用户以为没有下一步 -->
       <k-bottom><view class="cta__btn"><k-button block :disabled="roomsLoading || !roomsLoaded" label="下一步：查看房态日历" @click="next1" /></view></k-bottom>
     </view>
 
     <view v-else-if="s === 2" class="calendar-body">
-      <view class="booking-rule"><k-icon name="calendar-check" :size="18" color="red" /><text>一周起订，至少 {{ MIN_NIGHTS }} 晚</text></view>
+      <view class="booking-rule"><k-icon name="calendar-check" :size="16" color="red" /><text>一周起订，至少 {{ MIN_NIGHTS }} 晚</text></view>
       <view class="duration-options" aria-label="选择入住时长">
         <button v-for="item in durations" :key="item.nights" class="duration-option" :class="{ 'is-active': nightCount === item.nights }" :aria-pressed="nightCount === item.nights" hover-class="duration-pressed" @click="selectDuration(item.nights)"><text>{{ item.label }}</text><text>{{ item.nights }}晚</text></button>
       </view>
       <text class="duration-hint">按入住日期逐晚计算房费；半月为15晚，一个月为30晚，也可在日历自选离店日。</text>
       <view v-if="calendarLoading" class="booking-state">正在加载房态日历…</view><view v-else-if="calendarError" class="booking-state"><text>{{ calendarError }}</text><view class="booking-retry" role="button" @click="loadCalendar(calendarMonth)">重新加载日历</view></view>
-      <view class="selected-room"><text>{{ selRoom.name || '' }}　　{{ inText }}　—　{{ outText }}　　{{ nightCount }}晚　｜　{{ state.guests }}人</text></view>
+      <view class="selected-room"><text class="selected-room__name">{{ selRoom.name || '' }}</text><text class="selected-room__meta">{{ inText }}　—　{{ outText }}　　{{ nightCount }}晚　｜　{{ state.guests }}人</text></view>
       <!-- 2026-11-03 主人：简化 —— 换月只用「‹ 月 ›」左右箭头，月份文字不再弹选择菜单 -->
-      <view class="month-head"><view class="month-arrow" @click="shiftMonth(-1)"><k-icon name="chevron-left" :size="25" color="ink" /></view><text>{{ cal.month || '' }}</text><view class="month-arrow" @click="shiftMonth(1)"><k-icon name="chevron-right" :size="25" color="ink" /></view></view><view class="week"><text v-for="d in weeks" :key="d">{{ d }}</text></view><view class="calendar-grid"><view v-for="(day,i) in calendar" :key="i" :class="{ selected: day.selected, outside: day.outside }" @click="tapDay(day)"><text>{{ day.date }}</text><text v-if="day.price">¥{{ day.price }}</text><text v-if="day.note">{{ day.note }}</text></view></view><view class="legend"><view><text class="green-box" /> <text>可订</text></view><view><text class="gray-box" /> <text>已满</text></view></view><view class="calendar-total card"><text>已选： {{ inText }}　—　{{ outText }}　（{{ nightCount }}晚）</text><view><text>连住{{ nightCount }}晚 总价</text><view><text>¥{{ q ? yuan(q.payFen) : '--' }}</text><text>均价　¥{{ avgText }} / 晚</text></view></view></view>
+      <view class="cal-card"><view class="month-head"><view class="month-arrow" @click="shiftMonth(-1)"><k-icon name="chevron-left" :size="20" color="ink" /></view><text>{{ cal.month || '' }}</text><view class="month-arrow" @click="shiftMonth(1)"><k-icon name="chevron-right" :size="20" color="ink" /></view></view><view class="week"><text v-for="d in weeks" :key="d">{{ d }}</text></view><view class="calendar-grid"><view v-for="(day,i) in calendar" :key="i" :class="{ selected: day.selected, outside: day.outside, 'is-edge': !!day.ymd && (day.ymd === state.checkIn || day.ymd === state.checkOut), 'is-in': day.ymd === state.checkIn, 'is-out': day.ymd === state.checkOut }" @click="tapDay(day)"><text>{{ day.date }}</text><text v-if="day.price">¥{{ day.price }}</text><text v-if="day.note">{{ day.note }}</text></view></view></view><view class="legend"><view><text class="green-box" /> <text>可订</text></view><view><text class="gray-box" /> <text>已满</text></view></view><view class="calendar-total card"><text>已选： {{ inText }}　—　{{ outText }}　<text class="nowrap">（{{ nightCount }}晚）</text></text><view><text>连住{{ nightCount }}晚 总价</text><view><text>¥{{ q ? yuan(q.payFen) : '--' }}</text><text>均价　¥{{ avgText }} / 晚</text></view></view></view>
+      <view v-if="q?.onlinePaymentAvailable === false" class="booking-state">
+        <text>本店暂未开通在线收款。{{ canTryFreeNights ? '可使用免费间夜抵清全款后预订。' : '仍可查看房价和房态。' }}</text>
+        <button v-if="!experience.account" class="booking-retry" @click="go(R.login)">登录查看是否有适用的免费间夜</button>
+        <button class="booking-retry" @click="requote">刷新收款状态</button>
+      </view>
       <view v-if="quoteError" class="booking-state"><text>{{ quoteError }}</text><view class="booking-retry" role="button" @click="requote">重新查询报价</view></view>
-      <k-bottom><view class="cta__sum"><text class="cta__price">¥{{ q ? yuan(q.payFen) : '--' }}</text><text class="cta__meta">{{ nightCount }}晚 · {{ state.guests }}人</text></view><view class="cta__btn"><k-button block :disabled="quoteLoading || calendarLoading || !!calendarError" :label="quoteLoading ? '正在查询报价' : '下一步：确认订单'" @click="next2" /></view></k-bottom>
+      <k-bottom><view class="cta__sum"><text class="cta__price">¥{{ q ? yuan(q.payFen) : '--' }}</text><text class="cta__meta">{{ nightCount }}晚 · {{ state.guests }}人</text></view><view class="cta__btn"><k-button block :disabled="quoteLoading || calendarLoading || !!calendarError || collectionUnavailable" :label="quoteLoading ? '正在查询报价' : (collectionUnavailable ? '暂不能预订' : (q?.onlinePaymentAvailable === false ? '核对免费间夜' : '下一步：确认订单'))" @click="next2" /></view></k-bottom>
     </view>
 
   </view>
@@ -51,7 +56,6 @@
 </template>
 
 <script setup>
-import { isAssistedStay } from './booking-channel.js'
 import { bookingPriceDisplay } from './period-price.js'
 import { stayBookingEnabled, refreshFeatures } from '@/common/features.js'
 import { watch as watchStayGate } from 'vue'
@@ -67,11 +71,13 @@ import { watch as watchStayGate } from 'vue'
 // ---------------------------------------------------------------------------
 import { absUrl } from '@/common/upload.js'
 import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { experience } from '@/common/experience.js'
 import { useScreen, back, go, toast } from '@/common/screen.js'
 import { apiStayDetail, apiStayRoomTypes, apiStayCalendar, apiStayQuote } from '@/common/api.js'
 import { errText, sheet, yuan, shiftDate } from '@/common/ui.js'
 import { stayState, normalizeDates, saveStayState, nightsBetween, dayText, weekText } from './stays-state.js'
-import { MIN_NIGHTS } from './stays-range.js'
+import { MIN_NIGHTS, MAX_NIGHTS } from './stays-range.js'
 import R from '@/common/routes.js'
 
 let stayId = 0
@@ -115,11 +121,6 @@ async function init() {
   try {
     const detail = (await apiStayDetail(stayId)).data
     if (!detail?.stayName) throw new Error('房源不存在或已下架')
-    if (isAssistedStay(detail)) {
-      stayError.value = '自营房源请联系订房助手'
-      uni.redirectTo({ url: R.stayDetail + '?stayId=' + stayId, fail: () => toast('请返回房源详情联系订房助手') })
-      return
-    }
     stay.value = detail
   } catch (e) {
     stayError.value = errText(e, '房源信息加载失败，请重试')
@@ -157,7 +158,13 @@ const priceSort = ref('默认排序')
 const roomFilterLabels = computed(() => [roomName.value, bedName.value === '全部床型' ? '床型' : bedName.value, availableOnly.value ? '仅可订' : '筛选', priceSort.value === '默认排序' ? '排序' : priceSort.value])
 const roomTypes = computed(() => {
   const rows = allRoomTypes.value.filter(r => (roomName.value === '全部房型' || r.name === roomName.value) && (bedName.value === '全部床型' || r.bed === bedName.value) && (!availableOnly.value || r.bookable))
-  if (priceSort.value !== '默认排序') rows.sort((a, b) => (Number(a.price) - Number(b.price)) * (priceSort.value === '价格从低到高' ? 1 : -1))
+  if (priceSort.value !== '默认排序') {
+    const direction = priceSort.value === '价格从低到高' ? 1 : -1
+    rows.sort((a, b) => {
+      if (a.selectedPrice === '--' || b.selectedPrice === '--') return Number(a.selectedPrice === '--') - Number(b.selectedPrice === '--')
+      return direction * (Number(a.selectedPrice) - Number(b.selectedPrice))
+    })
+  }
   return rows
 })
 // 没填床型的房型卡片上显示「—」，床型筛选只列真正填了的床型（之前把「—」也当成一种床型列出来，选了顶栏只剩一道横线）
@@ -248,11 +255,14 @@ const calendar = computed(() => {
   for (let i = 0; i < lead; i++) cells.push({ date: '', outside: true })
   for (const d of days) {
     const inRange = d.date >= state.checkIn && d.date < state.checkOut
+    // beyond 限制开始入住。已选入住日后，离店仍可落在预订窗口之外。
+    const length = nightsBetween(state.checkIn, d.date)
+    const validCheckout = picking.value === 'out' && length >= MIN_NIGHTS && length <= MAX_NIGHTS
     const note = d.date === state.checkIn ? '入住' : d.date === state.checkOut ? '离店'
       : d.status === 'full' ? '满房' : d.status === 'closed' ? '不可订' : d.promo ? '早鸟' : ''
     cells.push({
       date: d.day, ymd: d.date, status: d.status, price: d.status === 'past' || d.status === 'beyond' ? '' : yuan(d.priceFen),
-      note, selected: inRange || d.date === state.checkOut, outside: d.status === 'past' || d.status === 'beyond'
+      note, selected: inRange || d.date === state.checkOut, outside: d.status === 'past' || (d.status === 'beyond' && !validCheckout)
     })
   }
   return cells
@@ -284,8 +294,9 @@ function tapDay(day) {
   } else {
     const n = nightsBetween(state.checkIn, day.ymd)
     if (n < MIN_NIGHTS) return toast('一周起订，请至少选择 7 晚')
-    if (n > 30) return toast('最多连住 30 晚')
-    const blocked = (cal.value.days || []).find(d => d.date >= state.checkIn && d.date < day.ymd && d.status !== 'available')
+    if (n > MAX_NIGHTS) return toast('最多连住 30 晚')
+    // 日历不返回预订窗口外每晚的可订状态，整个入住区间的库存由最新报价核实。
+    const blocked = (cal.value.days || []).find(d => d.date >= state.checkIn && d.date < day.ymd && (d.status === 'full' || d.status === 'closed'))
     if (blocked) return toast(`${dayText(blocked.date)} ${blocked.status === 'full' ? '已满房' : '不可订'}，不能跨过`)
     state.checkOut = day.ymd
     picking.value = 'in'
@@ -322,6 +333,17 @@ async function requote() {
     if (sequence === quoteSequence) quoteLoading.value = false
   }
 }
+const canTryFreeNights = computed(() => {
+  const quote = q.value
+  if (!quote?.memberVouchers?.length || quote.promoId || quote.guests !== 1 || quote.units !== 1) return false
+  const coveredNights = (quote.nightly || []).slice(0, quote.memberVouchers.length)
+  const coveredFen = coveredNights.reduce((sum, night) => sum + Number(night.priceFen || 0), 0)
+  return coveredNights.length > 0 && coveredFen >= quote.roomFen && !quote.addonFen && !quote.serviceFeeFen
+})
+const collectionUnavailable = computed(() => q.value?.onlinePaymentAvailable === false && !canTryFreeNights.value)
+onShow(() => {
+  if (selRoomId.value && q.value?.onlinePaymentAvailable === false) requote()
+})
 const avgText = computed(() => (q.value && nightCount.value ? yuan(Math.round(q.value.payFen / nightCount.value)) : '--'))
 async function next2() {
   if (picking.value === 'out') return toast('请先点选离店日期')
@@ -332,6 +354,7 @@ async function next2() {
   if (!q.value || quotedKey !== key) await requote()
   if (picking.value === 'out' || quoteLoading.value || key !== JSON.stringify(quoteParams()) || quotedKey !== key) return
   if (!q.value) return
+  if (collectionUnavailable.value) return toast('本店暂未开通在线收款')
   if (!q.value.bookable) return toast(q.value.reason || '所选日期不可订')
   toPay()
 }
@@ -465,4 +488,186 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) init() })
 .type-price-dates,.type-price-note { display: block; margin-top: 4px; color: var(--k-muted); font-size: 11px; line-height: 1.6; }
 .type-foot { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--k-line); }
 @media(max-width:359px) { .type-pricing { gap: 8px; } .type-pricing .type-price.is-long>text { font-size: 22px; } .type-selected-amount { font-size: 18px; } }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底 + 纯白卡，卡片不加阴影、不描棕边（选中的房型仍描一圈暖棕细边）；字和按钮收小一档，
+   底部主按钮是 44 高的暖棕胶囊。只改样子：房型、价格、日历、起订规则这些文字和所有操作都没动。
+   上面几轮的规则保留不动，这里统一用 .booking-page 开头的规则盖过去。 */
+.booking-page { @include stays-fine; }
+.booking-page .type-title>text, .booking-page .month-head text { font-family: var(--k-sans); }
+.booking-page .type-body, .booking-page .calendar-body { padding-left: 12px; padding-right: 12px; }
+.booking-page :deep(.k-bottom) { background: var(--k-paper); }
+.booking-page :deep(.k-bottom__inner) { padding: 8px 12px !important; }
+.booking-page :deep(.k-bottom .k-button) { height: 44px; background: linear-gradient(135deg,#B5814D,#8E5E33); box-shadow: none; font-size: 15px; }
+.booking-page .booking-state, .booking-page .rooms-empty { font-size: 12px; }
+.booking-page .booking-retry { min-height: 28px; padding: 0 14px; border-radius: 14px; font-size: 12px; }
+/* 选房型 */
+.booking-page .filters>view { height: 28px; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); }
+
+.booking-page .type-list { gap: 8px; }
+.booking-page .type-card { border-color: transparent; border-radius: 12px; box-shadow: none; }
+.booking-page .type-features { padding: 8px 12px 0; gap: 4px 8px; }
+.booking-page .type-features>view { color: var(--k-muted); font-size: 11px; }
+
+.booking-page .type-main { padding: 8px 12px 12px; }
+.booking-page .type-title { margin-bottom: 4px; }
+.booking-page .type-title>text { color: var(--k-ink); font-size: 16px; font-weight: 700; line-height: 22px; }
+.booking-page .type-main>.type-desc { color: var(--k-ink2); font-size: 13px; line-height: 20px; }
+.booking-page .type-main>text { font-size: 12px; line-height: 18px; }
+.booking-page .type-pricing { margin-top: 10px; }
+.booking-page .type-price-label { font-size: 11px; line-height: 16px; }
+.booking-page .type-pricing .type-price>text { color: var(--k-red-deep); font-size: 22px; line-height: 28px; }
+.booking-page .type-selected-amount { margin-top: 2px; font-size: 16px; line-height: 28px; }
+.booking-page .type-price-dates, .booking-page .type-price-note { margin-top: 2px; line-height: 16px; }
+.booking-page .stay-period-options { margin-top: 4px; font-size: 11px; line-height: 16px; }
+.booking-page .type-foot { margin-top: 10px; padding-top: 10px; }
+.booking-page .type-select { min-width: 56px; height: 28px; padding: 0 12px; border: 1px solid var(--k-red-line); background: var(--k-paper); color: var(--k-red-deep); font-size: 12px; }
+.booking-page .type-select.selected { border-color: transparent; background: linear-gradient(135deg,#B5814D,#8E5E33); color: var(--k-paper); }
+.booking-page .type-select.unavailable { border-color: transparent; background: var(--k-fill); color: var(--k-muted); }
+/* 复查：「已选 … 改日期」这一行和「已选」按钮、日历里选中的那几天都带 selected 这个类名 —— 这里只认房型列表下面那一行（.type-body 的直接子节点），
+   不然「已选」按钮会被撑成 44 高的方块、选中日期的三行字被撑出格子。日期放不下时换行，不再省略成「…」 */
+.booking-page .type-body>.selected, .booking-page .selected-room, .booking-page .calendar-total { border: 0; border-radius: 12px; background: var(--k-paper); }
+.booking-page .type-body>.selected { height: auto; min-height: 44px; margin: 8px 0; padding: 6px 12px; gap: 4px; font-size: 11px; line-height: 16px; }
+.booking-page .type-body>.selected .selected__text { white-space: normal; overflow: visible; }
+
+.booking-page .type-select.selected { margin-top: 0; margin-bottom: 0; }
+.booking-page .selected__edit { color: var(--k-red-deep); font-weight: 500; }
+/* 房态日历 */
+.booking-page .booking-rule { gap: 6px; padding: 2px 0 10px; font-size: 13px; }
+
+.booking-page .duration-options { margin: 0 0 8px; }
+.booking-page .duration-option { min-height: 52px; padding: 6px 4px; gap: 1px; border: 1px solid transparent; border-radius: 8px; background: var(--k-paper); color: var(--k-ink2); font-size: 14px; }
+.booking-page .duration-option text:last-child { font-size: 11px; }
+.booking-page .duration-option.is-active { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; }
+.booking-page .duration-hint { margin-bottom: 8px; font-size: 11px; line-height: 16px; }
+.booking-page .selected-room { padding: 10px 12px; font-weight: 500; }
+.booking-page .selected-room>text { font-size: 11px; line-height: 17px; }
+.booking-page .month-head { height: 48px; padding: 0; }
+.booking-page .month-head text { color: var(--k-ink); font-size: 16px; font-weight: 700; }
+
+.booking-page .week { height: 28px; color: var(--k-muted); font-size: 12px; font-weight: 400; }
+.booking-page .calendar-grid { border-radius: 12px; }
+.booking-page .calendar-grid>view text { line-height: 1.3; }
+.booking-page .calendar-grid>view text:first-child { font-size: 15px; font-weight: 600; }
+.booking-page .calendar-grid>view text:nth-child(2) { font-size: 10px; }
+.booking-page .calendar-grid>view.selected { gap: 0; background: var(--k-red-soft); color: var(--k-red-deep); }
+.booking-page .calendar-grid>view.selected text:nth-child(2), .booking-page .calendar-grid>view.selected text:last-child { color: var(--k-red-deep); }
+.booking-page .legend { height: 40px; color: var(--k-muted); font-size: 12px; }
+.booking-page .calendar-total { margin-bottom: 8px; }
+.booking-page .calendar-total>view>view text:first-child { color: var(--k-red-deep); font: 700 20px var(--k-sans); }
+.booking-page .cta__price { color: var(--k-red-deep); font: 700 18px var(--k-sans); line-height: 24px; }
+/* 2026-11-18 第三轮返修（独立评审第 1 轮）：
+   · 订阅条和第一张房型卡之间留 12；房型照片固定 16:9，没照片时浅棕底 + 40 号图片图标（不再用粗线条大图）；
+   · 价格只有左边「7天总价」一个焦点，右边所选晚数总价降成 13 / 500；「床型 / 面积 / 入住」排一行，中间发丝竖线；
+   · 「已选 日期 · 晚数 · 人数 改日期」13 / 500，右边让开客服竖条；
+   · 房态日历：卡内留 8；选中的几天连成一条浅棕带，入住 / 离店两格暖棕实底白字；过去的日期不加粗；
+   · 图例「可订」改成和日历里普通日期一样的白底发丝框，「已满」浅灰；合计金额 15 / 600 墨色，焦点留给底部；
+   · 竖向节奏：区块之间 20，组内 8。 */
+.booking-page .type-list { margin-top: 12px; }
+.booking-page .type-card { position: relative; }
+.booking-page .type-media>image { height: calc((100vw - 24px) * .5625); }
+.booking-page .type-media>image.type-img--empty { opacity: 0; }
+.booking-page .type-media__ph { position: absolute; left: 0; right: 0; top: 0; height: calc((100vw - 24px) * .5625); background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.booking-page .type-main>text:not(.type-desc) { display: inline-block; vertical-align: middle; color: var(--k-ink2); font-size: 12px; line-height: 18px; }
+.booking-page .type-main>text:not(.type-desc) + text:not(.type-desc)::before { content: ''; display: inline-block; width: 1px; height: 10px; margin: 0 8px; vertical-align: -1px; background: var(--k-line2); }
+.booking-page .type-main>.type-desc { margin-bottom: 4px; }
+.booking-page .type-selected-amount { margin-top: 2px; color: var(--k-ink2); font-size: 13px; font-weight: 500; line-height: 20px; }
+.booking-page .type-body>.selected { margin: 12px 20px 8px 0; padding: 10px 12px; gap: 6px; font-size: 13px; line-height: 20px; }
+.booking-page .type-body>.selected .selected__text { color: var(--k-ink); font-size: 13px; font-weight: 500; }
+.booking-page .selected__edit { font-size: 13px; }
+/* 房态日历 */
+.booking-page .calendar-body { padding-top: 12px; }
+.booking-page .booking-rule { padding: 0 0 8px; }
+.booking-page .duration-hint { margin: 8px 0 20px; }
+.booking-page .selected-room { margin-bottom: 8px; }
+.booking-page .selected-room>text { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--k-ink); font-size: 13px; font-weight: 500; line-height: 20px; }
+.booking-page .calendar-grid { gap: 4px 0; padding: 8px; }
+.booking-page .calendar-grid>view.selected { border-radius: 0; }
+.booking-page .calendar-grid>view.selected.is-in { border-radius: 8px 0 0 8px; }
+.booking-page .calendar-grid>view.selected.is-out { border-radius: 0 8px 8px 0; }
+.booking-page .calendar-grid>view.selected.is-edge { background: var(--k-red-deep); color: var(--k-paper); }
+.booking-page .calendar-grid>view.selected.is-edge text, .booking-page .calendar-grid>view.selected.is-edge text:nth-child(2), .booking-page .calendar-grid>view.selected.is-edge text:last-child { color: var(--k-paper); }
+.booking-page .calendar-grid>view.outside text:first-child { color: var(--k-light); font-weight: 400; }
+.booking-page .legend>view>text:first-child { width: 16px; height: 12px; border-radius: 3px; }
+.booking-page .legend .green-box { background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-line2); }
+.booking-page .legend .gray-box { background: var(--k-paper2); }
+.booking-page .calendar-total>view>view text:first-child { color: var(--k-ink); font: 600 15px var(--k-sans); }
+/* 11-18 第三轮返修（独立评审第 2 轮）：
+   · 房型没照片时不再占半屏：占位矮条 120 高、32 号图片图标；
+   · 右列「所选 N 晚总价」整列 12 灰，只做补充说明，不和左边 7 天价抢；
+   · 「已选」条和房型卡同宽：第一行短日期 13 / 500，第二行「7晚 · 1人」12 灰，右边「改日期」；
+   · 房态日历汇总条两行（房型名 15 / 600 + 日期晚数 13 灰）；图例靠左、两项隔 16；说明文字限宽，不剩一两个字单独一行。 */
+.booking-page .type-media>image.type-img--empty { height: 120px; }
+.booking-page .type-media__ph { height: 120px; }
+.booking-page .type-selected-price .type-price-label, .booking-page .type-selected-price .type-selected-amount, .booking-page .type-selected-price .type-price-dates { color: var(--k-muted); font-size: 12px; font-weight: 400; line-height: 18px; }
+.booking-page .type-selected-price .type-selected-amount { margin-top: 0; font-variant-numeric: tabular-nums; }
+.booking-page .type-body>.selected { margin: 12px 0 8px; padding: 10px 12px; gap: 8px; }
+.booking-page .selected__copy { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.booking-page .type-body>.selected .selected__text { display: block; color: var(--k-ink); font-size: 13px; font-weight: 500; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.booking-page .selected__meta { display: block; color: var(--k-muted); font-size: 12px; line-height: 18px; }
+.booking-page .selected-room { display: flex; flex-direction: column; align-items: flex-start; padding: 10px 12px; }
+.booking-page .selected-room>text.selected-room__name { color: var(--k-ink); font-size: 15px; font-weight: 600; line-height: 22px; }
+.booking-page .selected-room>text.selected-room__meta { color: var(--k-muted); font-size: 13px; font-weight: 400; line-height: 20px; font-variant-numeric: tabular-nums; }
+.booking-page .duration-hint { display: block; max-width: 248px; }
+.booking-page .legend { justify-content: flex-start; gap: 16px; padding-left: 4px; }
+.booking-page .legend>view { gap: 6px; }
+.booking-page .legend>view>text:first-child { width: 12px; height: 12px; border-radius: 3px; }
+.booking-page .legend .green-box { background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-line); }
+.booking-page .legend .gray-box { background: var(--k-line2); }
+.booking-page .calendar-total .nowrap { white-space: nowrap; }
+/* 11-18 第四轮返修：房型卡没填的「床型 / 面积」整项不显示（只加 class，文字和数据不动）；所选晚数总价和左边 7 天总价是同一个数时右列只留日期；
+   默认无描边、选中才有 1.5px 暖棕描边；无图占位降到 96 高。 */
+.booking-page .type-main>text.is-empty { display: none; }
+.booking-page .type-main>text.is-empty:not(.type-desc) + text:not(.type-desc)::before { display: none; }
+.booking-page .type-main>text:not(.is-empty):not(.type-desc) + text.is-empty:not(.type-desc) + text:not(.type-desc)::before { display: inline-block; }
+.booking-page .type-card { border: 1.5px solid transparent; }
+.booking-page .type-media>image.type-img--empty, .booking-page .type-media__ph { height: 96px; }
+/* 11-18 第五轮返修（功能补回 + 评审第 5 轮）：
+   · 房型卡右列「所选N晚总价」和金额恢复显示，右列贴卡片内边距线；日期恢复「11/19」「11月19日 周四」写法；
+   · 房态日历：月份、星期、日期格放进同一张白卡；格内价格 11 号；说明不再限宽；「可订」色块用浅灰实底。 */
+.booking-page .type-selected-price { padding-right: 0; text-align: right; }
+.booking-page .type-selected-price .type-selected-amount { color: var(--k-ink2); font-size: 14px; font-weight: 600; line-height: 20px; }
+.booking-page .type-body>.selected .selected__text { white-space: normal; overflow: visible; }
+.booking-page .selected-room>text.selected-room__meta { white-space: normal; overflow: visible; }
+.booking-page .cal-card { margin-bottom: 0; padding: 0 12px 12px; border-radius: 12px; background: var(--k-paper); }
+.booking-page .cal-card .month-head { height: 48px; }
+.booking-page .cal-card .week { height: 28px; margin-bottom: 8px; }
+.booking-page .cal-card .calendar-grid { padding: 0; border-radius: 0; background: transparent; }
+.booking-page .calendar-grid>view text:first-child { font-size: 16px; font-weight: 600; }
+.booking-page .calendar-grid>view text:nth-child(2) { font-size: 11px; line-height: 14px; }
+.booking-page .duration-hint { max-width: none; }
+.booking-page .legend .green-box { background: var(--k-fill); box-shadow: none; }
+@media (max-width: 359px) {
+  .booking-page .calendar-total>text { font-size: 12px; }
+  .booking-page .cal-card { padding: 0 8px 8px; }
+}
+/* <<R6-BEGIN>> */
+/* 11-18 第四轮：房型卡「床型： —」「面积： —」恢复显示，和「入住：」并成一行 meta（发丝竖线分隔）；无图时照片照常渲染、浅底占位叠在上面；
+   右列「所选N晚总价」金额 15/600 墨灰，标签和日期 12 灰；「已选」条第二行行首的「·」悬挂到左边，视觉上从「7晚」起和第一行对齐。 */
+.booking-page .type-main>text.is-empty { display: inline-block; color: var(--k-muted); }
+.booking-page .type-main>text.is-empty:not(.type-desc) + text:not(.type-desc)::before { display: inline-block; }
+.booking-page .type-media>image.type-img--empty { opacity: 1; }
+.booking-page .type-media__ph { z-index: 1; }
+.booking-page .type-selected-price .type-selected-amount { color: var(--k-ink2); font-size: 15px; font-weight: 600; line-height: 20px; }
+.booking-page .selected__meta { text-indent: -1em; }
+
+/* 11-19 独立复评返修：
+   · 「订阅预订后续提醒」和门店群聊 / 行程 / 退款页同一种左对齐入口行（铃铛 + 字 + 箭头，文字对齐卡内 24）；
+   · 「已选」条第二行的点整个挂到左边；320 宽日期只在空格处断行（不再把「11月26日」拆开）；
+   · 周期说明限宽，在「，」后折成两行；已选房型条里的竖线改灰色发丝色。 */
+.booking-page :deep(.subscribe-entry) { margin: 4px 12px 0; padding: 0; background: transparent; }
+.booking-page :deep(.subscribe-entry button) { display: flex; align-items: center; justify-content: flex-start; gap: 6px; height: 36px; margin: 0; padding: 0 12px; border: 0; border-radius: 0; background: transparent; color: var(--k-red-deep); font-size: 13px; font-weight: 500; line-height: 36px; }
+.booking-page :deep(.subscribe-entry button::after) { border: 0; }
+.booking-page .duration-hint { max-width: 18.6em; }
+@media (max-width: 359px) {
+  .booking-page .type-body>.selected .selected__text { word-break: keep-all; }
+}
+/* <<R6-END>> */
+
+.booking-page.user-surface {
+  .type-card, .cal-card { border-radius: 12px; }
+  .type-price, .selected__meta, .calendar-total, .cta__price { font-variant-numeric: tabular-nums; }
+  .type-selected-price { color: var(--k-red-deep); }
+  .booking-rule { background-color: var(--user-icon-field); }
+  .type-select, .cta__btn { border-radius: 10px; }
+}
 </style>

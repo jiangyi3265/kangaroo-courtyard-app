@@ -40,7 +40,7 @@
       <view class="k-body k-pad-tab">
         <view v-if="detailError" class="req-state"><text>{{ detailError }}</text><k-button label="重新加载" size="md" type="outline" @click="reloadDetail" /></view>
         <view v-else-if="!detail" class="req-state"><text>正在读取…</text></view>
-        <k-request-detail v-else :detail="detail" />
+        <template v-else><k-request-detail :detail="detail" /><k-button v-if="detail.canResume" label="接办这条需求" @click="resumeRequest" /></template>
       </view>
       <k-tabbar mode="staff" active="work" />
     </template>
@@ -52,7 +52,7 @@
 // 管人、审批合营院子是下一轮的事，这里没有任何写操作。
 import { ref, computed, watch } from 'vue'
 import { onShow, onUnload, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
-import { get } from '@/common/request.js'
+import { get, post } from '@/common/request.js'
 import { useScreen, back, toast } from '@/common/screen.js'
 import { ensureSession, hasStaffAccess, currentStaffStoreId, getSessionRevision, selectStaffStore, cityLeadFull } from '@/common/experience.js'
 import { errText } from '@/common/ui.js'
@@ -103,6 +103,12 @@ watch(s, (v, old) => { if (v === 1 && old !== 1 && booted) refresh() })
 // ---------------- 详情 ----------------
 const detail = ref(null), detailError = ref('')
 let detailSeq = 0, openId = null
+async function resumeRequest() {
+  try {
+    const result = await post(CITY_API + '/' + openId + '/resume?storeId=' + currentStaffStoreId())
+    uni.navigateTo({ url: result.data.route })
+  } catch (e) { toast(errText(e, '接办失败，请刷新')); await reloadDetail() }
+}
 async function reloadDetail() {
   const id = ++detailSeq
   detailError.value = ''
@@ -150,15 +156,23 @@ async function loadOverview() {
 
 <style scoped lang="scss">
 @import './request-pages.scss';
-.city-switch{height:40px;margin-bottom:14px;padding:3px;box-sizing:border-box;border-radius:20px;background:var(--k-paper2);display:grid;grid-template-columns:1fr 1fr}
-.city-switch>view{border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--k-ink2)}
-.city-switch>view.active{background:var(--k-paper);color:var(--k-red-deep);font-weight:600;box-shadow:0 2px 8px rgba(58,50,43,.1)}
-.req-tile.on{background:var(--k-red-soft);box-shadow:inset 0 0 0 1px var(--k-red)}
-.city-shop{margin-top:12px;padding:14px;border-radius:14px;background:var(--k-paper);box-shadow:0 6px 20px rgba(58,50,43,.08)}
-.city-shop__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:10px}
-.city-shop__name{min-width:0;flex:1;font-size:16px;font-weight:700;color:var(--k-ink);overflow-wrap:anywhere}
-.city-shop__count{flex-shrink:0;padding:3px 8px;border-radius:6px;background:var(--k-red-soft);font-size:12px;color:var(--k-red-deep)}
-.city-shop__row{padding:9px 0;border-top:1px solid var(--k-line);display:flex;flex-direction:column;gap:3px}
-.city-shop__title{font-size:14px;line-height:1.5;color:var(--k-ink);overflow-wrap:anywhere}
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、去阴影），切换条和人数标签按统一规范；内容不变。共用写法在 ./work-lite.scss；.req-* 在 ./request-pages.scss */
+@import './work-lite.scss';
+.city-page{@include lite-page}
+/* 分段控件（11-18 第二轮精修，和「我的」钱包页一个样子）：外框 #F0EBE4、高 32、圆角 16、内边距 2；选中白块圆角 14、13 / 600 墨色，没选 13 / 400 二级墨。
+   块看着 28 高，上下各多出一圈看不见的可点范围，可点高度仍有 40 */
+.city-switch{height:32px;margin-bottom:10px;padding:2px;box-sizing:border-box;border-radius:16px;background:#F0EBE4;display:grid;grid-template-columns:1fr 1fr}
+.city-switch>view{border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:400;color:var(--k-ink2)}
+.city-switch>view.active{background:var(--k-paper);color:var(--k-ink);font-weight:600;box-shadow:none}
+.city-switch>view{position:relative}.city-switch>view::after{content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px}
+.req-tile.on{background:var(--k-red-soft);box-shadow:none}
+.city-shop{margin-top:8px;padding:12px;border-radius:12px;background:var(--k-paper);box-shadow:none}
+.city-shop__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:8px}
+.city-shop__name{min-width:0;flex:1;font-size:14px;font-weight:600;line-height:20px;color:var(--k-ink);overflow-wrap:anywhere}
+.city-shop__count{flex-shrink:0;height:17px;padding:0 5px;border-radius:4px;background:var(--k-red-soft);font-size:10px;font-weight:500;line-height:17px;color:var(--k-red-deep)}
+.city-shop__row{position:relative;padding:8px 0;display:flex;flex-direction:column;gap:2px}
+/* 11-18 第二轮精修：分隔换成发丝线 */
+.city-shop__row::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 0}
+.city-shop__title{font-size:13px;line-height:1.5;color:var(--k-ink);overflow-wrap:anywhere}
 .city-shop__meta{font-size:12px;line-height:1.5;color:var(--k-muted)}
 </style>

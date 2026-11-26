@@ -23,7 +23,7 @@ export function badgeGuide(d = {}) {
     actions: [publish]
   }
   if (d.code === 'traveler') return {
-    text: '完成真实的换宿、兼职、全职或住宿体验，并通过评价和社区分享记录旅程。',
+    text: '完成真实的换工、兼职、全职或住宿体验，并通过评价和社区分享记录旅程。',
     actions: [orders, publish]
   }
   if (d.metric === 'manual') return { text: '由平台根据身份核验、任命或评选结果颁发；获得后会显示在“已获得”。', actions: [] }

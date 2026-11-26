@@ -37,7 +37,7 @@ test('活动详情：6 格（3×2），合并后的两格名字和去处对；�
   const gone = []
   const s = vue.ref(4)
   const h = runSetup('pages/staff/activities.vue', {
-    useScreen: () => s, staffCan: () => true, go: u => gone.push(u), R: { staffReviews: '/pages/staff/reviews' }, uni: { getSystemInfoSync: () => ({ windowWidth: 375 }) },
+    groupChatEnabled:vue.ref(true), useScreen: () => s, staffCan: () => true, go: u => gone.push(u), R: { staffReviews: '/pages/staff/reviews' }, uni: { getSystemInfoSync: () => ({ windowWidth: 375 }) },
     sheet: async () => 1, offerDraft: async () => {}
   })
   h.run("d.value = { activityId: 31, title: '海边 徒步&看日落', category: '徒步', startTime: '2026-11-08 09:00:00', endTime: '2026-11-08 12:00:00', capacity: 20, feeFen: 0 }")
@@ -124,7 +124,7 @@ test('成员与群聊页：最上面大按钮进活动群，下面名单；私�
   let boot
   const h = runSetup('pages/staff/activity-members.vue', {
     useScreen: (n, o) => { boot = o.onLoad; return vue.ref(1) }, ensureSession: async () => {}, go: u => gone.push(u), toast: m => toasts.push(m), errText: (e, d) => d,
-    R: { chat: '/pages/community/chat' }, staffCan: () => false, absUrl: x => x,
+    groupChatEnabled:vue.ref(true), privateChatEnabled:vue.ref(true), R: { chat: '/pages/community/chat' }, staffCan: () => false, absUrl: x => x,
     apiStaffActivity: async () => ({ data: { activityId: 31, title: '徒步', checkedIn: 1, phoneWindow: false, canPay: false,
       confirmed: [{ signupId: 1, userId: 5, name: '老王', tag: '已签到', checkedIn: true, phone: '138****0000' }], waiting: [{ signupId: 2, userId: 6, name: '小李', tag: '候补1', phone: '未验证手机号' }], refunds: [{ signupId: 3 }] } }),
     apiChatOpen: async (p) => ({ data: { convId: p.type === 'activity' ? 900 : 901 } }), gated: (fn) => fn()
@@ -132,7 +132,7 @@ test('成员与群聊页：最上面大按钮进活动群，下面名单；私�
   await boot({ id: '31' }); await flush()
   const t = h.template
   assert.ok(t.indexOf('进入活动群聊') < t.indexOf('v-for="sec in sections"'), '进群按钮在名单上面')
-  assert.match(t, /<k-button class="mb-group" block size="lg" icon="message-circle" label="进入活动群聊" @click="openGroup" \/>/)
+  assert.match(t, /<k-button v-if="groupChatEnabled" class="mb-group" block size="lg" icon="message-circle" label="进入活动群聊" @click="openGroup" \/>/)
   assert.deepEqual(JSON.parse(h.run('JSON.stringify(sections.value.map(x => [x.name, x.list.length]))')), [['已确认', 1], ['候补', 1]])
   await h.run('openGroup()')
   await h.run('message(waiting.value[0])')

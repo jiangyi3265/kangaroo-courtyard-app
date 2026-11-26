@@ -1,6 +1,6 @@
 // 寻伴同行页（原「同行队伍 / 找人一起去」，2026-10-18 主人：「搭子页面还是好丑，和我发你的完全不一样」）的文案和分享内容。
 // 只在 jobs 分包里用，不进主包；不引用 @/ 下的模块，node --test 直接测。
-import { API_BASE } from '../../common/config.js'
+import { jobShareWebUrl } from './job-share-url.js'
 
 // 「找个搭子，一起去{城市}做换工」：换宿 = 做换工、兼职 = 做兼职、全职 = 去工作（「一起到大理去工作」比「一起去大理去工作」顺）
 const DOING = { volunteer: '做换工', parttime: '做兼职', fulltime: '去工作' }
@@ -45,8 +45,7 @@ export const jobPath = (jobId) => '/pages/jobs/detail?jobId=' + (Number(jobId) |
  */
 export function shareCopyText({ title, city, jobId, href = '' }) {
   const head = '【袋鼠全球青年】' + (String(title || '').trim() || '一起去旅居打工') + (city ? '｜' + String(city).split('·')[0] : '')
-  if (href) return head + ' ' + href.replace(/#.*$/, '') + '#' + jobPath(jobId)
-  return head + ' ' + API_BASE + '/#' + jobPath(jobId)
+  return head + ' ' + jobShareWebUrl(jobPath(jobId), href)
 }
 
 /** 发到「找搭子」带的地址参数：预选找搭子，关联这个岗位（发布页认 linkType / linkId / linkTitle） */

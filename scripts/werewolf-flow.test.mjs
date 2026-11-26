@@ -16,7 +16,7 @@ test('one night progresses across roles without resetting its total countdown or
 })
 test('music pauses for voice, survives hide/show, and remembers an explicit off preference',()=>{
   const source=fs.readFileSync(new URL('../pages/werewolf/components/ww-sound.vue',import.meta.url),'utf8').split('<script setup>')[1].split('</script>')[0].replace(/^import .*$/gm,'')
-  const busy=vue.ref(false),players=[],hooks={},props=vue.reactive({active:true});let stored
+  const busy=vue.ref(false),players=[],hooks={},props=vue.reactive({active:true,track:'local.mp3',preferenceKey:'kangaroo:werewolf:music'});let stored
   const deps={ref:vue.ref,watch:vue.watch,defineProps:()=>props,voiceBusy:busy,music:'local.mp3',
     uni:{getStorageSync:()=>stored,setStorageSync:(k,v)=>{stored=v}},
     onShow:f=>hooks.show=f,onHide:f=>hooks.hide=f,onBeforeUnmount:f=>hooks.dispose=f,

@@ -155,6 +155,7 @@ function runDiary({ res, fail } = {}) {
   let reach = null
   const sandbox = {
     console, setTimeout, clearTimeout, ...m,
+    watchStayGate: vue.watch, stayBookingEnabled: vue.ref(true), refreshFeatures: async () => ({ stayBookingEnabled: true }),
     ref: vue.ref, computed: vue.computed,
     onReachBottom: (fn) => { reach = fn }, onPageScroll: () => {}, onHide: () => {}, onShow: () => {},
     TAB_DIARY: 'diary', TAB_COMMENT: 'comment', tabFromQuery: () => 'diary', commentTabLabel: (n) => String(n), commentCard: (x) => x, commentList: (a, b) => [...a, ...b],
@@ -217,7 +218,7 @@ test('生活碎片页：结构、注册在 pages/stays 分包、只引用分包�
   const stays = pages.subPackages.find(x => x.root === 'pages/stays')
   assert.ok(stays.pages.some(x => x.path === 'diary' && x.style.navigationStyle === 'custom'))
   assert.ok(!pages.pages.some(x => /diary/.test(x.path)), '主包没有这个页面')
-  for (const x of diaryJs.matchAll(/from '([^']+)'/g)) assert.ok(/^(vue|@dcloudio\/uni-app|@\/common\/(screen|request|ui|upload|experience|routes)\.js|\.\/stays-media\.js|\.\/stays-art\.js|\.\/stay-comments\.js|\.\/stay-video-player\.vue)$/.test(x[1]), x[1])
+  for (const x of diaryJs.matchAll(/from '([^']+)'/g)) assert.ok(/^(vue|@dcloudio\/uni-app|@\/common\/(features|screen|request|ui|upload|experience|routes)\.js|\.\/stays-media\.js|\.\/stays-art\.js|\.\/stay-comments\.js|\.\/stay-video-player\.vue)$/.test(x[1]), x[1])
   const css = diary.styles.map(s => s.content).join('\n').replace(/\/\*[\s\S]*?\*\//g, '')
   assert.ok(!/[>+~]\s*:(?!:)[a-z-]/i.test(css), '微信 WXSS 不认 > :first-child')
   compiles(diary, 'diary.vue')
@@ -229,11 +230,11 @@ test('视频上传 helper：员工端 / 写评价两份内容相同，各在自�
   const a = read('pages/staff/stay-video.js').split('\n').slice(3).join('\n')
   const b = read('pages/profile/review-video.js').split('\n').slice(3).join('\n')
   assert.equal(a, b, '除了开头说明，两份完全一样')
-  assert.equal(sv.VIDEO_MAX_MB, 50)
+  assert.equal(sv.VIDEO_MAX_MB, 200)
   assert.equal(sv.VIDEO_MAX_SECONDS, 60)
   assert.equal(sv.PART_BYTES, 8 * 1024 * 1024)
   const java = fs.readFileSync(path.join(APP, '../RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/core/KgVideoUploads.java'), 'utf8')
-  assert.match(java, /MAX_BYTES = 50L \* 1024 \* 1024;/)
+  assert.match(java, /MAX_BYTES = 200L \* 1024 \* 1024;/)
   assert.match(java, /MAX_SECONDS = 60;/)
   assert.match(java, /PART_BYTES = 8 \* 1024 \* 1024;/)
   // 小程序直接用 wx.request 发原始字节；ArrayBuffer 用类型标签判断
@@ -251,14 +252,14 @@ test('视频上传 helper：选完先查（格式 / 大小 / 时长），分段�
   assert.equal(sv.videoProblem({ path: 'wxfile://tmp_a.mp4', size: 1000, duration: 59.9 }), '')
   assert.equal(sv.videoProblem({ path: 'http://tmp/IMG.MOV', size: 1000, duration: 60.4 }), '', '四舍五入的余量')
   assert.match(sv.videoProblem({ path: 'a.avi', size: 10, duration: 1 }), /mp4 \/ mov/)
-  assert.match(sv.videoProblem({ path: 'a.mp4', size: 51 * 1024 * 1024, duration: 1 }), /50MB/)
+  assert.match(sv.videoProblem({ path: 'a.mp4', size: 201 * 1024 * 1024, duration: 1 }), /200MB/)
   assert.match(sv.videoProblem({ path: 'a.mp4', size: 10, duration: 75 }), /60 秒/)
   assert.match(sv.videoProblem({ path: 'a.mp4', size: 0, duration: 1 }), /空的/)
   assert.match(sv.videoProblem(null), /没有选到/)
-  // 小院介绍视频（3分钟看小院）：3 分钟、100MB 以内
-  assert.equal(sv.videoProblem({ path: 'a.mp4', size: 99 * 1024 * 1024, duration: 175 }, true), '')
+  // 小院介绍视频（3分钟看小院）：3 分钟、200MB 以内
+  assert.equal(sv.videoProblem({ path: 'a.mp4', size: 200 * 1024 * 1024, duration: 175 }, true), '')
   assert.match(sv.videoProblem({ path: 'a.mp4', size: 10, duration: 185 }, true), /3 分钟/)
-  assert.match(sv.videoProblem({ path: 'a.mp4', size: 101 * 1024 * 1024, duration: 10 }, true), /100MB/)
+  assert.match(sv.videoProblem({ path: 'a.mp4', size: 201 * 1024 * 1024, duration: 10 }, true), /200MB/)
   assert.match(sv.videoProblem({ path: 'blob:x', name: 'clip.mp4', size: 10, duration: 1 }), /^$/, '网页版看 File 的名字')
   const size = sv.PART_BYTES + 5
   const calls = []

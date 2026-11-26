@@ -2,7 +2,7 @@
   <!-- 评价指定横屏；其他入口按视频比例。画面占满播放区域，关闭栏悬浮，不挤占视频高度。 -->
   <view v-if="src" class="svp" :class="{ 'svp--land': rotate }" :style="rotateStyle" @touchmove.stop.prevent="noop">
     <view class="svp__bar" :style="'padding-top: ' + barTop + 'px'">
-      <view class="svp__close" hover-class="k-press-s" @click="close"><k-icon name="x" :size="18" color="white" :stroke="2.2" /><text class="svp__close-text">关闭</text></view>
+      <view class="svp__close" hover-class="k-press-s" @click="close"><k-icon name="x" :size="18" color="white" /><text class="svp__close-text">关闭</text></view>
       <text v-if="title" class="svp__title">{{ title }}</text>
     </view>
     <video :id="vid" class="svp__video" :src="fullSrc" :poster="fullPoster" autoplay controls show-fullscreen-btn show-center-play-btn :enable-progress-gesture="!rotate" object-fit="contain" :direction="fullDir"
@@ -145,7 +145,7 @@ function close() {
 .svp--land { right: auto; bottom: auto; transform-origin: 0 0; }
 .svp__bar { position: absolute; z-index: 2; top: 0; left: 0; right: 0; padding-left: 12px; padding-right: 12px; padding-bottom: 12px; display: flex; align-items: center; gap: 10px; background: linear-gradient(rgba(0, 0, 0, .55), transparent); pointer-events: none; }
 .svp__close { min-height: 44px; padding: 0 12px; border-radius: 999px; background: rgba(0, 0, 0, .45); display: flex; align-items: center; gap: 4px; pointer-events: auto; }
-.svp__close-text { color: #fff; font-size: 14px; }
+.svp__close-text { color: var(--k-paper); font-size: 14px; }
 .svp__title { flex: 1; min-width: 0; color: rgba(255, 255, 255, .86); font-size: 14px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .svp__video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #000; }
 </style>

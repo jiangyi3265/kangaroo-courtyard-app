@@ -3,33 +3,10 @@
     {
       "path": "pages/home/index",
       "style": {
+        "componentPlaceholder": { "handbook-carousel": "view" },
         "navigationStyle": "custom",
         "enableShareAppMessage": true,
         "enableShareTimeline": true
-      }
-    },
-    {
-      "path": "pages/auth/login",
-      "style": {
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/auth/identity",
-      "style": {
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/auth/onboarding",
-      "style": {
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/auth/legal",
-      "style": {
-        "navigationStyle": "custom"
       }
     },
     {
@@ -72,6 +49,15 @@
     }
   ],
   "subPackages": [
+    {
+      "root": "pages/auth",
+      "pages": [
+        { "path": "login", "style": { "navigationStyle": "custom" } },
+        { "path": "identity", "style": { "navigationStyle": "custom" } },
+        { "path": "onboarding", "style": { "navigationStyle": "custom" } },
+        { "path": "legal", "style": { "navigationStyle": "custom" } }
+      ]
+    },
     { "root": "pages/camp", "pages": [
       { "path": "index", "style": { "navigationStyle": "custom" } },
       { "path": "handbook", "style": { "navigationStyle": "custom" } }
@@ -101,6 +87,7 @@
         {
           "path": "room",
           "style": {
+            "componentPlaceholder": { "ww-chat": "view" },
             "navigationStyle": "custom"
           }
         },
@@ -129,6 +116,7 @@
           "path": "index",
           "style": {
             "navigationStyle": "custom",
+            "navigationBarTextStyle": "white",
             "enablePullDownRefresh": true,
             "enableShareAppMessage": true,
             "enableShareTimeline": true
@@ -710,6 +698,7 @@
         {
           "path": "stay-orders",
           "style": {
+            "componentPlaceholder": { "stay-after-refund": "view" },
             "navigationStyle": "custom"
           }
         },
@@ -897,6 +886,7 @@
         {
           "path": "index",
           "style": {
+            "componentPlaceholder": { "ww-chat": "view", "ww-sound": "view" },
             "navigationStyle": "custom",
             "enableShareAppMessage": true
           }
@@ -915,7 +905,7 @@
   "globalStyle": {
     "navigationStyle": "custom",
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "袋鼠全球青年",
+    "navigationBarTitleText": "袋鼠青年旅行",
     "navigationBarBackgroundColor": "#FCF9F3",
     "backgroundColor": "#FCF9F3",
     "backgroundTextStyle": "dark"

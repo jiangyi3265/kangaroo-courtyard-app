@@ -525,9 +525,9 @@ onUnload(() => {
 .rb-row__meta { display: block; font-size: 14px; line-height: 22px; color: var(--k-muted); }
 .rb-row__reason { display: block; font-size: 14px; line-height: 22px; color: var(--k-alert); }
 .rb-row__side { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.rb-row__amount { font-size: 17px; font-weight: 700; line-height: 24px; color: var(--k-ink); }
+.rb-row__amount { font-size: 17px; font-weight: 700; line-height: 24px; color: var(--k-ink); font-variant-numeric: tabular-nums; }
 // 状态：字写着，颜色帮着认。对比度都在 4.5:1 以上
-.rb-tag { display: inline-block; padding: 0 8px; border-radius: 6px; font-size: 13px; line-height: 24px; white-space: nowrap; }
+.rb-tag { display: inline-block; padding: 0 8px; border-radius: 4px; font-size: 13px; line-height: 24px; white-space: nowrap; }
 .rb-tag--wait { background: var(--k-ochre-soft); color: var(--k-ochre-deep); }
 .rb-tag--pass { background: var(--k-indigo-soft); color: var(--k-indigo); }
 .rb-tag--back { background: var(--k-alert-soft); color: var(--k-alert); }
@@ -541,7 +541,7 @@ onUnload(() => {
 .rb-sum { padding: 16px; }
 .rb-sum__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rb-sum__hint { font-size: 14px; line-height: 24px; color: var(--k-ink2); }
-.rb-sum__amount { display: block; margin-top: 10px; font-size: 30px; font-weight: 700; line-height: 38px; color: var(--k-ink); }
+.rb-sum__amount { display: block; margin-top: 10px; font-size: 30px; font-weight: 700; line-height: 38px; color: var(--k-ink); font-variant-numeric: tabular-nums; }
 .rb-sum__name { display: block; font-size: 16px; line-height: 24px; color: var(--k-ink); overflow-wrap: anywhere; }
 .rb-remark { display: block; font-size: 16px; line-height: 26px; color: var(--k-ink2); white-space: pre-wrap; overflow-wrap: anywhere; }
 // 撤回是危险操作，用提醒红的浅底（4.5:1），不抢「修改后再交」那种主操作的实心棕

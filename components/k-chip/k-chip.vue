@@ -21,15 +21,15 @@ const iconColor = computed(() => props.selected ? 'red' : ({ green: 'green', blu
 </script>
 
 <style scoped lang="scss">
-.k-chip { display: inline-flex; align-items: center; gap: 3px; height: 20px; padding: 0 6px; border-radius: 6px; border: 1px solid transparent; font-size: 11px; line-height: 1; white-space: nowrap; color: var(--k-ink2); background: var(--k-paper2); flex: 0 0 auto; }
+.k-chip { display: inline-flex; align-items: center; gap: 3px; height: 17px; padding: 0 5px; border-radius: 4px; border: 1px solid transparent; font-size: 10px; font-weight: 500; line-height: 1; white-space: nowrap; color: var(--k-ink2); background: var(--k-paper2); flex: 0 0 auto; }
 .is-green { color: var(--k-green); background: var(--k-green-soft); }
 .is-blue { color: var(--k-indigo); background: var(--k-indigo-soft); }
 .is-ochre { color: var(--k-ochre-deep); background: var(--k-ochre-soft); }
 .is-red { color: var(--k-alert); background: var(--k-alert-soft); }
 .is-ink { color: var(--k-ink); background: var(--k-paper2); }
 .is-outline { background: transparent; border-color: currentColor; }
-/* 筛选胶囊：奶油底不描边；选中时底色、文字、边框一起变（棕字用深一档的 --k-red-deep，浅底上才够清楚） */
-.is-pill { height: 32px; padding: 0 14px; border-radius: 999px; font-size: 13px; color: var(--k-ink2); background: var(--k-paper2); border-color: transparent; }
+/* 筛选胶囊（11-18 精修词典）：白底不描边；选中时底色、文字、边框一起变（棕字用深一档的 --k-red-deep，浅底上才够清楚） */
+.is-pill { height: 28px; padding: 0 12px; border-radius: 14px; font-size: 12px; font-weight: 400; color: var(--k-ink2); background: var(--k-paper); border-color: transparent; }
 .is-pill.is-green { color: var(--k-green); background: var(--k-green-soft); }
-.is-selected { color: var(--k-red-deep); background: var(--k-red-soft); border-color: var(--k-red-line); font-weight: 600; }
+.is-selected { color: var(--k-red-deep); background: var(--k-red-soft); border-color: var(--k-red-line); font-weight: 500; }
 </style>

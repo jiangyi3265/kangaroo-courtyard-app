@@ -1,8 +1,8 @@
 // 2026-10-30 商家端（V63）：node --test，不需要构建、不发真实请求。
 // 守住这几件事：
 //   · 成为商家：不问「想招的人」，填完即开通，刷新账号后进商家端；没自动开通的只看进度；已是商家的不再给表；
-//   · 底栏：merchant、merchant_service、city_lead 只有 首页 / 消息 / 我的，各页传 active="business" 时亮「首页」；其他角色不变；
-//   · 商家首页：四个板块 + 体验反馈 + 我发布的；房源、活动、报名入口不在首页；「线上任务」直接进发布，代运营、抖音卖房单独两个入口（10-31 主人拍板）；
+//   · 合作商家与只读城市负责人用三栏；商家服务人由业务栏处理本城申请；全权限城市负责人使用完整工作台；
+//   · 商家首页四个发布板块及经营入口；「线上任务」直接进发布，代运营、抖音卖房单独进入表单；
 //   · 代运营 / 抖音卖房表单、需求进度、被退回后修改；线上任务回发布表单里改；
 //   · 商家发招募、线上任务的文案说的是换工主理人 / 商家服务人，其他角色还是平台审核；
 //   · 新页在 staff 分包，白名单和 pages.json 同步，主包 common/api.js 没加接口。
@@ -26,6 +26,8 @@ const flush = () => new Promise(resolve => setImmediate(resolve))
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, hmr: false } })
 const session = await vite.ssrLoadModule('/common/experience.js')
 const logic = await vite.ssrLoadModule('/pages/staff/merchant-request-logic.js')
+const merchantDraft = await vite.ssrLoadModule('/pages/profile/merchant-draft.js')
+const { createPhoneBinding } = await vite.ssrLoadModule('/pages/auth/phone-binding.js')
 await vite.close()
 
 /** 在沙箱里跑页面的 script setup：导入一律先给永远不返回的函数，再用 stubs 覆盖用得到的那几个 */
@@ -52,34 +54,39 @@ test('experience：三个新标志只看当前门店的角色；切到别的门�
   session.logout()
   session.acceptAuthenticatedAccount({ id: 'm', staffGrants: [
     { storeId: 1, roleCode: 'merchant', active: true }, { storeId: 2, roleCode: 'merchant_service', active: true },
-    { storeId: 3, roleCode: 'city_lead', active: true }, { storeId: 4, roleCode: 'keeper', active: true }, { storeId: 5, roleCode: 'online_staff', active: true }
+    { storeId: 3, roleCode: 'city_lead', active: true }, { storeId: 4, roleCode: 'keeper', active: true }, { storeId: 5, roleCode: 'online_staff', active: true },
+    { storeId: 6, roleCode: 'city_lead', active: true, fullAccess: true }
   ] })
   const flags = () => [session.merchantStaff.value, session.merchantService.value, session.cityLead.value, session.threeTabStaff.value]
   session.setStaffStore(1); assert.deepEqual(flags(), [true, false, false, true])
-  session.setStaffStore(2); assert.deepEqual(flags(), [false, true, false, true])
+  session.setStaffStore(2); assert.deepEqual(flags(), [false, true, false, false])
   session.setStaffStore(3); assert.deepEqual(flags(), [false, false, true, true])
   session.setStaffStore(4); assert.deepEqual(flags(), [false, false, false, false])
   session.setStaffStore(5); assert.deepEqual(flags(), [false, false, false, false])
+  session.setStaffStore(6); assert.deepEqual(flags(), [false, false, true, false])
   session.logout()
   assert.equal(session.threeTabStaff.value, false)
 })
 
 // ---------------------------------------------------------------- 底栏
-function tabbarOf({ threeTab = false, online = false, active = 'work', mode = 'staff' } = {}) {
+function tabbarOf({ threeTab = false, service = false, online = false, active = 'work', mode = 'staff' } = {}) {
   const h = runSetup('components/k-tabbar/k-tabbar.vue', {
-    threeTabStaff: { value: threeTab }, onlineStaff: { value: online }, unreadCount: { value: 0 }, props: { active, mode, theme: '', badge: '' },
+    threeTabStaff: { value: threeTab }, merchantService: { value: service }, onlineStaff: { value: online }, unreadCount: { value: 0 },
     communityEnabled: { value: true },
     defineProps: () => ({ active, mode, theme: '', badge: '' })
   })
   return { keys: h.json('items.value.map(i => i.key)'), labels: h.json('items.value.map(i => i.label)'), on: h.run('on.value'), stop: h.stop }
 }
-test('底栏：商家、商家服务人、城市负责人三个 tab；各页传 business 时亮首页；其他角色和用户身份不变', () => {
+test('底栏：合作商家和只读城市负责人三栏；商家服务人有业务栏；其他员工及用户按身份展示', () => {
   const three = tabbarOf({ threeTab: true, active: 'business' })
   assert.deepEqual(three.keys, ['work', 'messages', 'profile'])
   assert.deepEqual(three.labels, ['首页', '消息', '我的'])
   assert.equal(three.on, 'work', '在没有「业务」格的身份下，online-jobs 这类页面传 business 也要有高亮')
   assert.equal(tabbarOf({ threeTab: true, active: 'messages' }).on, 'messages')
   assert.equal(tabbarOf({ threeTab: true, active: 'profile' }).on, 'profile')
+  const service = tabbarOf({ service: true, active: 'business' })
+  assert.deepEqual(service.labels, ['工作台', '业务', '消息', '我的'])
+  assert.equal(service.on, 'business')
   const keeper = tabbarOf({ active: 'business' })
   assert.deepEqual(keeper.labels, ['工作台', '业务', '发布', '消息', '我的'])
   assert.equal(keeper.on, 'business')
@@ -96,7 +103,13 @@ test('底栏：所有员工模式页面传的 active 都是这四个值之一（
       const tag = m[0]
       const fixed = /\sactive="([^"]+)"/.exec(tag)
       const bound = /:active="([^"]+)"/.exec(tag)
-      const values = fixed ? [fixed[1]] : [...(bound ? bound[1] : '').matchAll(/'([^']+)'/g)].map(x => x[1])
+      let values = fixed ? [fixed[1]] : [...(bound ? bound[1] : '').matchAll(/'([^']+)'/g)].map(x => x[1])
+      if (rel === 'pages/staff/components/k-service-work.vue' && bound?.[1] === 'activeTab') {
+        assert.match(sfc(rel).scriptSetup.content, /activeTab:\s*\{[^}]*default:\s*'work'/)
+        assert.match(sfc('pages/staff/index.vue').template.content, /<k-service-work\s+v-else-if="merchantService"\s*\/>/)
+        assert.match(sfc('pages/staff/business.vue').template.content, /<k-service-work\s+v-else-if="merchantService"\s+active-tab="business"\s*\/>/)
+        values = ['work', 'business']
+      }
       found.push(rel)
       assert.ok(values.length > 0, rel + ' ' + tag)
       for (const v of values) assert.ok(['work', 'business', 'messages', 'profile'].includes(v), rel + ' ' + tag)
@@ -107,20 +120,164 @@ test('底栏：所有员工模式页面传的 active 都是这四个值之一（
 })
 
 // ---------------------------------------------------------------- 成为商家
-function merchantPage({ apply, grants = [] } = {}) {
+function merchantPage({ apply, grants = [], account = { id: 7, nickname: '阿杰', phoneVerified: true, phone: '139****5678' }, stubs = {} } = {}) {
   const log = { toasts: [], posted: [], alerts: [], launched: [], refreshed: 0, store: [], modes: [] }
   const staffStores = vue.ref(grants)
   const h = runSetup('pages/profile/merchant.vue', {
-    toast: m => log.toasts.push(m), errText: (e, d) => (e && e.message) || d, experience: { account: { nickname: '阿杰' } }, staffStores,
+    ...merchantDraft, toast: m => log.toasts.push(m), errText: (e, d) => (e && e.message) || d, experience: vue.reactive({ account }), staffStores,
+    apiMerchantApply: async () => ({ data: { latest: null } }),
     apiSubmitMerchantApply: async (b) => { log.posted.push(plain(b)); return apply(b) },
     alert: async (t, m) => { log.alerts.push([t, m]) },
     refreshAccount: async () => { log.refreshed++; staffStores.value = [{ storeId: 77, roleCode: 'merchant', active: true }] },
     setStaffStore: id => log.store.push(id), switchMode: m => { log.modes.push(m); return R.staff },
-    uni: { reLaunch: o => log.launched.push(o.url), pageScrollTo() {} }
+    uni: { reLaunch: o => log.launched.push(o.url), pageScrollTo() {} },
+    ...stubs
   })
-  h.run("Object.assign(form, { contactName: '阿杰', phone: '13912345678', city: '大理', storeType: 'homestay', storeName: '喜洲小院' })")
+  h.run("Object.assign(form, { contactName: '阿杰', city: '大理', storeType: 'homestay', storeName: '喜洲小院' })")
   return { h, log }
 }
+test('成为商家：旧账号有号码但未完成验证，完整申请也不能提交', async (t) => {
+  const { h, log } = merchantPage({
+    account: { id: 7, nickname: '阿杰', phoneBound: true, phoneVerified: false, phone: '139****5678' }
+  })
+  t.after(h.stop)
+  await h.run('submit()')
+  assert.deepEqual(log.posted, [])
+  assert.match(log.toasts.at(-1), /验证|授权/)
+  assert.equal(h.run('form.storeName'), '喜洲小院')
+  assert.deepEqual(log.launched, [])
+})
+test('成为商家：取消微信授权可继续填草稿，重新授权成功后可在同一表单提交', async (t) => {
+  const account = { id: 7, nickname: '阿杰', phoneVerified: false, phone: '' }
+  const versions = { termsVersion: 'aaaaaaaaaaaaaaaa', privacyVersion: 'bbbbbbbbbbbbbbbb' }
+  const consentRows = Object.entries(versions).map(([k, version]) => ({ doc: k.replace('Version', ''), version }))
+  const requests = []
+  let onLoad, onShow, h
+  const bindWechatPhone = createPhoneBinding({
+    restore: async () => {}, login: () => assert.fail('登录过的商家无需再次登录'),
+    account: () => h.sandbox.experience.account,
+    async verify(code) {
+      assert.equal(code, 'test-wechat-code')
+      requests.push('verify')
+      return { data: { ...account, phoneVerified: true, phoneBound: true, phone: '138****1234' } }
+    },
+    accept: bound => { h.sandbox.experience.account = bound }
+  })
+  const page = merchantPage({ account, apply: async () => ({ data: { approved: false, message: '已提交' } }),
+    stubs: {
+      onLoad(fn) { onLoad = fn }, onShow(fn) { onShow = fn },
+      ensureSession: async () => {}, apiMerchantApply: async () => ({ data: {} }),
+      readMerchantDraft: () => null, saveMerchantDraft: () => true, removeMerchantDraft() {},
+      bindWechatPhone, refreshAccount: async () => {}, getSessionRevision: () => 1,
+      loadLegalVersions: async () => versions,
+      apiMeAuthorizations: async () => ({ data: { consents: consentRows } }),
+      post: async (path, input) => {
+        assert.equal(path, '/app/me/consent/legal')
+        assert.deepEqual(plain(input), versions)
+        requests.push('consent')
+      }
+    }
+  })
+  h = page.h
+  t.after(h.stop)
+  await onLoad({})
+  await onShow()
+  await flush()
+  h.run("Object.assign(form, { contactName: '阿杰', city: '大理', storeType: 'homestay', storeName: '喜洲小院' })")
+  const prior = h.json('form')
+  await h.run("verifyMerchantPhone({ detail: { errMsg: 'getPhoneNumber:fail user deny' } })")
+  assert.deepEqual(requests, [])
+  assert.deepEqual(h.json('form'), prior)
+  assert.equal(h.sandbox.experience.account.phoneVerified, false)
+  await h.run("verifyMerchantPhone({ detail: { code: 'test-wechat-code', errMsg: 'getPhoneNumber:ok' } })")
+  assert.deepEqual(requests, ['consent', 'verify'])
+  assert.deepEqual(h.json('form'), prior)
+  assert.equal(h.sandbox.experience.account.phone, '138****1234')
+  await h.run('submit()')
+  assert.equal(page.log.posted.length, 1)
+  assert.equal(page.log.posted[0].useVerifiedPhone, true)
+  assert.equal(page.log.posted[0].expectedPhoneMask, '138****1234')
+  assert.equal('phone' in page.log.posted[0], false)
+  assert.deepEqual(page.log.launched, [])
+})
+test('成为商家：其他设备更换手机号时保留表单，显示新号码后可重新提交', async (t) => {
+  const { h, log } = merchantPage({ apply: async ({ expectedPhoneMask }) => {
+    if (expectedPhoneMask === '139****5678') throw Object.assign(new Error('手机号已更新，请确认后重新提交'), { code: 409 })
+    return { data: { approved: false } }
+  } })
+  t.after(h.stop)
+  h.sandbox.refreshAccount = async () => { h.sandbox.experience.account.phone = '135****2233' }
+  const prior = h.json('form')
+  await h.run('submit()')
+  assert.equal(log.posted.length, 1)
+  assert.deepEqual(h.json('form'), prior)
+  assert.equal(h.run('waiting.value'), false)
+  assert.equal(h.run('verifiedPhone.value'), '135****2233')
+  assert.match(log.toasts.at(-1), /重新提交/)
+  await h.run('submit()')
+  assert.deepEqual(log.posted.map(b => b.expectedPhoneMask), ['139****5678', '135****2233'])
+  assert.equal(h.run('waiting.value'), true)
+  assert.deepEqual(log.launched, [])
+})
+test('成为商家：待审和已联系的申请重进只看进度，退回后返回可再申请', async (t) => {
+  let latest, onShow
+  const { h, log } = merchantPage({ stubs: {
+    onShow(fn) { onShow = fn },
+    apiMerchantApply: async () => ({ data: { latest } }), refreshAccount: async () => {}
+  } })
+  t.after(h.stop)
+  h.run('initialized = true')
+  for (const status of ['new', 'contacted']) {
+    latest = { status, open: true, canResubmit: false, storeName: '喜洲小院' }
+    await h.run('load()')
+    assert.equal(h.run('waiting.value'), true, status)
+    assert.equal(h.run('latest.value.storeName'), '喜洲小院')
+    await h.run('submit()')
+    assert.equal(log.posted.length, 0)
+  }
+  latest = { status: 'rejected', open: false, canResubmit: true }
+  await onShow()
+  await flush()
+  assert.equal(h.run('latest.value.status'), 'rejected')
+  assert.equal(h.run('waiting.value'), false)
+  latest = { status: 'settled', open: false, canResubmit: false, merchantActive: true }
+  h.sandbox.refreshAccount = async () => { throw new Error('网络连接失败') }
+  await h.run('load()')
+  assert.equal(h.run('waiting.value'), true, '已获批时刷新身份失败不应再次展示申请表')
+  latest = { status: 'settled', open: false, canResubmit: true, merchantActive: false }
+  await h.run('load()')
+  assert.equal(h.run('waiting.value'), false, '商家授权已结束，允许按服务端状态重新申请')
+})
+test('成为商家：另一设备已提交时刷新进度，更早的请求不会重新打开申请表', async (t) => {
+  let reply, calls = 0
+  const { h, log } = merchantPage({
+    apply() { throw Object.assign(new Error('申请正在审核，请勿重复提交'), { code: 409 }) },
+    stubs: {
+      apiMerchantApply() {
+        if (++calls === 1) return new Promise(resolve => { reply = resolve })
+        return Promise.resolve({ data: { latest: { status: 'new', open: true } } })
+      },
+      refreshAccount: async () => {}
+    }
+  })
+  t.after(h.stop)
+  const early = h.run('load()')
+  await h.run('submit()')
+  assert.equal(h.run('waiting.value'), true)
+  reply({ data: { latest: null } })
+  await early
+  assert.equal(h.run('latest.value.status'), 'new')
+  await h.run('submit()')
+  assert.equal(log.posted.length, 1)
+})
+test('成为商家：从协议返回时刷新申请，保留已经读完的文档', async (t) => {
+  const h = merchantPage({}).h
+  t.after(h.stop)
+  h.run("phoneConsentVersions.value = { termsVersion: 'v1', privacyVersion: 'v2' }; phoneReads.value = { terms: 'v1' }")
+  await h.run('load()')
+  assert.equal(h.run('phoneReads.value.terms'), 'v1')
+  assert.equal(h.run('phoneConsentVersions.value.privacyVersion'), 'v2')
+})
 test('成为商家：页面没有「想招的人」；提交即开通，刷新账号、切到新门店、进商家端', async (t) => {
   const tpl = sfc('pages/profile/merchant.vue').template.content
   assert.ok(!tpl.includes('想招的人'))
@@ -129,12 +286,38 @@ test('成为商家：页面没有「想招的人」；提交即开通，刷新�
   t.after(h.stop)
   await h.run('submit()')
   assert.equal(log.posted.length, 1)
+  assert.equal(log.posted[0].useVerifiedPhone, true)
+  assert.equal(log.posted[0].expectedPhoneMask, '139****5678')
+  assert.ok(!('phone' in log.posted[0]), '服务端使用已验证号码，申请不传明文手机号')
   assert.ok(!('wantTypes' in log.posted[0]), '不传想招的人')
   assert.deepEqual(log.alerts, [['已开通', '已通过，可以开始发布招募了']])
   assert.equal(log.refreshed, 1)
   assert.deepEqual(log.store, [77])
   assert.deepEqual(log.modes, ['staff'])
   assert.deepEqual(log.launched, [R.staff])
+})
+test('入驻复查：指定的新店尚未出现在授权里，不能自动进入另一家门店', async (t) => {
+  const { h, log } = merchantPage({ apply: async () => ({ data: { approved: true, storeId: 99 } }) })
+  t.after(h.stop)
+  await h.run('submit()')
+  assert.deepEqual(log.store, [])
+  assert.deepEqual(log.launched, [])
+  assert.match(log.toasts.at(-1), /门店|商家身份/)
+})
+test('入驻复查：开通提示显示期间改用了其他账号，不跳转其商家工作台', async (t) => {
+  let confirmed
+  const { h, log } = merchantPage({
+    apply: async () => ({ data: { approved: true, storeId: 77 } }),
+    stubs: { alert: () => new Promise(resolve => { confirmed = resolve }) }
+  })
+  t.after(h.stop)
+  const pending = h.run('submit()')
+  await new Promise(resolve => setImmediate(resolve))
+  h.sandbox.experience.account = { id: 8 }
+  confirmed()
+  await pending
+  assert.deepEqual(log.store, [])
+  assert.deepEqual(log.launched, [])
 })
 test('成为商家：没自动开通只显示进度；已是商家给按钮不给表；进商家端失败不跳走', async (t) => {
   const pending = merchantPage({ apply: async () => ({ data: { approved: false, message: '已提交，袋鼠小院会尽快电话联系你', latest: { status: 'new', open: true } } }) })
@@ -176,7 +359,7 @@ function homePage({ rows = [], hasMore = false } = {}) {
 test('商家首页保留四个发布板块，提供房源、结算与任务发布费用入口', async (t) => {
   const { h, log } = homePage({ rows: [{ requestId: 1, storeId: 9, status: 'dispatched', statusLabel: '换工主理人完善中' }, { requestId: 2, storeId: 9 }], hasMore: true })
   t.after(h.stop)
-  assert.deepEqual(h.json('boards.map(b => b.label)'), ['招募换工', '招募兼职', '招募全职', '线上任务'])
+  assert.deepEqual(h.json('boards.map(b => b.label)'), ['招募换工', '招募兼职', '招募全职', '发布任务'])
   assert.doesNotMatch(h.template, /体验反馈/)
   assert.match(h.template, /我的需求/)
   assert.doesNotMatch(h.template, /员工端/)
@@ -196,6 +379,42 @@ test('商家首页保留四个发布板块，提供房源、结算与任务发�
   await h.run('loadMore()')
   assert.deepEqual(h.json('rows.value.map(r => r.requestId)'), [1, 2, 3])
   assert.equal(h.run('hasMore.value'), false)
+  await h.run('selectRequestType("parttime")')
+  assert.deepEqual(log.gets.at(-1), [logic.REQUEST_API, { storeId: 9, type: 'parttime', pageNum: 1, pageSize: 10 }])
+  assert.match(h.template, /request__cover/)
+  assert.match(h.template, /r\.applicationCount/)
+})
+test('岗位列表刷新期间点查看更多，不把旧分类的页码拼到新列表', async t => {
+  const { h, log } = homePage({ rows: [{ requestId: 1 }], hasMore: true })
+  t.after(h.stop)
+  await h.run('load()')
+  const refresh = h.run('load()')
+  await h.run('loadMore()')
+  await refresh
+  assert.deepEqual(log.gets.map(([, params]) => params.pageNum), [1, 1])
+  await h.run('loadMore()')
+  assert.equal(log.gets.at(-1)[1].pageNum, 2)
+})
+test('旧分类翻页还在网络上时，新分类可以翻页且只显示自己的结果或错误', async t => {
+  const { h } = homePage()
+  t.after(h.stop)
+  const pending = [], toasts = []
+  h.sandbox.get = async (_, p) => p.pageNum === 1
+    ? { data: { rows: [{ requestId: p.type ? 20 : 10 }], hasMore: true } }
+    : new Promise((resolve, reject) => pending.push({ resolve, reject }))
+  h.sandbox.toast = text => toasts.push(text)
+  await h.run('load()')
+  const oldPage = h.run('loadMore()')
+  await h.run("selectRequestType('parttime')")
+  const newPage = h.run('loadMore()')
+  assert.equal(pending.length, 2)
+  pending[0].reject(new Error('旧分类加载失败'))
+  await oldPage
+  assert.deepEqual(toasts, [])
+  assert.equal(h.run('loadingMore.value'), true)
+  pending[1].resolve({ data: { rows: [{ requestId: 22 }], hasMore: false } })
+  await newPage
+  assert.deepEqual(h.json('rows.value.map(r => r.requestId)'), [20, 22])
 })
 // 10-31 主人拍板：代运营、抖音卖房拿出来单独放，点「线上任务」直接进发布，不再弹三选一（原来这里断言三选一）
 test('商家首页：「线上任务」直接进发布、不弹三选一；「申请代运营」「抖音卖房」单独两个入口，各去各的表单', async (t) => {
@@ -252,7 +471,7 @@ function requestPage({ detail = null, rows = [], fail = null } = {}) {
   const log = { posted: [], puts: [], toasts: [], alerts: [], launched: [], replaced: [], gets: [] }
   let onLoad = null
   const h = runSetup('pages/staff/merchant-request.vue', {
-    R, onLoad: fn => { onLoad = fn }, ensureSession: async () => {}, currentStaffStoreId: () => 9, experience: { account: { nickname: '小杰' } }, absUrl: x => x,
+    R, onLoad: fn => { onLoad = fn }, ensureSession: async () => {}, currentStaffStoreId: () => 9, experience: vue.reactive({ mode: 'staff', account: { id: 1, nickname: '小杰' } }), absUrl: x => x,
     APPLY_KINDS: logic.APPLY_KINDS, REQUEST_API: logic.REQUEST_API, formProblem: logic.formProblem, requestFollowUp: logic.requestFollowUp, requestSteps: logic.requestSteps, requestTone: logic.requestTone, resubmitUrl: logic.resubmitUrl, staffWording: logic.staffWording,
     toast: m => log.toasts.push(m), errText: (e, d) => (e && e.message) || d, alert: async (t, m) => { log.alerts.push([t, m]) }, replace: u => log.replaced.push(u), go() {},
     get: async (url, params) => { log.gets.push(plain([url, params])); return url === logic.REQUEST_API ? { data: { rows } } : { data: detail } },
@@ -293,6 +512,28 @@ test('申请代运营：先带上上一条留的联系人；协议取消不提�
   assert.deepEqual(bad.log.launched, [])
   assert.equal(bad.log.toasts.pop(), '请填写 11 位手机号')
   assert.equal(bad.h.run('submitting.value'), false)
+})
+test('商家已输入的联系人不会被迟到的预填覆盖，切换账号后旧表单不能继续提交', async t => {
+  const {h, load, log} = requestPage()
+  t.after(h.stop)
+  let receive, approve
+  h.sandbox.get = () => new Promise(resolve => { receive = resolve })
+  await load({type:'managed', storeId:'9'})
+  h.run("Object.assign(form,{content:'代运营',contactName:'新联系人',contactPhone:'13912345678'})")
+  receive({data:{rows:[{contactName:'上次联系人',contactPhone:'13911111111'}]}})
+  await flush()
+  assert.equal(h.run('form.contactName'), '新联系人')
+  h.sandbox.approval = () => new Promise(resolve => { approve = resolve })
+  h.run('merchantAgreement.value={confirm:approval}')
+  const sending = h.run('submit()')
+  h.sandbox.experience.account = { id: 2, nickname:'另一位商家' }
+  await flush()
+  approve(true)
+  await sending
+  assert.deepEqual(log.posted, [])
+  assert.deepEqual(log.launched, [])
+  assert.equal(h.run('form.contactPhone'), '')
+  assert.equal(h.run('editing.value'), false)
 })
 test('需求进度：被退回的代运营就地改了再交（PUT）；线上任务回发布表单；没有可编辑时没有入口', async (t) => {
   const row = { requestId: 5, storeId: 9, requestType: 'managed', status: 'returned', typeLabel: '代运营', statusLabel: '已退回，可修改后再提交', title: '代运营 · 喜洲小院', content: '原来的说明', contactName: '阿杰', contactPhone: '13912345678', images: ['/profile/upload/a.jpg'], returnReason: '请写清房间数', canEdit: true }
@@ -336,13 +577,15 @@ function onlinePage(stubs) {
   const log = { toasts: [], alerts: [], launched: [], puts: [], created: [], backs: 0, confirms: [] }
   let onLoad = null
   const s = vue.ref(1)
+  const isMerchant = stubs.merchantStaff?.value ?? true
   const h = runSetup('pages/staff/online-jobs.vue', {
     R, useScreen: (n, o) => { onLoad = o.onLoad; return s }, ensureSession: async () => {}, currentStaffStoreId: () => 9, onlineStaff: { value: false }, merchantStaff: { value: true },
     shiftDate: () => '2026-11-06', todayCn: () => '2026-10-30', toast: m => log.toasts.push(m), errText: (e, d) => (e && e.message) || d, back: () => { log.backs++ },
     confirm: async (t, m) => { log.confirms.push(m); return true }, alert: async (t, m) => { log.alerts.push([t, m]) },
     put: async (url, body, opts) => { log.puts.push(plain([url, body, opts])); return { data: { message: '已重新提交，本城换工主理人会尽快核实' } } },
     get: async () => ({ data: { config: { enabled: '0', amountFen: 0, version: 0 } } }),
-    apiOnlineCreate: async (b) => { log.created.push(plain(b)); return { data: { jobId: 8, message: '已提交，本城换工主理人会尽快核实' } } },
+    apiOnlineCreate: async (b) => { log.created.push(plain(b)); return { data: { jobId: 8, message: isMerchant ? '已提交，本城换工主理人会尽快核实' : '已提交平台审核' } } },
+    apiOnlineAssignments: async () => ({ data: [] }),
     uni: { reLaunch: o => log.launched.push(o.url), previewImage() {} },
     ...stubs
   })
@@ -383,35 +626,53 @@ test('线上任务：商家新发提示走核实流程，提交后回首页；�
   const { h, log, load } = onlinePage({})
   t.after(h.stop)
   await load({ s: '1' })
-  h.run("Object.assign(form.value, { title: 't', deliverables: 'd', criteria: 'c', commissionFen: 500 })")
-  // 2026-11-03 简化：提交不再弹「确认提交？」，流程一直写在表单最后（flowNote）；商家看到的是「袋鼠工作人员」，不提内部角色名
+  h.run("Object.assign(form.value, { title: '图文征集', deliverables: '原创游记', criteria: '照片与正文齐全', itemsPerPerson: 2 })")
+  await h.run('publish()')
+  assert.equal(log.created.length, 0, '未填写接单人每条报酬时不能发布')
+  h.run("unitRewardText.value = '5.25'")
+  assert.match(h.run('flowNote.value'), /接单人每条报酬 ¥5\.25；平台费另计 ¥3\/合格条/)
   assert.match(h.run('flowNote.value'), /袋鼠工作人员核实后上架/)
   await h.run('publish()')
   assert.deepEqual(log.confirms, [], '提交前不再弹确认框')
   assert.equal(log.created.length, 1)
-  assert.equal(log.created[0].commissionFen, 300, '新任务固定每条 3 元')
+  assert.equal(log.created[0].unitRewardFen, 525)
+  assert.equal(log.created[0].commissionFen, 1050, '申请人的单人最高报酬为两条，不含平台费')
   assert.deepEqual(log.alerts, [['已提交', '已提交，本城换工主理人会尽快核实']])
   assert.deepEqual(log.launched, [R.staff])
 
   const other = onlinePage({ merchantStaff: { value: false }, apiOnlineTask: async () => ({ data: {} }) })
   t.after(other.h.stop)
+  await other.load({ s: '1' })
   other.h.run("Object.assign(form.value, { title: 't', deliverables: 'd', criteria: 'c', commissionFen: 500 })")
   assert.match(other.h.run('flowNote.value'), /平台审核上架/)
   await other.h.run('publish()')
   assert.deepEqual(other.log.confirms, [])
   assert.deepEqual(other.log.launched, [])
-  assert.equal(other.log.toasts.pop(), '已提交，本城换工主理人会尽快核实')
+  assert.equal(other.log.created[0].commissionFen, 500)
+  assert.equal(other.log.toasts.pop(), '已提交平台审核')
 })
 
 // ---------------------------------------------------------------- 我的
-test('我的：商家看到商家身份和体验反馈；只有商家身份的账号切身份直接回用户身份；员工不变', async (t) => {
+test('我的：当前商家有身份和体验反馈，商家及其他员工都可以直接返回用户首页', async (t) => {
   const d = sfc('pages/profile/index.vue')
-  assert.match(d.template.content, /<text class="k-meta">\{\{ staffRoleLine \}\}<\/text>/)
-  assert.match(d.template.content, /<view v-if="merchantStaff" @click="go\(R\.support\)"><text>体验反馈<\/text>/)
-  assert.match(d.template.content, /onlyMerchant \? '切换到用户身份' : '切换身份'/)
+  assert.match(d.template.content, /\{\{ staffRoleLine \}\}/)
+  assert.match(d.template.content, /<view\b[^>]*v-if="merchantStaff"[^>]*@click="go\(R\.support\)"[^>]*>[^]*?体验反馈<\/text>/)
+  assert.match(d.template.content, /@click="openStaff"><k-icon[^>]+\/><text[^>]*>返回用户首页<\/text>/)
   assert.match(d.template.content, /onlyMerchant \? '商家工作台' : '员工工作台'/)
-  assert.match(d.scriptSetup.content, /if \(staffMode\.value && onlyMerchant\.value\) return relaunch\(switchMode\('user'\)\)/)
-  assert.match(d.scriptSetup.content, /if \(staffMode\.value\) return go\(R\.identity \+ '\?choose=1'\)/)
+  for (const role of ['merchant', 'keeper']) {
+    const calls = []
+    const grant = { roleCode: role, roleName: role === 'merchant' ? '合作商家' : '小院主理人', storeName: '喜洲小院' }
+    const h = runSetup('pages/profile/index.vue', {
+      experience: { mode: 'staff', account: { id: 'm' } }, useScreen: () => vue.ref(1),
+      staffStores: vue.ref([grant]), currentStaffStore: vue.ref(grant), hasStaffAccess: vue.ref(true),
+      switchMode: mode => { calls.push(mode); return '/pages/home/index' }, relaunch: url => calls.push(url)
+    })
+    t.after(h.stop)
+    assert.equal(h.run('staffRoleLine.value'), grant.roleName + ' · 喜洲小院')
+    assert.equal(h.run('onlyMerchant.value'), role === 'merchant')
+    await h.run('openStaff()')
+    assert.deepEqual(calls, ['user', '/pages/home/index'])
+  }
 })
 
 // ---------------------------------------------------------------- 分包、白名单
@@ -421,10 +682,12 @@ test('新页在 staff 分包；main.js 白名单同步；主包 api.js 和路由
   const main = read('main.js')
   const merchant = /role === 'merchant' && !\[([^\]]+)\]/.exec(main)[1]
   for (const route of ['index', 'business', 'merchant-request', 'jobs', 'online-jobs', 'applications', 'interviews']) assert.ok(merchant.includes(`'pages/staff/${route}'`), route)
+  for (const route of ['operations', 'city-finance', 'service', 'platform-tasks']) assert.ok(!merchant.includes(`'pages/staff/${route}'`), route)
   const service = /role === 'merchant_service' && !\[([^\]]+)\]/.exec(main)[1]
   for (const route of ['index', 'business', 'service', 'online-jobs', 'applications']) assert.ok(service.includes(`'pages/staff/${route}'`), route)
   const city = /role === 'city_lead' && !\[([^\]]+)\]/.exec(main)[1]
-  assert.deepEqual(city.split(',').map(x => x.trim()).sort(), ["'pages/manage/honor'", "'pages/manage/wallet'", "'pages/staff/business'", "'pages/staff/city'", "'pages/staff/city-finance'", "'pages/staff/index'"])
+  assert.deepEqual(city.split(',').map(x => x.trim()).sort(), ["'pages/manage/honor'", "'pages/manage/wallet'", "'pages/staff/business'", "'pages/staff/city'", "'pages/staff/city-finance'", "'pages/staff/index'", "'pages/staff/operations'"])
+  assert.match(sfc('pages/staff/components/k-city-work.vue').template.content, /go\('\/pages\/staff\/operations'\)/)
   assert.ok(!read('common/api.js').includes('merchant/requests'))
   assert.ok(!read('common/routes.js').includes('merchant-request'))
   const home = sfc('pages/staff/components/k-merchant-work.vue').scriptSetup.content

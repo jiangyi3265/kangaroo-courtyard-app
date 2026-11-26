@@ -60,17 +60,17 @@ test('标题：话题是「其他」时不加前缀，只显示标题；别的�
   const original = Object.freeze({ title: '义工经历', topicLabel: '其他' })
   assert.equal(titleOf(original), '义工经历', '标题组合函数仍保留原文，只在模板展示时更新称呼')
   assert.equal(original.title, '义工经历')
-  assert.match(mine, /import \{ titleOf, kindOf \} from '\.\/community-feed\.js'/)
+  assert.match(mine, /import \{ titleOf, kindOf(?:, [\w, ]+)? \} from '\.\/community-feed\.js'/)
   assert.doesNotMatch(mine, /post\.topicLabel \+ '｜'/)
   // 服务端：分类是 other 不当话题（老版本小程序也跟着好），找搭子列表的分类小标签照旧
-  assert.match(postJava, /String cat = "other"\.equals\(str\(r\.get\("category"\)\)\) \? null : CATEGORY_LABEL\.get\(str\(r\.get\("category"\)\)\);/)
+  assert.match(postJava, /String cat = "other"\.equals\(str\(r\.get\("category"\)\)\) \? null : categoryLabel\(str\(r\.get\("category"\)\)\);/)
   assert.match(postJava, /CATEGORY_LABEL\.put\("other", "其他"\);/)
 })
 
 // ---------------------------------------------------------------- 改名
 
 test('旅居日常：沿用 daily 数据和旧草稿，后端旧标签保持兼容', () => {
-  assert.deepEqual(FEED_TABS, ['全部', '找搭子', '旅居日常', '经验分享'])
+  assert.deepEqual(FEED_TABS, ['全部', '找搭子', '经验分享', '旅居日常'])
   assert.equal(FEED_KIND['旅居日常'], 'daily')
   assert.deepEqual(PUBLISH_TYPES.map(t => t.name), ['找搭子', '经验分享', '旅居日常'])
   assert.equal(PUBLISH_KIND['旅居日常'], 'daily')
@@ -86,7 +86,7 @@ test('旅居日常：沿用 daily 数据和旧草稿，后端旧标签保持兼�
   }
   assert.match(tpl(index), /placeholder="搜索搭子、旅居日常、经验分享"/)
   assert.match(index, /'这里还没有旅居日常'/)
-  assert.match(mine, /<text>找搭子 · 旅居日常 · 经验分享<\/text>/)
+  assert.match(mine, /PUBLISH_TYPES\.map/); assert.match(mine, /@click="switchKind\(tab.key\)"/)
   assert.match(postJava, /KIND_LABEL\.put\("daily", "旅居攻略"\);/)
   assert.doesNotMatch(postJava, /KIND_LABEL\.put\("daily", "旅居日常"\)/)
   assert.match(moduleJava, /"daily:旅居攻略,buddy:找搭子,diary:经验分享"/)
@@ -185,12 +185,13 @@ test('经验分享的「选择经历类型」只是预选：经历校验把这�
 // ---------------------------------------------------------------- 关联
 
 test('关联的跳转地址：小院详情 / 门店在招岗位 / 岗位详情 / 活动详情；不认识的不给入口', () => {
-  assert.deepEqual(LINK_TYPES, ['stay', 'store', 'job', 'activity'])
+  assert.deepEqual(LINK_TYPES, ['stay', 'store', 'job', 'activity', 'post'])
   assert.equal(linkRoute({ type: 'stay', id: 3 }), '/pages/stays/detail?stayId=3')
   assert.equal(linkRoute({ type: 'store', id: 4 }), '/pages/profile/follows?storeId=4')
   assert.equal(linkRoute({ type: 'job', id: 5 }), '/pages/jobs/detail?jobId=5')
   assert.equal(linkRoute({ type: 'activity', id: 6 }), '/pages/community/activity?id=6&channel=community')
-  assert.equal(linkRoute({ type: 'post', id: 7 }), '', '不关联别人的帖子')
+  assert.equal(linkRoute({ type: 'post', id: 7 }), '/pages/community/index?postId=7')
+  assert.equal(linkRoute({ type: 'unknown', id: 7 }), '')
   assert.equal(linkRoute({ type: 'stay' }), '')
   assert.equal(linkRoute(null), '')
   const v = linkView({ type: 'job', id: '5', title: ' 前台换宿 ', label: '换宿旅行', city: '大理' })
@@ -233,17 +234,17 @@ test('关联选择页：打开带上发布页的城市和已选的；选一个 /
   assert.equal(await openLinkPicker({}, (o) => o.fail()), null)
   assert.equal(await openLinkPicker({}, () => { throw new Error('x') }), null)
   // 页面：返回 / 侧滑 = null；不关联 = 'none'；发布页按这个改
-  assert.match(linkPage, /onUnload\(\(\) => finishLinkPicker\(requestId, null\)\)/)
+  assert.match(linkPage, /onUnload\([\s\S]*?finishLinkPicker\(requestId, null\)/)
   assert.match(tpl(linkPage), /class="selection-bar__clear"[^>]*@click="choose\('none'\)">/)
   assert.match(publish, /if \(res === null\) return\n  link0\.value = res === 'none' \? null : restoreLink\(res\)/)
   assert.match(publish, /openLinkPicker\(\{ city: city\.value, current: link0\.value \}, \(o\) => uni\.navigateTo\(o\)\)/)
 })
 
 test('关联选择页：搜索框 + 页签 小院/门店 / 岗位 / 活动，列表卡（封面 / 标题 / 类型小标签 / 城市），分页', () => {
-  assert.deepEqual(LINK_TABS.map(t => [t.key, t.label]), [['place', '小院/门店'], ['job', '岗位'], ['activity', '活动']])
+  assert.deepEqual(LINK_TABS.map(t => [t.key, t.label]), [['place', '小院/门店'], ['job', '岗位'], ['activity', '活动'], ['post', '我的帖子']])
   const t = tpl(linkPage)
   assert.match(t, /<k-topbar title="关联帖子" back \/>/)
-  assert.match(t, /<input v-model="kwDraft" class="search__input" confirm-type="search" maxlength="30" placeholder="搜索小院、门店、岗位或活动"[^>]*@confirm="runSearch"/)
+  assert.match(t, /<input v-model="kwDraft" class="search__input" confirm-type="search" maxlength="30" :placeholder="tab === 'post' \? '搜索我的帖子标题' : '搜索小院、门店、岗位或活动'"[^>]*@confirm="runSearch"/)
   assert.match(t, /<view v-for="t in LINK_TABS" :key="t\.key" class="tab" :class="\{ on: tab === t\.key \}" hover-class="k-press" @click="setTab\(t\.key\)">/)
   assert.match(t, /<view v-for="it in rows" :key="it\.type \+ it\.id" class="item" :class="\{ on: isSelected\(it\) \}"[^>]*@click="choose\(it\)">/)
   // 2026-10-18：类型小标签按类型分颜色（item__tag--stay / job / activity）
@@ -339,12 +340,12 @@ test('两个新页面都登记在 community 分包里，不进主包；只引用
 
 test('后端：关联存在 ref_type / ref_id，发布时校验能选，信息流 / 详情带 link，选择页搜索接口', () => {
   assert.match(postJava, /LINK_LABEL\.put\("stay", "小院"\);\s*LINK_LABEL\.put\("store", "门店"\);\s*LINK_LABEL\.put\("job", "岗位"\);\s*LINK_LABEL\.put\("activity", "活动"\);/)
-  assert.match(postJava, /if \(linkId != null\)\s*\{[\s\S]*?if \(pickableLink\(linkType, linkId\) == null\)/)
+  assert.match(postJava, /if \(linkId != null\)\s*\{[\s\S]*?if \(pickableLink\(linkType, linkId, me\) == null\)/)
   assert.match(postJava, /m\.put\("link", linked\.get\(id\)\);/)
   assert.match(postJava, /m\.put\("link", refId == null && linkId == null \? null : links\(/)
   assert.match(postJava, /public Map<String, Object> linkables\(String type, String keyword, String city, int page\)/)
   assert.match(ctlJava, /@AppAuth\(required = false\)\s*@GetMapping\("\/linkables"\)/)
-  assert.match(ctlJava, /posts\.linkables\(type, keyword, city, page\)/)
+  assert.match(ctlJava, /posts\.linkables\(type, keyword, city, page, AppUserContext\.currentUserId\(\)\)/)
   // 经验分享照旧必须是自己的经历（application）
   assert.match(postJava, /boolean ok = refId != null && "application"\.equals\(refType\);/)
 })
@@ -353,7 +354,7 @@ test('后端：关联存在 ref_type / ref_id，发布时校验能选，信息�
 
 test('r2：经验分享的「关联帖子」卡能点、和别的类型同一个选择页；没选时提示自动关联经历的岗位', () => {
   const s = script(publish)
-  assert.match(s, /const linkSub = computed\(\(\) => \(type\.value === '经验分享' \? DIARY_AUTO_LINK_HINT : '关联一个小院 \/ 门店、岗位或活动，看帖子的人点一下就能打开'\)\)/)
+  assert.match(s, /const linkSub = computed\(\(\) => \(type\.value === '经验分享' \? DIARY_AUTO_LINK_HINT : /)
   assert.match(s, /import \{ openLinkPicker, restoreLink, (?:linkFromQuery, )?linkPayload, rememberPublished, publishedUrl, DIARY_AUTO_LINK_HINT \} from '\.\/post-link\.js'/)
   assert.equal(DIARY_AUTO_LINK_HINT, '不选的话，会自动关联你在「经历校验」里选的那段经历的岗位')
   // pickLink 不分类型；切到经验分享不清掉已选的关联（之前不发、现在照发）

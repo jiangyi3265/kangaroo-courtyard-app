@@ -108,7 +108,7 @@
 }
 
 /* 原稿的完整度环、白色信息卡、三块经历和显眼的机会入口。 */
-.resume { --k-bg:#F8F5EE;--k-paper:#FFFEFC;background:linear-gradient(135deg,#FAF7F0,#F5F5F1); }
+.resume { --k-bg:#F8F5EE;background:linear-gradient(135deg,#FAF7F0,#F5F5F1); }
 .resume-summary { background:linear-gradient(120deg,#FAF1DF,#F8F7F0 75%);border:1px solid #EFE5D6;border-radius:20px;box-shadow:0 4px 14px rgba(103,78,42,.045); }
 .summary-badge { width:70px;height:70px;box-sizing:border-box;padding:4px;border:0;gap:0; }
 .summary-badge__inner { width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border-radius:50%;background:#FCF9F2; }
@@ -173,3 +173,617 @@
  .resume-opportunities__emblem { display:none; }
  .resume-opportunities .summary-heading { font-size:16px; }
 }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：简历概览、基本信息、技能、经历四屏 —— 浅灰底、白卡 12 圆角、不用阴影和描边，字和图收小一档。
+   功能和文字不变；输入框保持 44 高、字 14–15，性别 / 类型胶囊、日期、「×」这些能点的仍 ≥ 44。
+   概览屏比原来更矮：小屏（高 ≤ 700 / ≤ 600）的收紧规则在本段末尾重写了一遍，「技能匹配机会」入口仍留在首屏。 */
+.resume { --k-bg:var(--k-page);--k-radius:12px;background:var(--k-page); }
+.resume :deep(.k-navbar__title) { font-family:var(--k-sans);font-size:16px;font-weight:600; }
+.resume .k-body { padding-left:12px;padding-right:12px; }
+.card { border:0;border-radius:12px;box-shadow:none; }
+.resume :deep(.k-button.is-lg) { height:44px;font-size:15px;box-shadow:none; }
+/* 1 概览 */
+.resume-home { padding-top:4px; }
+.privacy-note { gap:6px;padding:0 2px 8px;font-size:12px; }
+.resume-summary { gap:12px;padding:12px;border:0;border-radius:12px;box-shadow:none;background:linear-gradient(120deg,#FFF4E2,var(--k-paper) 72%); }
+.summary-badge { width:56px;height:56px;padding:3px;font-size:10px; }
+.summary-badge__inner { background:var(--k-paper); }
+.summary-percent { font-size:15px;font-weight:700;line-height:1.2;color:var(--k-red-deep); }
+.summary-heading { font-family:var(--k-sans);font-size:15px;font-weight:700; }
+.summary-copy .summary-heading { font-size:15px;font-weight:700;color:var(--k-ink); }
+.resume-summary .k-bar { height:4px;margin:8px 0 6px;background:#EFE9DF; }
+.resume-summary .k-bar__fill { background:linear-gradient(90deg,#D9A865,#B5814D); }
+.summary-hint { font-size:11px; }
+.resume-person-card,.resume-skills-card { margin-top:8px;padding:12px;border:0;border-radius:12px;box-shadow:none; }
+.resume-person-heading { font-size:15px; }
+.resume-person { padding:8px 0 0; }
+.resume-person__avatar { width:40px;height:40px;border:0; }
+.resume-person__info { gap:2px; }
+.resume-person__name { font-size:14px; }
+.resume-person__meta { font-size:12px; }
+.resume-edit { font-size:12px; }
+.resume-person .resume-edit { height:28px;padding:0 12px;border:1px solid var(--k-red-line);background:transparent;color:var(--k-red-deep);font-size:12px;line-height:26px; }
+.resume-skills__text { margin-top:6px;font-size:13px;line-height:1.55; }
+.resume-experiences { gap:6px; }
+.resume-experiences>view { padding:8px 4px;border:0;border-radius:8px;background:#F9F7F3;font-size:12px; }
+.resume-experiences>view+view { border-left:0; }
+.resume-experiences__count { font-size:11px;color:var(--k-muted); }
+.resume-opportunities { margin-top:8px;padding:12px;border:0;border-radius:12px;box-shadow:none;background:linear-gradient(105deg,#FFF1DA,#FBE6C4); }
+.resume-opportunities .summary-heading { font-size:15px;color:#6B4A1F; }
+.resume-opportunities__layout { gap:10px; }
+.resume-opportunities__emblem { width:40px;height:40px;margin:0;border:0;background:rgba(255,255,255,.7);box-shadow:none; }
+.resume-opportunities__desc { margin:0 0 8px;font-size:12px;color:#7A5A22; }
+.resume-opportunities :deep(.k-button.is-lg) { height:40px;font-size:14px;background:linear-gradient(135deg,#B5814D,#8E5E33);box-shadow:none; }
+/* 2 基本信息 */
+.resume-import { padding:12px;border:0;border-radius:12px;background:var(--k-paper); }
+.resume-import>view { gap:2px; }
+.resume-import>view>text:first-child { font-size:14px; }
+.resume-import>view>text:last-child { font-size:11px; }
+.resume-import>text { flex:0 0 auto;white-space:nowrap;height:28px;padding:0 12px;border-radius:999px;background:linear-gradient(135deg,#B5814D,#8E5E33);color:var(--k-paper);font-size:12px;font-weight:500;line-height:28px; }
+.resume-editor>.k-title,.resume-history>.k-title { margin-top:14px;font-family:var(--k-sans);font-size:15px; }
+.resume-editor .form { gap:12px;padding:14px 12px;border:0;border-radius:12px;box-shadow:none; }
+.resume-editor .form__label { width:72px;font-size:14px;font-weight:500; }
+.resume-editor .form__input { min-height:44px;border-color:var(--k-line2);border-radius:10px;background:var(--k-paper); }
+.resume-editor .gender { border-radius:10px; }
+.resume-editor .gender.on { border-color:var(--k-red-line); }
+.resume-section-head { margin:20px 0 8px; }
+.resume-section-head>text:first-child { font-size:15px;font-weight:700;color:var(--k-ink); }
+.resume-section-head>text:last-child { font-size:11px; }
+.editor-field { gap:6px;margin-top:10px;font-size:13px; }
+.editor-field .k-input { min-height:44px;border-radius:10px; }
+.editor-field textarea { padding:10px 12px;border-radius:10px;font-size:14px; }
+.resume-media { gap:8px;padding:0;background:transparent; }
+.resume-media__add { gap:6px;min-height:72px;border:1px dashed var(--k-red-line);border-radius:12px;background:var(--k-paper);box-shadow:none;color:var(--k-red-deep);font-size:13px; }
+.resume-photo { margin-top:12px;padding:12px;border:0;border-radius:12px;background:var(--k-paper); }
+.resume-photo image { width:48px;height:48px;border-radius:8px; }
+.resume-photo>view { gap:2px; }
+.resume-photo>view>text:last-child { font-size:11px; }
+.resume-editor>.k-meta { display:block;margin-top:6px;font-size:11px;line-height:1.5; }
+.resume-editor>:deep(.k-button:not(.is-disabled)) { background:linear-gradient(135deg,#B5814D,#8E5E33); }
+/* 不能点的按钮（保存中 / 上传中）：11-18 第二轮起交给公共组件 —— 原配色整体 .45，不再盖成冷灰块 */
+/* 3 技能 */
+.resume-skills-editor .tip { gap:8px;padding:10px 12px;border:0;border-radius:12px;background:#FFF8EE; }
+.resume-skills-editor .tip__icon { width:18px;height:18px;font-size:12px;background:var(--k-red); }
+.resume-skills-editor .tip__text { font-size:12px;line-height:1.6;color:#7A5A22; }
+.form__label--lg { font-family:var(--k-sans);font-size:15px; }
+.form__hint { font-size:12px; }
+.resume-skills-editor .k-between>.k-text { font-size:12px; }
+.resume-skills-editor .area { padding:10px 12px;border-color:var(--k-line2);border-radius:12px;background:var(--k-paper);box-shadow:none; }
+.resume-skills-editor .addlink { border-radius:12px;border-color:var(--k-red-line);background:var(--k-paper);color:var(--k-red-deep);font-size:14px; }
+/* 4 经历 */
+.tabs__item { padding:9px 0 11px;font-size:14px;color:var(--k-ink2); }
+.tabs__item.active { font-family:var(--k-sans);font-weight:600;color:var(--k-red-deep); }
+.tabs__item.active::after { width:16px;height:3px;margin-left:-8px;background:var(--k-red); }
+.resume-history .card.k-mt12,.resume-history .card.k-mt8 { margin-top:8px; }
+.resume-history .exp { gap:10px;padding:12px;border:0;border-radius:12px;background:var(--k-paper);box-shadow:none; }
+.resume-history .exp__img { width:72px;height:84px;border-radius:8px; }
+.resume-history .exp__img--short { height:72px; }
+.exp__title { font-family:var(--k-sans);font-size:14px;font-weight:600; }
+.exp .k-text,.exp .k-small { font-size:12px; }
+.exp-form { gap:10px; }
+.exp-form__title { font-family:var(--k-sans);font-size:15px; }
+.exp-form__label { flex-basis:72px;font-size:14px; }
+.exp-form__pill.on { border-color:var(--k-red-line);background:var(--k-red-soft);color:var(--k-red-deep); }
+.exp-form__btn :deep(.k-button) { border-radius:999px; }
+@media(max-height:700px) {
+ .resume-home { padding-top:2px; }
+ .privacy-note { padding-bottom:6px; }
+ .resume-summary { padding:10px 12px; }
+ .summary-badge { width:52px;height:52px; }
+ .resume-summary .k-bar { margin:6px 0 4px; }
+ .resume-person-card,.resume-skills-card { padding:10px 12px; }
+ .resume-person { padding:6px 0 0; }
+ .resume-person-heading { font-size:14px; }
+ .resume-person__avatar { width:36px;height:36px; }
+ .resume-skills__text { margin-top:4px; }
+ .resume-experiences>view { padding:5px 2px; }
+ .resume-opportunities { padding:10px 12px; }
+ .resume-opportunities__desc { margin:0 0 6px; }
+}
+@media(max-height:600px) {
+ .privacy-note { padding-bottom:4px; }
+ .resume-summary { gap:10px;padding:8px 12px; }
+ .summary-badge { width:44px;height:44px; }
+ .summary-percent { font-size:12px; }
+ .summary-copy .summary-heading { font-size:14px; }
+ .resume-person-card,.resume-skills-card { margin-top:4px;padding:5px 10px; }
+ .resume-person { padding:0; }
+ .resume-person__avatar { width:32px;height:32px; }
+ .resume-person .resume-edit { height:26px;padding:0 9px;line-height:24px; }
+ .resume-skills__text { margin-top:2px; }
+ .resume-experiences { gap:4px; }
+ .resume-experiences>view { min-height:42px;padding:2px 1px; }
+ .resume-opportunities { margin-top:4px;padding:8px 12px; }
+ .resume-opportunities .summary-heading { margin-bottom:6px; }
+}
+
+/* 2026-11-18 评审修正（只动样子） */
+/* 1) 概览屏底部「技能匹配机会」卡：圆图标挪到标题左边同一行，说明文字和「查看匹配机会」按钮都从卡片左内边距起、按钮整宽。
+      之前图标悬在文字和按钮中间的左侧，说明、按钮跟着缩进一大截，三样东西左边对不齐 */
+.resume-opportunities { position:relative; }
+.resume-opportunities .summary-heading { min-height:28px;padding-left:36px; }
+.resume-opportunities__layout { display:block; }
+.resume-opportunities__emblem { position:absolute;left:12px;top:12px;width:28px;height:28px; }
+@media(max-height:700px) {
+ .resume-opportunities__emblem { top:10px; }
+}
+@media(max-height:600px) {
+ /* 这个高度下圆图标本来就不显示，标题不用再给它让位置 */
+ .resume-opportunities .summary-heading { min-height:0;padding-left:0; }
+}
+/* 2) 基本信息编辑屏：「认识你」「相关经历与作品」「本人特长」三段和上面的「基本信息」一样各放进一张白卡（模板里各包了一层），
+      不再是输入框直接摆在灰底上；字段名 14 / 500，和上面那张卡的标签一个样。输入框大小、字号不变 */
+.editor-card { padding:12px;border-radius:12px;background:var(--k-paper); }
+.editor-card>.editor-field:first-child { margin-top:0; }
+.editor-card>.editor-field>text { font-size:14px;font-weight:500; }
+.editor-card>.resume-media { margin-top:10px; }
+.editor-card>.k-meta { display:block;margin-top:6px;font-size:11px;line-height:1.5; }
+.editor-card>.resume-uploaded:last-child { border-bottom:0; }
+/* 3) 经历卡最后一行「评价：☆☆☆☆☆ 平台记录」：五颗星和两边的字对在一条线上（之前星星低了约 2） */
+.resume-history .exp .stars { align-items:center; }
+.resume-history .exp .star,.resume-history .exp .star__half { display:flex;align-items:center;justify-content:center; }
+
+/* 11-18 第二轮精修（只动样子；填写区的输入框和字号不动） */
+/* 1) 卡里的小标题（完善简历 / 基本信息 / 技能与特长 / 技能匹配机会）统一 14 / 600；卡外的区块标题（基本信息、认识你、相关经历与作品、本人特长）16 / 700、行高 22，上 16 下 8 */
+.summary-heading,.summary-copy .summary-heading,.resume-person-heading,.resume-opportunities .summary-heading { font-size:14px;font-weight:600; }
+.resume-section-head { margin:16px 0 8px; }
+.resume-section-head>text:first-child { font-size:16px;font-weight:700;line-height:22px; }
+.resume-editor>.k-title { margin-top:16px;font-size:16px;font-weight:700;line-height:22px; }
+.resume-editor>.form.k-mt10 { margin-top:8px; }
+/* 2) 三块经历的「N 段」后面换成 12 号灰箭头（模板里把文字 › 换成了图标，外面包了一层横排） */
+.resume-experiences__more { display:flex;align-items:center;gap:2px; }
+/* 3) 「导入简历」从实心棕胶囊改成浅底小按钮（浅棕底深棕字），页面底部的「保存简历」是唯一的实心主按钮 */
+.resume-import>text { border-radius:14px;background:var(--k-red-soft);color:var(--k-red-deep); }
+/* 4) 经历页签：字 14，没选 400 灰、选中 600 墨色，下面 16×3 的暖棕短条；整行 40 高 */
+.tabs__item { padding:9px 0;line-height:22px;color:var(--k-muted);font-weight:400; }
+.tabs__item.active { color:var(--k-ink);font-weight:600; }
+
+/* ===================================================================================================
+   11-18 第三轮「逐页精修」（只动样子；功能、文字、点按区不变）
+   简历是给门店看的名片：第一屏 = 一张名片卡（头像 56、称呼 18 / 700、年龄城市；底部一行完整度），
+   下面是「技能与特长」卡（文字 + 三格经历），再下面是「技能匹配机会」白卡（次按钮），隐私说明退到页尾当脚注。
+   节奏：页边距 16，卡内 16，卡间 12；卡里的小标题 14 / 600；两个「编辑」入口是同一种 28 高浅棕小按钮。
+   =================================================================================================== */
+.resume .k-body { padding-left:16px;padding-right:16px; }
+.resume-home { padding-top:12px; }
+/* 名片卡 */
+.resume-home .resume-person-card { position:relative;margin-top:0;padding:16px;border-radius:12px;background:linear-gradient(180deg,var(--k-red-soft) 0,var(--k-paper) 72px); }
+.resume-home .resume-person-heading { font-size:12px;font-weight:500;line-height:16px;color:var(--k-muted); }
+.resume-home .resume-person { gap:12px;padding:12px 0 0; }
+.resume-home .resume-person__avatar { width:56px;height:56px;border:2px solid var(--k-paper);box-shadow:0 0 0 1px var(--k-line); }
+.resume-home .resume-person__info { gap:4px; }
+.resume-home .resume-person__name { font-size:18px;font-weight:700;line-height:24px;color:var(--k-ink); }
+.resume-home .resume-person__meta { font-size:13px;line-height:18px; }
+.resume-home .resume-edit,.resume-home .resume-person .resume-edit { flex:0 0 auto;height:28px;padding:0 12px;border:0;border-radius:14px;background:var(--k-red-soft);color:var(--k-red-deep);font-size:12px;font-weight:500;line-height:28px; }
+.resume-home .resume-person .resume-edit { position:absolute;top:10px;right:16px; }
+/* 完整度：名片卡底部一行（环 44 + 一句话 + 箭头），和上面隔一条发丝线；右边那条进度条和环说的是同一个数，不再重复画 */
+.resume-home .resume-summary { position:relative;gap:12px;margin-top:16px;padding:14px 0 0;border:0;border-radius:0;background:transparent; }
+.resume-home .resume-summary::before { content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5); }
+.resume-home .summary-badge { width:44px;height:44px;padding:3px;font-size:9px;line-height:1.1; }
+.resume-home .summary-percent { font-size:12px;font-weight:700;line-height:14px;font-variant-numeric:tabular-nums; }
+.resume-home .summary-copy .summary-heading { font-size:14px;font-weight:600;line-height:20px; }
+.resume-home .resume-summary .k-bar { display:none; }
+.resume-home .summary-hint { display:block;margin-top:2px;font-size:12px;line-height:16px;color:var(--k-muted); }
+/* 技能与特长 */
+.resume-home .resume-skills-card { margin-top:12px;padding:16px; }
+.resume-home .resume-skills { padding:0; }
+.resume-home .resume-skills .summary-heading { font-size:14px;font-weight:600;line-height:28px; }
+.resume-home .resume-skills__text { margin-top:8px;font-size:13px;line-height:1.65;color:var(--k-ink2);-webkit-line-clamp:3; }
+/* 三格经历：数字在上（16 / 700 等宽）、名称在下，像名片上的数据格 */
+.resume-home .resume-experiences { gap:8px;margin-top:14px;padding:0; }
+.resume-home .resume-experiences>view { gap:4px;min-height:60px;padding:10px 4px;justify-content:center;border-radius:8px;background:var(--k-bg); }
+.resume-home .resume-experiences__more { order:-1;gap:2px; }
+.resume-home .resume-experiences__count { font-size:16px;font-weight:700;line-height:20px;color:var(--k-ink);font-variant-numeric:tabular-nums; }
+.resume-home .resume-experiences__label { gap:4px;font-size:12px;line-height:16px;color:var(--k-ink2); }
+/* 技能匹配机会：白卡；左边 40 浅棕方块 + 线性图标，标题和说明对齐在图标右边，按钮是整宽 36 高的次按钮 */
+.resume-home .resume-opportunities { margin-top:12px;padding:16px;border-radius:12px;background:var(--k-paper); }
+.resume-home .resume-opportunities .summary-heading { min-height:20px;padding-left:52px;font-size:14px;font-weight:600;line-height:20px;color:var(--k-ink); }
+.resume-home .resume-opportunities__emblem { left:16px;top:16px;width:40px;height:40px;border-radius:12px;background:var(--k-red-soft); }
+.resume-home .resume-opportunities__desc { min-height:20px;margin:4px 0 0 52px;font-size:12px;line-height:1.6;color:var(--k-muted);-webkit-line-clamp:2; }
+.resume-home .resume-opportunities :deep(.k-button) { height:36px;margin-top:14px;border-radius:18px;background:var(--k-paper);box-shadow:inset 0 0 0 1px var(--k-red-line);border:0;color:var(--k-red-deep);font-size:13px;font-weight:600; }
+/* 隐私说明：页尾一行脚注 */
+.resume-home .privacy-note { justify-content:center;gap:4px;margin-top:16px;padding:0;font-size:11px;line-height:16px;color:var(--k-muted); }
+@media(max-height:700px) {
+ .resume-home { padding-top:8px; }
+ .resume-home .resume-person-card,.resume-home .resume-skills-card,.resume-home .resume-opportunities { padding:12px 16px; }
+ .resume-home .resume-person .resume-edit { top:6px; }
+ .resume-home .resume-person { padding-top:8px; }
+ .resume-home .resume-person__avatar { width:48px;height:48px; }
+ .resume-home .resume-summary { margin-top:12px;padding-top:10px; }
+ .resume-home .resume-skills-card,.resume-home .resume-opportunities { margin-top:8px; }
+ .resume-home .resume-skills__text { -webkit-line-clamp:2;margin-top:4px; }
+ .resume-home .resume-experiences { margin-top:10px; }
+ .resume-home .resume-experiences>view { min-height:52px;padding:6px 4px; }
+ .resume-home .resume-opportunities__emblem { top:12px; }
+ .resume-home .resume-opportunities :deep(.k-button) { margin-top:10px; }
+ .resume-home .privacy-note { margin-top:12px; }
+}
+@media(max-height:600px) {
+ .resume-home .resume-person-heading { display:block; }
+ .resume-home .resume-summary .summary-hint { display:none; }
+ .resume-home .resume-opportunities__desc { display:-webkit-box;-webkit-line-clamp:1; }
+ .resume-home .resume-opportunities .summary-heading { padding-left:52px; }
+}
+
+/* 2 基本信息编辑：输入框改成平的浅灰底（不描边、圆角 8）；性别改成和输入框一样宽的分段控件 */
+.resume-editor .form,.resume-editor .editor-card,.resume-editor .resume-import,.resume-editor .resume-photo { padding:16px; }
+.resume-editor .form { gap:12px; }
+.resume-editor .form__input,.resume-editor .editor-field .k-input { min-height:44px;border:0;border-radius:8px;background:var(--k-bg); }
+.resume-editor .editor-field textarea { border:0;border-radius:8px;background:var(--k-bg); }
+.resume-editor .form__row .k-row { flex:1;min-width:0;flex-wrap:nowrap;gap:0;padding:2px;border-radius:22px;background:var(--k-line); }
+.resume-editor .gender { flex:1;min-width:0;min-height:40px;height:40px;padding:0;border:0;border-radius:20px;background:transparent;color:var(--k-ink2);font-size:14px; }
+.resume-editor .gender.on { background:var(--k-paper);color:var(--k-ink);font-weight:600;box-shadow:0 1px 2px rgba(58,50,43,.08); }
+.resume-editor .resume-import>text { height:28px;line-height:28px; }
+.resume-editor .resume-section-head { margin:24px 0 10px; }
+.resume-editor>.k-title { margin-top:24px; }
+.resume-editor>.form.k-mt10 { margin-top:10px; }
+.resume-editor .resume-media__add { min-height:72px;background:var(--k-paper); }
+.resume-editor .resume-photo { margin-top:12px; }
+.resume-editor>:deep(.k-button) { margin-top:24px; }
+@media(max-width:350px) {
+ .resume-editor .form,.resume-editor .editor-card,.resume-editor .resume-import,.resume-editor .resume-photo { padding:12px; }
+ .resume-editor .gender { font-size:13px; }
+}
+
+/* 3 自由技能编辑：提示条左边换成 16 号线性 info 图标（之前是实心棕圆 + 白色 i）；输入区白卡、无描边 */
+.resume-skills-editor { padding-top:12px; }
+.resume-skills-editor .tip { align-items:flex-start;gap:6px;padding:12px;border-radius:12px;background:var(--k-red-soft); }
+.resume-skills-editor .tip__icon { width:16px;height:20px;margin-top:0;border-radius:0;background:transparent; }
+.resume-skills-editor .tip__text { font-size:12px;line-height:20px;color:var(--k-red-deep); }
+.resume-skills-editor .k-between.k-mt16 { margin-top:24px; }
+.resume-skills-editor .form__label--lg { font-size:15px;font-weight:600; }
+.resume-skills-editor .area { padding:12px;border:0;border-radius:12px;background:var(--k-paper); }
+.resume-skills-editor .skill-hint { margin-top:8px;font-size:12px;color:var(--k-muted); }
+.resume-skills-editor .link { min-height:44px;gap:6px;border:0;border-radius:12px;background:var(--k-paper); }
+.resume-skills-editor .addlink { min-height:44px;height:44px;gap:6px;border:1px dashed var(--k-red-line);border-radius:12px;background:transparent;color:var(--k-red-deep);font-size:14px;font-weight:500; }
+.resume-skills-editor>:deep(.k-button) { margin-top:24px; }
+
+/* 4 经历列表：卡片 = 1:1 缩略图 72 + 标题 + 两行灰字；「评价：」和星星都收成 12 号一档；「新增经历」是列表下面的虚线次按钮，不再是悬在半屏的实心大按钮 */
+.resume-history { padding-top:12px; }
+.resume-history .exp { align-items:flex-start;gap:12px;padding:12px;border-radius:12px; }
+.resume-history .exp__img,.resume-history .exp__img--short { width:72px;height:72px;border-radius:8px; }
+.resume-history .exp__title { font-size:14px;font-weight:600;line-height:20px; }
+.resume-history .exp .k-small,.resume-history .exp .k-text { font-size:12px;line-height:18px; }
+.resume-history .exp .k-small:not(.k-muted) { color:var(--k-muted); }
+.resume-history .exp .k-mt6 { margin-top:4px; }
+.resume-history .exp .k-mt4 { margin-top:2px; }
+.resume-history .exp .stars { gap:2px; }
+.resume-history .exp .star,.resume-history .exp .star__half { width:12px;height:12px; }
+.resume-history .exp__x { margin:-12px -12px 0 -8px; }
+.resume-history > :deep(.k-button.k-mt16) { height:44px;margin-top:16px;border-radius:22px;font-size:15px;font-weight:600; }
+/* 没有兼职经历：空状态（56 浅棕方块 + 图标 + 一句话），不再是一行孤零零的大字 */
+.exp-empty { display:flex;flex-direction:column;align-items:center;padding:32px 16px 28px;border-radius:12px;background:var(--k-paper); }
+.exp-empty__ic { width:56px;height:56px;border-radius:16px;background:var(--k-red-soft);display:flex;align-items:center;justify-content:center; }
+.exp-empty>.k-title { margin-top:12px;font-family:var(--k-sans);font-size:14px;font-weight:500;line-height:20px;color:var(--k-ink2); }
+/* 全职 / 培训页签顶上的「查看认证」：一行可点的链接行（奖章图标 + 字 + 箭头） */
+.exp-cert { display:flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:12px;background:var(--k-paper); }
+.exp-cert>.k-title { flex:1;min-width:0;margin-top:0;font-family:var(--k-sans);font-size:14px;font-weight:500;color:var(--k-ink); }
+.exp-cert + .card.exp { margin-top:8px; }
+/* 第三轮复查 1：完整度环 48（44 时「100%」和「完整度」挤在一起） */
+.resume-home .summary-badge { width:48px;height:48px; }
+/* 320 宽：起止日期、共 N 天、评价、来源各自不折字，放不下整段换到下一行（不再出现「评 / 价：」「共 30 / 天」） */
+.resume-history .exp > .k-flex1 { min-width:0; }
+.resume-history .exp .k-row.k-gap16,.resume-history .exp .k-row.k-gap6 { flex-wrap:wrap; }
+.resume-history .exp .k-row.k-gap16 { column-gap:8px;row-gap:0; }
+.resume-history .exp .k-row.k-gap6 { column-gap:6px;row-gap:2px; }
+.resume-history .exp .k-row > text { flex-shrink:0;white-space:nowrap; }
+@media (max-width:350px) {
+  .resume-history .exp__img,.resume-history .exp__img--short { width:56px;height:56px; }
+}
+/* 新增 / 修改经历的小表单：标签一行不折（「门店 · 城市」不再折成三行）；输入框和基本信息页一样是浅灰平底 */
+.resume-history .exp-form { padding:16px; border-radius:12px; }
+.resume-history .exp-form__label { flex:0 0 80px;font-size:14px;line-height:20px;white-space:nowrap;color:var(--k-ink2); }
+.resume-history .exp-form__input.k-input { min-height:44px;border:0;border-radius:8px;background:var(--k-bg); }
+.resume-history .exp-form__pill { min-height:44px;padding:0 16px;font-size:14px; }
+.resume-history .exp-form__input .k-input { min-height:44px;border:0;border-radius:8px;background:var(--k-bg); }
+
+/* ===================================================================================================
+   11-18 第三轮返修（独立评审第 1 轮的问题；只动样子）
+   =================================================================================================== */
+/* s1 技能文字：没写时是一句灰色引导（13 号 muted + 14 号铅笔），和真内容分得开 */
+.resume-home .resume-skills__body { display:flex;align-items:flex-start;gap:4px;margin-top:8px; }
+.resume-home .resume-skills__body .resume-skills__text { flex:1;min-width:0;margin-top:0; }
+.resume-home .resume-skills__body > .k-icon { margin-top:4px; }
+.resume-home .resume-skills__body.is-empty .resume-skills__text { font-size:13px;line-height:22px;color:var(--k-muted); }
+/* s1 三格经历：数字旁的箭头去掉（整格就能点、有按压效果），数字和名称居中对称。
+   注意：模板里的 chevron 图标有意保留（功能对照要求），这里是故意隐藏，不是漏删 */
+.resume-home .resume-experiences__more :deep(.k-icon) { display:none; }
+.resume-home .resume-experiences__more { justify-content:center; }
+/* s1 机会卡：标题右边的装饰星光去掉，只留左边方块一个视觉点（模板里的 sparkles 图标有意保留，这里是故意隐藏） */
+.resume-home .resume-opportunities .summary-heading :deep(.k-icon) { display:none; }
+/* s1 完整度环 52、内圈 44，「100%」不再贴着内壁 */
+.resume-home .summary-badge { width:52px;height:52px;padding:4px; }
+@media (max-width:359px) {
+  .resume-home .resume-opportunities__desc { font-size:11px;line-height:18px; }
+}
+/* s2：生活照那行相机直接用 24 号（模板改的，去掉了把整行图标都放大到 24 的规则），右边箭头和「所在城市」一样 12 号；上传说明两行排匀；小标题旁的「选填」按文字基线对齐 */
+.resume-editor .editor-card > .k-meta { display:block;max-width:21em;margin-top:8px;font-size:12px;line-height:18px;color:var(--k-muted); }
+.resume-editor .resume-section-head { align-items:baseline; }
+/* s3：和 s2 同一套 —— 白卡（内边距 16）里放浅灰平底输入框 */
+.resume-skills-editor .skills-card { margin-top:12px;padding:16px;border-radius:12px;background:var(--k-paper); }
+.resume-skills-editor .skills-card > .k-between.k-mt16:first-child { margin-top:0; }
+.resume-skills-editor .skills-card .k-between.k-mt16 { margin-top:20px; }
+.resume-skills-editor .skills-card .area { padding:12px;border:0;border-radius:8px;background:var(--k-bg); }
+.resume-skills-editor .skills-card .link { min-height:44px;border:0;border-radius:8px;background:var(--k-bg); }
+.resume-skills-editor .skills-card .addlink { border-radius:8px; }
+/* s4 经历卡：没有照片，按类型放 72 方块 + 24 号线性图标（换工 house / 兼职 briefcase / 全职 building / 培训 graduation-cap） */
+.resume-history .exp { position:relative; }
+.resume-history .exp__ph { flex:0 0 auto;width:72px;height:72px;border-radius:8px;background:var(--k-red-soft);display:flex;align-items:center;justify-content:center; }
+/* 自己填的经历：× 挪到卡片右上角（点按区 44），只给标题留 28 的位置，日期和评价行用满宽，两种卡结构一样 */
+.resume-history .exp__x { position:absolute;top:0;right:0;width:44px;height:44px;margin:0; }
+.resume-history .exp--own .exp__title { padding-right:28px; }
+/* 「新增经历」退成虚线次按钮：透明底、暖棕虚线、深棕字；加号放进 20 的实心暖棕小圆（图标本身是白色） */
+.resume-history > :deep(.k-button.k-mt16) { background:transparent;border:1px dashed var(--k-red-line);color:var(--k-red-deep);box-shadow:none; }
+/* 新增 / 修改经历表单：标签列 72（「门店 · 城市」也放得下），输入 14 号，占位字不被截；类型 = 4 段分段控件 */
+.resume-history .exp-form__label { flex:0 0 72px; }
+.resume-history .exp-form__row { gap:8px; }
+.resume-history .exp-form__input input { font-size:14px; }
+.resume-history .exp-form__row--top { align-items:center; }
+.resume-history .exp-form__row--top .exp-form__label { line-height:44px; }
+.resume-history .exp-form__pills { flex-wrap:nowrap;gap:0;height:44px;padding:2px;border-radius:22px;background:var(--k-line);box-sizing:border-box; }
+.resume-history .exp-form__pill { flex:1;min-width:0;min-height:40px;height:40px;padding:0;border:0;border-radius:20px;background:transparent;color:var(--k-ink2);font-size:13px;justify-content:center;white-space:nowrap; }
+.resume-history .exp-form__pill.on { background:var(--k-paper);color:var(--k-ink);font-weight:600;box-shadow:0 1px 2px rgba(58,50,43,.08); }
+@media (max-width:359px) {
+  .resume-history .exp-form__row { flex-wrap:wrap;row-gap:6px; }
+  .resume-history .exp-form__label,.resume-history .exp-form__row--top .exp-form__label { flex:0 0 100%;line-height:20px; }
+  .resume-history .exp-form__input { flex:1 1 0; }
+  .resume-history .exp-form__pills { flex:0 0 100%; }
+}
+
+/* ===================================================================================================
+   11-18 第三轮返修 2（独立评审第 2 轮的问题；只动样子）
+   =================================================================================================== */
+/* s1 名片卡、技能卡、机会卡同一种表面：纯白，不再有顶部暖色渐变 */
+.resume-home .resume-person-card { background:var(--k-paper); }
+.resume .resume-summary { background:transparent; }
+/* s1 完整度：环里只放「100%」（12 / 700），「完整度」挪到右边当 11 号小眉题；三行（11 + 14 + 12）和 52 的环等高 */
+.resume-home .summary-badge { font-size:12px; }
+.resume-home .summary-copy { display:flex;flex-direction:column;justify-content:center; }
+.resume-home .summary-eyebrow { display:block;font-size:11px;font-weight:500;line-height:16px;color:var(--k-muted); }
+.resume-home .summary-copy .summary-heading { line-height:20px; }
+/* s1 卡标题统一 15 / 600；技能正文 14、行高 1.6 */
+.resume-home .resume-skills .summary-heading,.resume-home .resume-opportunities .summary-heading,.resume-home .summary-copy .summary-heading { font-size:15px;font-weight:600; }
+.resume-home .resume-skills__text { font-size:14px;line-height:1.6; }
+.resume-home .resume-skills__body.is-empty .resume-skills__text { font-size:14px;line-height:22px; }
+@media(max-height:600px) {
+  .resume-home .summary-badge { width:44px;height:44px;padding:3px; }
+  .resume-home .resume-person-card { padding:12px 16px; }
+  .resume-home .resume-person { padding-top:6px; }
+  .resume-home .resume-summary { margin-top:10px;padding-top:10px; }
+  .resume-home .resume-skills-card,.resume-home .resume-opportunities { margin-top:8px; }
+  .resume-home .resume-experiences>view { min-height:48px;padding:4px; }
+}
+/* s2 上传说明占满卡内宽度；生活照那行标题和字段标签同一档（14 / 500） */
+.resume-editor .editor-card > .k-meta { max-width:none; }
+.resume-editor .resume-photo>view>text:first-child { font-size:14px;font-weight:500;line-height:20px;color:var(--k-ink); }
+/* s3 提示条：浅棕底保留，字退成 ink2，不再比下面的白卡还重 */
+.resume-skills-editor .tip__text { color:var(--k-ink2); }
+/* s4 经历卡左边的类型块：48 × 48、圆角 12、图标 22，顶部和标题对齐 */
+.resume-history .exp__ph { width:48px;height:48px;border-radius:12px; }
+/* s4「查看认证」：不是一条经历，退成 40 高的轻量链接行（奖章 16 + 13 / 500 深棕字 + 箭头），没有白卡底 */
+.resume-history .exp-cert { min-height:40px;padding:0 4px;background:transparent; }
+.resume-history .exp-cert>.k-title { font-size:13px;font-weight:500;line-height:18px;color:var(--k-red-deep); }
+.resume-history .exp-cert + .card.exp { margin-top:4px; }
+/* s4 新增经历表单：标签列统一 80（「门店 · 城市」也放得下），四行输入框左边对齐；类型的分段控件在标签下面占满整行，每段约 80 */
+.resume-history .exp-form__label { flex:0 0 80px;width:80px; }
+.resume-history .exp-form__row--top { flex-wrap:wrap;row-gap:8px; }
+.resume-history .exp-form__row--top .exp-form__label { flex:0 0 100%;width:auto;line-height:20px; }
+.resume-history .exp-form__row--top .exp-form__pills { flex:0 0 100%; }
+.resume-history .exp-form__pill { font-size:14px; }
+@media(max-height:600px) {
+  /* 320×568：机会卡左边的方块不再藏起来（标题已经给它留了 52 的位置）；技能文字收成 1 行、经历格 44 高，让机会卡的标题和说明整行露在底栏上面 */
+  .resume-home .resume-opportunities__emblem { display:flex;top:12px; }
+  .resume-home .resume-skills__text { -webkit-line-clamp:1; }
+  .resume-home .resume-skills__body { margin-top:4px; }
+  .resume-home .resume-experiences { margin-top:8px; }
+  .resume-home .resume-experiences>view { min-height:44px;padding:2px 4px;gap:2px; }
+}
+@media (max-width:359px) {
+  /* 320 宽：新增经历表单的标签都在输入框上面（输入框满宽，占位字不被截）；分段控件字 13 */
+  .resume-history .exp-form__label { flex:0 0 100%;width:auto;line-height:20px; }
+  .resume-history .exp-form__pill { font-size:13px; }
+}
+
+/* ===================================================================================================
+   11-18 第三轮返修 3（独立评审第 3 轮；只动样子）
+   =================================================================================================== */
+/* 全页主按钮：纯暖棕平色（不再是 135° 渐变 + 高光），44 高 22 圆角 */
+.resume :deep(.k-button.is-primary) { background:var(--k-red);box-shadow:none; }
+.resume .resume-editor > :deep(.k-button.is-primary), .resume .resume-skills-editor > :deep(.k-button.is-primary) { height:44px;border-radius:22px; }
+/* 1 概览：「编辑简历」胶囊回到头像那一行右边、和头像垂直居中；「基本信息」小标签单独一行只占 16 高 */
+.resume-home .resume-person { position:relative; }
+.resume-home .resume-person .resume-edit { position:static;margin-left:8px;align-self:center; }
+.resume-home .resume-person-heading { min-height:16px; }
+.resume-home .summary-badge { width:56px;height:56px;padding:4px; }
+.resume-home .summary-percent { font-size:13px;line-height:16px; }
+/* 2 基本信息：「本人生活照」和上面的区块隔 24，标题 15 / 600 */
+.resume-editor .resume-photo { margin-top:24px; }
+.resume-editor .resume-photo>view>text:first-child { font-size:15px;font-weight:600;line-height:21px; }
+/* 3 技能描述：输入框按内容收矮（技能 120、补充 88），「保存」回到首屏附近 */
+.resume-skills-editor .area--tall textarea, .resume-skills-editor .area--tall .resume-area-idle { height:auto;min-height:120px; }
+.resume-skills-editor .area--mid textarea, .resume-skills-editor .area--mid .resume-area-idle { height:auto;min-height:88px; }
+.resume-skills-editor .area--tall textarea { height:120px; }
+.resume-skills-editor .area--mid textarea { height:88px; }
+/* 4 经历：标题 15 / 600、最多两行；平台记录卡没有 ×，标题右边不留空 */
+.resume-history .exp__title { font-size:15px;font-weight:600;line-height:21px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2; }
+/* 「新增经历」：经历页唯一的主操作 —— 44 高纯暖棕实心按钮 + 组件自带的白色线性加号（不再是虚线框里套一枚白加号实心圆徽章） */
+.resume-history > :deep(.k-button.k-mt16) { height:44px;border:0;border-radius:22px;background:var(--k-red);color:var(--k-paper);box-shadow:none; }
+/* 全职/培训页签顶部入口：48 高白卡行（奖章 16 + 14 / 500 字 + 右边 14 灰箭头对齐卡内右线），和下面的卡隔 12 */
+.resume-history .exp-cert { min-height:48px;gap:8px;padding:0 16px;border-radius:12px;background:var(--k-paper); }
+.resume-history .exp-cert>.k-title { font-size:14px;font-weight:500;line-height:20px;color:var(--k-ink); }
+.resume-history .exp-cert + .card.exp { margin-top:12px; }
+/* 新增经历表单：所有宽度都是标签在上、输入框在下，占位字整句放得下 */
+.resume-history .exp-form__row { flex-wrap:wrap;row-gap:6px; }
+.resume-history .exp-form__label, .resume-history .exp-form__row--top .exp-form__label { flex:0 0 100%;width:auto;line-height:20px; }
+.resume-history .exp-form__row > .exp-form__input, .resume-history .exp-form__row--top .exp-form__pills { flex:0 0 100%;width:100%; }
+
+/* ===================================================================================================
+   11-18 第三轮返修 4（独立评审第 4 轮；只动样子）
+   =================================================================================================== */
+/* 主按钮回到公共默认（--k-grad-brown，和订单「去支付」、评价「提交评价」、写评论「提交评论」同一种），不在本页单独改成纯色 */
+.resume :deep(.k-button.is-primary), .resume-history > :deep(.k-button.k-mt16) { background:var(--k-grad-brown); }
+/* 1 概览：「基本信息」和下面「技能与特长」同一种卡标题（15 / 600 墨色），和头像行隔 12 */
+.resume-home .resume-person-heading { min-height:21px;font-size:15px;font-weight:600;line-height:21px;color:var(--k-ink); }
+.resume-home .resume-person { padding-top:12px; }
+@media (max-width:359px) {
+  /* 320 宽：头像 48、间距 8、胶囊左右 8，文字列多出约 24，「女 · 24岁 · 大理」整行放得下 */
+  .resume-home .resume-person { gap:8px; }
+  .resume-home .resume-person__avatar { width:48px;height:48px; }
+  .resume-home .resume-person .resume-edit { margin-left:0;padding:0 8px; }
+}
+/* 2 基本信息：自我介绍 / 相关经历 / 本人特长三个多行框统一 88 高（含内边距），不再空一大块浅灰 */
+.resume-editor .editor-field textarea { height:88px;min-height:88px; }
+/* 3 技能描述：技能框 104、补充说明 76（都含外框 12 内边距），「保存」回到 390×844 第一屏 */
+.resume-skills-editor .area--tall textarea, .resume-skills-editor .area--tall .resume-area-idle { min-height:80px; }
+.resume-skills-editor .area--mid textarea, .resume-skills-editor .area--mid .resume-area-idle { min-height:52px; }
+.resume-skills-editor .area--tall textarea { height:80px; }
+.resume-skills-editor .area--mid textarea { height:52px; }
+/* 4 经历卡标题：15 / 600 一行省略（日期、店名在下面两行），不再折出以「+ 奖金）」开头的第二行 */
+.resume-history .exp > .k-flex1 { min-width:0; }
+.resume-history .exp__title { display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;-webkit-line-clamp:unset; }
+
+/* ===================================================================================================
+   11-18 第三轮返修 5（独立评审第 5 轮；只动样子）
+   =================================================================================================== */
+/* s1 小屏（高 ≤600）：「完整度」挪到环外后，环里只剩「100%」——上面 max-height 那条 last-child 9 号字原本压的是「完整度」，这里把百分比改回 13 号 */
+@media (max-height:600px) {
+  .resume-home .summary-badge__inner > .summary-percent, .resume-home .summary-badge__inner > text:last-child { font-size:13px;line-height:16px; }
+}
+/* s4 新增经历表单「取消」：和同组其它描边按钮一样用暖棕细描边、二级墨字 */
+.resume-history .exp-form__btns :deep(.k-button.is-outline) { border-color:var(--k-red-line);color:var(--k-ink2); }
+/* s3 技能描述顶部提示条：窄屏放三行时三行均匀断开（text-wrap: balance），第三行不再只剩「保留。」两个字 */
+@media (max-width:359px) {
+  .resume-skills-editor .tip__text { text-wrap:balance; }
+}
+
+/* ===================================================================================================
+   11-18 第四轮精修（微信实拍评审；只动样子）。前缀 .k-page.resume 压过上面各轮和按屏高的旧规则
+   =================================================================================================== */
+/* 顶栏「客服」：不要胶囊底和描边，13 号二级墨字 + 14 号耳机 */
+.k-page.resume .nav-kefu { border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--k-ink2);font-size:13px; }
+.k-page.resume .nav-kefu::after { border:0; }
+/* 1 概览：名片区不要卡，直接放在页面底色上的「个人主页头」；名字是这一屏的主角 */
+.k-page.resume .resume-home { padding-top:16px; }
+.k-page.resume .resume-home .resume-person-card { margin:0;padding:4px 0 20px;border:0;border-radius:0;background:transparent;box-shadow:none; }
+.k-page.resume .resume-home .resume-person { position:relative;display:flex;align-items:center;gap:16px;margin:0;padding:0;border:0; }
+.k-page.resume .resume-home .resume-person__avatar { flex:0 0 auto;width:64px;height:64px;border:2px solid var(--k-paper);border-radius:50%;background:var(--k-red-soft);box-sizing:border-box; }
+.k-page.resume .resume-home .resume-person__info { flex:1;min-width:0;display:flex;flex-direction:column;gap:0; }
+.k-page.resume .resume-home .resume-person-heading { display:block;min-height:0;margin:0;padding:0;font-size:12px;font-weight:500;line-height:16px;letter-spacing:.5px;color:var(--k-muted); }
+.k-page.resume .resume-home .resume-person__name { margin-top:2px;font-size:22px;font-weight:700;line-height:30px;color:var(--k-ink);word-break:break-all; }
+.k-page.resume .resume-home .resume-person__meta { margin-top:2px;font-size:13px;line-height:18px;color:var(--k-muted);white-space:normal;overflow:visible;text-overflow:clip; }
+.k-page.resume .resume-home .resume-person .resume-edit { position:static;flex:0 0 auto;align-self:center;height:auto;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;font-size:13px;font-weight:500;line-height:18px;color:var(--k-red-deep); }
+.k-page.resume .resume-home .resume-person > .k-icon, .k-page.resume .resume-home .resume-person > :deep(.k-icon) { display:block;flex:0 0 auto;margin-left:-14px; }
+/* 下面一张白卡依次放：完整度行（环 44）、技能与特长、三栏经历统计（无底色、竖发丝线分栏），行与行之间发丝线 */
+.k-page.resume .resume-home .resume-skills-card { margin:0;padding:0 16px;border:0;border-radius:12px;background:var(--k-paper);box-shadow:none; }
+.k-page.resume .resume-home .resume-summary { position:relative;display:flex;align-items:center;gap:12px;margin:0;padding:16px 0;border:0;border-radius:0;background:transparent; }
+.k-page.resume .resume-home .summary-badge { flex:0 0 auto;width:48px;height:48px;padding:4px;border:0;box-sizing:border-box; }
+.k-page.resume .resume-home .summary-badge__inner { background:var(--k-paper); }
+.k-page.resume .resume-home .summary-percent, .k-page.resume .resume-home .summary-badge__inner > text:last-child { font-size:12px;font-weight:700;line-height:16px;color:var(--k-red-deep);font-variant-numeric:tabular-nums; }
+.k-page.resume .resume-home .summary-copy { flex:1;min-width:0;display:flex;flex-direction:column; }
+.k-page.resume .resume-home .summary-eyebrow { display:block;font-size:11px;font-weight:500;line-height:16px;color:var(--k-muted); }
+.k-page.resume .resume-home .summary-copy .summary-heading { font-size:15px;font-weight:600;line-height:21px;color:var(--k-ink); }
+.k-page.resume .resume-home .resume-summary .summary-hint { display:block;margin-top:2px;font-size:12px;line-height:18px;color:var(--k-muted); }
+.k-page.resume .resume-home .resume-skills { position:relative;margin:0;padding:16px 0; }
+.k-page.resume .resume-home .resume-skills::before, .k-page.resume .resume-home .resume-experiences::before { content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5); }
+.k-page.resume .resume-home .resume-skills .summary-heading { display:flex;align-items:center;justify-content:space-between;min-height:0;padding:0;font-size:15px;font-weight:600;line-height:21px;color:var(--k-ink); }
+.k-page.resume .resume-home .resume-skills .resume-edit { height:auto;margin:0;padding:0;border:0;border-radius:0;background:transparent;font-size:13px;font-weight:500;line-height:18px;color:var(--k-red-deep); }
+.k-page.resume .resume-home .resume-skills__body { margin-top:8px; }
+.k-page.resume .resume-home .resume-skills__text { font-size:14px;line-height:22px;color:var(--k-ink2);-webkit-line-clamp:3; }
+.k-page.resume .resume-home .resume-experiences { position:relative;display:flex;gap:0;margin:0;padding:0;border:0; }
+.k-page.resume .resume-home .resume-experiences > view { position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:72px;padding:12px 0;border:0;border-radius:0;background:transparent; }
+.k-page.resume .resume-home .resume-experiences > view + view::before { content:"";position:absolute;left:0;top:18px;bottom:18px;width:1px;background:var(--k-line);transform:scaleX(.5); }
+.k-page.resume .resume-home .resume-experiences__more { order:-1;display:flex;justify-content:center; }
+.k-page.resume .resume-home .resume-experiences__count { font-size:18px;font-weight:700;line-height:24px;color:var(--k-ink);font-variant-numeric:tabular-nums; }
+.k-page.resume .resume-home .resume-experiences__label { display:flex;align-items:center;gap:2px;font-size:12px;line-height:16px;color:var(--k-muted); }
+.k-page.resume .resume-home .resume-experiences__label > .k-icon, .k-page.resume .resume-home .resume-experiences__label > :deep(.k-icon) { display:block;flex:0 0 auto; }
+.k-page.resume .resume-home .resume-experiences__label > text { margin-left:2px; }
+/* 机会卡：40 方块 + 标题 15 / 600 + 两行 12 灰说明；按钮退到右下角、宽度跟着字走的 32 高次按钮 */
+.k-page.resume .resume-home .resume-opportunities { position:relative;margin-top:12px;padding:16px;border:0;border-radius:12px;background:var(--k-paper);box-shadow:none; }
+.k-page.resume .resume-home .resume-opportunities .summary-heading { display:flex;min-height:0;margin:0;padding-left:52px;font-size:15px;font-weight:600;line-height:21px;color:var(--k-ink); }
+.k-page.resume .resume-home .resume-opportunities__layout { display:block;margin:0; }
+.k-page.resume .resume-home .resume-opportunities__emblem { position:absolute;left:16px;top:16px;display:flex;align-items:center;justify-content:center;width:40px;height:40px;margin:0;border:0;border-radius:10px;background:var(--k-red-soft);box-shadow:none; }
+.k-page.resume .resume-home .resume-opportunities__main { display:flex;flex-direction:column;align-items:flex-end;min-width:0; }
+.k-page.resume .resume-home .resume-opportunities__desc { align-self:stretch;display:block;min-height:0;margin:4px 0 0 52px;overflow:visible;-webkit-line-clamp:unset;font-size:12px;line-height:18px;color:var(--k-muted); }
+.k-page.resume .resume-home .resume-opportunities__main :deep(.k-button) { width:auto;height:32px;margin:12px 0 0;padding:0 16px;border:1px solid var(--k-red-line);border-radius:16px;background:var(--k-paper);box-shadow:none;color:var(--k-red-deep);font-size:13px;font-weight:500;line-height:30px;box-sizing:border-box; }
+.k-page.resume .resume-home .privacy-note { justify-content:center;gap:4px;margin-top:16px;padding:0 0 12px;font-size:12px;line-height:18px; }
+/* 2 基本信息：导入是一行横幅（白卡 12 16，标题 14 / 500，说明 12 灰，右边 28 高浅棕小按钮） */
+.k-page.resume .resume-editor .resume-import { padding:12px 16px;border:0;border-radius:12px;background:var(--k-paper);box-shadow:none; }
+.k-page.resume .resume-editor .resume-import > view > text:first-child { font-size:14px;font-weight:500;line-height:20px;color:var(--k-ink); }
+.k-page.resume .resume-editor .resume-import > view > text:last-child { font-size:12px;line-height:18px;color:var(--k-muted); }
+.k-page.resume .resume-editor .resume-import > text { height:28px;padding:0 12px;border:0;border-radius:14px;background:var(--k-red-soft);color:var(--k-red-deep);font-size:12px;font-weight:500;line-height:28px; }
+/* 单行字段一律「名字在左、取值在右」的整行：行高 52、发丝线分隔、值 15 号右对齐墨色，不要灰底块；性别是行右侧 28 高的分段控件 */
+.k-page.resume .resume-editor .form { gap:0;margin-top:12px;padding:0 16px;border:0;border-radius:12px;background:var(--k-paper);box-shadow:none; }
+.k-page.resume .resume-editor .form__row { position:relative;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:12px;min-height:52px;margin:0;padding:0; }
+.k-page.resume .resume-editor .form__row + .form__row::before { content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5); }
+.k-page.resume .resume-editor .form__label { flex:0 0 auto;width:auto;font-size:15px;font-weight:400;line-height:21px;color:var(--k-ink); }
+.k-page.resume .resume-editor .form__input { flex:1 1 0;width:auto;min-width:0;min-height:52px;height:52px;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;justify-content:flex-end;gap:4px; }
+.k-page.resume .resume-editor .form__input input { width:100%;text-align:right;font-size:15px;color:var(--k-ink); }
+.k-page.resume .resume-editor .form__input > .k-flex1 { text-align:right;font-size:15px;line-height:21px;color:var(--k-ink); }
+.k-page.resume .resume-editor .form__row > .k-row { flex:0 0 auto;flex-wrap:nowrap;gap:0;height:28px;margin-left:auto;padding:2px;border-radius:14px;background:var(--k-fill);box-sizing:border-box; }
+.k-page.resume .resume-editor .gender { min-width:0;width:48px;height:24px;min-height:24px;padding:0;border:0;border-radius:12px;background:transparent;box-shadow:none;color:var(--k-ink2);font-size:13px;font-weight:400; }
+.k-page.resume .resume-editor .gender.on { background:var(--k-paper);color:var(--k-ink);font-weight:600;box-shadow:0 1px 2px rgba(58,50,43,.08); }
+@media (max-width:359px) {
+  .k-page.resume .resume-editor .form__label { font-size:14px; }
+  .k-page.resume .resume-editor .form__input input, .k-page.resume .resume-editor .form__input > .k-flex1 { font-size:14px; }
+  .k-page.resume .resume-editor .gender { width:42px; }
+}
+/* 3 技能描述：提示不要底色，退成卡片上方一行 12 灰小注（info 14）；技能框当主角（最小 120 高，「保存」仍在微信第一屏、16 号字、行高 1.7）；「添加链接」是无框的文字按钮行（上方发丝线） */
+.k-page.resume .resume-skills-editor .tip { gap:4px;padding:0 4px;border:0;border-radius:0;background:transparent; }
+.k-page.resume .resume-skills-editor .tip__icon { width:14px;height:18px;margin:0;background:transparent;display:flex;align-items:center;justify-content:center; }
+.k-page.resume .resume-skills-editor .tip__text { font-size:12px;line-height:18px;color:var(--k-muted); }
+.k-page.resume .resume-skills-editor .area--tall textarea, .k-page.resume .resume-skills-editor .area--tall .resume-area-idle { min-height:120px;font-size:16px;line-height:1.7; }
+.k-page.resume .resume-skills-editor .area--tall textarea { height:120px; }
+.k-page.resume .resume-skills-editor .skills-card .addlink { position:relative;justify-content:flex-start;gap:6px;height:44px;min-height:44px;margin-top:12px;padding:0;border:0;border-radius:0;background:transparent;color:var(--k-red-deep);font-size:14px;font-weight:500; }
+.k-page.resume .resume-skills-editor .skills-card .addlink::before { content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5); }
+.k-page.resume .resume-skills-editor .skills-card { margin-top:8px; }
+/* 4 经历卡：标题整段显示（不再一行省略吃掉「宿 + 奖金）」），卡内边距 16；店名 · 城市 13 二级墨，日期 12 灰等宽，评价行 12、「平台记录」11 */
+.k-page.resume .resume-history .exp { padding:16px;gap:12px; }
+.k-page.resume .resume-history .exp__title { display:block;overflow:visible;white-space:normal;text-overflow:clip;-webkit-line-clamp:unset;font-size:15px;font-weight:600;line-height:21px; }
+.k-page.resume .resume-history .exp > .k-flex1 > text.k-small.k-mt2 { margin-top:4px;font-size:13px;line-height:18px;color:var(--k-ink2); }
+.k-page.resume .resume-history .exp .k-row.k-gap16 > text, .k-page.resume .resume-history .exp > .k-flex1 > text.k-text { font-size:12px;line-height:18px;color:var(--k-muted);font-variant-numeric:tabular-nums; }
+.k-page.resume .resume-history .exp > .k-flex1 > .k-mt6, .k-page.resume .resume-history .exp > .k-flex1 > .k-mt4 { margin-top:4px; }
+.k-page.resume .resume-history .exp .k-row.k-gap6 > text:last-child { font-size:11px;color:var(--k-muted); }
+/* 第四轮复查：标题和固定说明只在空格 / 标点处断行（「平潭 · 李喵喵民宿日常换工」/「（提供食宿 + 奖金）」），不再掉单字；超长没有断点的才逐字断 */
+.k-page.resume .resume-history .exp__title, .k-page.resume .resume-home .resume-opportunities__desc, .k-page.resume .resume-home .resume-person__meta, .k-page.resume .resume-editor .resume-import > view > text:last-child, .k-page.resume .resume-skills-editor .tip__text { word-break:keep-all;overflow-wrap:break-word;overflow-wrap:anywhere; }
+/* ===================================================================================================
+   11-19 第四轮返修（独立复评；只动样子）
+   =================================================================================================== */
+/* 1 概览：眉题「完整度」和「基本信息」同为 12（整屏字号收成 22 / 18 / 15 / 13 / 12 五档） */
+.k-page.resume .resume-home .summary-eyebrow { font-size:12px; }
+/* 320×568 等矮屏：上面的前缀规则把旧的按屏高压缩盖掉了，这里用同样的前缀重新压，首屏保住「技能匹配机会」入口（DESIGN.md 规矩） */
+@media (max-height:600px) {
+  .k-page.resume .resume-home { padding-top:8px; }
+  .k-page.resume .resume-home .resume-person-card { padding:0 0 8px; }
+  .k-page.resume .resume-home .resume-person { gap:12px; }
+  .k-page.resume .resume-home .resume-person__avatar { width:52px;height:52px; }
+  .k-page.resume .resume-home .resume-person__name { margin-top:0;font-size:20px;line-height:26px; }
+  .k-page.resume .resume-home .resume-summary, .k-page.resume .resume-home .resume-skills { padding:12px 0; }
+  .k-page.resume .resume-home .summary-badge { width:44px;height:44px; }
+  .k-page.resume .resume-home .resume-experiences > view { min-height:60px;padding:8px 0; }
+  .k-page.resume .resume-home .resume-experiences > view + view::before { top:12px;bottom:12px; }
+  .k-page.resume .resume-home .resume-opportunities { margin-top:8px; }
+  .k-page.resume .resume-home .resume-opportunities { padding-top:12px; }
+  .k-page.resume .resume-home .resume-opportunities__emblem { top:12px; }
+}
+/* 2 基本信息：「认识你」里的兴趣爱好、性格特点也是整行（名字在左、值在右、52 高、发丝线、无灰底），和上面「基本信息」一套；灰底块只留给多行输入 */
+.k-page.resume .resume-editor .editor-card--lines { padding:0 16px 16px; }
+.k-page.resume .resume-editor .editor-card > .editor-field > text { font-size:15px;font-weight:400;line-height:21px;color:var(--k-ink); }
+.k-page.resume .resume-editor .editor-card--lines > .editor-field { position:relative;margin-top:0;padding-top:16px; }
+.k-page.resume .resume-editor .editor-card--lines > .editor-field + .editor-field::before { content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5); }
+.k-page.resume .resume-editor .editor-card--lines > .editor-field--line { flex-direction:row;align-items:center;gap:12px;min-height:52px;padding-top:0; }
+.k-page.resume .resume-editor .editor-field--line > text { flex:0 0 auto; }
+.k-page.resume .resume-editor .editor-field--line > .k-input { flex:1 1 0;min-width:0;min-height:52px;height:52px;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none; }
+.k-page.resume .resume-editor .editor-field--line > .k-input input { width:100%;text-align:right;font-size:15px;color:var(--k-ink); }
+@media (max-width:359px) {
+  .k-page.resume .resume-editor .editor-card > .editor-field > text { font-size:14px; }
+  .k-page.resume .resume-editor .editor-field--line > .k-input input { font-size:14px; }
+  /* 导入横幅：右边小按钮左右收到 8，说明「支持 PDF / DOCX / TXT，5MB 以内」一行放下 */
+  .k-page.resume .resume-editor .resume-import > text { padding:0 8px; }
+  .k-page.resume .resume-editor .resume-import > view > text:last-child { font-size:11px; }
+}
+/* 3 技能描述：内容多（三行技能 + 两条链接）时「保存」也不被底栏和发布圆钮压住 —— 技能框最小 96、「添加链接」贴近上一行、卡到按钮 16 */
+.k-page.resume .resume-skills-editor .area--tall textarea, .k-page.resume .resume-skills-editor .area--tall .resume-area-idle { min-height:96px; }
+.k-page.resume .resume-skills-editor .area--tall textarea { height:96px; }
+.k-page.resume .resume-skills-editor .skills-card .addlink { margin-top:4px; }
+.k-page.resume .resume-skills-editor .skills-card { margin-bottom:0; }
+.k-page.resume .resume-skills-editor > .k-button, .k-page.resume .resume-skills-editor > :deep(.k-button) { margin-top:16px; }

@@ -1,0 +1,51 @@
+// 输入框视觉高度 40px，文字输入和提交操作保留 44px 点击范围。
+@mixin field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  min-height: 40px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0 1px 0 12px;
+  border: 0;
+  border-radius: 11px;
+  background: #FFFDF9;
+  box-shadow: inset 0 0 0 1px var(--k-line);
+
+  &:focus-within { box-shadow: inset 0 0 0 1px var(--user-focus); }
+}
+
+@mixin input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  font-size: 14px;
+  color: var(--k-ink);
+}
+
+@mixin submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 54px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: solid transparent;
+  border-width: 8px 4px;
+  border-radius: 12px;
+  background: var(--k-red-soft) padding-box;
+  color: var(--k-red-deep);
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+
+  &::before, &::after { content: none; }
+}

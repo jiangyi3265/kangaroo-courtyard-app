@@ -7,9 +7,9 @@
       <!-- 主人：活动群聊和成员管理合到一起，进群放最上面、做大 -->
       <k-button v-if="groupChatEnabled" class="mb-group" block size="lg" icon="message-circle" label="进入活动群聊" @click="openGroup" />
       <view v-if="refunds.length" class="mb-refund" hover-class="k-press" @click="refundFlow">
-        <k-icon name="wallet" :size="22" color="ochre" :stroke="1.6" />
+        <k-icon name="wallet" :size="18" color="ochre" :stroke="1.6" />
         <text class="k-flex1">{{ canPay ? `退款待审批 ${refunds.length} 笔，点这里处理` : `退款待审批 ${refunds.length} 笔（需要活动支付权限）` }}</text>
-        <k-icon name="chevron-right" :size="18" color="muted" />
+        <k-icon name="chevron-right" :size="12" color="muted" />
       </view>
       <view v-if="loaded && !confirmed.length && !waiting.length" class="mb-empty"><text>还没有人报名</text></view>
       <view v-for="sec in sections" :key="sec.name" class="mb-sec">
@@ -152,21 +152,31 @@ async function refundFlow() {
 </script>
 
 <style scoped lang="scss">
-.mb-body { padding: 12px 16px calc(32px + var(--k-safe-bottom)); }
-.mb-title { display: block; font-family: var(--k-serif); font-weight: 700; font-size: 20px; line-height: 1.4; }
-.mb-sum { display: block; margin-top: 4px; font-size: 15px; color: var(--k-muted); }
-.mb-group { margin-top: 14px; }
-.mb-refund { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid var(--k-ochre); border-radius: 10px; background: var(--k-ochre-soft); font-size: 16px; color: var(--k-ochre-deep); }
-.mb-empty { margin-top: 40px; text-align: center; font-size: 16px; color: var(--k-muted); }
-.mb-sec { margin-top: 18px; }
-.mb-sec__title { display: block; font-family: var(--k-serif); font-weight: 700; font-size: 17px; margin-bottom: 4px; }
-.mb-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--k-line); }
-.mb-avatar { width: 44px; height: 44px; border-radius: 50%; flex: 0 0 auto; background: var(--k-paper2); }
-.mb-avatar--txt { display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: var(--k-red); }
+/* 2026-11-17 改版「小而精」：浅灰底；已确认 / 候补各是一张白卡（12 圆角、不描边），成员一人一行、中间一道细线；
+   名字 14 / 600、电话 12，「私信」「电话」收成 28 高的细边胶囊；退款待审批是一条琥珀色浅底的提示条，不再描边 */
+.mb-page { --k-bg: #F7F5F2; --k-sh1: none; background: #F7F5F2; }
+.mb-page :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+.mb-body { padding: 8px 12px calc(32px + var(--k-safe-bottom)); }
+.mb-title { display: block; font-family: var(--k-sans); font-weight: 700; font-size: 17px; line-height: 24px; }
+.mb-sum { display: block; margin-top: 2px; font-size: 12px; color: var(--k-muted); }
+.mb-group { margin-top: 12px; }
+.mb-refund { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 8px; padding: 8px 12px; border-radius: 12px; background: var(--k-ochre-soft); font-size: 13px; line-height: 18px; color: var(--k-ochre-deep); }
+/* 11-18 词典「空状态」：放进白卡，上下留白 28，14 / 500 / ink2 */
+.mb-empty { margin-top: 8px; padding: 28px 12px; border-radius: 12px; background: var(--k-paper); text-align: center; font-size: 14px; font-weight: 500; color: var(--k-ink2); }
+.mb-sec { margin-top: 8px; padding: 12px 12px 2px; border-radius: 12px; background: var(--k-paper); }
+.mb-sec__title { display: block; font-family: var(--k-sans); font-weight: 700; font-size: 15px; line-height: 22px; }
+/* 成员行之间是发丝线（1px 压成一半），紧挨标题的第一行不画 */
+.mb-row { position: relative; display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 10px 0; }
+.mb-row::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.mb-sec__title + .mb-row::before { display: none; }
+.mb-avatar { width: 40px; height: 40px; border-radius: 50%; flex: 0 0 auto; background: var(--k-paper2); }
+.mb-avatar--txt { display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: var(--k-red-deep); }
 .mb-row__copy { min-width: 0; }
-.mb-name { font-size: 17px; font-weight: 600; min-width: 0; }
-.mb-tag { flex: 0 0 auto; padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--k-ochre-deep); background: var(--k-ochre-soft); }
+.mb-name { font-size: 14px; font-weight: 600; line-height: 20px; min-width: 0; }
+.mb-tag { flex: 0 0 auto; height: 17px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 500; line-height: 17px; color: var(--k-ochre-deep); background: var(--k-ochre-soft); }
 .mb-tag--ok { color: var(--k-green); background: var(--k-green-soft); }
-.mb-phone { display: block; margin-top: 3px; font-size: 14px; color: var(--k-muted); }
-.mb-btn { flex: 0 0 auto; height: 36px; padding: 0 12px; display: flex; align-items: center; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper); font-size: 15px; color: var(--k-ink); }
+.mb-phone { display: block; margin-top: 2px; font-size: 12px; color: var(--k-muted); }
+.mb-btn { position: relative; flex: 0 0 auto; height: 28px; padding: 0 12px; display: flex; align-items: center; border: 1px solid var(--k-red-line); border-radius: 999px; background: var(--k-paper); font-size: 12px; font-weight: 500; color: var(--k-red-deep); }
+/* 看着是 28 高的小胶囊，能点的范围上下各多出 8（共 44 高，原来是 36）：手指粗一点也点得准，两个按钮之间不重叠 */
+.mb-btn::after { content: ''; position: absolute; left: -4px; right: -4px; top: -8px; bottom: -8px; }
 </style>

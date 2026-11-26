@@ -129,17 +129,27 @@ async function cancelActivity(a) {
 
 <style scoped lang="scss">
 @import './request-pages.scss';
-.finance-switch{height:40px;margin-bottom:12px;padding:3px;box-sizing:border-box;border-radius:20px;background:var(--k-paper2);display:grid;grid-template-columns:1fr 1fr}
-.finance-switch>view{border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--k-ink2)}
-.finance-switch>view.active{background:var(--k-paper);color:var(--k-red-deep);font-weight:600;box-shadow:0 2px 8px rgba(58,50,43,.1)}
-.finance-scope{margin-bottom:10px;padding:10px 12px;border-radius:12px;background:var(--k-red-soft);display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--k-red-deep)}
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、去阴影），金额加粗做大小对比，按钮收成胶囊；「驳回 / 同意退款 / 取消活动」都在。共用写法在 ./work-lite.scss；.req-* 在 ./request-pages.scss */
+@import './work-lite.scss';
+.finance-page{@include lite-page}
+/* 分段控件（11-18 第二轮精修，和「我的」钱包页一个样子）：外框 #F0EBE4、高 32、圆角 16、内边距 2；选中白块圆角 14、13 / 600 墨色，没选 13 / 400 二级墨。
+   块看着 28 高，上下各多出一圈看不见的可点范围，可点高度仍有 40 */
+.finance-switch{height:32px;margin-bottom:10px;padding:2px;box-sizing:border-box;border-radius:16px;background:#F0EBE4;display:grid;grid-template-columns:1fr 1fr}
+.finance-switch>view{border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:400;color:var(--k-ink2)}
+.finance-switch>view.active{background:var(--k-paper);color:var(--k-ink);font-weight:600;box-shadow:none}
+.finance-switch>view{position:relative}.finance-switch>view::after{content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px}
+.finance-scope{margin-bottom:8px;padding:10px 12px;border-radius:12px;background:var(--k-red-soft);display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;color:var(--k-red-deep)}
 .finance-scope__link{flex-shrink:0;font-weight:600}
-.finance-note{margin:0 0 12px}
-.finance-card{margin-bottom:12px;padding:14px;border-radius:14px;background:var(--k-paper);box-shadow:0 6px 20px rgba(58,50,43,.08);display:flex;flex-direction:column;gap:5px}
+.finance-note{margin:0 0 10px}
+.finance-card{margin-bottom:8px;padding:12px;border-radius:12px;background:var(--k-paper);box-shadow:none;display:flex;flex-direction:column;gap:3px}
 .finance-card__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:3px}
-.finance-card__title{min-width:0;flex:1;font-size:16px;font-weight:700;line-height:1.45;color:var(--k-ink);overflow-wrap:anywhere}
-.finance-card__money{flex-shrink:0;font-size:17px;font-weight:700;line-height:1.35;color:var(--k-red-deep)}
-.finance-card__meta{font-size:13px;line-height:1.55;color:var(--k-ink2);overflow-wrap:anywhere}
-.finance-card__mine{margin-top:6px;font-size:13px;line-height:1.55;color:var(--k-alert)}
-.finance-card__acts{margin-top:8px;display:flex;justify-content:flex-end;gap:10px}
+.finance-card__title{min-width:0;flex:1;font-size:14px;font-weight:600;line-height:1.45;color:var(--k-ink);overflow-wrap:anywhere}
+.finance-card__money{flex-shrink:0;font-size:18px;font-weight:700;line-height:1.2;color:var(--k-red);font-variant-numeric:tabular-nums}
+.finance-card__meta{font-size:12px;line-height:1.6;color:var(--k-muted);overflow-wrap:anywhere}
+.finance-card__mine{margin-top:4px;font-size:12px;line-height:1.55;color:var(--k-alert)}
+.finance-card__acts{margin-top:8px;display:flex;justify-content:flex-end;gap:8px}
+/* 「同意退款」每条都有一个：不用实心渐变，浅底暖棕字（一屏只留一个暖棕主操作） */
+.finance-card__acts :deep(.k-button.is-primary){border-color:transparent;background:var(--k-red-soft);color:var(--k-red-deep)}
+/* 「驳回」「取消活动」是公共的 outline（灰边墨字），和旁边浅棕的「同意退款」不像一家：按次按钮换成暖棕细边、暖棕字 */
+.finance-card__acts :deep(.k-button.is-outline){border-color:var(--k-red-line);color:var(--k-red-deep)}
 </style>

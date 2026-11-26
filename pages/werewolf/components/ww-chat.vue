@@ -1,26 +1,27 @@
 <template>
 	<view class="ww-chat">
 		<view class="ww-chat__head" hover-class="k-press" @click="expanded = !expanded">
-			<view class="ww-row">
-				<k-icon name="message-circle" :size="17" color="green" />
-				<text>{{ room.phase === 'waiting' ? '房间聊天' : '发言记录' }}</text>
+			<view class="ww-chat__title">
+				<k-icon name="message-circle" :size="16" color="green" />
+				<text>{{ game === 'party' ? '房间语音' : room.phase === 'waiting' ? '房间聊天' : '发言记录' }}</text>
 			</view>
-			<text class="ww-chat__toggle">
-				{{ expanded ? '收起' : '展开' }} {{ messages.length ? '· ' + messages.length : '' }}
-			</text>
+			<view class="ww-chat__toggle">
+				<text>{{ expanded ? '收起' : '展开' }} {{ messages.length ? '· ' + messages.length : '' }}</text>
+				<k-icon :name="expanded ? 'chevron-up' : 'chevron-down'" :size="12" color="muted" />
+			</view>
 		</view>
 		<view v-if="expanded" class="ww-chat__messages">
 			<button v-if="messages.length > visibleCount" class="ww-link" @click="visibleCount += 12">查看更早的发言</button>
 			<text v-if="!messages.length" class="ww-muted">
 				{{ room.phase === 'waiting' ? '和朋友打个招呼吧' : '等待大家的发言' }}
 			</text>
-			<view v-for="message in messages.slice(-visibleCount)" :key="message.id" class="ww-chat__message">
+			<view v-for="message in messages.slice(-visibleCount)" :key="message.id" class="ww-chat__message" :class="{ 'ww-chat__message--voice': !message.text }">
 				<text class="ww-chat__name">{{ message.seat || '' }} {{ message.name }}</text>
 				<text v-if="message.text" class="ww-chat__text">{{ message.text }}</text>
 				<button v-else class="ww-chat__voice" :disabled="recording" @click="play(message)">
 					<k-icon
 						:name="playing === message.id ? 'pause' : 'volume-2'"
-						:size="17"
+						:size="16"
 						color="green"
 					/>
 					<text>
@@ -56,7 +57,7 @@
 			@mouseup="stopRecording"
 			@mouseleave="cancelRecording"
 		>
-			<k-icon name="mic" :size="17" color="green" />
+			<k-icon name="mic" :size="16" :color="recording ? 'white' : 'green'" />
 			<text>
 				{{
 					uploading
@@ -67,7 +68,7 @@
 				}}
 			</text>
 		</button>
-		<text v-if="recordedVoice && expanded" class="ww-chat__hint">{{ room.me?.canSpeak ? '语音消息 · 上滑取消，每条最多60秒；请在本轮倒计时结束前发送' : '现在可以点击收听，轮到你发言时可录音或打字' }}</text>
+		<text v-if="recordedVoice && expanded" class="ww-chat__hint">{{ game === 'party' ? '按住说话，松开发送，上滑取消。每条最多60秒，房间内的玩家可收听。' : room.me?.canSpeak ? '语音消息 · 上滑取消，每条最多60秒；请在本轮倒计时结束前发送' : '现在可以点击收听，轮到你发言时可录音或打字' }}</text>
 		<view v-if="voiceError" class="ww-chat__error">
 			<text>{{ voiceError }}</text>
 			<button v-if="draft" class="ww-link" :disabled="uploading" @click="upload">
@@ -83,8 +84,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import { getToken } from '@/common/request.js'
-import { requestId } from '../api.js'
-import { recorder, sendVoice, loadVoice, createVoicePlayer } from '../voice.js'
+import { recorder, sendVoice, loadVoice, createVoicePlayer, requestId } from '../voice.js'
 import { voiceFocus } from '../audio-focus.js'
 const props = defineProps({ room: Object, active: { type: Boolean, default: true }, busy: Boolean, recordedVoice: Boolean, voiceOnly: Boolean, game: { type: String, default: 'werewolf' } })
 const emit = defineEmits(['send', 'refresh'])
@@ -238,21 +238,31 @@ onBeforeUnmount(cleanup)
 onShow(() => { active = props.active })
 </script>
 <style scoped>
+/* 11-18 第三轮：白卡 12 圆角、内边距 12 16；标题 15/600 配 16 号图标（返修第 2 轮：和「对局记录」同档）；名字一列对齐，正文 14 */
 .ww-chat {
-	margin-top: 10px;
-	padding: 12px;
-	background: var(--k-paper2);
+	margin-top: 12px;
+	padding: 4px 16px 12px;
+	background: var(--k-paper);
 	border-radius: 12px;
 }
 .ww-chat__head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	min-height: 30px;
-	font-size: 14px;
+	min-height: 44px;
+	font-size: 15px;
 	font-weight: 600;
 }
+.ww-chat__title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--k-ink);
+}
 .ww-chat__toggle {
+	display: flex;
+	align-items: center;
+	gap: 4px;
 	color: var(--k-muted);
 	font-size: 12px;
 	font-weight: 400;
@@ -260,7 +270,13 @@ onShow(() => { active = props.active })
 .ww-chat__messages {
 	max-height: 220px;
 	overflow-y: auto;
+	padding: 4px 0 8px;
+}
+.ww-chat__messages .ww-muted {
+	display: block;
 	padding: 8px 0;
+	font-size: 13px;
+	color: var(--k-muted);
 }
 .ww-chat__message {
 	display: flex;
@@ -269,13 +285,21 @@ onShow(() => { active = props.active })
 	align-items: flex-start;
 	font-size: 14px;
 	line-height: 1.6;
+	color: var(--k-ink);
+}
+/* 语音消息行：名字和 32 高的语音胶囊按中线对齐 */
+.ww-chat__message--voice {
+	align-items: center;
 }
 .ww-chat__name {
-	min-width: 44px;
-	max-width: 74px;
-	color: var(--k-muted);
+	width: 64px;
 	flex-shrink: 0;
-	overflow-wrap: anywhere;
+	color: var(--k-muted);
+	font-size: 12px;
+	line-height: 22px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 .ww-chat__text {
 	flex: 1;
@@ -289,19 +313,40 @@ onShow(() => { active = props.active })
 	gap: 8px;
 	margin-top: 8px;
 }
+.ww-chat__compose .ww-field {
+	flex: 1;
+	min-width: 0;
+	height: 40px;
+	padding: 0 16px;
+	border: 0;
+	border-radius: 20px;
+	background: var(--k-page);
+	color: var(--k-ink);
+	font-size: 14px;
+	box-sizing: border-box;
+}
+.ww-chat__compose :deep(.k-button) {
+	height: 40px;
+	padding: 0 16px;
+	border-radius: 20px;
+	font-size: 14px;
+}
 .ww-chat__voice,
 .ww-chat__record {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	background: var(--k-green-soft);
 	color: var(--k-green);
-	border-radius: 10px;
-	font-size: 14px;
-	line-height: 1.5;
-	padding: 8px 12px;
+	font-size: 13px;
+	line-height: 1.4;
 	margin: 0;
+}
+.ww-chat__voice {
+	height: 32px;
+	padding: 0 12px;
+	border-radius: 16px;
 }
 .ww-chat__voice::after,
 .ww-chat__record::after {
@@ -309,11 +354,15 @@ onShow(() => { active = props.active })
 }
 .ww-chat__record {
 	width: 100%;
-	margin-top: 10px;
-	min-height: 44px;
+	height: 44px;
+	margin-top: 8px;
+	padding: 0 16px;
+	border-radius: 22px;
+	font-size: 14px;
+	font-weight: 500;
 	user-select: none;
 }
-.ww-chat__hint { display: block; margin-top: 8px; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+.ww-chat__hint { display: block; margin-top: 8px; font-size: 11px; line-height: 1.6; color: var(--k-muted); }
 .ww-chat__record--on {
 	background: var(--k-green);
 	color: var(--k-paper);
@@ -323,5 +372,42 @@ onShow(() => { active = props.active })
 	line-height: 1.6;
 	color: var(--k-alert);
 	padding-top: 8px;
+}
+.ww-chat__error .ww-link {
+	color: var(--k-alert);
+	margin-right: 12px;
+}
+.ww-chat .ww-link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 32px;
+	padding: 0;
+	margin: 0;
+	font-size: 12px;
+	color: var(--k-muted);
+	background: transparent;
+}
+.ww-chat .ww-link::after {
+	border: 0;
+}
+/* 11-18 第四轮：发送人「座位号 名字」单独一行放在消息上面（12 号灰字、行高 16），长名字照样完整显示、
+   不再被 64 宽 + 省略号吃掉；正文 / 语音条在下一行占满宽，行间 2 */
+.ww-chat__message,
+.ww-chat__message--voice {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	padding: 8px 0;
+}
+.ww-chat__name {
+	width: auto;
+	max-width: 100%;
+	line-height: 16px;
+	overflow: visible;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+.ww-chat__text {
+	width: 100%;
 }
 </style>

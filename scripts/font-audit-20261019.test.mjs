@@ -43,7 +43,7 @@ test('字体名：只用四个字体变量，不出现宋体 / 楷体 / Georgia 
       for (const { sel, body } of rulesOf(css)) {
         if (/@font-face/.test(sel)) continue
         for (const [k, v] of declsOf(body)) {
-          if (k === 'font-family' && v.replace(TOKENS, '').replace(/[\s,]/g, '')) bad.push(`${rel(f)} ${sel} → ${v}`)
+          if (k === 'font-family' && v !== 'inherit' && v.replace(TOKENS, '').replace(/[\s,]/g, '')) bad.push(`${rel(f)} ${sel} → ${v}`)
           if (k === 'font' && /['"]|serif|sans|mono|kai|song|georgia|cursive/i.test(v.replace(TOKENS, ''))) bad.push(`${rel(f)} ${sel} → font: ${v}`)
         }
       }

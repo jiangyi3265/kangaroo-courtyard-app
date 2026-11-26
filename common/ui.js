@@ -7,6 +7,8 @@ export const modal = (title, content, extra = {}) => new Promise((resolve) => {
   uni.showModal({
     title,
     content: content || '',
+    confirmColor: '#9A6B3F', // = --k-red（微信默认是绿 / 黑，和全站暖棕不搭）；调用方传了就用调用方的
+    cancelColor: '#6F6A65', // = --k-muted
     ...extra,
     success: (r) => resolve(r),
     fail: () => resolve({ confirm: false })

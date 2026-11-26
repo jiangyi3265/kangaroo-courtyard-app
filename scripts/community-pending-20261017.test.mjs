@@ -15,6 +15,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import * as feedJs from '../pages/community/community-feed.js'
+import { commentParts, commentStickers } from '../pages/community/comment-stickers.js'
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(APP, 'package.json'))
@@ -55,9 +56,10 @@ const renderFn = (() => {
 function page(state) {
   const detail = vue.ref({ postId: 11, title: '大理三天', content: '正文', images: [], tags: [], related: [], author: { userId: 7, name: '小七', isMe: true }, likes: 0, comments: 0, ...state.detail })
   const ctx = {
-    s: state.s, filterOpen: false, detail, imgIdx: 0, heroImgs: [], heroImg: '', heroBadge: '1/1', authorAvatar: '', detailLink: null,
+    cm: { hasMore: false }, cmLoading: false, replyLoading: {},
+    composerOpen: !!state.composerOpen, commentImages: [], commentEmojis: false, replyTo: null, commentBusy: false, commentError: '', privateChatEnabled: true, s: state.s, filterOpen: false, detail, imgIdx: 0, heroImgs: [], heroImg: '', heroBadge: '1/1', authorAvatar: '', detailLink: null,
     titleOf: feedJs.titleOf, canShare: feedJs.canShare, canInteract: feedJs.canInteract, absUrl: (x) => x, R: {},
-    detailOpen: vue.computed(() => feedJs.canInteract(detail.value)), comments: [], cmLoaded: true, commentTitle: '全部评论（0）', ctab: '热评', draft: ''
+    detailOpen: vue.computed(() => feedJs.canInteract(detail.value)), comments: state.comments || [], expandedReplies: {}, cmLoaded: true, commentTitle: '全部评论（0）', ctab: '热评', draft: ''
   }
   const comp = { setup: () => ctx, render: renderFn, components: { 'k-topbar': { render() { return vue.h('header') } } } }
   const app = vue.createSSRApp(comp)
@@ -65,20 +67,33 @@ function page(state) {
   return renderToString(app)
 }
 const actbarOf = (html) => html.slice(html.indexOf('class="actbar"'), html.indexOf('class="actbar__safe"'))
+
+test('留言和回复：时间、发布时的属地、回复在正文后面；老留言无属地，验证章已移除', async () => {
+  const html = await page({ s: 3, detail: { status: 'online' }, comments: [{
+    commentId: 1, name: '甲', text: '留言正文', dateText: '11-22', phoneVerified: true, tripVerified: true,
+    chips: ['手机已验证', '行程已验证'],
+    replies: [{ commentId: 2, name: '乙', text: '回复正文', dateText: '11-23', ipRegion: '福建', phoneVerified: true, tripVerified: true }]
+  }] })
+  const section = html.slice(html.indexOf('class="comments"'), html.indexOf('class="actbar-spacer"'))
+  assert.match(section, /value="留言正文"[\s\S]*?comment__meta[^]*?11-22[^]*?回复</)
+  assert.match(section, /value="回复正文"[\s\S]*?comment__meta[^]*?11-23[^]*?IP属地 · 福建[^]*?回复</)
+  assert.equal((section.match(/IP属地/g) || []).length, 1)
+  assert.doesNotMatch(section, /手机已验证|行程已验证/)
+})
 const items = (bar) => [...bar.matchAll(/<(?:view|button) class="([^"]*actbar__item[^"]*)"[^>]*>([\s\S]*?)<\/(?:view|button)>/g)].map(m => ({ cls: m[1], body: m[2], text: (m[2].match(/<text>([^<]*)<\/text>/) || [])[1] }))
 
-test('详情：作者看自己审核中的帖子，赞 / 评论 / 收藏 / 分享 / 私信 都灰掉，正文下面有说明', async () => {
+test('详情：作者看自己审核中的帖子，点赞 / 收藏 / 评论都灰掉，分享不可用，正文下面有说明', async () => {
   const html = await page({ s: 3, detail: { status: 'pending' } })
   assert.ok(html.includes(NOTICE), '正文下面的说明')
   assert.match(html, /class="pending-line"/)
   const list = items(actbarOf(html))
   // 小程序和 H5 的分享按钮条件编译都留在模板里：赞 / 评论 / 收藏 / 分享（小程序 v-else）/ 分享（H5）/ 私信
-  assert.deepEqual(list.map(i => i.text), ['赞', '评论', '收藏', '分享', '分享', '私信'])
+  assert.deepEqual(list.map(i => i.text), ['赞', '收藏', '评论'])
   for (const i of list) {
     assert.match(i.cls, /actbar__item--off/, i.text + ' 要灰')
     assert.match(i.body, /color="light"/, i.text + ' 图标是灰的')
   }
-  assert.ok(!/open-type="share"/.test(actbarOf(html)), '审核中不给微信转发按钮')
+  assert.ok(!/open-type="share"/.test(html), '审核中不给微信转发按钮')
 })
 
 test('详情：已发布的帖子一切照旧，没有说明行、没有灰按钮', async () => {
@@ -87,24 +102,24 @@ test('详情：已发布的帖子一切照旧，没有说明行、没有灰按�
   const bar = actbarOf(html)
   assert.ok(!bar.includes('actbar__item--off'))
   assert.ok(!bar.includes('color="light"'))
-  assert.match(bar, /open-type="share"/)
-  assert.deepEqual(items(bar).map(i => i.text), ['赞 3', '评论 2', '收藏', '分享', '分享', '私信'])
+  assert.match(html, /class="post-share share-btn" open-type="share"/)
+  assert.deepEqual(items(bar).map(i => i.text), ['赞 3', '收藏', '评论 2'])
 })
 
 test('详情：别人的帖子不出说明行（审核中的别人本来就打不开）；之前点过的赞照常亮红色', async () => {
   const html = await page({ s: 3, detail: { status: 'pending', liked: true, favorited: true, author: { userId: 8, name: '小八', isMe: false } } })
   assert.ok(!html.includes(NOTICE))
-  const [like, , fav] = items(actbarOf(html))
+  const [like, fav] = items(actbarOf(html))
   assert.match(like.body, /color="red"/)
   assert.match(fav.body, /color="ochre"/)
 })
 
-test('评论屏：没发布时不给输入框，换成一行灰字；已发布照常有输入框和发送', async () => {
-  const off = await page({ s: 4, detail: { status: 'pending' } })
-  assert.match(off, /class="cbar__off"[\s\S]*?审核通过后才能点赞、收藏和评论/)
+test('帖子内留言：待审帖子不能评论；已发布可展开输入框并发送', async () => {
+  const off = await page({ s: 3, composerOpen: true, detail: { status: 'pending' } })
+  assert.ok(!off.includes('id="post-comments"'))
   assert.ok(!off.includes('cbar__input'))
   assert.ok(!off.includes('cbar__send'))
-  const on = await page({ s: 4, detail: { status: 'online' } })
+  const on = await page({ s: 3, composerOpen: true, detail: { status: 'online' } })
   assert.ok(!on.includes('cbar__off'))
   assert.match(on, /cbar__input/)
   assert.match(on, /class="cbar__send"/)
@@ -125,26 +140,151 @@ test('信息流卡片：自己审核中的帖子 赞 / 评论 灰掉，评论点
 })
 
 // ---------------------------------------------------------------- 点了会怎样：把几个函数放进沙箱跑，接口换成记录调用的假函数
-function runScript(detailInit) {
+function runScript(detailInit, pagination = false) {
   const ast = compiler.babelParse(js, { sourceType: 'module' })
-  const want = new Set(['likePost', 'detailOpen', 'openComments', 'openPostComments', 'favoritePost', 'sending', 'sendComment', 'likeComment', 'openPost'])
+  const want = new Set(['likePost', 'detailOpen', 'openComments', 'openPostComments', 'favoritePost', 'sending', 'sendComment', 'likeComment', 'openPost',
+    'beginComment', 'closeComposer', 'cancelComment', 'startReply', 'toggleCommentEmojis', 'appendCommentEmoji',
+    'favoritePending', 'currentPost', 'REASONS', 'reportPost', 'blockAuthor', 'onReply'])
+  if (pagination) for (const key of ['loadComments', 'moreReplies', 'mergeComments', 'cmLoading', 'replyLoading', 'commentRequest']) want.add(key)
   const named = (n) => (n.type === 'FunctionDeclaration' && want.has(n.id.name)) || (n.type === 'VariableDeclaration' && n.declarations.some(d => want.has(d.id.name)))
   const body = ast.program.body.filter(named).map(n => js.slice(n.start, n.end)).join('\n')
   const calls = [], toasts = []
   const rec = (name, data) => async (...args) => { calls.push([name, ...args]); return { data: typeof data === 'function' ? data(...args) : data } }
   const box = {
-    console, ...feedJs, computed: vue.computed,
+    console, ...feedJs, computed: vue.computed, ref:vue.ref, nextTick:f=>f?.(), uni:{pageScrollTo:o=>calls.push(['scroll',o]),hideKeyboard() {}},
+    page: { $nextTick: fn => vue.nextTick(fn) }, commentFocus: vue.ref(false),
+    commentBusy:vue.ref(false),commentImages:vue.ref([]),replyTo:vue.ref(null),commentEmojis:vue.ref(false),commentError:vue.ref(''),composerOpen:vue.ref(false),
+    experience:{account:{id:1}},composerVersion:1,postRequest:0,cm:vue.ref({}),cmLoaded:vue.ref(false),cmFailed:vue.ref(false),ctab:vue.ref('热评'),
     s: vue.ref(3), feed: vue.ref({ rows: [] }), detail: vue.ref(detailInit), imgIdx: vue.ref(0), draft: vue.ref('去古城怎么走'),
     toast: (t) => toasts.push(t), fail: (e) => toasts.push('fail:' + e.message), gated: (fn) => fn(), prompt: async () => '回复内容',
-    loadComments: () => calls.push(['loadComments']),
+    loadComments: () => calls.push(['loadComments']), reload: () => calls.push(['reload']),
+    expandedReplies: vue.ref({}),
+    sheet: async () => 0, confirm: async () => true, apiReport: rec('report', {}),
     apiPostLike: rec('like', { liked: true, likes: 1 }), apiPostFavorite: rec('favorite', { favorited: false }),
     apiPostComment: rec('comment', { status: 'visible', message: '评论已发布' }), apiCommentLike: rec('commentLike', {}),
     apiPost: rec('post', () => box.__next)
   }
   vm.createContext(box)
-  vm.runInContext(body + '\n;globalThis.__x = { likePost, detailOpen, openComments, openPostComments, favoritePost, sendComment, likeComment, openPost }', box, { filename: 'index.vue:script-setup' })
+  vm.runInContext(body + '\n;globalThis.__x = { ' + [...want].join(', ') + ' }', box, { filename: 'index.vue:script-setup' })
   return { x: box.__x, box, calls, toasts }
 }
+
+test('单击回复在输入框挂载后请求焦点；取消、重开与表情面板不会误唤起键盘', async () => {
+  const { x, box } = runScript({ postId: 11, status: 'online' })
+  const target = { commentId: 42, name: '小张' }
+  x.startReply(target)
+  assert.equal(box.composerOpen.value, true)
+  assert.equal(box.commentFocus.value, false)
+  await vue.nextTick()
+  assert.equal(box.commentFocus.value, true)
+  x.toggleCommentEmojis()
+  assert.equal(box.commentFocus.value, false)
+  assert.equal(box.commentEmojis.value, true)
+  x.toggleCommentEmojis()
+  await vue.nextTick()
+  assert.equal(box.commentFocus.value, true)
+  x.cancelComment()
+  assert.equal(box.composerOpen.value, false)
+  assert.equal(box.replyTo.value, null)
+  x.startReply(target)
+  x.cancelComment()
+  await vue.nextTick()
+  assert.equal(box.commentFocus.value, false)
+})
+
+test('留言与回复分页：同页只请求一次，失败可重试，翻过旧上限后仍能读到最后一条', async () => {
+  const { x, box } = runScript({ postId: 11, status: 'online' }, true)
+  const tops = Array.from({ length: 107 }, (_, i) => ({ commentId: 200 - i, likes: 5, replies: [], hasMoreReplies: false }))
+  const replies = Array.from({ length: 53 }, (_, i) => ({ commentId: 300 + i }))
+  tops[0] = { ...tops[0], replies: [replies[0]], hasMoreReplies: true }
+  const requested = []
+  let failNext = true
+  box.apiPostComments = async (_, sort, paging) => {
+    requested.push(paging.before)
+    const index = paging.before ? tops.findIndex(r => r.commentId === paging.before) + 1 : 0
+    if (index && failNext) { failNext = false; throw new Error('暂时离线') }
+    const rows = tops.slice(index, index + paging.size)
+    return { data: { rows, total: 160, hasMore: index + rows.length < tops.length } }
+  }
+  await x.loadComments()
+  await x.loadComments(true)
+  assert.equal(box.cmFailed.value, true)
+  assert.equal(box.cm.value.rows.length, 20)
+  await Promise.all([x.loadComments(true), x.loadComments(true)])
+  while (box.cm.value.hasMore) await x.loadComments(true)
+  assert.deepEqual(requested, [undefined, 181, 181, 161, 141, 121, 101])
+  assert.equal(box.cm.value.rows.length, 107)
+  assert.equal(box.detail.value.comments, 160)
+  const requestedReplies = []
+  box.apiCommentReplies = async (_, parent, after) => {
+    assert.equal(parent, 200)
+    requestedReplies.push(after)
+    const rest = replies.filter(r => r.commentId > after)
+    return { data: { rows: rest.slice(0, 20), hasMore: rest.length > 20 } }
+  }
+  while (box.cm.value.rows[0].hasMoreReplies) await Promise.all([x.moreReplies(200), x.moreReplies(200)])
+  assert.deepEqual(requestedReplies, [300, 320, 340])
+  assert.equal(box.cm.value.rows[0].replies.length, 53)
+})
+
+test('切换排序、帖子或账号后，旧的留言和回复分页结果不会插回当前列表', async () => {
+  const { x, box } = runScript({ postId: 11 }, true)
+  const page = { rows: [{commentId: 80, likes: 1, replies: [{commentId:90}], hasMoreReplies: true}], hasMore: true, total: 3 }
+  box.apiPostComments = async () => ({data: page})
+  await x.loadComments()
+  let finishMore, finishReply
+  box.apiPostComments = () => new Promise(r => { finishMore = r })
+  box.apiCommentReplies = () => new Promise(r => { finishReply = r })
+  const top = x.loadComments(true), nested = x.moreReplies(80)
+  box.ctab.value = '最新'
+  box.apiPostComments = async (_, sort) => { assert.equal(sort, 'new'); return {data: {rows: [{commentId: 100}], hasMore:false,total:1}} }
+  await x.loadComments()
+  finishMore({data:page}); finishReply({data:{rows:[{commentId:91}],hasMore:false}})
+  await Promise.all([top, nested])
+  assert.deepEqual(Array.from(box.cm.value.rows, r => r.commentId), [100])
+  for (const change of [() => {box.detail.value = {postId:12}}, () => {box.experience.account = {id:2}}]) {
+    box.apiPostComments = () => new Promise(r => { finishMore = r })
+    const old = x.loadComments()
+    change()
+    finishMore({data:page})
+    await old
+    assert.equal(box.cm.value.rows.length, 0)
+  }
+})
+
+test('袋鼠表情可与文字或旧表情一起回复，刷新后仍可解析；未知标记保留原文', async () => {
+  const { x, box, calls } = runScript({ postId: 11, status: 'online' })
+  x.startReply({ commentId: 42, name: '小张' })
+  box.draft.value = '好😊'
+  for (const sticker of commentStickers) x.appendCommentEmoji(sticker.token)
+  await x.sendComment()
+  const [, postId, content, parent] = calls.find(call => call[0] === 'comment')
+  assert.equal(postId, 11)
+  assert.equal(parent, 42)
+  assert.equal(content, '好😊[袋鼠·你好][袋鼠·开心][袋鼠·点赞][袋鼠·谢谢][袋鼠·疑问][袋鼠·抱抱][袋鼠·捂脸笑]')
+  const parts = commentParts(content)
+  assert.equal(parts[0].text, '好😊')
+  assert.equal(parts[0].sticker, undefined)
+  assert.deepEqual(parts.slice(1).map(part => part.sticker.key), ['wave','joy','like','thanks','think','hug','facepalm'])
+  assert.ok(commentStickers.every(sticker => fs.existsSync(path.join(APP, sticker.image))))
+  assert.equal(commentParts('[袋鼠·捂脸笑]')[0].sticker.key, 'facepalm')
+  assert.deepEqual(commentParts('[袋鼠·未知]'), [{ text: '[袋鼠·未知]', sticker: undefined }])
+})
+
+test('表情单独可发，添加后超出 500 字时不截断草稿或表情', async () => {
+  const { x, box, calls, toasts } = runScript({ postId: 11, status: 'online' })
+  const marker = commentStickers[0].token
+  box.draft.value = '字'.repeat(500 - marker.length)
+  x.appendCommentEmoji(marker)
+  assert.equal(box.draft.value.length, 500)
+  x.appendCommentEmoji(marker)
+  assert.equal(box.draft.value.length, 500)
+  assert.match(toasts.at(-1), /500/)
+  box.draft.value = ''
+  x.appendCommentEmoji(marker)
+  await x.sendComment()
+  assert.equal(calls.find(call => call[0] === 'comment')[2], marker)
+})
 
 test('点了只提示，不发请求：赞 / 收藏 / 评论 / 回复 / 评论点赞 / 进评论屏', async () => {
   const r = runScript({ postId: 11, status: 'pending', liked: false, favorited: false })
@@ -168,6 +308,56 @@ test('之前点过的赞 / 收藏照常能取消（服务端也放行）', async
   assert.deepEqual(r.calls.map(c => c[0]), ['like', 'favorite'])
 })
 
+test('收藏慢时重复点击只提交一次，切到另一帖后不会改它的收藏状态', async () => {
+  const { x, box, toasts } = runScript({ postId: 11, status: 'online', favorited: false })
+  const requests = []
+  let finish
+  const response = new Promise(resolve => { finish = resolve })
+  box.apiPostFavorite = id => { requests.push(id); return response }
+  const first = x.favoritePost(), second = x.favoritePost()
+  box.detail.value = { postId: 12, status: 'online', favorited: false }
+  finish({ data: { favorited: true } })
+  await Promise.all([first, second])
+  assert.deepEqual(requests, [11])
+  assert.equal(box.detail.value.favorited, false)
+  assert.deepEqual(toasts, [])
+})
+
+test('举报原因弹窗或屏蔽请求未结束时离开，不能举报新帖或把新帖关掉', async () => {
+  const { x, box, calls } = runScript({ postId: 11, author: { userId: 7, name: '小张' } })
+  let choose
+  box.sheet = () => new Promise(resolve => { choose = resolve })
+  const report = x.reportPost()
+  box.detail.value = { postId: 12, author: { userId: 8, name: '小王' } }
+  choose(0)
+  await report
+  assert.equal(calls.some(([type]) => type === 'report'), false)
+  let finish
+  box.apiBlock = () => new Promise(resolve => { finish = resolve })
+  const block = x.blockAuthor()
+  await Promise.resolve()
+  await new Promise(resolve => setImmediate(resolve))
+  box.detail.value = { postId: 13, author: { userId: 9 } }
+  finish({ data: { blocked: true } })
+  await block
+  assert.equal(box.s.value, 3)
+  assert.equal(calls.some(([type]) => type === 'reload'), false)
+})
+
+test('删除自己留言时切换帖子，不扣新帖的留言数', async () => {
+  const { x, box, calls } = runScript({ postId: 11, comments: 3 })
+  box.sheet = async () => 1
+  let finish
+  box.apiCommentDelete = () => new Promise(resolve => { finish = resolve })
+  const deletion = x.onReply({ commentId: 45, isMe: true })
+  await new Promise(resolve => setImmediate(resolve))
+  box.detail.value = { postId: 12, comments: 7 }
+  finish({ msg: '已删除' })
+  await deletion
+  assert.equal(box.detail.value.comments, 7)
+  assert.equal(calls.some(([type]) => type === 'loadComments'), false)
+})
+
 test('已发布的帖子照常能点', async () => {
   const r = runScript({ postId: 11, status: 'online', liked: false, favorited: false })
   assert.equal(r.x.detailOpen.value, true)
@@ -175,11 +365,11 @@ test('已发布的帖子照常能点', async () => {
   await r.x.favoritePost()
   await r.x.sendComment()
   r.x.openComments()
-  assert.deepEqual(r.calls.map(c => c[0]), ['like', 'favorite', 'comment', 'loadComments', 'loadComments'])
-  assert.equal(r.box.s.value, 4)
+  assert.deepEqual(r.calls.map(c => c[0]), ['like', 'favorite', 'comment', 'loadComments', 'scroll', 'scroll'])
+  assert.equal(r.box.s.value, 3)
 })
 
-test('?view=comments / 卡片「评论」打开审核中的帖子：落到详情（s=3），不拉评论；已发布的照常进评论屏', async () => {
+test('?view=comments / 卡片「评论」打开审核中的帖子：落到详情（s=3），不拉评论；已发布的定位到页内评论', async () => {
   const r = runScript({ postId: 0 })
   r.box.__next = { postId: 11, status: 'pending', author: {} }
   assert.equal(await r.x.openPost(11, 4), true)
@@ -187,7 +377,7 @@ test('?view=comments / 卡片「评论」打开审核中的帖子：落到详情
   assert.ok(!r.calls.some(c => c[0] === 'loadComments'))
   r.box.__next = { postId: 12, status: 'online', author: {} }
   await r.x.openPost(12, 4)
-  assert.equal(r.box.s.value, 4)
+  assert.equal(r.box.s.value, 3)
   assert.ok(r.calls.some(c => c[0] === 'loadComments'))
 })
 
@@ -196,7 +386,7 @@ test('后端：点赞 / 收藏 / 评论 / 评论点赞 都按帖子状态 409，
   assert.match(postJava, /return "帖子还在审核中，通过后才能点赞、收藏和评论";/)
   assert.match(postJava, /return "帖子未通过审核，不能点赞、收藏和评论";/)
   assert.match(postJava, /return "帖子已下架，不能点赞、收藏和评论";/)
-  const body = (name) => { const i = postJava.indexOf('public Map<String, Object> ' + name + '('); return postJava.slice(i, postJava.indexOf('\n    }\n', i)) }
+  const body = (name) => { const i = postJava.lastIndexOf('public Map<String, Object> ' + name + '('); return postJava.slice(i, postJava.indexOf('\n    }\n', i)) }
   for (const name of ['like', 'favorite', 'likeComment']) {
     const b = body(name)
     assert.match(b, /String blocked = interactBlockedMessage\((r|post)\.get\("status"\)\);/, name)

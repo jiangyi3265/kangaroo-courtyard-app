@@ -1,53 +1,63 @@
 // 商家需求几个页面共用的样式（线上任务审核、商家服务人、城市负责人）：放在 staff 分包目录里，编译时并进各自页面，不进主包。
-.req-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+// 2026-11-17 改版「小而精」：白卡 12 圆角、不加阴影；标题和数字收一档；页签、小按钮收成 28 高的胶囊；底部操作条不用阴影，换一条细线。类名和结构都没动。
+.req-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 .req-head__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
-.req-head__title{font-size:19px;font-weight:700;color:var(--k-ink)}
+.req-head__title{font-family:var(--k-sans);font-size:17px;font-weight:700;line-height:24px;color:var(--k-ink)}
 .req-head__sub{font-size:12px;line-height:1.6;color:var(--k-muted)}
-.req-head__act{flex-shrink:0;height:34px;padding:0 12px;border:1px solid var(--k-red-line);border-radius:17px;display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--k-red-deep)}
-.req-tabs{white-space:nowrap;margin:0 -16px 12px;width:auto}
-.req-tabs__row{display:inline-flex;gap:8px;padding:0 16px}
-.req-tab{flex-shrink:0;height:34px;padding:0 14px;border:1px solid var(--k-line2);border-radius:17px;background:var(--k-paper);display:flex;align-items:center;font-size:13px;color:var(--k-ink2)}
-.req-tab.active{border-color:var(--k-red);background:var(--k-red-soft);color:var(--k-red-deep);font-weight:600}
-.req-state{min-height:180px;padding:0 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;font-size:14px;line-height:1.6;color:var(--k-muted)}
-.req-more{height:44px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--k-red-deep)}
-.req-bar{position:fixed;left:0;right:0;bottom:0;z-index:43;padding:10px 16px calc(10px + var(--k-safe-bottom));background:rgba(255,255,255,.96);box-shadow:0 -6px 20px rgba(58,50,43,.08);display:flex;gap:10px}
+.req-head__act{flex-shrink:0;height:28px;padding:0 12px;border:1px solid var(--k-red-line);border-radius:999px;background:var(--k-paper);display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--k-red-deep)}
+.req-tabs{white-space:nowrap;margin:0 -12px 10px;width:auto}
+.req-tabs__row{display:inline-flex;gap:6px;padding:0 12px}
+.req-tab{flex-shrink:0;height:28px;padding:0 12px;border-radius:999px;background:var(--k-paper);display:flex;align-items:center;font-size:12px;color:var(--k-ink2)}
+// 2026-11-18 第二轮精修：筛选胶囊选中不描边、字重 500；空状态 / 读取中放进白卡；分隔线、操作条顶线换成发丝线；数字格数字在上 18 号
+.req-tab.active{background:var(--k-red-soft);color:var(--k-red-deep);font-weight:500;box-shadow:none}
+.req-state{min-height:auto;padding:28px 16px;border-radius:12px;background:var(--k-paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;font-size:14px;font-weight:500;line-height:1.6;color:var(--k-ink2)}
+// 空状态里的「重新加载」：32 高的次按钮小胶囊（公共按钮 outline 是灰边墨字，这里换成暖棕细边）
+.req-state :deep(.k-button.is-md){height:32px;padding:0 14px;font-size:13px;border-color:var(--k-red-line);color:var(--k-red-deep)}
+.req-more{height:44px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--k-red-deep)}
+.req-bar{position:fixed;left:0;right:0;bottom:0;z-index:43;padding:8px 12px calc(8px + var(--k-safe-bottom));background:var(--k-paper);border-top:0;display:flex;gap:10px}
+.req-bar::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 0}
+// 几个按钮并排时用的 md（40）也撑到 44，和单个大按钮一样高；字号不变
+.req-bar :deep(.k-button.is-md){height:44px}
 .req-bar__btn{min-width:0;flex:1}
 .req-pad-bar{padding-bottom:calc(84px + var(--k-safe-bottom))}
-.req-hint{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--k-red-soft);font-size:13px;line-height:1.65;color:var(--k-red-deep)}
-.req-note{margin-top:12px;padding:14px;border-radius:14px;background:var(--k-paper);box-shadow:0 6px 20px rgba(58,50,43,.08)}
-.req-note__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;font-size:15px;font-weight:700;color:var(--k-ink)}
-.req-note__save{flex-shrink:0;padding:4px 0 4px 12px;font-size:13px;font-weight:600;color:var(--k-red-deep)}
-.req-note__tip{display:block;margin-top:7px;font-size:12px;line-height:1.55;color:var(--k-muted)}
-.req-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 4px}
-.req-tile{min-width:0;padding:14px 8px;border-radius:14px;background:var(--k-paper);box-shadow:0 6px 20px rgba(58,50,43,.08);display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
-.req-tile__num{font-size:26px;font-weight:700;line-height:1.1;color:var(--k-ink)}
+.req-hint{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--k-red-soft);font-size:12px;line-height:1.65;color:var(--k-red-deep)}
+.req-note{margin-top:8px;padding:12px;border-radius:12px;background:var(--k-paper)}
+.req-note__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;font-size:14px;font-weight:600;color:var(--k-ink)}
+.req-note__save{flex-shrink:0;padding:4px 0 4px 12px;font-size:12px;font-weight:600;color:var(--k-red-deep)}
+.req-note__tip{display:block;margin-top:7px;font-size:11px;line-height:1.55;color:var(--k-muted)}
+.req-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0 4px}
+.req-tile{min-width:0;padding:12px 6px;border-radius:12px;background:var(--k-paper);display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.req-tile__num{font-size:18px;font-weight:700;line-height:1.25;color:var(--k-ink);font-variant-numeric:tabular-nums}
 .req-tile__num.warn{color:var(--k-alert)}
-.req-tile__label{font-size:12px;color:var(--k-ink2);white-space:nowrap}
-.req-store{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-radius:14px;background:var(--k-paper);box-shadow:0 6px 20px rgba(58,50,43,.08)}
-.req-store__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:6px}
-.req-store__eyebrow{font-size:12px;color:var(--k-red-deep)}
-.req-store__name{font-size:18px;font-weight:700;color:var(--k-ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.req-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0 10px;font-size:17px;font-weight:700;color:var(--k-ink)}
-.req-heading__link{flex-shrink:0;padding:6px 0 6px 12px;font-size:13px;font-weight:400;color:var(--k-red-deep)}
-.req-foot{display:block;margin-top:16px;font-size:12px;line-height:1.7;color:var(--k-muted)}
-.req-links{margin-top:12px;border-radius:14px;background:var(--k-paper);box-shadow:0 6px 20px rgba(58,50,43,.08);overflow:hidden}
-.req-link{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--k-line)}
-.req-link:last-child{border-bottom:0}
-.req-link__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
-.req-link__title{font-size:15px;font-weight:600;color:var(--k-ink)}
-.req-link__sub{font-size:12px;color:var(--k-muted)}
-.req-link__num{flex-shrink:0;font-size:18px;font-weight:700;color:var(--k-ink)}
+.req-tile__label{font-size:11px;color:var(--k-muted);white-space:nowrap}
+.req-store{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-radius:12px;background:var(--k-paper)}
+.req-store__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.req-store__eyebrow{font-size:11px;font-weight:500;color:var(--k-red-deep)}
+.req-store__name{font-family:var(--k-sans);font-size:17px;font-weight:700;line-height:24px;color:var(--k-ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.req-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 8px;font-family:var(--k-sans);font-size:16px;font-weight:700;line-height:22px;color:var(--k-ink)}
+.req-heading__link{flex-shrink:0;padding:6px 0 6px 12px;font-size:12px;font-weight:400;color:var(--k-red-deep)}
+.req-foot{display:block;margin-top:14px;font-size:11px;line-height:1.7;color:var(--k-muted)}
+.req-links{margin-top:8px;border-radius:12px;background:var(--k-paper);overflow:hidden}
+.req-link{position:relative;display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 12px}
+.req-link + .req-link::before{content:"";position:absolute;left:12px;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 0}
+.req-link__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.req-link__title{font-size:14px;font-weight:600;line-height:20px;color:var(--k-ink)}
+.req-link__sub{font-size:12px;line-height:17px;color:var(--k-muted)}
+.req-link__num{flex-shrink:0;font-size:16px;font-weight:700;color:var(--k-ink)}
 .req-link__num.warn{color:var(--k-alert)}
 // 2026-11-03 主人：「每个项目区分开别放到一起」——商家需求页顶上的项目页签（线上任务 | 代运营 | 抖音卖房），大一点好点；红色数字是待办
-.req-kinds{display:flex;gap:6px;margin-bottom:14px;padding:4px;border-radius:14px;background:var(--k-paper2)}
-.req-kind{position:relative;min-width:0;flex:1;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:5px;font-size:15px;color:var(--k-ink2)}
-.req-kind.active{background:var(--k-paper);color:var(--k-red-deep);font-weight:700;box-shadow:0 2px 8px rgba(58,50,43,.10)}
+.req-kinds{display:flex;gap:4px;margin-bottom:10px;padding:3px;border-radius:12px;background:#F0EBE4}
+// 这一排的高度（44）和字号（15）、待办数字（18 / 11）是主人上面那句定的，改版只换了底色和圆角，没有收小；11-18 轨道和选中字色向全站分段控件靠（#F0EBE4、墨色）
+.req-kind{position:relative;min-width:0;flex:1;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:5px;font-size:15px;color:var(--k-ink2)}
+.req-kind.active{background:var(--k-paper);color:var(--k-ink);font-weight:600}
 .req-kind__badge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--k-alert);color:#fff;font-size:11px;line-height:18px;text-align:center;font-weight:600}
-.req-links--top{margin:0 0 12px}
+.req-links--top{margin:0 0 10px}
 // 线上任务管理：卡片底下的「管理任务」「审核报名」（点它们不进详情）
-.req-acts{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--k-line)}
-.req-acts__todo{font-size:13px;font-weight:600;color:var(--k-alert)}
-.req-acts__row{display:flex;gap:10px}
-.req-acts__btn{min-width:0;flex:1;height:40px;border:1px solid var(--k-red-line);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--k-red-deep);background:var(--k-paper)}
-.req-acts__btn--main{border-color:var(--k-red);background:var(--k-red);color:#fff}
+.req-acts{position:relative;display:flex;flex-direction:column;gap:8px;padding-top:10px}
+.req-acts::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 0}
+.req-acts__todo{font-size:12px;font-weight:600;color:var(--k-alert)}
+.req-acts__row{display:flex;gap:8px}
+.req-acts__btn{min-width:0;flex:1;height:36px;border:1px solid var(--k-red-line);border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--k-red-deep);background:var(--k-paper)}
+// 列表里每张卡都有一个，不用实心渐变（一屏只留一个暖棕主操作）：浅底暖棕字
+.req-acts__btn--main{border-color:transparent;background:var(--k-red-soft);color:var(--k-red-deep)}
 .req-acts__tip{font-size:12px;color:var(--k-muted)}

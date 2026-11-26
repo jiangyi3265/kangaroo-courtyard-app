@@ -99,9 +99,12 @@ export function setStaffStore(storeId) {
   const grant = findStaffIdentity(staffIdentities.value, storeId)
   if (!grant) throw new Error('该门店或城市暂无员工授权，请刷新后重试')
   // 使用授权里的编号，兼容接口或旧缓存中的数字/字符串差异，且不做可能丢精度的 Number 转换。
-  if (String(staffGrantKey(currentStaffStore.value)) !== String(staffGrantKey(grant))) invalidateMessageScope()
-  experience.staffStoreId = staffGrantKey(grant)
-  try { uni.setStorageSync(key('staff-store'), staffGrantKey(grant)) } catch (e) { /* 存不下只影响下次默认身份 */ }
+  const id = staffGrantKey(grant)
+  if (String(staffGrantKey(currentStaffStore.value)) !== String(id) || currentStaffStore.value?.roleCode !== grant.roleCode) invalidateMessageScope()
+  // 旧版只存编号。明确选择同店某个角色时，一并记住角色，避免账号刷新后又选回第一条授权。
+  const selection = storeId?.roleCode && grant.storeId != null && !grant.identityKey ? { identityKey: id, roleCode: grant.roleCode } : id
+  experience.staffStoreId = selection
+  try { uni.setStorageSync(key('staff-store'), selection) } catch (e) { /* 存不下只影响下次默认身份 */ }
 }
 /** 给经营页地址带上门店：日报、周报、看板、任务按这家门店取数和记账，不再让服务端默认到第一家主理门店。 */
 export function staffStoreUrl(url, storeId = currentStaffStoreId()) {
@@ -164,7 +167,7 @@ export const unreadCount = computed(() => {
   if (!experience.account) return 0
   if (experience.unreadAuthoritative) return experience.unread || 0
   const local = visibleMessages.value
-  const localUnread = local.length ? local.filter(m => !m.read).length : 0
+  const localUnread = local.reduce((sum,m) => sum + (m.read ? 0 : Number(m.unreadCount || 1)), 0)
   return Math.max(localUnread, experience.unread || 0)
 })
 export function markMessageRead(id) {
@@ -174,7 +177,7 @@ export function markMessageRead(id) {
     const wasUnread = !message.read
     message.read = true
     // 缓存要同步递减，否则离开消息中心后 visibleMessages 仍在但别的页面回退到缓存时红点不消
-    if (wasUnread && experience.unread > 0) experience.unread -= 1
+    if (wasUnread && experience.unread > 0) experience.unread = Math.max(0, experience.unread - Number(message.unreadCount || 1))
     // 服务端才是已读状态的权威来源；本地先改是为了列表立刻响应，失败也不回滚，
     // 下次 loadMessages 会以服务端结果为准。
     return apiMarkRead(id).then(res => {
@@ -272,6 +275,7 @@ export async function restoreSession({ isCurrent = () => true, strictErrors = fa
 }
 
 let restorePromise = null
+let restoreToken
 
 /**
  * 保证登录态已恢复完毕，返回同一个 Promise。
@@ -280,7 +284,16 @@ let restorePromise = null
  * 不等恢复完成就判断，会把持有有效令牌的员工误踢到身份页。
  */
 export function ensureSession() {
-  if (!restorePromise) restorePromise = restoreSession()
+  const token = getToken()
+  if (!restorePromise || token !== restoreToken) {
+    restoreToken = token
+    const pending = restoreSession().then(route => {
+      // 断网时令牌仍然有效，留给下次操作重试。晚返回的旧请求不能清掉新会话。
+      if (!route && token && restorePromise === pending) restorePromise = null
+      return route
+    })
+    restorePromise = pending
+  }
   return restorePromise
 }
 
@@ -467,7 +480,7 @@ export async function loadMessages(category, more, append) {
   // 列表接口一并返回了服务端未读总数，它不受 category / bucket 过滤和分页影响，比数本地行数准
   if (unreadRequest === messageUnreadRequest) {
     const validUnread = typeof res.unread === 'number' && Number.isFinite(res.unread) && res.unread >= 0
-    experience.unread = validUnread ? res.unread : visibleMessages.value.filter(m => !m.read).length
+    experience.unread = validUnread ? res.unread : visibleMessages.value.reduce((sum,m) => sum + (m.read ? 0 : Number(m.unreadCount || 1)), 0)
     experience.unreadAuthoritative = validUnread
   }
   return experience.messages
@@ -521,7 +534,7 @@ export async function deleteMessage(id) {
   if (typeof unread === 'number' && Number.isFinite(unread) && unread >= 0) {
     experience.unread = unread
     experience.unreadAuthoritative = true
-  } else if (removed && !removed.read) experience.unread = Math.max(0, experience.unread - 1)
+  } else if (removed && !removed.read) experience.unread = Math.max(0, experience.unread - Number(removed.unreadCount || 1))
   return true
 }
 

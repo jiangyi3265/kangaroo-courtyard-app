@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 
 const server = await createServer({ configFile: false, server: { middlewareMode: true, hmr: false } })
-const { createPhoneBinding, bindWechatPhone } = await server.ssrLoadModule('/common/phone-binding.js')
+const { createPhoneBinding, bindWechatPhone } = await server.ssrLoadModule('/pages/auth/phone-binding.js')
 const session = await server.ssrLoadModule('/common/experience.js')
 const request = await server.ssrLoadModule('/common/request.js')
 await server.close()
@@ -37,10 +37,73 @@ test('no consent, cancelled permission, and missing codes do not log in or bind'
   const f = fixture()
   await assert.rejects(f.bind(authorized('phone-code')), /同意协议/)
   await assert.rejects(f.bind({ detail: { errMsg: 'getPhoneNumber:fail user deny' } }, consent), /取消/)
-  await assert.rejects(f.bind({ detail: {} }, consent), /未取得/)
-  await assert.rejects(f.bind({ detail: { code: ' ', errMsg: 'getPhoneNumber:ok' } }, consent), /未取得/)
-  await assert.rejects(f.bind({ detail: { code: 'unexpected', errMsg: 'getPhoneNumber:fail' } }, consent), /未取得/)
+  await assert.rejects(f.bind({ detail: {} }, consent), /未返回手机号授权凭证/)
+  await assert.rejects(f.bind({ detail: { code: ' ', errMsg: 'getPhoneNumber:ok' } }, consent), /未返回手机号授权凭证/)
+  await assert.rejects(f.bind({ detail: { code: 'unexpected', errMsg: 'getPhoneNumber:fail' } }, consent), /未返回手机号授权凭证/)
   assert.deepEqual(f.calls, [])
+})
+
+test('native failures explain the next step without logging in or revealing callback contents', async () => {
+  const f = fixture()
+  for (const [detail, expected] of [
+    [{ errno: 1400001 }, /次数已用完.*1400001/],
+    [{ errno: '102', code: 'sensitive', errMsg: 'getPhoneNumber:ok' }, /联系客服.*102/],
+    [{ errno: 112 }, /联系客服.*112/],
+    [{ errno: 101102 }, /微信弹出的隐私保护指引/],
+    [{ errno: 108 }, /网络/],
+    [{ errno: 1003 }, /频繁/],
+    [{ errMsg: 'getPhoneNumber:fail privacy permission is not authorized' }, /隐私保护指引/],
+    [{ encryptedData: 'sensitive', iv: 'sensitive', errMsg: 'getPhoneNumber:ok' }, /更新微信/],
+    [{ errno: 9999, errMsg: 'getPhoneNumber:fail sensitive' }, /微信错误码 9999/]
+  ]) {
+    await assert.rejects(f.bind({ detail }, consent), error => {
+      assert.match(error.message, expected)
+      assert.doesNotMatch(error.message, /sensitive|取消/)
+      return true
+    })
+  }
+  for (const detail of [{ errno: 104 }, { errMsg: 'getPhoneNumber:fail jsapi user authorize denied' }]) {
+    await assert.rejects(f.bind({ detail }, consent), error => error.cancelled === true)
+  }
+  assert.deepEqual(f.calls, [])
+})
+
+test('a fresh successful callback works after a native network error', async () => {
+  const f = fixture()
+  await assert.rejects(f.bind({ detail: { errno: 108 } }, consent), /网络/)
+  assert.equal(await f.bind({ detail: { code: ' new ', errMsg: 'getPhoneNumber:ok ', errno: 0 } }, consent), f.bound)
+  assert.deepEqual(f.calls, ['restore', 'login', ['verify', 'new'], 'accept'])
+})
+
+test('record consent after login and before exchanging a fresh phone code', async () => {
+  const f = fixture()
+  const conflict = Object.assign(new Error('需重新阅读协议'), { code: 409 })
+  let currentTerms = false
+  const opts = { agreed: true, beforeVerify: async () => {
+    assert.equal(f.state.account.id, 'user-1')
+    f.calls.push('consent')
+    if (!currentTerms) throw conflict
+  } }
+  await assert.rejects(f.bind({ detail: {} }, opts), /未返回/)
+  assert.deepEqual(f.calls, [])
+  await assert.rejects(f.bind(authorized('old'), opts), error => error === conflict)
+  assert.deepEqual(f.calls, ['restore', 'login', 'consent'])
+  currentTerms = true
+  await f.bind(authorized('fresh'), opts)
+  assert.deepEqual(f.calls.slice(3), ['restore', 'consent', ['verify', 'fresh'], 'accept'])
+})
+
+test('leaving the page or switching accounts while consent is pending prevents phone exchange', async () => {
+  for (const kind of ['unload', 'switch']) {
+    const f = fixture()
+    let visible = true
+    const opts = { agreed: true, isCurrent: () => visible, beforeVerify: async () => {
+      if (kind === 'unload') visible = false
+      else f.state.account = { id: 'user-2' }
+    } }
+    await assert.rejects(f.bind(authorized('unused'), opts), /已变化/)
+    assert.deepEqual(f.calls, ['restore', 'login'])
+  }
 })
 
 test('an existing valid account binds without switching identity or logging in again', async () => {

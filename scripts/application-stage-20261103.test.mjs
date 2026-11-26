@@ -126,7 +126,7 @@ test('页面：已入职可确认完成时，状态条 + 一句下一步 + 积�
 })
 
 test('页面：三方协议按双方进度显示店家动作，不能把待店家核对误写为待用户签约', async (t) => {
-  const h = await openDetail({ status: 'store_confirmed', canManage: true, volunteerContractStatus: 'pending' })
+  const h = await openDetail({ status: 'store_confirmed', canManage: true, canReviewVolunteerContract: true, volunteerContractStatus: 'pending' })
   t.after(h.stop)
   assert.equal(h.run('canPass.value'), true)
   assert.equal(h.run('passLabel.value'), '核对三方协议')
@@ -141,7 +141,7 @@ test('页面：三方协议按双方进度显示店家动作，不能把待店�
 })
 
 test('页面：简历卡按「标签 + 内容」列出，没填的项不出', async (t) => {
-  const h = await openDetail({ status: 'contract_signed', canManage: true }, { resume: { hobbies: '22', personality: '  ', background: '222\n在民宿做过前台' } })
+  const h = await openDetail({ status: 'contract_signed', canManage: true, canViewRecruitmentDetails: true }, { resume: { hobbies: '22', personality: '  ', background: '222\n在民宿做过前台' } })
   t.after(h.stop)
   assert.deepEqual(h.json('profileFields.value'), [{ key: 'hobbies', label: '兴趣爱好', value: '22' }, { key: 'background', label: '相关经历', value: '222\n在民宿做过前台' }])
   assert.equal(h.run('stepClass(5)'), 'current')

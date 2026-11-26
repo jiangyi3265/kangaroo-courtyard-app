@@ -1,6 +1,4 @@
-// 底栏「发布」（10-16 主人定，收回 10-15 的平放红块）：暖棕圆钮，「发布」两个字写在圆里，一圈白边 + 柔和阴影，往上凸出底栏；
-// 圆钮下面不再写字。凸出来的那一截会盖住页面最底下的内容，所以 .k-pad-tab 的留白要 ≥ 底栏高 + 凸出高度 + 一点空隙，
-// 拉到底时最后一行露在圆钮上面（各页实际截图核对见本轮 shell 验收）。
+// 发布按钮在圆内同时显示图案和标签，凸出部分需要页面预留底部空间。
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -21,19 +19,23 @@ const px = (body, prop) => {
   return m ? Number(m[1]) : 0
 }
 
-test('「发布」是凸出底栏的暖棕圆钮：字写在圆里、白边、阴影，下面不再写字', () => {
-  assert.match(tpl, /<view v-if="item\.key === 'publish'" class="k-tabbar__publish"><k-icon v-if="theme === 'journal'"[^>]*\/><text>发布<\/text><\/view>/, '圆里写「发布」')
+test('发布圆钮包含配套的钢笔图案和「发布」文字，图片资源能随主包加载', () => {
+  const content = /<view v-if="item\.key === 'publish'" class="k-tabbar__publish">([\s\S]*?)<\/view>/.exec(tpl)?.[1]
+  assert.ok(content, '缺少发布圆钮')
+  const image = /<image\b[^>]*src="(\/static\/tabbar\/c-publish\.png)"/.exec(content)
+  assert.ok(image, '发布入口使用钢笔图标')
+  const png = fs.readFileSync(path.join(APP, image[1]))
+  assert.equal(png.readUInt32BE(0), 0x89504e47)
+  assert.match(content, /<text>发布<\/text>/)
   assert.match(tpl, /<text v-if="item\.key !== 'publish'" class="k-tabbar__label">/, '圆钮下面不再写「发布」')
-  assert.match(tpl, /<k-icon v-if="theme === 'journal'" name="plus"/, '只有生活日记主题使用加号，默认暖棕主题只有发布文字')
   const pub = rule(css, '.k-tabbar__publish')
   const size = px(pub, 'width')
   assert.equal(px(pub, 'height'), size, '正圆')
   assert.match(pub, /border-radius: 50%/)
-  assert.match(pub, /background: var\(--k-grad-brown\)/, '参考图的暖棕渐变')
+  assert.match(pub, /background: var\(--k-red-soft\)/, '浅色底衬出棕橙图案')
   assert.match(pub, /border: \d+px solid var\(--k-paper\)/, '一圈白边')
   assert.match(pub, /box-shadow: /, '柔和阴影')
-  assert.match(pub, /color: #fff/, '圆里白字')
-  assert.ok(px(pub, 'font-size') >= 14, '圆里的字不小于 14px')
+  assert.ok(px(pub, 'font-size') >= 10, '文字至少与其他底栏标签一样大')
 })
 
 test('圆钮往上凸、不往下伸；页面底部留白够，拉到底时圆钮不压最后一行', () => {

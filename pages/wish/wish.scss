@@ -1,7 +1,87 @@
-.wish-page{--w-ink:#102c46;--w-blue:#3166f5;--w-lime:#e7f58a;min-height:100vh;background:#f5f7fa;color:var(--w-ink);font-family:var(--k-sans);font-size:14px;line-height:1.55;padding-bottom:110px;box-sizing:border-box}
-.wish-page button,.w-bottom button,.w-sheet button{margin:0;border:0;font-size:14px;line-height:1.4;font-family:var(--k-sans)}
+/* 2026-11-17 改版「小而精」：心愿互助并入全站暖棕配色 —— 浅灰底 + 白卡（12 圆角、不描边不加阴影），主按钮是暖棕渐变胶囊，标签、字号、间距收小一档。只改样子：金额、手续费、规则文案、凭证、按钮和入口都原样保留。 */
+.wish-page{--w-ink:var(--k-ink);--w-blue:var(--k-red);--w-lime:var(--k-green-soft);--k-bg:var(--k-page);min-height:100vh;background:var(--k-page);color:var(--k-ink);font-family:var(--k-sans);font-size:13px;line-height:1.55;padding-bottom:110px;box-sizing:border-box}
+.wish-page button,.w-bottom button,.w-sheet button{margin:0;border:0;font-size:13px;line-height:1.4;font-family:var(--k-sans)}
 .wish-page button::after,.w-bottom button::after,.w-sheet button::after{border:0}
-.wish-page .k-topbar{background:#f5f7fa}.wish-page .w-input{height:50px}.wish-page .w-area{height:132px}.wish-page .wo-compose input{height:48px;box-sizing:border-box}
-.w-body{padding:20px}.w-row{display:flex;align-items:center;gap:10px}.w-between{display:flex;align-items:center;justify-content:space-between;gap:12px}.w-grow{flex:1;min-width:0}.w-title{font-size:24px;font-weight:800;line-height:1.35;letter-spacing:-.7px;display:block}.w-heading{font-size:18px;font-weight:750;display:block}.w-muted{font-size:12px;color:#718095}.w-caption{font-size:12px;color:#718095;display:block;margin-top:8px;line-height:1.7}.w-blue{color:#3166f5}.w-section{margin-top:26px}.w-card{background:white;border:1px solid #e9edf3;border-radius:22px;padding:20px;margin-bottom:16px;box-shadow:0 6px 24px #102c4605}.w-tag{display:inline-flex;align-items:center;background:#eaf0ff;color:#2454c8;font-size:11px;font-weight:650;border-radius:7px;padding:4px 8px;white-space:nowrap}.w-tag--lime{color:#243a21;background:#e7f58a}.w-primary{background:#102c46!important;color:white!important;display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 20px;border-radius:17px;font-weight:700}.w-primary--lime{background:#e7f58a!important;color:#102c46!important}.w-secondary{background:#eef2f8!important;color:#102c46!important;padding:14px 18px;border-radius:15px;font-weight:650}.w-link{background:transparent!important;color:#3166f5!important;font-size:13px!important;padding:8px 0!important}.w-bottom{position:fixed;z-index:30;left:0;right:0;bottom:0;padding:12px 20px calc(12px + env(safe-area-inset-bottom));background:#ffffffef;backdrop-filter:blur(16px);border-top:1px solid #e8edf5;display:flex;align-items:center;gap:12px}.w-bottom .w-primary{flex:1}.w-field{padding:17px 0;border-bottom:1px solid #edf0f5;display:flex;align-items:center;gap:12px}.w-field__label{min-width:76px;font-weight:600}.w-field input{flex:1;text-align:right;min-width:0;font-size:14px;color:#102c46;height:30px}.w-input{background:#f0f3f8;border:1px solid #e6ebf3;border-radius:12px;padding:14px;box-sizing:border-box;width:100%;font-size:14px;color:#102c46}.w-area{height:132px;line-height:1.7}.w-tip{display:flex;align-items:flex-start;gap:9px;background:#eaf0ff;border:1px solid #e2eafa;border-radius:12px;padding:13px;font-size:12px;line-height:1.7;color:#254b85}.w-tabs{display:flex;gap:24px;border-bottom:1px solid #e6ebf3;margin-bottom:20px}.w-tabs__item{font-size:16px;font-weight:650;padding:12px 0;position:relative;color:#718095}.w-tabs__item.on{color:#102c46}.w-tabs__item.on:after{content:"";height:4px;position:absolute;bottom:-1px;left:0;right:0;background:#3166f5;border-radius:4px}.w-pills{display:flex;gap:9px;flex-wrap:wrap}.w-pill{background:#eef2f8;padding:9px 15px;border-radius:10px;font-size:13px;color:#67788c}.w-pill.on{color:#fff;background:#102c46}.w-state{padding:50px 26px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}.w-state__art{width:74px;height:74px;background:#e7f58a;border-radius:24px;display:flex;align-items:center;justify-content:center;transform:rotate(-8deg);margin-bottom:8px}.w-avatar{width:32px;height:32px;border-radius:50%;background:#eaf0ff}.w-avatar--fallback{display:flex;align-items:center;justify-content:center;color:#3166f5;font-size:13px}.w-price{font-size:28px;font-weight:800;letter-spacing:-.6px;line-height:1.3;font-variant-numeric:tabular-nums}.w-rule{height:1px;background:#e6ebf3;margin:16px 0}.w-copy{white-space:pre-wrap;word-break:break-word;line-height:1.85;font-size:14px}.w-route{background:#eaf0ff;border-radius:13px;padding:16px;display:flex;align-items:center;justify-content:space-between;font-weight:650;gap:10px}.w-mask{position:fixed;inset:0;background:#07182b80;z-index:80;display:flex;align-items:flex-end}.w-sheet{background:#fff;width:100%;max-height:86vh;overflow:auto;border-radius:28px 28px 0 0;padding:25px 22px calc(24px + env(safe-area-inset-bottom));box-sizing:border-box}.w-check{display:flex;align-items:flex-start;gap:10px;font-size:12px;margin:20px 0;line-height:1.8}.w-check__box{width:20px;height:20px;border:1px solid #b8c5d8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}.w-check__box.on{background:#3166f5;border-color:#3166f5}.w-empty-cover{background:linear-gradient(135deg,#dce8f6,#edf4d1);display:flex;align-items:center;justify-content:center}.wish-page button[disabled]{opacity:.48}.w-eyebrow{font-size:10px;font-weight:750;letter-spacing:2px;color:#718095;display:block;margin-bottom:8px}
+.wish-page .k-topbar{background:var(--k-page)}.wish-page .k-navbar__title{font-family:var(--k-sans);font-size:16px;font-weight:600}.wish-page .w-input{height:44px}.wish-page .w-area{height:120px}.wish-page .wo-compose input{height:40px;box-sizing:border-box}
+.w-body{padding:12px}.w-row{display:flex;align-items:center;gap:8px}.w-between{display:flex;align-items:center;justify-content:space-between;gap:10px}.w-grow{flex:1;min-width:0}.w-title{font-size:20px;font-weight:700;line-height:1.4;letter-spacing:0;display:block}.w-heading{font-size:15px;font-weight:700;line-height:1.45;display:block}.w-muted{font-size:12px;color:var(--k-muted)}.w-caption{font-size:12px;color:var(--k-muted);display:block;margin-top:6px;line-height:1.65}.w-blue{color:var(--k-red-deep)}.w-tip .w-blue{padding:9px 0}.w-section{margin-top:14px}.wish-page button.w-section,.w-sheet button.w-section{margin-top:12px}.w-card{background:var(--k-paper);border:0;border-radius:12px;padding:12px;margin-bottom:8px;box-shadow:none}.w-sheet .w-card{background:var(--k-page)}.w-tag{display:inline-flex;align-items:center;height:17px;background:var(--k-red-soft);color:var(--k-red-deep);font-size:10px;font-weight:500;line-height:17px;border-radius:4px;padding:0 5px;white-space:nowrap}.w-tag--lime{color:var(--k-green);background:var(--k-green-soft)}.w-primary{background:linear-gradient(135deg,#B5814D,#8E5E33)!important;color:var(--k-paper)!important;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 20px;border-radius:22px;font-size:15px!important;font-weight:600;box-sizing:border-box}.w-primary--lime{background:linear-gradient(135deg,#B5814D,#8E5E33)!important;color:var(--k-paper)!important}.w-secondary{background:var(--k-paper)!important;color:var(--k-red-deep)!important;height:44px;padding:0 18px;border-radius:22px;font-size:14px!important;font-weight:500;line-height:44px!important;box-shadow:inset 0 0 0 1px var(--k-red-line);box-sizing:border-box}.w-link{background:transparent!important;color:var(--k-red-deep)!important;font-size:12px!important;padding:10px 0!important}.w-bottom{position:fixed;z-index:30;left:0;right:0;bottom:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--k-paper);border-top:1px solid var(--k-line);display:flex;align-items:center;gap:10px}.w-bottom .w-primary{flex:1}.w-field{min-height:46px;padding:6px 0;box-sizing:border-box;border-bottom:1px solid var(--k-line);display:flex;align-items:center;gap:10px;font-size:14px}.w-card>.w-field:last-child,.w-card>picker:last-child .w-field,.wd-main>.w-field:last-child{border-bottom:0}.w-field__label{min-width:70px;font-weight:500}.w-field input{flex:1;text-align:right;min-width:0;font-size:14px;color:var(--k-ink);height:32px}.w-input{background:var(--k-paper);border:1px solid var(--k-line2);border-radius:10px;padding:0 12px;box-sizing:border-box;width:100%;font-size:14px;color:var(--k-ink)}.w-area{height:120px;padding:10px 12px;line-height:1.6}.w-tip{display:flex;align-items:flex-start;gap:8px;background:var(--k-indigo-soft);border:0;border-radius:8px;padding:10px;font-size:12px;line-height:1.65;color:var(--k-indigo)}.w-tabs{display:flex;gap:20px;border-bottom:1px solid var(--k-line);margin-bottom:12px}.w-tabs__item{font-size:15px;font-weight:500;padding:11px 0;position:relative;color:var(--k-muted)}.w-tabs__item.on{color:var(--k-ink);font-weight:700}.w-tabs__item.on:after{content:"";height:3px;width:20px;position:absolute;bottom:-1px;left:50%;margin-left:-10px;background:var(--k-red);border-radius:2px}.w-pills{display:flex;gap:8px;flex-wrap:wrap}.w-pill{position:relative;background:var(--k-paper);height:30px;padding:0 12px;border-radius:15px;font-size:12px;line-height:30px;color:var(--k-ink2);white-space:nowrap}.w-pill::after{content:"";position:absolute;left:0;right:0;top:-3px;bottom:-3px}.w-card .w-pill{background:var(--k-fill)}.w-pill.on,.w-card .w-pill.on{color:var(--k-paper);background:linear-gradient(135deg,#B5814D,#8E5E33);font-weight:600}.w-state{padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:13px;color:var(--k-ink2)}.w-state__art{width:56px;height:56px;background:linear-gradient(145deg,#FCF4E8,#F4E4CC);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:4px}.w-avatar{width:28px;height:28px;border-radius:50%;background:var(--k-red-soft)}.w-avatar--fallback{display:flex;align-items:center;justify-content:center;color:var(--k-red-deep);font-size:12px}.w-price{font-size:22px;font-weight:700;letter-spacing:0;line-height:1.3;font-variant-numeric:tabular-nums;color:var(--k-red)}.w-rule{height:1px;background:var(--k-line);margin:12px 0}.w-copy{white-space:pre-wrap;word-break:break-word;line-height:1.75;font-size:13px;color:var(--k-ink2)}.w-route{background:var(--k-page);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600;gap:10px}.w-mask{position:fixed;inset:0;background:rgba(20,14,10,.5);z-index:80;display:flex;align-items:flex-end}.w-sheet{background:var(--k-paper);width:100%;max-height:86vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box}.w-check{display:flex;align-items:flex-start;gap:8px;font-size:12px;margin:6px 0;padding:8px 0;line-height:1.7}.w-check>text{padding:8px 0;margin:-8px 0}.w-check__box{position:relative;width:20px;height:20px;border:1px solid var(--k-line2);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--k-paper);box-sizing:border-box}.w-check__box::after{content:"";position:absolute;left:-8px;right:-8px;top:-8px;bottom:-8px}.w-check__box.on{background:var(--k-red);border-color:var(--k-red)}.w-empty-cover{background:linear-gradient(135deg,var(--k-red-soft),var(--k-green-soft));display:flex;align-items:center;justify-content:center}.wish-page button[disabled]{opacity:.45}.w-eyebrow{font-size:10px;font-weight:500;letter-spacing:1.5px;color:var(--k-muted);display:block;margin-bottom:6px}
 /* Keep the H5 phone preview aligned with this project's existing 430px shell. */
 @media(min-width:700px){.wish-page{max-width:430px;margin:auto}.w-bottom{max-width:430px;margin:auto;box-sizing:border-box}.w-sheet{max-width:430px;margin:0 auto}}
+
+/* 11-18 第二轮精修（只动样子；心愿配色等主人拍板，这里不换色，只统一形状、字号、间距和分隔线） */
+/* 1) 筛选胶囊：28 高、圆角 14；选中改成浅棕底 + 深棕字 500（不再是实心渐变）；透明点按区上下各 4，点按高度仍是 36 */
+.w-pill{height:28px;line-height:28px;border-radius:14px;padding:0 12px;font-size:12px}
+.w-pill::after{top:-4px;bottom:-4px}
+.w-pill.on,.w-card .w-pill.on{color:var(--k-red-deep);background:var(--k-red-soft);font-weight:500}
+/* 2) 出错 / 读取中 / 没有内容：白卡里居中，图块 40、圆角 12；标题 14/500，说明 12 灰字；按钮换成 32 高的白底细边小胶囊（上下各 6 的透明边，点按高度仍是 44） */
+.w-state{background:var(--k-paper);border-radius:12px;padding:28px 12px;gap:8px;font-size:14px;font-weight:500;line-height:1.6;color:var(--k-ink2)}
+.wish-page>.w-state{margin:8px 12px 0}
+.w-state__art{width:40px;height:40px;border-radius:12px;margin-bottom:0}
+.w-state .w-heading{font-size:14px;font-weight:500;line-height:20px;color:var(--k-ink2)}
+.w-state .w-muted{font-size:12px;font-weight:400;line-height:1.6}
+.w-state .w-primary,.w-state .w-secondary{display:flex;align-items:center;justify-content:center;gap:2px;height:44px;min-height:44px;padding:0 16px;border:6px solid transparent;border-radius:22px;background:var(--k-paper) padding-box!important;box-shadow:inset 0 0 0 1px var(--k-red-line);color:var(--k-red-deep)!important;font-size:13px!important;font-weight:500;line-height:32px!important}
+/* 3) 下划线页签：14 号，未选 400 灰、选中 600 深色，16×3 的短条；一行 40 高；底边改发丝线 */
+.w-tabs{position:relative;border-bottom:0}
+.w-tabs::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 100%}
+.w-tabs__item{font-size:14px;font-weight:400;line-height:22px;padding:9px 0}
+.w-tabs__item.on{font-weight:600}
+.w-tabs__item.on:after{z-index:1;width:16px;margin-left:-8px;bottom:0}
+/* 4) 标题：卡外的区块标题 16/700、行高 22；卡里的小标题 14/600；卡里标题到下面内容统一 8 */
+.w-heading{font-size:16px;font-weight:700;line-height:22px}
+.w-card .w-heading{font-size:14px;font-weight:600;line-height:20px}
+.w-card>.w-heading+.w-section{margin-top:8px}
+/* 5) 分隔线一律发丝线：填写行之间、底部操作条顶上、横线；最后一行照旧不画 */
+.w-field{position:relative;border-bottom:0}
+.w-field::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 100%}
+.w-card>.w-field:last-child::after,.w-card>picker:last-child .w-field::after,.wd-main>.w-field:last-child::after{display:none}
+.w-bottom{border-top:0}
+.w-bottom::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 0}
+.w-rule{transform:scaleY(.5)}
+/* 6) 文字箭头换成图标后，链接 / 按钮里的字和箭头排成一行 */
+.w-arrow{display:flex!important;align-items:center;justify-content:center;gap:2px}
+/* 7) 卡里没选中的胶囊用页面底色（中性浅灰），和选中的浅棕底分得开（之前 var(--k-fill) 和浅棕底几乎一样，看不出选了哪个） */
+.w-card .w-pill{background:var(--k-page)}
+/* 11-18 第三轮逐页精修（心愿各页共用）
+   1) 提示框从靛蓝换成全站暖色提示：浅棕底 + 二级墨字 + 暖棕 16 号图标，圆角 8、内边距 12
+   2) 筛选胶囊选中再加一圈细棕边（浅棕底和浅灰底太像，一眼分不出选了哪个）
+   3) 空状态图块和全站统一：56 的浅棕方块、圆角 16
+   4) 读取中不再是一行粗字：一块 4:3 的图位 + 三条灰条的骨架，下面一行 13 号灰字
+   5) 卡片内边距 16 */
+.w-tip{gap:8px;padding:10px 12px;background:var(--k-red-soft);color:var(--k-ink2);line-height:1.6}
+.w-tip>.k-icon{margin-top:2px}
+.w-pill.on,.w-card .w-pill.on{box-shadow:inset 0 0 0 1px var(--k-red-line)}
+.w-state__art{width:56px;height:56px;border-radius:16px;background:var(--k-red-soft)}
+.w-state--loading{align-items:stretch;gap:0;padding:16px;background:var(--k-paper)}
+.w-state--loading>text{margin-top:16px;font-size:13px;font-weight:400;color:var(--k-muted);text-align:center}
+.w-skel{display:flex;flex-direction:column;gap:10px}
+.w-skel__photo{width:100%;padding-top:56%;border-radius:8px;background:var(--k-fill)}
+.w-skel__bar{width:100%;height:12px;border-radius:6px;background:var(--k-fill)}
+.w-skel__bar--mid{width:72%}
+.w-skel__bar--short{width:44%}
+
+.w-card{padding:16px}
+/* 11-18 第三轮返修（评审第 2 轮）：
+   1) 眉题 11/500、字距 1.2（原来 10 号，低于最小档）；
+   2) 小标签 11 号、20 高、左右 6（原来 10 号 17 高）；未通过 / 已过期这类有问题的状态用提醒红浅底；
+   3) 骨架灰条用暖线色变量，不再单写十六进制色。 */
+.w-eyebrow{font-size:11px;font-weight:500;letter-spacing:1.2px}
+.w-tag{height:20px;padding:0 6px;font-size:11px;line-height:20px}
+.w-tag--alert{color:var(--k-alert);background:var(--k-alert-soft)}
+.w-skel__photo,.w-skel__bar{background:var(--k-line)}
+/* 2026-11-18 第三轮返修（评审第 4 轮）：说明 / 正文 / 灰字在窄屏折行时避开第二行只剩一两个字（正文 text-wrap:pretty；一两行的小字说明 balance 两行等长；不支持的环境照常显示）。 */
+.wish-page .w-copy,.wish-page .w-muted{text-wrap:pretty}
+.wish-page .w-caption{text-wrap:balance}
+
+/* 2026-11-18 第四轮精修：不能点的按钮整体 .6 透明（全端主按钮规则，原来 .45 太淡像坏了）。 */
+.wish-page button[disabled]{opacity:.6}
+/* 2026-11-19 第五轮（按微信实拍复核）：不能点的主按钮（没选文件的「提交审核」、倒计时里的「阅读后确认」等）不再是半透明的暖棕渐变（像能点）——
+   一律平的暖灰底 + 浅灰字、去掉渐变和阴影，和纠纷调解、大众评审的不能点按钮一个样子；能点时照旧暖棕实心。 */
+.wish-page button.w-primary[disabled]{opacity:1;background:var(--k-line)!important;color:var(--k-light)!important;box-shadow:none!important}
+
+.wish-page.user-surface {
+  .w-card, .w-state { border-radius: 12px; }
+  .w-input, .w-area { border-radius: 9px; }
+  .w-input:focus-within, .w-area:focus-within { box-shadow: inset 0 0 0 1px var(--k-red-line); }
+  .w-state__art { background-color: var(--user-icon-field); }
+  .w-price, .w-route { font-variant-numeric: tabular-nums; }
+  .w-bottom .w-primary, .w-bottom .w-secondary { min-height: 44px; border-radius: 11px; }
+}

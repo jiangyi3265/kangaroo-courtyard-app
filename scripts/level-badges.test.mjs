@@ -135,7 +135,8 @@ test('页面接入：会员卡、会员信息屏、等级阶梯、我的权益�
   assert.match(profile, /<view class="member-mascot"><level-icon :level="currentLevel" :size="44" \/><\/view>/)
   assert.match(profile, /<level-icon :level="levelItem\.level" :size="48" :off="levelItem\.off" \/>/)
   assert.match(profile, /<level-icon :level="selectedPerk\.level" :size="46" \/>/)
-  assert.match(profile, /<level-icon :level="currentLevel" :size="98" \/>/)
+  // 2026-11-17 改版「小而精」：会员信息屏顶部的等级徽章从 98 收到 64
+  assert.match(profile, /<level-icon :level="currentLevel" :size="64" \/>/)
   assert.match(benefits, /<level-icon v-if="member" :level="member\.level" :size="26" \/>/)
   assert.match(benefits, /<k-tabbar active="profile" :mode="experience\.mode" \/>/, '员工身份打开会员权益，底栏也要是员工底栏')
   assert.match(icon, /src="\/pages\/profile\/static\/member-travel-atlas\.png"/)

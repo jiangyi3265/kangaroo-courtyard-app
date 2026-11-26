@@ -1,39 +1,41 @@
 <template>
-  <view class="k-page picker-page">
+  <view class="k-page picker-page" :class="$userSurface">
     <k-topbar :title="o.title || '请选择'" back custom-back @back="close(o.cancelValue)" />
 
     <!-- 长名单：一屏列出，多了可搜索；点一行即选中返回 -->
     <template v-if="o.mode === 'list'">
       <view v-if="(o.items || []).length > 10" class="picker-tools">
         <view class="picker-search">
-          <k-icon name="search" :size="20" color="muted" />
+          <k-icon name="search" :size="16" color="muted" />
           <input v-model="keyword" placeholder="搜索" placeholder-class="k-placeholder" confirm-type="search" @confirm="hideKeyboard" />
-          <view v-if="keyword" class="picker-clear" @click="keyword = ''"><k-icon name="x" :size="18" color="muted" /></view>
+          <view v-if="keyword" class="picker-clear" @click="keyword = ''"><k-icon name="x" :size="14" color="muted" /></view>
         </view>
       </view>
       <scroll-view scroll-y class="picker-results">
-        <view v-for="row in rows" :key="row.i" class="picker-row" :class="{ chosen: row.i === o.value }" @click="close(row.i)">
+        <view class="picker-card">
+        <view v-for="row in rows" :key="row.i" class="picker-row" :class="{ chosen: row.i === o.value }" hover-class="k-press" @click="close(row.i)">
           <text class="picker-row__text">{{ row.label }}</text>
-          <k-icon v-if="row.i === o.value" name="check" :size="20" color="red" />
-          <k-icon v-else name="chevron-right" :size="18" color="light" />
+          <k-icon v-if="row.i === o.value" name="check" :size="18" color="red" />
+          <k-icon v-else name="chevron-right" :size="12" color="muted" />
         </view>
-        <view v-if="!rows.length" class="picker-state"><text>{{ keyword ? '没有找到匹配的选项' : '暂无可选项' }}</text></view>
+        </view>
+        <view v-if="!rows.length" class="picker-state"><view class="picker-state__icon"><k-icon name="list" :size="32" color="red" /></view><text>{{ keyword ? '没有找到匹配的选项' : '暂无可选项' }}</text></view>
         <view class="picker-gap" />
       </scroll-view>
     </template>
 
     <!-- 时刻 / 日期 / 月日：滚轮，年份可以一下子滚过好多年 -->
     <template v-else-if="o.mode">
-      <view class="wheel-head"><text class="wheel-head__value">{{ preview }}</text><text v-if="hint" class="wheel-head__hint">{{ hint }}</text></view>
+      <view class="wheel-card"><view class="wheel-head"><text class="wheel-head__value">{{ preview }}</text><text v-if="hint" class="wheel-head__hint">{{ hint }}</text></view>
       <picker-view class="wheel" :value="idx" indicator-class="wheel__indicator" mask-class="wheel__mask" @change="onWheel">
         <picker-view-column v-for="(col, ci) in cols" :key="ci">
           <view v-for="t in col" :key="t" class="wheel__item"><text>{{ t }}</text></view>
         </picker-view-column>
-      </picker-view>
+      </picker-view></view>
       <view class="picker-gap" />
     </template>
 
-    <view v-else class="picker-state"><text>请返回原页面重新打开</text></view>
+    <view v-else class="picker-state picker-state--lost"><view class="picker-state__icon"><k-icon name="circle-alert" :size="32" color="red" /></view><text>请返回原页面重新打开</text><text class="picker-state__sub">选择页的参数已失效，回上一页再点一次即可</text></view>
 
     <view class="picker-footer">
       <template v-if="o.mode && o.mode !== 'list'">
@@ -165,29 +167,39 @@ function close(value) {
 </script>
 
 <style scoped lang="scss">
-.picker-page { height: 100vh; height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.picker-tools { padding: 12px 16px 8px; flex-shrink: 0; }
-.picker-search { min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 9px; border: 1px solid var(--k-line); border-radius: 22px; background: var(--k-paper); }
-.picker-search input { flex: 1; min-width: 0; height: 42px; font-size: 14px; }
-.picker-clear { width: 32px; height: 42px; display: flex; align-items: center; justify-content: center; }
+.picker-page { --pg: 16px; --k-bg: var(--k-page); height: 100vh; height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--k-bg); }
+.picker-tools { padding: 4px var(--pg) 8px; flex-shrink: 0; }
+.picker-search { min-height: 40px; padding: 0 4px 0 14px; display: flex; align-items: center; gap: 8px; border-radius: 20px; background: var(--k-paper); }
+.picker-search input { flex: 1; min-width: 0; height: 40px; font-size: 14px; }
+.picker-clear { width: 36px; height: 40px; display: flex; align-items: center; justify-content: center; }
 .picker-results { flex: 1; min-height: 0; height: 0; width: 100%; }
-.picker-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; margin: 0 16px; padding: 12px 2px; border-bottom: 1px solid var(--k-line); }
+.picker-card { margin: 8px var(--pg) 0; padding: 0 12px; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.picker-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 12px 0; }
+.picker-row + .picker-row::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
 .picker-row__text { flex: 1; min-width: 0; font-size: 15px; line-height: 1.5; color: var(--k-ink); word-break: break-all; }
-.picker-row.chosen .picker-row__text { color: var(--k-red); font-weight: 600; }
-.picker-state { padding: 38px 24px; text-align: center; color: var(--k-muted); font-size: 15px; }
+.picker-row.chosen .picker-row__text { color: var(--k-red-deep); font-weight: 600; }
+.picker-state { margin: 12px var(--pg) 0; padding: 32px 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; border-radius: 12px; background: var(--k-paper); text-align: center; color: var(--k-ink2); font-size: 15px; font-weight: 500; }
+.picker-state--lost { margin: auto var(--pg); padding-bottom: 96px; background: none; color: var(--k-ink); font-size: 15px; font-weight: 600; }
+.picker-state__sub { margin-top: -4px; color: var(--k-muted); font-size: 12px; font-weight: 400; line-height: 1.6; }
+.picker-state__icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: var(--k-red-soft); }
 .picker-gap { flex: 1; min-height: 12px; }
-.wheel-head { flex-shrink: 0; padding: 28px 16px 8px; text-align: center; }
-.wheel-head__value { display: block; font-family: var(--k-serif); font-size: 26px; font-weight: 700; color: var(--k-ink); }
-.wheel-head__hint { display: block; margin-top: 6px; font-size: 12px; color: var(--k-muted); }
-.wheel { flex-shrink: 0; width: 100%; height: 264px; margin-top: 12px; }
-.wheel__item { height: 44px; line-height: 44px; text-align: center; font-size: 18px; color: var(--k-ink); }
-.picker-footer { flex-shrink: 0; display: flex; gap: 12px; padding: 10px 16px calc(10px + var(--k-safe-bottom)); border-top: 1px solid var(--k-line); background: var(--k-bg); }
+.wheel-card { flex-shrink: 0; margin: 16px var(--pg) 0; border-radius: 12px; background: var(--k-paper); }
+.wheel-head { position: relative; padding: 16px; text-align: center; }
+.wheel-head::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.wheel-head__value { display: block; font-size: 20px; font-weight: 700; line-height: 28px; color: var(--k-ink); font-variant-numeric: tabular-nums; }
+.wheel-head__hint { display: block; margin-top: 4px; font-size: 12px; color: var(--k-muted); }
+.wheel { height: 220px; margin: 8px 16px; }
+.wheel__item { height: 44px; line-height: 44px; text-align: center; font-size: 18px; color: var(--k-ink); font-variant-numeric: tabular-nums; }
+.picker-footer { --k-radius: 22px; flex-shrink: 0; display: flex; gap: 8px; padding: 8px var(--pg) calc(8px + var(--k-safe-bottom)); box-shadow: 0 -.5px 0 var(--k-line2); background: var(--k-paper); }
+.picker-footer :deep(.k-button.is-lg) { height: 44px; font-size: 15px; box-shadow: none; }
+.picker-footer :deep(.is-outline) { border-color: var(--k-red-line); color: var(--k-red-deep); }
 .picker-footer__item { flex: 1; min-width: 0; }
 .picker-footer__item--main { flex: 2; }
+@media (max-width: 359px) { .picker-page { --pg: 12px; } }
 </style>
 <style lang="scss">
 /* picker-view 的选中框类名作用在内置组件里，scoped 样式够不到 */
 .wheel__indicator { height: 44px; }
-/* 滚轮上下的渐隐层默认是白色，和亚麻纸底色（--k-bg）对不上，看着像一块白板 */
-.wheel__mask { background-image: linear-gradient(180deg, rgba(250, 247, 241, .96), rgba(250, 247, 241, .5)), linear-gradient(0deg, rgba(250, 247, 241, .96), rgba(250, 247, 241, .5)); background-position: top, bottom; background-size: 100% 110px; background-repeat: no-repeat; }
+/* 渐隐要半透明白，小程序没有 color-mix，只能写 rgba */
+.wheel__mask { background-image: linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(255, 255, 255, .5)), linear-gradient(0deg, rgba(255, 255, 255, .96), rgba(255, 255, 255, .5)); background-position: top, bottom; background-size: 100% 66px; background-repeat: no-repeat; }
 </style>

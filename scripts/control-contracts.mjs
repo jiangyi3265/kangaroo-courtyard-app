@@ -37,6 +37,11 @@ export function assertExtensionRoutes(routes, manifest) {
 export function assertExtensionSource(entry, source) {
   if (entry.kind === 'ext-crud') {
     assert.deepEqual([...source.matchAll(/\bentity="([^"]+)"/g)].map(x => x[1]), [entry.entity], 'component entity mapping')
+  } else if (entry.kind === 'insurance-finance') {
+    assert.match(source, /from ['"]@\/api\/kangaroo\/insurance-finance['"]/)
+    assert.match(source, /listInsuranceApplies\s*:\s*listInsuranceRefunds/)
+    assert.match(source, /v-hasPermi="\['kangaroo:insapply:query'\]"/)
+    assert.match(source, /v-hasPermi="\['kangaroo:insapply:handle'\]"/)
   } else {
     assert.equal(entry.kind, 'application-list')
     assert.match(source, /import\s+ApplicationList\s+from\s+["']@\/views\/kangaroo\/application\/index\.vue["']/)

@@ -12,6 +12,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import * as gender from '../common/job-gender.js'
+import { parseRecruitmentText } from '../pages/staff/recruitment-text.js'
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(APP, 'package.json'))
@@ -92,6 +93,28 @@ function harness(platform = 'MP-WEIXIN', { rows = ROWS, missing = 3, missingJob 
 }
 const row = (h, id) => JSON.parse(h.run('JSON.stringify(jobList.value.find(r => r.jobId === ' + id + '))'))
 const sheetState = (h) => JSON.parse(h.run('JSON.stringify(condSheet.value)'))
+
+test('全职招聘识别确认期间切换门店或重新打开表单，旧结果不会写入', async (t) => {
+  const h = harness()
+  t.after(h.stop)
+  await h.load()
+  let store = 107, finish
+  Object.assign(h.sandbox, {
+    experience: { account: { id: 1 } }, currentStaffStoreId: () => store, parseRecruitmentText,
+    confirm: () => new Promise(resolve => { finish = resolve })
+  })
+  h.run("s.value = 2; formOpen.value = true; form.value = newForm('fulltime'); recruitmentText.value = '招聘岗位：前台'")
+  const first = h.run('fillRecruitmentText()')
+  store = 108
+  finish(true)
+  await first
+  assert.equal(h.run('gen.value.title'), undefined)
+  const second = h.run('fillRecruitmentText()')
+  h.run("form.value = newForm('fulltime')")
+  finish(true)
+  await second
+  assert.equal(h.run('gen.value.title'), undefined)
+})
 
 test('卡片菜单：线下岗位（草稿 / 招聘中 / 暂停）有「补填筛选条件」；线上任务、已关闭、没有编辑权限的不出现', async (t) => {
   const h = harness()

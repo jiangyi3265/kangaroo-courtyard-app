@@ -5,14 +5,14 @@
        只在小程序里加：H5 的 page-meta 关弹窗时清不掉这条样式，顶栏会从此不吸顶 -->
   <!-- #endif -->
   <k-feature-gate feature="recruitment">
-  <view class="k-page jobs">
+  <view class="k-page jobs" :class="[$userSurface, 'jobs--s' + s]">
     <k-topbar :title="cur.title" back bg="#FCF9F3" />
 
     <view class="jobs-discovery">
       <!-- 氛围背景与岗位实拍分开：装饰图不参与岗位数据和实拍认证。 -->
       <view class="jobs-discovery__backdrop" aria-hidden="true"><image class="jobs-discovery__coast" src="/pages/jobs/static/discovery-coast.jpg" mode="aspectFill" /><view class="jobs-discovery__wash" />
         <!-- 2026-11-03 主人给的参考图：「全国 / 筛选」那一行右边留纸飞机 + 虚线装饰，订阅回到数量行 -->
-        <view class="jobs-discovery__decor"><view class="jobs-discovery__trail" /><view class="jobs-discovery__plane"><k-icon name="send" :size="26" color="red" :stroke="1.2" :fill="true" /></view></view>
+        <view class="jobs-discovery__decor"><view class="jobs-discovery__trail" /><view class="jobs-discovery__plane"><k-icon name="send" :size="16" color="red" /></view></view>
       </view>
       <view class="jobs-discovery__controls">
       <view class="job-kinds">
@@ -20,18 +20,18 @@
       </view>
       <job-search v-model="keyword" theme="travel" :type="curType()" :cities="cities" :max="MAX_CITIES" :placeholder="cur.placeholder" @search="doSearch" @clear="clearKeyword" @city="selectSearchCity" />
       <view v-if="s !== 4 && shownCities.length" class="city-tags">
-        <view v-for="cityName in shownCities" :key="cityName" class="city-tag" hover-class="k-press" aria-role="button" :aria-label="'删除城市 ' + cityName" @click="removeChip('city:' + cityName)"><k-icon name="map-pin" :size="13" color="red" /><text>{{ cityName }}</text><k-icon name="x" :size="12" color="red" /></view>
+        <view v-for="cityName in shownCities" :key="cityName" class="city-tag" hover-class="k-press" aria-role="button" :aria-label="'删除城市 ' + cityName" @click="removeChip('city:' + cityName)"><k-icon name="map-pin" :size="12" color="red" /><text>{{ cityName }}</text><k-icon name="x" :size="12" color="red" /></view>
         <view class="city-tags__reset" hover-class="k-press" @click="resetCities"><text>重置城市</text></view>
       </view>
 
       <!-- 城市与条件分开展示；打开面板后编辑草稿，确认后才生效。 -->
-      <view class="fchips-wrap">
+      <view class="fchips-wrap" :class="{ 'fchips--city': shownCities.length }">
         <view class="fchips">
-          <view v-if="s !== 4" class="fchip fchip--add" hover-class="k-press-s" aria-role="button" aria-label="选择城市" @click="openCityChip"><k-icon name="map-pin" :size="16" color="red" :stroke="2" :fill="true" /><text class="fchip__text">{{ shownCities.length ? '更换城市' : '全国' }}</text><k-icon name="chevron-down" :size="13" color="ink" :stroke="2" /></view>
-          <view class="fchip-main" :class="{ open: filterOpen, on: chips.length }" hover-class="k-press-s" @click="toggleFilter"><k-icon name="filter" :size="16" color="ink2" :stroke="1.8" /><text class="fchip-main__text">筛选</text><view class="fchip-main__caret" :class="{ up: filterOpen }" /></view>
+          <view v-if="s !== 4" class="fchip fchip--add" hover-class="k-press-s" aria-role="button" aria-label="选择城市" @click="openCityChip"><k-icon name="map-pin" :size="14" color="red" /><text class="fchip__text">{{ shownCities.length ? '更换城市' : '全国' }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view>
+          <view class="fchip-main" :class="{ open: filterOpen, on: chips.length }" hover-class="k-press-s" @click="toggleFilter"><k-icon name="filter" :size="14" color="ink2" /><text class="fchip-main__text">筛选</text><k-icon :name="filterOpen ? 'chevron-up' : 'chevron-down'" :size="12" :color="filterOpen ? 'red' : 'muted'" /></view>
           <scroll-view scroll-x class="fchips__scroll" :show-scrollbar="false">
             <view class="fchips__inner">
-              <view v-for="chipItem in conditionChips" :key="chipItem.key" class="fchip" hover-class="k-press-s" @click="removeChip(chipItem.key)"><text class="fchip__text">{{ chipItem.text }}</text><k-icon name="x" :size="11" color="red" :stroke="2.2" /></view>
+              <view v-for="chipItem in conditionChips" :key="chipItem.key" class="fchip" hover-class="k-press-s" @click="removeChip(chipItem.key)"><text class="fchip__text">{{ chipItem.text }}</text><k-icon name="x" :size="12" color="red" /></view>
               <text v-if="s === 4" class="online-scope">全国可接 · 不限所在城市</text>
             </view>
           </scroll-view>
@@ -52,63 +52,77 @@
       <view v-if="s === 3 && training" class="train" hover-class="k-press-s" @click="openTraining">
         <image v-if="training.img" class="train__img" :src="training.img" mode="aspectFill" />
         <view class="train__shade" :class="{ 'train__shade--plain': !training.img }" />
-        <image v-if="!training.img" class="train__roo" src="/static/media/brand-kangaroo.png" mode="aspectFit" />
+        <image v-if="!training.img" class="train__roo" src="/static/user-icons/roo-mark.png" mode="aspectFit" />
         <view class="train__copy">
-          <view class="train__tag"><k-icon name="graduation-cap" :size="12" color="white" :stroke="2" /><text>培训活动</text></view>
+          <view class="train__tag"><k-icon name="graduation-cap" :size="12" color="red" /><text>培训活动</text></view>
           <text class="train__title">{{ training.title }}</text>
           <text v-if="training.meta" class="train__meta">{{ training.meta }}</text>
         </view>
-        <view class="train__go"><text>去报名</text><k-icon name="chevron-right" :size="13" color="red" :stroke="2.4" /></view>
+        <view class="train__go"><text>去报名</text><k-icon name="chevron-right" :size="12" color="red" /></view>
       </view>
 
       <!-- 数量 + 订阅 + 刷新（2026-11-03 主人参考图：订阅在数量行，「当前订阅 | 5秒更新」；每人只有一条订阅，没有就新建，有了点进去直接改「当前订阅」） -->
       <view class="list-status">
         <text class="count">{{ loading ? '正在获取最新岗位…' : loadError ? '岗位加载失败，请刷新重试' : cur.count }}</text>
-        <view class="bell" :class="{ on: notify }" hover-class="k-press" @click="openSubscribe"><k-icon :name="notify ? 'bell-ring' : 'bell'" :size="15" :color="notify ? 'red' : 'ink'" :stroke="1.8" /><text class="bell__text">{{ notify ? '当前订阅' : '订阅' }}</text></view>
-        <view class="refresh" aria-live="off"><k-icon name="clock" :size="15" color="ink" :stroke="1.7" /><text class="refresh__text">{{ autoRefreshing ? '更新中' : refreshSeconds + '秒更新' }}</text></view>
+        <view class="bell" :class="{ on: notify }" hover-class="k-press" @click="openSubscribe"><k-icon :name="notify ? 'bell-ring' : 'bell'" :size="14" :color="notify ? 'red' : 'muted'" /><text class="bell__text">{{ notify ? '当前订阅' : '订阅' }}</text></view>
+        <view class="refresh" aria-live="off"><k-icon name="clock" :size="14" color="muted" /><text class="refresh__text">{{ autoRefreshing ? '更新中' : refreshSeconds + '秒更新' }}</text></view>
       </view>
-      <text v-if="!loading && !loadError && !cur.jobs.length" class="empty-jobs">{{ keyword ? '没有找到匹配的岗位，换个说法或关键词试试。' : chips.length ? '没有符合这些条件的岗位，点「筛选」换个条件试试。' : s === 4 ? '暂无已上架的线上任务，新任务发布后会在这里展示。' : '暂无已上架的岗位，可切换其他分类查看。' }}</text>
+      <view v-if="!loading && !loadError && !cur.jobs.length" class="empty-box"><view class="empty-box__icon"><k-icon :name="keyword || chips.length ? 'search' : s === 4 ? 'laptop' : 'briefcase-business'" :size="32" color="red" /></view><text class="empty-box__title">{{ keyword || chips.length ? '没有找到岗位' : s === 4 ? '还没有线上任务' : '还没有岗位' }}</text><text v-if="!loading && !loadError && !cur.jobs.length" class="empty-jobs">{{ keyword ? '没有找到匹配的岗位，换个说法或关键词试试。' : chips.length ? '没有符合这些条件的岗位，点「筛选」换个条件试试。' : s === 4 ? '暂无已上架的线上任务，新任务发布后会在这里展示。' : '暂无已上架的岗位，可切换其他分类查看。' }}</text><view v-if="keyword || chips.length" class="empty-box__btn" hover-class="k-press" @click="resetFilters"><text>重置条件</text></view></view>
 
-      <!-- 实拍岗位用大图卡片；缺图或图片加载失败时自动收为紧凑卡片，真实条件分组展示。 -->
-      <view v-for="job in cur.jobs" :key="job.jobId" class="card" :class="hasJobPhoto(job) ? 'card--photo' : 'card--compact'" hover-class="k-press-s" aria-role="button" :aria-label="'查看岗位：' + job.headline" @click="openJob(job)">
+      <!-- 实拍岗位用大图卡片；缺图或图片加载失败时自动收为紧凑卡片，真实条件分组展示。
+           2026-11-17 改版「小而精」：外面包一层 job-feed，岗位排成两列（样式在 list-premium.scss 末尾），卡片上的信息一项不少。 -->
+      <view v-if="cur.jobs.length" class="job-feed" :class="{ 'job-feed--cols': s !== 4 }">
+      <view v-for="(feedCol, colIndex) in feedCols" :key="'col' + colIndex" class="job-col">
+      <view v-for="job in feedCol" :key="job.jobId" class="card" :class="[hasJobPhoto(job) ? 'card--photo' : 'card--compact', s === 4 ? 'card--row' : 'card--tile']" hover-class="k-press-s" aria-role="button" :aria-label="'查看岗位：' + job.headline" @click="openJob(job)">
         <view class="card__left">
           <image v-if="hasJobPhoto(job)" class="card__img" :src="job.img" mode="aspectFill" @error="markJobPhotoFailed(job)" />
-          <view v-else class="card__empty" aria-label="暂无岗位照片"><k-icon :name="s === 4 ? 'laptop' : 'house'" :size="26" color="red" :stroke="1.6" /></view>
+          <view v-else class="card__empty" aria-label="暂无岗位照片"><view class="card__empty-box"><k-icon :name="s === 4 ? 'laptop' : 'house'" :size="s === 4 ? 20 : 28" :color="s === 4 ? 'muted' : 'red'" /></view></view>
           <view v-if="job.assured && hasJobPhoto(job)" class="card__badge" aria-label="经袋鼠实地拍摄并含保险"><job-badge size="ribbon" /></view>
-          <view v-if="hasJobPhoto(job)" class="card__location" :aria-label="job.loc || '地点待定'"><k-icon :name="s === 4 ? 'store' : 'map-pin'" :size="13" color="white" :stroke="2" /><text>{{ job.locationLabel || job.loc || '地点待定' }}</text></view>
+          <view v-if="hasJobPhoto(job)" class="card__location" :aria-label="job.loc || '地点待定'"><k-icon :name="s === 4 ? 'store' : 'map-pin'" :size="12" :color="$userSurface && s !== 4 ? 'red' : 'white'" /><text>{{ job.locationLabel || job.loc || '地点待定' }}</text></view>
+          <!-- 返修第 2 轮：名额已满 / 已暂停招聘挪到照片（或占位图）右下角，20 高深色小胶囊，不会被小标签行挤掉 -->
+          <view v-if="s !== 4" class="card__states"><k-job-urgency :job="job" /><template v-for="stateItem in job.flags" :key="'s' + stateItem.text"><view v-if="stateItem.tone !== 'green'" class="card__state" :class="'card__state--' + stateItem.tone"><text>{{ stateItem.text }}</text></view></template></view>
         </view>
         <view class="card__main">
-          <k-job-urgency :job="job" />
+          <k-job-urgency v-if="s === 4" :job="job" />
+          <text v-if="$userSurface && job.category" class="card__kind">{{ job.category }}</text>
           <view class="card__head">
             <view class="card__heading"><view class="card__title-row"><text class="title k-display">{{ displayWording(job.headline, [job.storeName]) }}</text></view><text v-if="job.subtitle" class="card__subtitle">{{ job.subtitle }}</text></view>
-            <view class="card__open"><k-icon name="chevron-right" :size="16" color="muted" :stroke="1.7" /></view>
+            <view class="card__open"><k-icon name="chevron-right" :size="16" color="muted" /></view>
           </view>
-          <view v-if="job.category || job.arrangement" class="card__meta">
-            <text v-if="job.category" class="card__category">{{ job.category }}</text>
-            <view v-if="job.arrangement" class="card__arrangement"><k-icon :name="job.arrangement.icon" :size="14" color="ink2" :stroke="1.6" /><text>{{ job.arrangement.text }}</text></view>
+          <!-- 第四轮：类型 · 排班 · 房型 · 期限 · 工时 合成一段灰字（card__desc 只是包一层，两块各自的显示条件不变） -->
+          <view class="card__desc">
+          <view v-if="job.arrangement || (job.category && !$userSurface)" class="card__meta">
+            <text v-if="job.category && !$userSurface" class="card__category">{{ job.category }}</text>
+            <view v-if="job.arrangement" class="card__arrangement"><k-icon :name="job.arrangement.icon" :size="12" color="ink2" /><text>{{ job.arrangement.text }}</text></view>
+          </view>
+          <view v-if="job.facts.length" class="card__facts" :class="'card__facts--' + job.facts.length">
+            <view v-for="factItem in job.facts" :key="factItem.icon" class="card__fact" :class="{ 'card__fact--board': factItem.icon === 'utensils' }"><k-icon :name="factItem.icon" :size="12" :color="factItem.tone === 'green' ? 'green' : 'muted'" /><text>{{ factItem.text }}</text></view>
+          </view>
           </view>
           <view v-if="job.price" class="price"><text class="price__num">{{ job.price }}</text><text class="price__unit">{{ job.unit }}</text></view>
           <view v-if="!hasJobPhoto(job)" class="loc" :aria-label="job.loc || '地点待定'">
-            <k-icon :name="s === 4 ? 'store' : 'map-pin'" :size="s === 4 ? 13 : 14" color="muted" :stroke="1.7" />
+            <k-icon :name="s === 4 ? 'store' : 'map-pin'" :size="12" color="light" />
             <text class="loc__text">{{ job.locationLabel || job.loc || '地点待定' }}</text>
           </view>
         </view>
-          <view v-if="job.flags.length || job.redpacket || job.keywordTags.length || job.remote || (job.assured && !hasJobPhoto(job))" class="tags card__tags">
-            <view v-for="flagItem in job.flags" :key="'f' + flagItem.text" class="tag" :class="'tag--' + flagItem.tone"><text>{{ flagItem.text }}</text></view>
-            <view v-if="job.redpacket" class="tag tag--gift"><k-icon name="gift" :size="13" color="#8A5A1C" :stroke="1.8" /><text>满月红包</text></view>
-            <view v-if="job.keywordTags.length" class="card__keywords"><text v-for="tagText in job.keywordTags" :key="tagText">{{ tagText }}</text></view>
-            <view v-if="job.remote" class="remote"><k-icon name="laptop" :size="13" color="green" :stroke="2" /><text>远程</text></view>
-            <view v-if="job.assured && !hasJobPhoto(job)" class="card__trust" aria-label="安心商家 · 含保险"><k-icon name="shield-check" :size="15" color="green" :stroke="2" /><text>安心商家 · 含保险</text></view>
+        <!-- 返修第 2 轮：小标签按「食宿 → 满月红包 → 安心商家 / 含保险 → 性别 / 我的报名 → 远程」排，放不下就折到第二行，一枚都不藏；
+             名额已满 / 已暂停招聘在照片右下角显示、这一行里收起（线上任务没有照片，仍在这一行）；关键词另起一行灰字 -->
+        <view class="card__chips">
+          <template v-for="boardItem in job.facts" :key="'b' + boardItem.icon"><view v-if="boardItem.icon === 'utensils'" class="tag tag--board"><text>{{ boardItem.text }}</text></view></template>
+          <view v-if="job.redpacket" class="tag tag--gift"><k-icon name="gift" :size="12" color="red" /><text>满月红包</text></view>
+          <view v-if="job.details.length" class="card__details">
+            <view v-for="detailItem in job.details" :key="detailItem.text" class="card__detail" :class="{ 'card__detail--safe': detailItem.tone === 'green' }"><k-icon :name="detailItem.icon" :size="12" :color="detailItem.tone === 'green' ? 'green' : 'ink2'" /><text>{{ detailItem.text }}</text></view>
           </view>
-        <view v-if="job.facts.length" class="card__facts" :class="'card__facts--' + job.facts.length">
-          <view v-for="factItem in job.facts" :key="factItem.icon" class="card__fact" :class="{ 'card__fact--board': factItem.icon === 'utensils' }"><k-icon :name="factItem.icon" :size="16" :color="factItem.tone === 'green' ? 'green' : 'red'" :stroke="1.8" /><text>{{ factItem.text }}</text></view>
+          <view v-if="job.flags.length || job.redpacket || job.keywordTags.length || job.remote || (job.assured && !hasJobPhoto(job))" class="tags card__tags">
+            <view v-if="job.assured && !hasJobPhoto(job)" class="card__trust" aria-label="安心商家 · 含保险"><k-icon name="shield-check" :size="12" color="green" /><text>安心商家 · 含保险</text></view>
+            <view v-for="flagItem in job.flags" :key="'f' + flagItem.text" class="tag" :class="['tag--' + flagItem.tone, { 'tag--onphoto': s !== 4 && flagItem.tone !== 'green' }]"><text>{{ flagItem.text }}</text></view>
+            <view v-if="job.remote" class="remote"><k-icon name="globe" :size="12" color="light" /><text>远程</text></view>
+          </view>
         </view>
-        <view v-if="job.details.length" class="card__details">
-          <view v-for="detailItem in job.details" :key="detailItem.text" class="card__detail" :class="{ 'card__detail--safe': detailItem.tone === 'green' }"><k-icon :name="detailItem.icon" :size="14" :color="detailItem.tone === 'green' ? 'green' : 'ink2'" :stroke="1.6" /><text>{{ detailItem.text }}</text></view>
-        </view>
+        <view v-if="job.keywordTags.length" class="card__keywords"><text v-for="tagText in job.keywordTags" :key="tagText">{{ tagText }}</text></view>
         <view v-if="(s === 2 && (job.days || job.time)) || (s === 3 && (job.train || job.probation || job.benefits.length)) || (s === 4 && (job.deliver || job.est))" class="card__extra">
           <!-- 兼职旅行：门店写的排班说明 / 上班时间 -->
-          <view v-if="s === 2 && (job.days || job.time)" class="meta"><k-icon name="clock" :size="13" color="muted" :stroke="1.7" /><text>{{ job.days }}</text><text v-if="job.time" class="meta__time">{{ job.time }}</text></view>
+          <view v-if="s === 2 && (job.days || job.time)" class="meta"><k-icon name="clock" :size="12" color="muted" /><text :class="{ 'meta__days--none': !job.days }">{{ job.days }}</text><text v-if="job.time" class="meta__time">{{ job.time }}</text></view>
           <!-- 全职旅行：培训 / 试用期 / 福利 -->
           <template v-else-if="s === 3">
             <view v-if="job.train || job.probation" class="meta meta--text"><text v-if="job.train">培训：{{ job.train }}</text><text v-if="job.probation">试用期：{{ job.probation }}</text></view>
@@ -116,10 +130,12 @@
           </template>
           <!-- 线上任务：交付 / 工时 -->
           <view v-else-if="s === 4 && (job.deliver || job.est)" class="meta meta--text">
-            <view v-if="job.deliver" class="meta__item"><k-icon name="calendar-days" :size="13" color="muted" :stroke="1.7" /><text>交付日期：{{ job.deliver }}</text></view>
+            <view v-if="job.deliver" class="meta__item"><k-icon name="calendar-days" :size="12" color="light" /><text>交付日期：{{ job.deliver }}</text></view>
             <text v-if="job.est">预计工时：{{ job.est }}</text>
           </view>
         </view>
+      </view>
+      </view>
       </view>
       <!-- 触底翻页之前没有任何提示，看不出是还在加载还是已经到底 -->
       <text v-if="cur.jobs.length && !loading" class="list-end">{{ loadingMore ? '正在加载更多…' : hasMore[s - 1] ? '上滑加载更多' : '已经到底了' }}</text>
@@ -202,7 +218,7 @@ function openSubscribe() {
 
 // 四类岗位共用卡片布局，搜索提示和统计文案随分类切换。
 const screens = [
-  { title: '换宿旅行', placeholder: '搜索城市、岗位或偏好', countText: (n) => `${n} 个换宿岗位` },
+  { title: '换工旅行', placeholder: '搜索城市、岗位或偏好', countText: (n) => `${n} 个换工岗位` },
   { title: '兼职旅行', placeholder: '搜索城市或兼职，如咖啡、前台', countText: (n) => `${n} 个兼职岗位` },
   { title: '全职旅行', placeholder: '搜索城市或全职，如管家、店长', countText: (n) => `${n} 个全职岗位` },
   { title: '线上任务', placeholder: '搜索任务，如文案、视频剪辑', countText: (n) => `${n} 个线上任务` }
@@ -399,6 +415,18 @@ onReachBottom(() => {
 const cur = computed(() => {
   const conf = screens[s.value - 1]
   return { ...conf, jobs: lists.value[s.value - 1], count: conf.countText(totals.value[s.value - 1]) }
+})
+// 纯展示：到店三类排成两列瀑布，按估算卡高往矮的那列放（只看文字多少，不改列表本身）；线上任务一列横排卡
+// 第四轮：估高补上价格行（26）；小标签按真正显示在标签行里的枚数估（每 3 枚一行 24）；标题按 10 字一行、说明段按 12 字一行估
+const tileChipCount = (job) => job.facts.filter(f => f.icon === 'utensils').length + job.details.length + (job.redpacket ? 1 : 0) + job.flags.filter(f => f.tone === 'green').length + (job.assured && !hasJobPhoto(job) ? 1 : 0)
+const tileDescChars = (job) => [job.category, job.arrangement && job.arrangement.text, ...job.facts.filter(f => f.icon !== 'utensils').map(f => f.text)].filter(Boolean).join(' · ').length
+const tileHeight = (job) => 150 + Math.ceil((job.headline || '').length / 10) * 20 + (job.subtitle ? 18 : 0) + (job.price ? 26 : 0) + Math.ceil(tileDescChars(job) / 12) * 20 + (tileChipCount(job) ? Math.ceil(tileChipCount(job) / 3) * 24 + 8 : 0) + (job.keywordTags.length ? Math.ceil(job.keywordTags.join('').length / 10) * 16 + 8 : 0) + (s.value === 3 ? ((job.train ? Math.ceil(job.train.length / 12) * 16 + 4 : 0) + (job.probation ? 20 : 0) + (job.benefits.length ? 26 : 0)) : 0) + (s.value === 2 ? ((job.days ? Math.ceil(job.days.length / 12) * 20 : 0) + (job.time ? 20 : 0)) : 0)
+const feedCols = computed(() => {
+  if (s.value === 4) return [cur.value.jobs]
+  const cols = [[], []]
+  const heights = [0, 0]
+  cur.value.jobs.forEach((job) => { const c = heights[1] < heights[0] ? 1 : 0; cols[c].push(job); heights[c] += tileHeight(job) })
+  return cols
 })
 
 // 上架、暂停可能发生在别的设备；每次回到列表重新读取服务端，不能只在首次挂载时加载。
@@ -617,8 +645,6 @@ onShow(showPublicShareMenu)
 .fchip-main { flex: 0 0 auto; height: 32px; box-sizing: border-box; padding: 0 12px 0 16px; border: 1.5px solid #C9935F; border-radius: 16px; background: #FFFCF8; display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; color: #A0632E; }
 .fchip-main.on, .fchip-main.open { border-color: #B5763C; background: #FDF1E3; }
 /* 实心小三角（参考图「筛选 ▾」）；面板打开时朝上 */
-.fchip-main__caret { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #B5763C; }
-.fchip-main__caret.up { border-top: 0; border-bottom: 6px solid #B5763C; }
 .fchip-main__text { white-space: nowrap; }
 .fchips__scroll { flex: 1; min-width: 0; white-space: nowrap; }
 .fchips__inner { display: inline-flex; align-items: center; gap: 6px; padding-right: 4px; }
@@ -699,4 +725,46 @@ onShow(showPublicShareMenu)
 .filter-summary { display: flex; align-items: center; justify-content: space-between; color: var(--k-muted); font-size: 12px; }
 .filter-summary view { min-height: 36px; display: flex; align-items: center; color: var(--k-red-deep); }
 @import "list-premium.scss";
+
+.jobs.user-surface {
+  .job-kind { min-height: 44px; }
+  .job-kind.active .job-kind__text { color: var(--k-red-deep); font-weight: 650; }
+  .job-kind.active .job-kind__bar { width: 20px; height: 3px; border-radius: 3px; background: #BD895A; }
+  .city-tag, .fchip-main.on { background: var(--k-red-soft); color: var(--k-red-deep); }
+  .job-feed .card { border-radius: 12px; background-color: var(--k-paper); box-shadow: none; }
+  .job-feed .card--tile {
+    --job-inset: 11px;
+    > .card__left { width: auto; margin: 5px 5px 0; padding-bottom: 62%; overflow: hidden; border-radius: 8px; }
+    .card__empty { background: var(--user-icon-field); }
+    .card__empty-box { width: 36px; height: 36px; border-radius: 10px; background: var(--k-paper); }
+    .card__location { left: 5px; right: auto; bottom: 5px; max-width: calc(100% - 10px); box-sizing: border-box; gap: 3px; padding: 2px 6px; border-radius: 5px; background: rgba(255, 253, 249, .95); color: var(--k-ink2); }
+    > .card__main { padding: 8px var(--job-inset) 0; }
+    .card__kind { order: 0; margin-bottom: 2px; font-size: 11px; line-height: 16px; font-weight: 500; color: var(--k-red-deep); }
+    .title { color: var(--k-ink); font-size: 15px; line-height: 1.4; }
+    .card__main > .card__desc { margin: 4px 0 0; -webkit-clip-path: none; clip-path: none; }
+    .card__desc > .card__meta { display: block; }
+    .card__desc .card__arrangement { display: block; padding: 0; text-indent: 0; }
+    .card__desc .card__arrangement::before, .card__desc .card__fact::before { display: none; }
+    .card__desc > .card__facts { display: flex; flex-wrap: wrap; gap: 0 7px; }
+    .card__desc .card__fact:not(.card__fact--board) { display: inline-flex; align-items: center; gap: 3px; margin-top: 3px; padding: 0; text-indent: 0; font-variant-numeric: tabular-nums; }
+    .card__desc .card__fact :deep(.k-icon) { display: inline-flex; flex: none; }
+    > .card__chips, > .card__extra { margin-right: var(--job-inset); margin-left: var(--job-inset); }
+    .card__chips .tag--board, .card__chips .tag--gift, .card__chips .card__detail { background-color: var(--user-inset); }
+    > .card__keywords {
+      position: relative;
+      margin: 8px var(--job-inset) 0 calc(var(--job-inset) - 12px);
+      padding-top: 7px;
+      &::before { content: ''; position: absolute; left: 12px; top: 0; right: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+    }
+  }
+  .job-feed .price__num, .list-status .count { font-variant-numeric: tabular-nums; }
+  .empty-box__icon { background: var(--user-icon-field); box-shadow: none; }
+}
+@media (max-width: 359px) {
+  .jobs.user-surface .job-feed .card--tile {
+    --job-inset: 9px;
+    .title { font-size: 14px; }
+    .card__desc > .card__facts { column-gap: 5px; }
+  }
+}
 </style>

@@ -202,6 +202,8 @@
       </view>
 
       <view class="sec sec--tight"><text class="sec__title">{{ secNo('trend') }}{{ isRecruit ? '收入趋势' : '营收趋势' }}</text><text class="sec__hint">（元）</text></view>
+      <!-- 2026-11-17 改版：预览里的折线图也放进白卡（只加了这一层包裹，图本身没动） -->
+      <view class="chart-card chart-card--preview">
       <view class="legend">
         <view class="legend__item"><view class="legend__line legend__line--red" /><text>本周</text></view>
         <view class="legend__item"><view class="legend__line legend__line--dash" /><text>上周</text></view>
@@ -217,6 +219,7 @@
         </view>
       </view>
       <view class="chart__x" :style="{ width: (PW + 28) + 'px' }"><text v-for="(d, i) in days" :key="i" class="chart__xlabel">{{ d }}</text></view>
+      </view>
 
       <template v-if="isRecruit">
         <view class="sec sec--tight"><text class="sec__title">{{ secNo('shops') }}各换工店家情况</text></view>
@@ -827,4 +830,156 @@ async function submit() {
 .preview .risk { padding-top: 6px; padding-bottom: 6px; }
 .preview .k-mt14 { margin-top: 8px; }
 .preview .btns { transform: translateY(-9px); }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底 + 白卡 12 圆角、不描边不加阴影；数字 15–20 / 700，标签 11–12 灰字，状态小标签 4 圆角。
+   只改样子：页签、门店 / 周筛选、周报卡、异常提示、新建、系统汇总、折线图、编辑各项、预览、确认提交都在；「较上周」的颜色仍由脚本里的 deltaTone() 定。
+   编辑周报是填写页，字不改小，只统一底色和圆角。下面每条都带 .weekly，盖住上面的旧值；上面四屏各自的紧凑间距没写到的照旧。 */
+@import './manage-refine.scss';
+.weekly .tabs { border-bottom: 0; }
+.weekly .tabs__item { padding: 9px 0 11px; font-size: 14px; color: var(--k-ink2); }
+.weekly .tabs__item.active { color: var(--k-red-deep); }
+.weekly .tabs__item.active::after { bottom: 3px; width: 20px; height: 3px; margin-left: -10px; border-radius: 2px; }
+/* 列表 */
+.weekly .filter { gap: 12px; margin-top: 0; }
+.weekly .pill { height: 30px; padding: 0 10px 0 12px; border: 0; font-size: 13px; }
+.weekly .pill :deep(.k-icon), .weekly .filter :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+.weekly .filter__week { font-size: 13px; color: var(--k-ink2); }
+.weekly .report { padding: 10px 12px; margin-bottom: 8px; border: 0; border-radius: 12px; }
+.weekly .report__head { gap: 10px; }
+.weekly .report__img { width: 52px; height: 52px; }
+.weekly .report__name { font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; }
+.weekly .report__meta { margin-top: 2px; font-size: 12px; }
+.weekly .report__time { gap: 4px; margin-top: 2px; font-size: 11px; }
+.weekly .report__time :deep(.k-icon) { width: 11px !important; height: 11px !important; }
+.weekly .report__right { gap: 2px; padding-top: 1px; }
+.weekly .report__right :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+.weekly .report__money { margin-top: 8px; padding: 0 2px; font-size: 12px; color: var(--k-ink2); }
+.weekly .stag { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+.weekly .stag--wait { color: var(--k-ochre-deep); }
+.weekly .stat4--boxed { margin-top: 8px; padding: 6px 0; border: 0; border-radius: 8px; background: var(--k-bg); }
+.weekly .stat4--card { border: 0; border-radius: 12px; }
+.weekly .stat4__label { font-size: 11px; }
+.weekly .stat4__value { font-size: 15px; line-height: 20px; }
+.weekly .stat4__value--lg { margin-top: 0; font-size: 20px; line-height: 26px; }
+.weekly .stat4__delta { text-align: center; }
+@media (max-width: 340px) { .weekly .stat4__value--lg { font-size: 17px; } .weekly .stat4__delta { font-size: 10px; } }
+.weekly .alert { padding: 10px 12px; border: 0; border-radius: 12px; }
+.weekly .alert__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.weekly .alert__dot { background: var(--k-alert); }
+.weekly .alert :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+.weekly .shop { padding: 12px; border: 0; border-radius: 12px; }
+.weekly .shop__name { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.weekly .shop__nums { font-size: 12px; color: var(--k-ink2); }
+.weekly .shop__money { font-size: 11px; }
+/* 汇总 */
+.weekly .notice { flex-wrap: wrap; gap: 2px 8px; height: auto; min-height: 36px; padding: 7px 12px; border: 0; border-radius: 10px; background: #FFF8EE; }
+.weekly .notice__text { font-size: 12px; color: var(--k-ochre-deep); }
+.weekly .notice .k-meta { font-size: 11px; }
+.weekly .sec__title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; }
+.weekly .sec__hint { font-size: 11px; }
+.weekly .works__item { border: 0; border-radius: 12px; }
+.weekly .works__item :deep(.k-icon) { width: 22px !important; height: 22px !important; }
+.weekly .works__label { font-size: 11px; color: var(--k-muted); }
+.weekly .preview .works__item { gap: 2px; padding: 8px 0; }
+.weekly .preview .stat4--card { padding: 8px 0; }
+.weekly .select { height: 28px; padding: 0 8px 0 10px; border: 0; border-radius: 14px; font-size: 12px; }
+.weekly .select :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+.weekly .chart-card { border: 0; border-radius: 12px; }
+.weekly .chart-card--preview { margin-top: 0; padding: 8px 10px 6px; }
+.weekly .legend { font-size: 11px; }
+.weekly .legend__line { width: 14px; }
+.weekly .chart__ylabel { font-size: 10px; }
+.weekly .orders__item { border: 0; border-radius: 12px; }
+/* 编辑（填写页）：字号不动 */
+.weekly .store { padding: 0 2px; border-bottom: 0; }
+.weekly .store__name { font-family: var(--k-sans); font-size: 15px; font-weight: 700; }
+.weekly .returned { padding: 6px 10px; border-radius: 8px; color: var(--k-ochre-deep); }
+.weekly .area { border: 0; border-radius: 10px; }
+.weekly .card { border: 0; border-radius: 12px; }
+.weekly .add-dash { border-radius: 8px; }
+.weekly .coop__check { border-radius: 4px; }
+.weekly .coop__tag { height: 18px; padding: 0 6px; border-radius: 4px; background: #F5F1EB; color: var(--k-ink2); font-size: 11px; }
+.weekly .coop__tag--ochre { background: var(--k-ochre-soft); color: var(--k-ochre-deep); }
+.weekly .proofs__img, .weekly .proofs__add { border-radius: 8px; }
+.weekly .proofs__add { background: var(--k-paper); }
+.weekly .btns { gap: 10px; }
+/* 预览 */
+.weekly .lock { color: var(--k-ochre-deep); }
+.weekly .table { border: 0; border-radius: 10px; }
+.weekly .table__row--head { background: transparent; font-size: 11px; }
+.weekly .preview .table__row { height: 30px; }
+.weekly .risk { padding: 10px 12px; border: 0; border-radius: 10px; color: var(--k-ink2); line-height: 18px; }
+/* 2026-11-18 复查 */
+/* 1) 门店胶囊、周选择、汇总页的门店下拉、问号看着小，手指能点的范围补到 36：上下各补一截透明的可点区；问号是图标自己在接点击，用透明内边距撑大（负外边距抵掉，位置和大小都不变） */
+.weekly .pill, .weekly .select, .weekly .filter > .k-row { position: relative; }
+.weekly .pill::after { content: ""; position: absolute; left: 0; right: 0; top: -3px; bottom: -3px; }
+.weekly .select::after { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+.weekly .filter > .k-row::after { content: ""; position: absolute; left: -6px; right: -8px; top: -9px; bottom: -9px; }
+.weekly .notice :deep(.k-icon) { box-sizing: content-box; padding: 11px; margin: -11px; }
+/* 编辑页的小勾选框（16）和「添加…」虚线条（27）原来就偏小，一并把能点的范围补大，样子不变 */
+.weekly .edit .coop__check, .weekly .edit .add-dash { position: relative; }
+.weekly .edit .coop__check::after { content: ""; position: absolute; left: -12px; right: -12px; top: -12px; bottom: -12px; }
+.weekly .edit .add-dash::after { content: ""; position: absolute; left: 0; right: 0; top: -6px; bottom: -5px; }
+/* 2) 编辑周报是填写页，字不改小：小字说明和部门小标签还原回 12；预览里的部门小标签和别处的小标签一个尺寸 */
+.weekly .edit .sec__hint { font-size: 12px; }
+.weekly .edit .coop__tag { height: 20px; font-size: 12px; }
+.weekly .preview .coop__tag { height: 17px; padding: 0 5px; font-size: 10px; font-weight: 500; }
+/* 3) 两个说明框原来只露一行半，第二行被拦腰截掉：改成整两行（打字时和平时一样高，不跳），再长用省略号收尾；字数挪到两行字下面，不压字 */
+.weekly .edit .area { padding-bottom: 20px; }
+.weekly .edit .area__ta { height: 42px; line-height: 21px; }
+.weekly .weekly-area-idle > text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+/* 4) 底部按钮原来整体上提 9px，压在凭证图片的「添加」小方块上：取消上提，留出正常间距 */
+.weekly .edit .btns, .weekly .preview .btns { transform: none; margin-top: 14px; }
+/* 5) 白卡里最后一行下面不再拖一条线 */
+.weekly .card > .coop:last-child, .weekly .card > .fee:last-child { border-bottom: 0; }
+/* 6) 预览页「我已确认周报内容真实准确」只有一行字那么高：拉到和旁边按钮一样高，好点（字的位置不变）；
+   这句话原来在常见屏宽上也被挤成「…内容真 / 实准确」两行：屏宽够（360 起）就让它完整占一行，旁边的按钮用剩下的宽度 */
+.weekly .confirm { align-self: stretch; }
+@media (min-width: 360px) { .weekly .preview .confirm { flex: 0 0 auto; white-space: nowrap; } .weekly .preview .btns__main { flex: 1; min-width: 0; } }
+/* 2026-11-18 第二轮精修（精修词典：同一种东西全站一个样子；只改样子，页签、筛选、周报卡、异常、汇总、编辑、预览、提交都在） */
+/* 1) 顶栏下的页签按词典：没选中 400 灰字，选中 600 墨色 + 16×3 的暖棕短条（页签行高不变） */
+.weekly .tabs__item { color: var(--k-muted); }
+.weekly .tabs__item.active { color: var(--k-ink); font-weight: 600; }
+.weekly .tabs__item.active::after { width: 16px; margin-left: -8px; background: var(--k-red); }
+/* 2) 区块标题统一 16 / 700；折线图卡片里的标题是卡内小标题 14 / 600（同看板的「业务趋势」）；编辑页（填写页）的字段组标题仍是 15 */
+.weekly .sec__title { font-size: 16px; line-height: 22px; color: var(--k-ink); white-space: nowrap; }
+.weekly .sec__title--sm { font-size: 15px; }
+.weekly .chart-card .sec__title { font-size: 14px; font-weight: 600; line-height: 20px; }
+/* 3) 区块标题行：「（系统识别）」这类说明一律紧跟在标题后面；只有门店下拉、合计靠右。
+      320 宽放不下时说明整段掉到标题下面，店名保持一行、超长用省略号（之前标题、店名都被拆成两行挤在一起） */
+.weekly .sec { justify-content: flex-start; }
+.weekly .sec > .sec__hint { margin-left: 2px; }
+.weekly .sec > .select, .weekly .sec > .total { margin-left: auto; }
+.weekly .sec > .k-row { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; margin-right: 8px; }
+.weekly .select { flex: 0 1 auto; min-width: 0; max-width: 52%; }
+.weekly .select > text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 4) 数据格统一成「一张白卡 + 发丝竖线（上下各缩 12）」：本周完成工作、报名与订单原来是一格一张卡，经营数据是 1px 通栏竖线 */
+.weekly .works, .weekly .orders { gap: 0; padding: 0; border-radius: 12px; background: var(--k-paper); }
+.weekly .works__item, .weekly .orders__item { position: relative; border-radius: 0; background: transparent; }
+.weekly .stat4__cell { position: relative; border-left: 0; }
+.weekly .works__item + .works__item::before, .weekly .orders__item + .orders__item::before, .weekly .stat4__cell + .stat4__cell::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 1px; background: var(--k-line); transform: scaleX(.5); }
+/* 周报卡里的灰底数据框矮一些，竖线上下只缩 4 */
+.weekly .stat4--boxed .stat4__cell + .stat4__cell::before { top: 4px; bottom: 4px; }
+/* 5) 异常提示：店名保持一行（超长省略），说明只在自己那一列里折行；小圆点对齐第一行 */
+.weekly .alert__row { align-items: flex-start; }
+.weekly .alert__dot { margin-top: 8px; }
+.weekly .alert__name { flex-shrink: 0; max-width: 55%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.weekly .alert__desc { flex: 1; min-width: 0; }
+/* 6) 编辑页（填写页，字号不动）：费用、待协同每行至少 44 高，卡片左右内边距 12 和说明框的字对齐，行间发丝线；「添加…」虚线条 36 高 */
+.weekly .card { padding: 0 12px 8px; }
+.weekly .fee { position: relative; padding: 0; border-bottom: 0; }
+.weekly .coop { position: relative; padding: 4px 0; border-bottom: 0; }
+.weekly .edit .fee { height: auto; min-height: 44px; }
+.weekly .edit .coop { min-height: 44px; }
+.weekly .card > .fee + .fee::before, .weekly .card > .coop + .coop::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.weekly .edit .add-dash { height: 36px; margin-top: 4px; }
+/* 7) 「本城还没有换工店家」按空状态画：白卡里居中 */
+.weekly .list-body > .preview-empty, .weekly .summary-body > .preview-empty { padding: 28px 12px; border-radius: 12px; background: var(--k-paper); text-align: center; font-size: 14px; font-weight: 500; line-height: 20px; color: var(--k-ink2); }
+/* 8) 「补充本周信息」和页面主按钮一个尺寸（44 高、15 号字） */
+.weekly .summary-body :deep(.k-button.is-lg) { height: 44px; font-size: 15px; }
+/* 9) 预览：区块标题上下按词典留 16 / 8（之前 5 / 3，标题几乎贴在卡片上）；费用表行线改发丝线，左右和卡片内边距 12 对齐，金额等宽 */
+.weekly .preview .sec--tight { margin: 16px 0 8px; }
+.weekly .table__row { position: relative; padding: 0 12px; border-top: 0; }
+.weekly .table__row + .table__row::before { content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.weekly .table__c2 { font-variant-numeric: tabular-nums; }
 </style>

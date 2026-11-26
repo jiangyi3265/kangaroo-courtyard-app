@@ -70,4 +70,8 @@ async function submit(){
 </script>
 <style scoped>
 .after-refund{padding:10px 14px calc(96px + var(--k-safe-bottom))}.ar-card{padding:18px;margin-bottom:12px;border:1px solid var(--k-line);border-radius:14px;background:rgba(253,251,247,.95)}.ar-title{font-size:17px;font-weight:700}.ar-copy,.ar-number,.ar-error{display:block;margin-top:10px;line-height:1.8;font-size:13px;color:var(--k-muted)}.ar-number{font-size:11px}.ar-error{color:var(--k-red)}.ar-row{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;font-size:14px}.ar-money{color:var(--k-red);font-weight:700}.ar-label{display:block;margin:18px 0 10px;font-weight:600}.ar-input,.ar-textarea{box-sizing:border-box;width:100%;padding:12px;border:1px solid var(--k-line2);border-radius:10px;background:white;font-size:14px}.ar-input{height:48px}.ar-textarea{height:110px;margin-bottom:18px}
+/* 2026-11-17 改版「小而精」：每块是 12 圆角的纯白卡，不描边；说明字收小一档，报错用提醒红。输入框仍是 48 高，金额、原因、提交都没动。 */
+.after-refund{padding-left:12px;padding-right:12px}.after-refund .ar-card{padding:12px;margin-bottom:8px;border:0;border-radius:12px;background:var(--k-paper)}.after-refund .ar-title{font-size:15px}.after-refund .ar-copy,.after-refund .ar-error{margin-top:6px;font-size:12px;line-height:19px}.after-refund .ar-error{color:var(--k-alert)}.after-refund .ar-row{margin-bottom:8px;font-size:13px}.after-refund .ar-money{color:var(--k-red-deep)}.after-refund .ar-label{margin:12px 0 8px;font-size:13px}.after-refund .ar-input,.after-refund .ar-textarea{border-radius:8px}.after-refund .ar-textarea{margin-bottom:4px}
+/* 复查：「刷新进度」「重新加载」「提交退款申请」之前紧贴着上面的字，各留 8px 的空 */
+.after-refund :deep(.k-button){margin-top:8px}
 </style>

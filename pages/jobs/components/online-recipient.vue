@@ -41,4 +41,15 @@ async function save(){
 </script>
 <style scoped>
 .recipient-note{display:block;font-size:13px;line-height:1.7;color:var(--k-muted);margin:8px 0 12px}.recipient-label{display:block;font-size:14px;margin-top:12px}.recipient-input{box-sizing:border-box;border:1px solid var(--k-line);border-radius:8px;height:46px;padding:0 12px;font-size:15px;margin:8px 0 14px}.recipient-methods{display:flex;gap:8px;margin:12px 0}.recipient-methods button,.recipient-pick{font-size:14px;min-height:44px;line-height:44px;padding:0 12px;margin:0;background:var(--k-bg);color:var(--k-ink)}.recipient-methods .active{color:var(--k-red);box-shadow:inset 0 0 0 1px var(--k-red)}.recipient-qr{display:block;width:180px;height:180px;margin:12px 0}.recipient-pick{margin-bottom:14px}button::after{border:0}
+/* 2026-11-17 改版「小而精」：和任务交付页别的卡片一个样子——标题 15 / 700、说明 12；输入框浅色底 10 圆角（高度和输入字号不动）；
+   两种收款方式是 8 圆角的浅色块，选中换成浅棕底 + 细棕边；选择二维码是白底细棕边的胶囊。 */
+.section-title{font-size:16px;font-weight:700;line-height:22px;color:var(--k-ink)}
+.recipient-note{margin:4px 0 10px;font-size:12px}
+.recipient-label{margin-top:10px;font-size:13px;color:var(--k-ink2)}
+.recipient-input{border:0;border-radius:10px;background:#F5F1EB;margin:6px 0 12px}
+.recipient-methods{margin:10px 0}
+.recipient-methods button{flex:1;border-radius:8px;background:#F5F1EB;color:var(--k-ink2);font-size:13px}
+.recipient-methods .active{background:var(--k-red-soft);box-shadow:inset 0 0 0 1px var(--k-red-line);color:var(--k-red-deep);font-weight:600}
+.recipient-pick{border-radius:22px;background:var(--k-paper);box-shadow:inset 0 0 0 1px var(--k-red-line);color:var(--k-red-deep);font-size:13px}
+.recipient-qr{border-radius:8px}
 </style>

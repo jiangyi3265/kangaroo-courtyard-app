@@ -4,7 +4,7 @@
 // 链接只带四样：jobId、date、days、name，绝不带手机号。地点不放链接里：打开时按 jobId 查，别人改不了地点。
 // 行程页不查报名（不然就要登录），所以用户撤回报名后老链接还能打开，这是有意的。
 import { durationLabel } from './apply-flow.js'
-import { API_BASE } from '../../common/config.js'
+import { jobShareWebUrl } from './job-share-url.js'
 import { displayWording } from '../../common/display-wording.js'
 
 export const ITINERARY_PAGE = '/pages/jobs/itinerary' // 放这里，不进 routes.js（主包不加东西）
@@ -65,8 +65,7 @@ export function parseTripQuery(q) {
 export function tripCopyText(trip, href = '') {
   const stay = durationLabel(trip.days)
   const head = tripTitle(trip) + (stay ? '，预计待' + stay : '')
-  const base = href ? String(href).replace(/#.*$/, '') : API_BASE + '/'
-  return head + '。行程：' + base + '#' + tripPath(trip)
+  return head + '。行程：' + jobShareWebUrl(tripPath(trip), href)
 }
 
 /** 分享封面：要是完整地址才传；本地占位图（/static/）或没有封面时不传，微信用页面截图 */

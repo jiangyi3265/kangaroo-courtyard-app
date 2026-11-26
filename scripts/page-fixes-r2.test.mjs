@@ -100,7 +100,7 @@ function interviewHarness(data) {
   return h
 }
 const PLAN = { planId: 7, name: '月度意外险', desc: '', priceYuan: '30', days: 30 }
-const insured = (apply, extra) => ({ candidate: { appId: 11, name: '续保人', insurable: true }, plans: [PLAN], apply, ...extra })
+const insured = (apply, extra) => ({ storeId: '101', candidate: { appId: 11, name: '续保人', insurable: true }, plans: [PLAN], apply, ...extra })
 const openInsurance = async (h) => {
   h.run(`d.value = { appId: 11, storeId: '101', storeName: 'own A' }`)
   await h.run('toInsurance()')
@@ -220,7 +220,13 @@ test('岗位详情：暂停 / 名额满 / 过截止时不再显示绿色「还�
   assert.equal(chip(h, { jobType: 'volunteer', status: 'published', acceptsApplication: true, headcount: 5, hiredCount: 2 }), JSON.stringify(['', '还招 3 人', '']))
   // 胶囊：不能报名时灰色写短原因，能报名时才是绿色剩余名额；底部按钮不能报名时写短原因
   assert.match(h.template, /<k-chip v-if="blockedShort \|\| headcountText" :tone="blockedShort \? 'neutral' : 'green'"><text>\{\{ blockedShort \|\| headcountText \}\}<\/text><\/k-chip>/)
-  assert.match(h.template, /:disabled="!detail \|\| !!applyBlockedText" :label="applyBlockedText \? blockedShort :/)
+  const button = h.template.match(/<k-button[^>]*@click="openApply"[^>]*>/)?.[0]
+  assert.ok(button, '底部报名按钮必须可操作')
+  const disabled = button.match(/:disabled="([^"]+)"/)[1], label = button.match(/:label="([^"]+)"/)[1]
+  const values = {detail: paused, applyBlockedText: '该岗位暂停招聘中', blockedShort:'已暂停招聘', isOnline:false}
+  for (const [myApplication, expected] of [[null, [true, '已暂停招聘']], [{label:'查看报名进度'}, [false, '查看报名进度']]]) {
+    assert.deepEqual([disabled,label].map(expr => vm.runInNewContext(expr,{...values,myApplication})), expected)
+  }
 })
 
 // ---------------------------------------------------------------- 样式：邮戳、活动标签 ✓

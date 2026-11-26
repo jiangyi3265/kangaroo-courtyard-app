@@ -14,7 +14,8 @@ const body=file=>{const s=parse(fs.readFileSync(file,'utf8')).descriptor.scriptS
 const pending=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject}}
 function page(options={}){
   const calls=[],modals=[],hooks={},identity=ref('merchant:1')
-  const ctx=vm.createContext({ref,computed,watch,getMessageScopeKey:()=>identity.value,states:{},juryChoices:[],mediationRules,mediationTextCount,combinedClaims,mediationAmountRange,mediationFormErrors,
+  const grant=ref(options.grant || {roleCode:'city_lead',cityId:31,active:true})
+  const ctx=vm.createContext({ref,computed,watch,getMessageScopeKey:()=>identity.value,experience:{mode:'staff'},currentStaffStore:grant,ensureSession:options.ensureSession || (async()=>{}),states:{},juryChoices:[],mediationRules,mediationTextCount,combinedClaims,mediationAmountRange,mediationFormErrors,
     onLoad:f=>hooks.load=f,onShow:f=>hooks.show=f,onHide:f=>hooks.hide=f,onUnload:f=>hooks.unload=f,
     get:async(path,data)=>{calls.push({method:'GET',path,data});if(options.get)return options.get(path,data);return {data:path==='context'?{canSupport:true}:path==='cases'?{rows:[],total:0}:{caseId:42,status:'pending',viewerRole:'merchant',canMerchantRespond:true}}},
     post:async(path,data)=>{calls.push({method:'POST',path,data});if(options.post)return options.post(path,data);return {data:42}},
@@ -23,8 +24,53 @@ function page(options={}){
   vm.runInContext(body(pageFile),ctx)
   const run=s=>vm.runInContext(s,ctx)
   run("caseId.value=42;detail.value={caseId:42,status:'pending',viewerRole:'merchant',canMerchantRespond:true}")
-  return {run,calls,modals,hooks,identity,posts:()=>calls.filter(c=>c.method==='POST')}
+  return {run,calls,modals,hooks,identity,grant,posts:()=>calls.filter(c=>c.method==='POST')}
 }
+
+test('逾期提醒等待还原身份，仅按提醒城市和代岗角色查询，刷新仍使用原条件',async()=>{
+  const ready=pending()
+  const h=page({grant:{},ensureSession:()=>ready.promise,get:async path=>({data:path==='context'?{canCity:true}:{rows:[{caseId:40}],total:1}})})
+  h.run('caseId.value=0')
+  h.hooks.load({mode:'city',overdue:'1',cityId:'31',dutyRole:'manager'})
+  const opening=h.run('load()')
+  assert.equal(h.calls.length,0)
+  h.grant.value={roleCode:'city_lead',cityId:31}
+  ready.resolve();await opening
+  assert.deepEqual({...h.calls.at(-1).data},{mode:'city',overdue:1,cityId:31,dutyRole:'manager',status:'',pageNum:1})
+  await h.run("page.value=2;load()")
+  assert.deepEqual({...h.calls.at(-1).data},{mode:'city',overdue:1,cityId:31,dutyRole:'manager',status:'',pageNum:1})
+  assert.equal(h.run('list.value[0].caseId'),40)
+})
+
+test('逾期提醒遇到无效城市、错误角色或城市不匹配时绝不查询全量待办',async()=>{
+  for (const [q,grant] of [
+    [{mode:'city',cityId:'0'},{roleCode:'city_lead',cityId:31}],
+    [{mode:'support',cityId:'31'},{roleCode:'manager',cityId:31}],
+    [{mode:'city',cityId:'31',dutyRole:'merchant'},{roleCode:'city_lead',cityId:31}],
+    [{mode:'city',cityId:'31'},{roleCode:'manager',cityId:31}],
+    [{mode:'city',cityId:'31'},{roleCode:'city_lead',cityId:99}],
+  ]) {
+    const h=page({grant})
+    h.run('caseId.value=0');h.hooks.load({...q,overdue:'1'});await h.run('load()')
+    assert.match(h.run('error.value'),/提醒/);assert.equal(h.calls.length,0)
+    await h.run("switchMode('user')");assert.equal(h.calls.length,0)
+  }
+})
+
+test('切到其他城市丢弃旧逾期列表，切回后仍查提醒城市；普通本城待办不受过滤影响',async()=>{
+  const old=pending();let lists=0
+  const h=page({get:async path=>path==='context'?{data:{canCity:true}}:++lists===1?old.promise:{data:{rows:[{caseId:30}],total:1}}})
+  h.run('caseId.value=0');h.hooks.load({mode:'city',cityId:'31',overdue:'1'})
+  const opening=h.run('load()');await new Promise(r=>setImmediate(r))
+  h.grant.value={roleCode:'city_lead',cityId:99};h.identity.value='city:99'
+  await new Promise(r=>setImmediate(r));old.resolve({data:{rows:[{caseId:90}],total:1}});await opening
+  assert.equal(h.run('list.value.length'),0);assert.match(h.run('error.value'),/切换/)
+  h.grant.value={roleCode:'city_lead',cityId:31};h.identity.value='city:31';await new Promise(r=>setImmediate(r))
+  assert.equal(h.run('list.value[0].caseId'),30)
+  assert.deepEqual({...h.calls.at(-1).data},{mode:'city',overdue:1,cityId:31,status:'',pageNum:1})
+  const ordinary=page();ordinary.run('caseId.value=0');ordinary.hooks.load({mode:'city'});await ordinary.run('load()')
+  assert.deepEqual({...ordinary.calls.at(-1).data},{mode:'city',status:'',pageNum:1})
+})
 
 test('pending店家可用10字说明提交材料并通知，成功后清空草稿',async()=>{
   const h=page();await h.run("merchantNote.value='已核实住宿安排并补充店家说明';submitMerchantResponse()")

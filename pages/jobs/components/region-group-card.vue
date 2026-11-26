@@ -1,9 +1,9 @@
 <template>
   <view v-if="groupChatEnabled" class="region-group">
     <view class="region-group__head" role="button" :aria-expanded="opened" hover-class="k-press" @click="toggle">
-      <view class="region-group__icon"><k-icon name="users" :size="23" color="green" /></view>
+      <view class="region-group__icon"><k-icon name="users" :size="18" color="green" /></view>
       <view class="region-group__copy"><text class="region-group__title">{{ group.name || '地区换工畅玩群' }}</text><text class="region-group__sub">结识同地区换工伙伴，一起探索当地</text></view>
-      <k-icon :name="opened ? 'chevron-up' : 'chevron-right'" :size="20" color="muted" />
+      <k-icon :name="opened ? 'chevron-up' : 'chevron-right'" :size="12" color="muted" />
     </view>
     <view v-if="opened" class="region-group__body">
       <text v-if="loading" class="region-group__hint">正在获取最新群码…</text>
@@ -88,4 +88,18 @@ onUnmounted(() => { visible = false; version++; clearTimeout(expiryTimer) })
 .region-group__hint { display: block; color: var(--k-ink2); font-size: 13px; line-height: 1.7; margin-bottom: 10px; }
 .region-group__expire { display: block; color: var(--k-muted); font-size: 11px; line-height: 1.7; }
 .region-group__body :deep(.k-button) { margin-top: 10px; }
+/* 2026-11-17 改版「小而精」：白卡 12 圆角、不描边；图标放在 36 的浅豆绿圆角方块里；标题 14 / 600。展开、群码、重新获取都照旧 */
+.region-group { margin-top: 8px; border: 0; border-radius: 12px; }
+.region-group__head { padding: 10px 12px; }
+.region-group__icon { flex-basis: 36px; height: 36px; border-radius: 10px; }
+
+.region-group__title { font-size: 14px; font-weight: 600; line-height: 20px; }
+.region-group__sub { margin-top: 0; font-size: 11px; }
+
+.region-group__body { border-top: 0; background-image: linear-gradient(to bottom, var(--k-line) 50%, transparent 50%); background-size: 100% 1px; background-repeat: no-repeat; background-position: left top; }
+.region-group__body { padding: 12px; }
+.region-group__note { font-size: 12px; }
+.region-group__qr { max-width: 220px; height: 220px; }
+.region-group__hint { font-size: 12px; margin-bottom: 8px; }
+.region-group__body :deep(.k-button) { margin-top: 8px; border-radius: 20px; }
 </style>

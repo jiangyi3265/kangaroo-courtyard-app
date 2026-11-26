@@ -4,7 +4,7 @@
       <k-topbar :title="asKeeper ? '审核本店活动' : '待审核活动'" back />
       <view class="k-body k-pad-tab">
         <view class="req-head"><view class="req-head__copy"><text class="req-head__title">{{ asKeeper ? '本店待审核活动' : (list.city.value ? list.city.value + ' · ' : '') + '待审核活动' }}</text><text class="req-head__sub">{{ asKeeper ? '本店提交的活动由你先审：通过后公开给用户报名；驳回要写原因，改完可以再提交。你自己提交的活动交给平台审。' : '本城合作商家提交的活动。通过后公开给用户报名；驳回要写原因，商家改完可以再提交。' }}</text></view></view>
-        <view v-if="list.error.value" class="req-state"><text>{{ list.error.value }}</text><k-button label="重新加载" size="md" type="outline" @click="list.reload" /></view>
+        <view v-if="entryError || list.error.value" class="req-state"><text>{{ entryError || list.error.value }}</text><k-button label="重新加载" size="md" type="outline" @click="retryEntry" /></view>
         <template v-else>
           <view v-for="a in list.rows.value" :key="a.activityId" class="act" hover-class="k-press-s" @click="openDetail(a)">
             <image class="act__cover" :src="coverOf(a)" mode="aspectFill" />
@@ -14,7 +14,7 @@
               <text class="act__meta">{{ a.storeName }} · {{ a.creator }}</text>
               <text class="act__meta">提交于 {{ mdhm(a.submitTime) }}</text>
             </view>
-            <k-icon name="chevron-right" :size="15" color="light" />
+            <k-icon name="chevron-right" :size="12" color="muted" />
           </view>
           <view v-if="list.hasMore.value" class="req-more" hover-class="k-press" @click="list.more"><text>{{ list.loading.value ? '正在加载…' : '加载更多' }}</text></view>
           <view v-if="!list.rows.value.length" class="req-state"><text>{{ list.loading.value || !list.loaded.value ? '正在读取…' : '现在没有待审核的活动' }}</text></view>
@@ -33,7 +33,7 @@
           <view class="detail__facts"><view v-for="f in facts" :key="f.label" class="fact"><text class="fact__label">{{ f.label }}</text><text class="fact__value">{{ f.value }}</text></view></view>
           <view v-if="current.intro" class="req-note"><view class="req-note__head"><text>活动介绍</text></view><text class="detail__text">{{ current.intro }}</text></view>
           <view v-if="current.safetyNote" class="req-note"><view class="req-note__head"><text>安全说明</text></view><text class="detail__text">{{ current.safetyNote }}</text></view>
-          <view v-if="current.needsPlatform" class="req-hint"><text>这场活动的内容需要平台人工复核，你只能驳回；不驳回就等平台审核。</text></view>
+          <view v-if="current.needsPlatform" class="req-hint"><text>这场活动由平台最终决定。你可以驳回让商家修改，或等待平台审核。</text></view>
           <view class="req-hint"><text>平台后台也能审这场活动，谁先处理算谁。</text></view>
         </template>
       </view>
@@ -72,21 +72,30 @@ const list = useRequestList(async (pageNum) => (await get(api(), { storeId: stor
 const coverOf = (a) => (a && a.cover ? absUrl(a.cover) : '') || '/static/media/cover-empty.png'
 
 let booted = false, shown = false
+let entryQuery = {}
+const entryError = ref('')
 const s = useScreen(2, { onLoad: boot })
 const current = ref(null), working = ref(false)
 const facts = computed(() => activityFacts(current.value))
 
 async function boot(q) {
+  entryQuery = q
+  entryError.value = ''
+  booted = false
+  scopeStore = null
   asKeeper.value = q.as === 'keeper'
   try {
     await ensureSession()
-    if (!hasStaffAccess.value) return
-    if (!merchantService.value && q.storeId && String(q.storeId) !== String(currentStaffStoreId())) {
-      if (currentAlsoService.value) scopeStore = q.storeId
-      else await selectStaffStore(q.storeId)
+    if (!hasStaffAccess.value) throw new Error('当前账号暂无员工授权')
+    if (q.storeId && String(q.storeId) !== String(currentStaffStoreId())) {
+      scopeStore = q.storeId
+      if (!merchantService.value && !currentAlsoService.value) await selectStaffStore(q.storeId)
     }
   } catch (e) {
-    toast(errText(e, '切换门店失败'))
+    scopeStore = null
+    entryError.value = errText(e, '无法打开活动，请重试')
+    s.value = 1
+    return
   }
   booted = true
   await list.reload()
@@ -101,6 +110,9 @@ async function boot(q) {
   s.value = 1
   if (id && !list.error.value) toast('这场活动已经处理过了')
 }
+function retryEntry() {
+  return boot(entryQuery)
+}
 onShow(() => {
   if (shown && booted && s.value === 1) list.reload()
   shown = true
@@ -108,7 +120,7 @@ onShow(() => {
 onUnload(() => { list.cancel() })
 onReachBottom(() => { if (s.value === 1) list.more() })
 onPullDownRefresh(async () => {
-  if (s.value === 1) await list.reload()
+  if (s.value === 1) await (booted ? list.reload() : retryEntry())
   uni.stopPullDownRefresh()
 })
 watch(s, (v, old) => { if (v === 1 && old !== 1 && booted) { current.value = null; list.reload() } })
@@ -148,18 +160,22 @@ async function audit(pass) {
 
 <style scoped lang="scss">
 @import './request-pages.scss';
-.act{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:12px;border-radius:14px;background:var(--k-paper);box-shadow:0 6px 20px rgba(58,50,43,.08)}
-.act__cover{flex-shrink:0;width:76px;height:76px;border-radius:10px;background:var(--k-paper2)}
-.act__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
-.act__title{font-size:15px;font-weight:700;line-height:1.4;color:var(--k-ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、去阴影），封面图 8 圆角，行标题 14、说明 12；「驳回 / 通过」都在。共用写法在 ./work-lite.scss；.req-* 在 ./request-pages.scss */
+@import './work-lite.scss';
+.service-activities{@include lite-page}
+.act{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:12px;border-radius:12px;background:var(--k-paper);box-shadow:none}
+.act__cover{flex-shrink:0;width:72px;height:72px;border-radius:8px;background:#F5F1EB}
+.act__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.act__title{font-size:14px;font-weight:600;line-height:1.4;color:var(--k-ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .act__meta{font-size:12px;line-height:1.5;color:var(--k-muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.detail__cover{display:block;width:100%;height:180px;border-radius:14px;background:var(--k-paper2)}
+.detail__cover{display:block;width:100%;height:180px;border-radius:12px;background:#F5F1EB}
 .detail__head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:12px}
-.detail__title{min-width:0;flex:1;font-size:18px;font-weight:700;line-height:1.4;color:var(--k-ink);overflow-wrap:anywhere}
-.detail__facts{margin-top:12px;padding:4px 14px;border-radius:14px;background:var(--k-paper);box-shadow:0 6px 20px rgba(58,50,43,.08)}
-.fact{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--k-line);font-size:14px;line-height:1.5}
-.fact:last-child{border-bottom:0}
+.detail__title{min-width:0;flex:1;font-family:var(--k-sans);font-size:17px;font-weight:700;line-height:1.4;color:var(--k-ink);overflow-wrap:anywhere}
+.detail__facts{margin-top:10px;padding:2px 12px;border-radius:12px;background:var(--k-paper);box-shadow:none}
+.fact{position:relative;display:flex;gap:12px;padding:10px 0;font-size:13px;line-height:1.5}
+/* 11-18 第二轮精修：行间发丝线，最后一行没有线 */
+.fact + .fact::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 0}
 .fact__label{flex-shrink:0;width:66px;color:var(--k-muted)}
 .fact__value{min-width:0;flex:1;color:var(--k-ink);overflow-wrap:anywhere}
-.detail__text{display:block;font-size:14px;line-height:1.7;color:var(--k-ink2);white-space:pre-wrap;overflow-wrap:anywhere}
+.detail__text{display:block;font-size:13px;line-height:1.7;color:var(--k-ink2);white-space:pre-wrap;overflow-wrap:anywhere}
 </style>

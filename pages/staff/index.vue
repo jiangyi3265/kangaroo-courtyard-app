@@ -25,20 +25,22 @@
     <k-subscribe scenes="apply_progress,online_task,order,work_task" label="订阅工作消息" />
       <view class="k-body k-pad-tab">
         <view class="store" hover-class="k-press" @click="go(R.staffBusiness + '?s=2')">
-          <k-icon name="house" :size="20" color="ink" :stroke="1.6" />
+          <k-icon name="house" :size="18" color="ink" :stroke="1.6" />
           <text class="store__name k-flex1">{{ storeName }}</text>
-          <k-icon name="chevron-down" :size="18" color="ink" :stroke="1.8" />
+          <k-icon name="chevron-down" :size="16" color="muted" :stroke="1.8" />
         </view>
 
-        <view v-if="currentStaffStore?.roleCode === 'manager'" class="admin-task-entry" hover-class="k-press" @click="go('/pages/governance/mediation?mode=support')"><k-icon name="scale" :size="24" color="ochre"/><view class="k-flex1 k-col k-gap4"><text class="admin-task-entry__title">纠纷调解</text><text class="k-meta">店家补充材料后接单，跟进授权门店调解</text></view><k-icon name="chevron-right" :size="18"/></view>
+        <view v-if="currentStaffStore?.roleCode === 'manager'" class="admin-task-entry" hover-class="k-press" @click="go('/pages/governance/mediation?mode=support')"><k-icon name="scale" :size="18" color="ink2"/><view class="k-flex1 k-col k-gap4"><text class="admin-task-entry__title">纠纷调解</text><text class="k-meta">店家补充材料后接单，跟进授权门店调解</text></view><k-icon name="chevron-right" :size="12" color="muted"/></view>
 
-        <view v-if="isKeeper || currentStaffStore?.roleCode === 'manager' || cityLeadDaily" class="admin-task-entry" hover-class="k-press" @click="go('/pages/staff/operations')"><view><text class="admin-task-entry__title">日报与月度任务</text><text class="k-meta">核对日报、查看任务进度和月度总结</text></view><k-icon name="chevron-right" :size="18" /></view>
+        <view v-if="canReviewInsurance || cityLeadDaily" class="admin-task-entry" hover-class="k-press" @click="go('/pages/staff/insurance-account?tab=refunds')"><k-icon name="receipt" :size="18" color="ink2"/><view class="k-flex1 k-col k-gap4"><text class="admin-task-entry__title">保险退费</text><text class="k-meta">{{ cityLeadDaily ? '核实或修改离店日期，决定退款金额' : '核实授权门店的离店日期' }}</text></view><k-icon name="chevron-right" :size="12" color="muted"/></view>
+
+        <view v-if="isKeeper || currentStaffStore?.roleCode === 'manager' || cityLeadDaily" class="admin-task-entry" hover-class="k-press" @click="go('/pages/staff/operations')"><view><text class="admin-task-entry__title">日报与月度任务</text><text class="k-meta">核对日报、查看任务进度和月度总结</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view>
 
         <!-- 工作台直接展示当地换工三项；点击带上分类进入同一接口的明细。小院主理人（10-30 店员 Luna 的备忘录）换成本店旅居订单三项，点了进订单台对应分组，不放换工概况的链接 -->
         <view class="k-between sec">
           <text class="sec__title">今日概览</text>
           <text v-if="isKeeper" class="k-small k-muted">{{ today }}</text>
-          <view v-else class="k-row k-gap4 daily-link" hover-class="k-press" @click="go(DAILY_PAGE)"><text class="k-small k-muted">{{ today }}</text><text class="daily-link__text">当地换工概况</text><k-icon name="chevron-right" :size="13" color="red" :stroke="2" /></view>
+          <view v-else class="k-row k-gap4 daily-link" hover-class="k-press" @click="go(DAILY_PAGE)"><text class="k-small k-muted">{{ today }}</text><text class="daily-link__text">当地换工概况</text><k-icon name="chevron-right" :size="12" color="#8A5E36" :stroke="2" /></view>
         </view>
         <text class="overview-scope">{{ isKeeper ? storeName + ' · 全部房源' : (overviewCity ? overviewCity + ' · 全部合作门店' : '当地全部合作门店') }}</text>
         <view class="stats volunteer-stats">
@@ -53,7 +55,7 @@
         <template v-if="alsoService">
           <view class="k-between sec">
             <text class="sec__title">线上任务</text>
-            <view class="k-row k-gap4 daily-link" hover-class="k-press" @click="openOnlineDaily"><text class="daily-link__text">线上任务概况</text><k-icon name="chevron-right" :size="13" color="red" :stroke="2" /></view>
+            <view class="k-row k-gap4 daily-link" hover-class="k-press" @click="openOnlineDaily"><text class="daily-link__text">线上任务概况</text><k-icon name="chevron-right" :size="12" color="#8A5E36" :stroke="2" /></view>
           </view>
           <view class="stats volunteer-stats">
             <view v-for="it in onlineOverview" :key="it.label" class="stat" hover-class="k-press-s" @click="openOnlineDaily">
@@ -65,11 +67,11 @@
         </template>
 
         <!-- 没有待办时标题和卡片都不显示：之前只剩一个标题压着一条空卡片的细线 -->
-        <view v-if="hasManagerTasks" class="admin-task-entry" hover-class="k-press" @click="go(STAFF_TASK_PAGE)"><view><text class="admin-task-entry__title">管理员任务</text><text class="k-meta">接收任务、回复提问、提交完成情况</text></view><view class="k-row k-gap6"><text v-if="staffTaskTodoCount" class="admin-task-entry__count">{{ staffTaskTodoCount }} 项待办</text><k-icon name="chevron-right" :size="18" /></view></view>
+        <view v-if="hasManagerTasks" class="admin-task-entry" hover-class="k-press" @click="go(STAFF_TASK_PAGE)"><view><text class="admin-task-entry__title">管理员任务</text><text class="k-meta">接收任务、回复提问、提交完成情况</text></view><view class="k-row k-gap6"><text v-if="staffTaskTodoCount" class="admin-task-entry__count">{{ staffTaskTodoCount }} 项待办</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
         <view v-if="priority.length" class="k-between sec"><text class="sec__title">优先处理</text></view>
         <k-card v-if="priority.length" :pad="0">
           <view v-for="(it, i) in priority" :key="it.title" class="prio" :class="{ line: i < priority.length - 1 }" hover-class="k-press" @click="openTodo(it)">
-            <view class="k-circle prio__icon" :class="it.cls"><k-icon :name="it.icon" :size="22" :color="it.iconColor" :stroke="it.stroke || 2" :fill="it.fill" /></view>
+            <view class="k-circle prio__icon" :class="it.cls"><k-icon :name="it.icon" :size="18" color="red" :stroke="it.stroke || 2" :fill="it.fill" /></view>
             <view class="k-flex1 k-col k-gap4">
               <view class="k-row k-gap4"><text class="prio__num">{{ it.num }}</text><text class="prio__title">{{ it.title }}</text></view>
               <text class="k-meta">{{ it.sub }}</text>
@@ -82,7 +84,7 @@
         <view class="k-grid-4 quick">
           <view v-for="q in quick" :key="q.label" class="quick__item" hover-class="k-press-s" @click="q.to()">
             <view class="quick__icon">
-              <k-icon :name="q.icon" :size="30" :color="q.color" :stroke="1.5" />
+              <k-icon :name="q.icon" :size="22" color="red" :stroke="1.6" />
               <text v-if="q.badge" class="quick__badge">{{ q.badge }}</text>
             </view>
             <text class="quick__label">{{ q.label }}</text>
@@ -90,16 +92,16 @@
         </view>
 
         <!-- 采购报销（V66，主人 10-31 拍板）：只给小院主理人，服务端 /access 说可以才出（直营，或者改成非直营前有老记录要看） -->
-        <view v-if="(isKeeper || cityLeadDaily) && reimburseEntry" class="admin-task-entry" hover-class="k-press" @click="openReimburse"><view><text class="admin-task-entry__title">采购报销</text><text class="k-meta">小院采购花的钱，在这里提交，等平台审核</text></view><k-icon name="chevron-right" :size="18" /></view>
+        <view v-if="(isKeeper || cityLeadDaily) && reimburseEntry" class="admin-task-entry" hover-class="k-press" @click="openReimburse"><view><text class="admin-task-entry__title">采购报销</text><text class="k-meta">小院采购花的钱，在这里提交，等平台审核</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view>
         <!-- 主人 2026-11-03「小院主理人，审核活动」：本店提交的活动由小院主理人先审（平台后台照样能审）；自己提交的、内容检查要人工把关的交给平台 -->
-        <view v-if="canKeeperReview" class="admin-task-entry" hover-class="k-press" @click="openKeeperReview"><view><text class="admin-task-entry__title">审核本店活动</text><text class="k-meta">本店提交的活动，通过后才会上线</text></view><view class="k-row k-gap6"><text v-if="keeperReview" class="admin-task-entry__count">{{ keeperReview }} 场待审核</text><k-icon name="chevron-right" :size="18" /></view></view>
+        <view v-if="canKeeperReview" class="admin-task-entry" hover-class="k-press" @click="openKeeperReview"><view><text class="admin-task-entry__title">审核本店活动</text><text class="k-meta">本店提交的活动，通过后才会上线</text></view><view class="k-row k-gap6"><text v-if="keeperReview" class="admin-task-entry__count">{{ keeperReview }} 场待审核</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
 
         <!-- 发布招募（2026-10-18 商家端改版）：四个板块直接点进对应的发布表；只给有「岗位管理·编辑」权限的人（主理人、管家）看。小院主理人只发线上任务和活动，标题改「发布」，两格铺满不留空位 -->
         <template v-if="canPublish && publishEntries.length">
           <view class="k-between sec"><text class="sec__title">{{ isKeeper ? '发布' : '发布招募' }}</text><text class="k-meta">提交后平台审核，通过后公示</text></view>
           <view class="publish-card" :class="'publish-card--' + publishEntries.length">
             <view v-for="p in publishEntries" :key="p.kind" class="publish-card__item" hover-class="k-press-s" @click="openPublish(p.kind)">
-              <view class="publish-card__icon"><k-icon :name="p.icon" :size="24" color="red" :stroke="1.7" /></view>
+              <view class="publish-card__icon"><k-icon :name="p.icon" :size="22" color="red" :stroke="1.7" /></view>
               <text class="publish-card__label">{{ p.label }}</text>
             </view>
           </view>
@@ -129,14 +131,14 @@
           <text class="group__title" :class="{ 'k-alert': g.overdue }" @click="g.retry && loadTodos()">{{ g.title }}</text>
           <k-card v-if="g.items.length" :pad="0">
             <view v-for="(t, i) in g.items" :key="t.title + i" class="todo" :class="{ line: i < g.items.length - 1 }" hover-class="k-press" @click="openTodo(t)">
-              <view class="k-circle todo__icon" :class="t.cls"><k-icon :name="t.icon" :size="22" :color="t.iconColor" :stroke="t.stroke || 2" :fill="t.fill" /></view>
+              <view class="k-circle todo__icon" :class="t.cls"><k-icon :name="t.icon" :size="18" color="red" :stroke="t.stroke || 2" :fill="t.fill" /></view>
               <view class="k-flex1 k-col k-gap3">
                 <text class="todo__title">{{ t.title }}</text>
                 <text class="k-meta">{{ t.sub }}</text>
                 <view class="todo__row"><text class="k-meta">截止</text><text class="todo__due">{{ t.due }}</text><text v-if="t.over" class="todo__due">{{ t.over }}</text></view>
               </view>
               <k-chip :tone="t.chipTone">{{ t.chip }}</k-chip>
-              <k-icon name="chevron-right" :size="18" color="light" :stroke="1.8" />
+              <k-icon name="chevron-right" :size="12" color="muted" :stroke="1.8" />
             </view>
           </k-card>
         </view>
@@ -149,11 +151,11 @@
       <k-topbar title="今日经营数据" back custom-back @back="s = 1" />
       <view class="k-body k-pad-tab">
         <view class="k-between">
-          <view class="date-box"><text>{{ today }}</text><k-icon name="calendar" :size="18" color="ink" :stroke="1.6" /></view>
+          <view class="date-box"><text>{{ today }}</text><k-icon name="calendar" :size="14" color="muted" :stroke="1.6" /></view>
           <view class="source"><text>系统自动统计</text></view>
         </view>
         <view v-for="m in metrics" :key="m.label" class="metric" hover-class="k-press-s" @click="openDashboard">
-          <view class="metric__icon" :style="{ background: m.color }"><k-icon :name="m.icon" :size="26" color="white" :stroke="m.fill ? 0.8 : 2.2" :fill="m.fill" /></view>
+          <view class="metric__icon" :style="{ background: m.color }"><k-icon :name="m.icon" :size="20" color="red" :stroke="m.fill ? 0.8 : 2.2" :fill="m.fill" /></view>
           <view class="metric__body">
             <text class="metric__label">{{ m.label }}</text>
             <view class="k-row k-gap12">
@@ -177,7 +179,7 @@
       <view class="k-body k-pad-tab">
         <view class="task-head">
           <view class="k-row-start k-gap12">
-            <view class="k-circle k-circle--red task-head__icon"><k-icon name="clock" :size="26" color="white" :stroke="2.2" /></view>
+            <view class="k-circle k-circle--red task-head__icon"><k-icon name="clock" :size="20" color="red" :stroke="2.2" /></view>
             <view class="k-flex1 k-col k-gap6">
               <view class="k-between">
                 <text class="task-head__title k-flex1">{{ task ? task.title : taskEmptyText }}</text>
@@ -203,7 +205,7 @@
             <view v-for="r in related" :key="r.label" class="rel" hover-class="k-press" @click="r.to()">
               <text class="rel__label">{{ r.label }}</text>
               <text class="rel__value k-flex1">{{ r.value }}</text>
-              <k-icon v-if="r.route" name="chevron-right" :size="18" color="ink" :stroke="1.6" />
+              <k-icon v-if="r.route" name="chevron-right" :size="12" color="muted" :stroke="1.6" />
             </view>
           </view>
           <view class="blk">
@@ -252,7 +254,8 @@ import { get } from '@/common/request.js'
 import { sheet } from '@/common/ui.js'
 import { ref, computed, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { useScreen, go, back, toast } from '@/common/screen.js'
+import { useScreen, back, toast } from '@/common/screen.js'
+import { goFromWorkbench as go } from '@/common/visit-subscriptions.js'
 import {
   apiWorkbenchHome, apiWorkbenchTodos, apiWorkbenchTodo, apiWorkbenchMetrics,
   apiWorkbenchAssign, apiWorkbenchNote, apiStaffHub
@@ -303,6 +306,8 @@ const backFromTask = () => { s.value = taskFrom }
 const keyword = ref('')
 const todoTab = ref('全部')
 const isKeeper = computed(() => currentStaffStore.value?.roleCode === 'keeper')
+const canReviewInsurance = computed(() => currentStaffStore.value?.roleCode === 'manager'
+  && experience.account?.staffGrants?.some(g => g.active === true && g.roleCode === 'manager' && g.storeId && !g.sharedRecruitment))
 const alsoService = currentAlsoService
 // 小院主理人的待办没有保险、调度（服务端 KgWorkbenchService.collect 同样不出），报名只有线上任务
 const todoTabs = computed(() => (isKeeper.value ? ['全部', '报名', '订单', '活动'] : ['全部', '报名', '订单', '保险', '活动', '调度'].filter(t => t !== '订单' || ['merchant', 'city_lead'].includes(currentStaffStore.value?.roleCode))))
@@ -746,6 +751,10 @@ onShow(async () => {
   // 冷启动时登录态是异步恢复的，等恢复完再请求；没有员工授权时
   // main.js 的路由守卫会把页面带去身份页，这里不重复处理。
   await ensureSession()
+  if (currentStaffStore.value?.sharedRecruitment) {
+    uni.redirectTo({ url: staffStoreUrl(R.staffApplications, currentStaffStore.value.storeId) })
+    return
+  }
   // 本城还没有门店（城市授权）时工作台只显示筹备页，但管理员任务照样能派来：待办数先刷新
   checkStaffTaskReminder()
   if (pendingScope.value) return
@@ -757,107 +766,162 @@ onShow(async () => {
 </script>
 
 <style scoped lang="scss">
-.admin-task-entry { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 14px;margin-top:18px;border:1px solid var(--k-line);border-radius:12px;background:var(--k-paper); }
-.admin-task-entry>view:first-child { display:flex;flex-direction:column;gap:6px;min-width:0; }
-.admin-task-entry__title { font-size:16px;font-weight:700; }.admin-task-entry__count { color:var(--k-red);font-size:13px;white-space:nowrap; }
-.hello { display: flex; align-items: center; gap: 14px; padding-left: 8px; min-width: 0; }
+/* 2026-11-17 改版「小而精」：浅灰底上放白卡（12 圆角、不描边、不加阴影），标题用系统黑体，数字加粗做大小对比；和用户端「我的」「消息」一个路子，只是更紧凑。
+   入口、按钮、文字、状态一个不少，只改大小和样子。 */
+.staff { --k-bg: #F7F5F2; --k-sh1: none; background: #F7F5F2; }
+.staff .k-body { padding-left: 12px; padding-right: 12px; }
+.staff :deep(.k-card) { border-radius: 12px !important; box-shadow: none; }
+.staff :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+.staff :deep(.k-button) { border-radius: 999px; }
+.staff :deep(.k-button.is-lg) { height: 44px; font-size: 15px; }
+.staff :deep(.k-chip:not(.is-pill)) { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+.staff :deep(.subscribe-entry) { padding: 4px 12px 8px; }
+.staff :deep(.subscribe-entry button) { min-height: 36px; border: 0; border-radius: 12px; background: var(--k-paper); color: var(--k-ochre-deep); font-size: 12px; }
+/* 其他身份的工作台是组件，整页顶替上面的 .staff：顶栏标题、按钮这几条穿透要写在页面里，小程序才认（说明见 ./work-lite.scss） */
+@import './work-lite.scss';
+@include lite-role-hosts;
+.admin-task-entry { display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:10px 12px;margin-top:8px;border:0;border-radius:12px;background:var(--k-paper); }
+.admin-task-entry>view:first-child { display:flex;flex-direction:column;gap:3px;min-width:0; }
+.admin-task-entry__title { font-size:14px;font-weight:600;line-height:20px; }.admin-task-entry__count { color:var(--k-red-deep);font-size:12px;font-weight:600;white-space:nowrap; }
+.hello { display: flex; align-items: center; gap: 10px; padding-left: 8px; min-width: 0; }
 .hello__text { min-width: 0; }
-.hello__avatar { width: 52px; height: 52px; border-radius: 50%; flex: 0 0 auto; }
-.hello__name { font-family: var(--k-serif); font-weight: 700; font-size: 20px; line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.hello__role { font-size: 13px; color: var(--k-muted); }
-.switch-btn { flex-shrink: 0; height: 30px; padding: 0 12px; border: 1px solid var(--k-ochre); border-radius: 999px; display: flex; align-items: center; color: var(--k-ochre-deep); font-size: 13px; margin-right: 8px; }
-.store { margin-top: 2px; height: 42px; padding: 0 14px; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper); display: flex; align-items: center; gap: 10px; }
-.store__name { font-size: 15px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.sec { margin: 18px 0 10px; }
-.sec__title { font-family: var(--k-serif); font-weight: 700; font-size: 16px; }
+.hello__avatar { width: 44px; height: 44px; border-radius: 50%; flex: 0 0 auto; }
+.hello__name { font-family: var(--k-sans); font-weight: 700; font-size: 17px; line-height: 1.3; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hello__role { font-size: 12px; color: var(--k-muted); }
+.switch-btn { flex-shrink: 0; height: 28px; padding: 0 12px; border: 1px solid var(--k-red-line); border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; color: var(--k-ochre-deep); font-size: 12px; font-weight: 500; margin-right: 8px; }
+.store { margin-top: 2px; height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; gap: 8px; }
+.store__name { font-size: 14px; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 11-18 第二轮精修：区块标题 16 / 700，左边和白卡齐平（不再多缩 2px） */
+.sec { margin: 16px 0 8px; }
+.sec__title { font-family: var(--k-sans); font-weight: 700; font-size: 16px; line-height: 22px; color: var(--k-ink); }
 .daily-link { flex-shrink: 0; }
-.daily-link__text { margin-left: 6px; font-size: 12px; color: var(--k-red); font-weight: 700; }
-.stat { height: 100px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
-.stat__label { font-size: 13px; color: var(--k-muted); }
-.stat__value { font-size: 26px; font-weight: 700; line-height: 1.1; }
+.daily-link__text { margin-left: 6px; font-size: 12px; color: var(--k-red-deep); font-weight: 500; }
+.stat { height: 100px; border: 0; border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+/* 数据格（11-18 第二轮精修）：数字在上 18 / 700 等宽，说明 11 / muted 在下（只用 order 调顺序，模板不动） */
+.stat__label { font-size: 11px; color: var(--k-muted); }
+.stat__value { order: -1; font-size: 18px; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
 .stat__delta { font-size: 12px; color: var(--k-green); font-weight: 600; }
-.overview-scope { display:block; margin:-3px 0 10px; font-size:12px; color:var(--k-muted); }
-.volunteer-stats { display:flex; border:1px solid var(--k-line); border-radius:14px; overflow:hidden; background:var(--k-paper); }
-.volunteer-stats .stat { flex:1; border:0; border-radius:0; height:96px; gap:10px; }
-.volunteer-stats .stat:first-child { background:var(--k-red-soft); color:var(--k-red-deep); }
-.volunteer-stats .stat + .stat { border-left:1px solid var(--k-line2); }
-.stat__unit { font-size:12px; font-weight:400; margin-left:4px; }
-.overview-error { display:flex; justify-content:space-between; gap:10px; padding:10px 0; color:var(--k-red); font-size:12px; line-height:1.6; }
+.overview-scope { display:block; margin:-4px 0 8px; font-size:11px; color:var(--k-muted); }
+.volunteer-stats { display:flex; border:0; border-radius:12px; overflow:hidden; background:var(--k-paper); }
+.volunteer-stats .stat { position:relative; flex:1; border:0; border-radius:0; height:64px; gap:2px; }
+/* 第一格原来铺浅棕底，像被选中的页签，其实不是：和另外两格一样白底 */
+.volunteer-stats .stat:first-child { background:var(--k-paper); color:inherit; }
+/* 格子之间一条短的发丝竖线，不通到顶 */
+.volunteer-stats .stat + .stat::before { content:""; position:absolute; left:0; top:18px; bottom:18px; width:1px; background:var(--k-line); transform:scaleX(.5); }
+.stat__unit { font-size:11px; font-weight:400; margin-left:3px; }
+.overview-error { display:flex; justify-content:space-between; gap:10px; padding:10px 0; color:var(--k-alert); font-size:12px; line-height:1.6; }
 /* 320 宽一张卡只有约 90px：5 位以上的数字字号收小，再长就省略号；「较昨日 +1234」一行也不许撑出卡片 */
 .stat { min-width: 0; box-sizing: border-box; padding: 0 6px; }
 .stat__value, .stat__row { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.stat__value--long { font-size: 20px; }
-.stat__value--xlong { font-size: 16px; }
+.stat__value--long { font-size: 16px; }
+.stat__value--xlong { font-size: 14px; }
 .stat__row>text { flex-shrink: 0; white-space: nowrap; }
 .stat__row .stat__delta { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.prio { display: flex; align-items: center; gap: 12px; padding: 8px 12px; }
-.prio.line { border-bottom: 1px solid var(--k-line); }
-.prio__icon { width: 40px; height: 40px; }
-.prio__num { font-size: 15px; font-weight: 700; color: var(--k-red); }
-.prio__title { font-size: 15px; font-weight: 600; }
-.go-btn { height: 30px; padding: 0 12px; border: 1px solid var(--k-ochre); border-radius: 6px; display: flex; align-items: center; color: #9A6A22; font-size: 13px; background: var(--k-paper); flex: 0 0 auto; }
-.go-btn--sm { height: 28px; }
-.quick { gap: 12px; }
-.quick__item { height: 86px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-.quick__icon { position: relative; width: 30px; height: 30px; }
-.quick__badge { position: absolute; top: -8px; right: -10px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--k-alert); color: #fff; font-size: 11px; line-height: 18px; text-align: center; font-weight: 600; }
-.quick__label { font-size: 13px; }
+.prio { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+/* 行间发丝线（11-18）：不再从卡片左边通到右边的 1px 实线，最后一行自然没有线 */
+.prio + .prio::before, .todo + .todo::before { content: ""; position: absolute; left: 12px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+/* 待办类型图标（11-18）：和快捷入口一家，浅暖色圆角方块里放暖棕线性图标（原来是实心彩色圆 + 白图标，一屏叠三四个最重） */
+.prio__icon, .todo__icon { width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(145deg, #FCF4E8, #F4E4CC); }
+/* 数字和标题按基线对齐；副标题一行，放不下省略（和商家服务工作台同一种行一致） */
+.prio .k-row { align-items: baseline; }
+.prio .k-flex1 { min-width: 0; }
+.prio .k-meta { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 「去处理」每行都有一个：浅底暖棕字，不描边 */
+.prio .go-btn { border-color: transparent; background: var(--k-red-soft); }
+.prio__num { font-size: 16px; font-weight: 700; color: var(--k-red-deep); }
+.prio__title { font-size: 14px; font-weight: 600; }
+.go-btn { height: 28px; padding: 0 12px; border: 1px solid var(--k-red-line); border-radius: 999px; display: flex; align-items: center; color: var(--k-red-deep); font-size: 12px; font-weight: 500; background: var(--k-paper); flex: 0 0 auto; }
+.go-btn--sm { height: 26px; }
+/* 「切换门店」「转派」是单独能点的小胶囊：样子不变，上下各多出一圈看不见的可点范围，手指好点 */
+.switch-btn, .go-btn--sm { position: relative; }
+.switch-btn::after, .go-btn--sm::after { content: ""; position: absolute; left: -4px; right: -4px; top: -8px; bottom: -8px; }
+/* 快捷入口：一张白卡里一排，图标放在浅暖色的圆角方块里（和「我的」宫格同一个样子） */
+.quick { gap: 0; padding: 12px 4px 10px; border-radius: 12px; background: var(--k-paper); }
+.quick__item { min-height: 62px; border: 0; border-radius: 0; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.quick__icon { position: relative; width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(145deg, #FCF4E8, #F4E4CC); display: flex; align-items: center; justify-content: center; }
+.quick__badge { position: absolute; top: -5px; right: -8px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--k-alert); color: #fff; font-size: 10px; line-height: 16px; text-align: center; font-weight: 600; }
+.quick__label { font-size: 12px; line-height: 17px; color: var(--k-ink2); }
 /* 发布招募：一张白卡里四格，暖棕浅底圆角图标 */
-.publish-card { padding: 14px 6px; border-radius: 16px; background: var(--k-paper); box-shadow: 0 6px 20px rgba(58,50,43,.08); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.publish-card { padding: 12px 4px 10px; border-radius: 12px; background: var(--k-paper); box-shadow: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .publish-card--1 { grid-template-columns: minmax(0, 1fr); }
 .publish-card--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.publish-card__item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.publish-card__icon { width: 46px; height: 46px; border-radius: 14px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
-.publish-card__label { font-size: 13px; font-weight: 600; color: var(--k-ink); }
+.publish-card__item { min-height: 62px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.publish-card__icon { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(145deg, #FCF4E8, #F4E4CC); display: flex; align-items: center; justify-content: center; }
+.publish-card__label { font-size: 12px; line-height: 17px; font-weight: 400; color: var(--k-ink2); }
 
-.search { height: 38px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; gap: 8px; }
-.search input { flex: 1; min-width: 0; height: 38px; font-size: 14px; }
-.filter-btn { height: 38px; padding: 0 14px; border: 1px solid var(--k-line2); border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; gap: 6px; font-size: 14px; flex: 0 0 auto; }
-.tabs-scroll { margin: 10px -16px 0; width: calc(100% + 32px); white-space: nowrap; }
-.tabs { display: flex; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--k-line); width: 100%; }
-.tabs__item { position: relative; padding: 9px 2px 10px; font-size: 13.5px; color: var(--k-ink); flex: 0 0 auto; }
-.tabs__item.active { color: var(--k-red); font-weight: 600; }
-.tabs__item.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--k-red); border-radius: 2px; }
-.group { margin-top: 10px; }
-.group__title { display: block; font-size: 14px; color: var(--k-ink); margin-bottom: 6px; }
-.todo { display: flex; align-items: center; gap: 12px; padding: 7px 10px 7px 12px; }
-.todo.line { border-bottom: 1px solid var(--k-line); }
-.todo__icon { width: 40px; height: 40px; }
+.search { height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; gap: 8px; }
+.search input { flex: 1; min-width: 0; height: 36px; font-size: 14px; }
+.filter-btn { height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; gap: 6px; font-size: 13px; flex: 0 0 auto; }
+.tabs-scroll { margin: 8px -12px 0; width: calc(100% + 24px); white-space: nowrap; }
+/* 页签（下划线式，11-18）：字 14，没选 400 / muted，选中 600 / 墨色 + 下面 16×3 的暖棕短条；底线换成发丝线；行高约 40 */
+.tabs { position: relative; display: flex; justify-content: space-between; padding: 0 14px; border-bottom: 0; width: 100%; }
+.tabs::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 100%; }
+.tabs__item { position: relative; padding: 10px 2px 11px; font-size: 14px; font-weight: 400; color: var(--k-muted); flex: 0 0 auto; }
+.tabs__item.active { color: var(--k-ink); font-weight: 600; }
+.tabs__item.active::after { content: ""; position: absolute; left: 50%; right: auto; width: 16px; margin-left: -8px; bottom: 0; height: 3px; background: var(--k-red); border-radius: 2px; }
+.group { margin-top: 12px; }
+.group__title { display: block; font-size: 13px; font-weight: 500; color: var(--k-ink2); margin: 0 0 6px; }
+.todo { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 12px; }
 .todo__row { display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; }
-.todo__title { font-family: var(--k-serif); font-weight: 700; font-size: 15px; line-height: 1.3; }
+/* 窄屏（320）上「截止」会被挤成竖排两个字：每段文字不许再压缩，放不下时「已超时 x 小时」整段换到下一行 */
+.todo__row { flex-wrap: wrap; row-gap: 0; }
+.todo__row > text { flex-shrink: 0; }
+/* 说明行（如「小满 · 22 岁 · 可停留 30 天」）是员工审核要看的数据，放不下就照常换行，不用省略号吃字 */
+.todo__title { font-family: var(--k-sans); font-weight: 600; font-size: 14px; line-height: 1.4; }
 .todo__due { font-size: 12px; color: var(--k-alert); font-weight: 600; }
 .k-gap3 { gap: 3px; }
 
-.date-box { height: 40px; padding: 0 14px; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper); display: flex; align-items: center; gap: 22px; font-size: 15px; font-weight: 600; }
-.source { height: 30px; padding: 0 10px; border-radius: 6px; background: var(--k-paper2); display: flex; align-items: center; font-size: 11px; color: var(--k-ink2); }
-.metric { margin-top: 12px; height: 84px; padding: 0 14px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; gap: 12px; }
-.metric__icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+/* 日期只是显示、点不了：去掉白底胶囊，不再像按钮 */
+.date-box { height: 36px; padding: 0 2px; border: 0; border-radius: 0; background: transparent; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
+.source { height: 22px; padding: 0 8px; border-radius: 4px; background: #F5F1EB; display: flex; align-items: center; font-size: 11px; color: var(--k-ink2); }
+.metric { margin-top: 8px; height: 72px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; gap: 12px; }
+.metric__icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .metric__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.metric__label { font-size: 14px; }
-.metric__value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+.metric__label { font-size: 12px; color: var(--k-ink2); }
+.metric__value { font-size: 22px; font-weight: 700; line-height: 1.15; }
+/* 窄屏（320）上「较昨日」会被挤成竖排：数字和「较昨日 +2」各自不折行，放不下时「较昨日」整段换到数字下面 */
+.metric__body > .k-row { flex-wrap: wrap; row-gap: 0; }
+.metric__value { flex-shrink: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.metric__body .k-gap4 { flex-shrink: 0; white-space: nowrap; }
 .spark { position: relative; width: 82px; height: 36px; flex: 0 0 auto; }
 .spark__seg { position: absolute; height: 1.5px; transform-origin: 0 50%; }
 .spark__dot { position: absolute; width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid; }
+/* 11-18：六个指标原来各用一种颜色（像调色盘），统一成暖棕；图标底是浅暖色方块。行内 :style 给的颜色要 !important 才盖得住。「较昨日」的涨跌红绿保留 */
+.metric__icon { background: linear-gradient(145deg, #FCF4E8, #F4E4CC) !important; }
+.spark__seg { background: var(--k-red) !important; }
+.spark__dot { border-color: var(--k-red) !important; }
+.spark__seg + .spark__dot, .spark__dot:first-child { background: var(--k-red) !important; }
 .foot { display: block; text-align: center; margin-top: 14px; }
 
-.task-head { padding: 12px 14px; border: 1px solid #E3CFA6; border-radius: 12px; background: var(--k-paper); }
-.task-head__icon { width: 46px; height: 46px; }
-.task-head__title { font-family: var(--k-serif); font-weight: 700; font-size: 17px; }
-.overdue-chip { flex-shrink: 0; margin-left: 8px; height: 24px; padding: 0 8px; border: 1px solid var(--k-alert); border-radius: 5px; display: flex; align-items: center; color: var(--k-alert); font-size: 12px; }
-.blk { padding: 10px 14px; border-bottom: 1px solid var(--k-line); }
-.blk--last { border-bottom: 0; }
-.blk__title { display: block; font-family: var(--k-serif); font-weight: 700; font-size: 15px; }
-.owner__avatar { width: 30px; height: 30px; border-radius: 50%; }
-.rel { display: flex; align-items: center; min-height: 27px; font-size: 14px; }
-.rel__label { width: 100px; color: var(--k-muted); flex: 0 0 auto; }
+.task-head { padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); }
+.task-head__icon { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(145deg, #FCF4E8, #F4E4CC); }
+.task-head__title { font-family: var(--k-sans); font-weight: 700; font-size: 16px; line-height: 1.4; }
+.overdue-chip { flex-shrink: 0; margin-left: 8px; height: 17px; padding: 0 5px; border: 0; border-radius: 4px; background: var(--k-alert-soft); display: flex; align-items: center; color: var(--k-alert); font-size: 10px; font-weight: 500; }
+.blk { position: relative; padding: 12px; }
+.blk + .blk::before { content: ""; position: absolute; left: 12px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+.blk__title { display: block; font-family: var(--k-sans); font-weight: 600; font-size: 14px; line-height: 20px; }
+.owner__avatar { width: 26px; height: 26px; border-radius: 50%; }
+.rel { display: flex; align-items: center; min-height: 28px; font-size: 13px; }
+.rel__label { width: 88px; color: var(--k-muted); flex: 0 0 auto; }
 .rel__value { min-width: 0; color: var(--k-ink); word-break: break-all; }
 .desc { display: block; margin-top: 2px; }
 .logs { margin-top: 8px; }
-.log { display: flex; align-items: flex-start; min-height: 23px; font-size: 13px; }
-.log__rail { width: 8px; margin-right: 14px; display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; align-self: stretch; }
-.log__dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; border: 1px solid #D5B98F; background: var(--k-paper); flex: 0 0 auto; }
-.log__line { width: 1px; flex: 1; background: #D5B98F; }
+.log { display: flex; align-items: flex-start; min-height: 23px; font-size: 12px; }
+.log__rail { width: 8px; margin-right: 12px; display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; align-self: stretch; }
+.log__dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; border: 1px solid var(--k-red-line); background: var(--k-paper); flex: 0 0 auto; }
+.log__line { width: 1px; flex: 1; background: var(--k-line2); }
 .log__time { width: 96px; flex: 0 0 auto; color: var(--k-muted); }
 .log__text { flex: 1; min-width: 0; color: var(--k-muted); }
-.add-note { color: var(--k-indigo); font-size: 14px; }
+.add-note { color: var(--k-red-deep); font-size: 13px; }
+/* 320 宽：「角色：小院主理人 + 商家服务人」原来折成两行、第二行只剩「务人」。头像、间距、「切换门店」各收一点，角色字 11，一行放得下（不截字） */
+@media (max-width: 360px) {
+  .hello { gap: 8px; padding-left: 4px; }
+  .hello__avatar { width: 40px; height: 40px; }
+  .hello__role { font-size: 11px; }
+  .switch-btn { padding: 0 10px; margin-right: 4px; }
+  /* 全部待办的搜索框：占位字「搜索任务、报名编号、订单号」13 个字，320 宽原来最后半个字被截掉。「筛选」和搜索框的内边距各收一点、字回到 13，整句放得下 */
+  .search { padding: 0 10px; gap: 6px; }
+  .search input { font-size: 13px; }
+  .filter-btn { padding: 0 10px; }
+}
 </style>

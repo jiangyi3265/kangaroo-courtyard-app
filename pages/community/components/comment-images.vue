@@ -9,6 +9,6 @@ const props = defineProps({ images: { type: Array, default: () => [] } })
 const preview = i => uni.previewImage({ urls: props.images.map(absUrl), current: absUrl(props.images[i]) })
 </script>
 <style scoped>
-.comment-images{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
-.comment-images image{width:72px;height:72px;border-radius:8px;background:var(--k-paper2)}
+.comment-images{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.comment-images image{width:72px;height:72px;border-radius:8px;background:#F5F1EB}
 </style>

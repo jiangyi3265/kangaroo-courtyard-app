@@ -15,7 +15,7 @@ const src = rel => fs.readFileSync(path.join(root, rel), 'utf8').replace(/\r\n/g
 test('底栏：城市负责人只有服务端给了 fullAccess 才不是三格（老后端、老版本照旧）', () => {
   const s = src('common/experience.js')
   assert.match(s, /export const cityLeadFull = computed\(\(\) => cityLead\.value && currentStaffStore\.value\?\.fullAccess === true\)/)
-  assert.match(s, /threeTabStaff = computed\(\(\) => merchantStaff\.value \|\| merchantService\.value \|\| \(cityLead\.value && !cityLeadFull\.value\)\)/)
+  assert.match(s, /threeTabStaff = computed\(\(\) => merchantStaff\.value \|\| \(cityLead\.value && !cityLeadFull\.value\)\)/)
 })
 
 test('工作台：平时是城市工作台，?daily=1 且 fullAccess 才进门店日常；业务中心 fullAccess 就是完整的', () => {

@@ -3,15 +3,15 @@
     <template v-if="s===1">
       <k-topbar title="待申请保险" back />
     <k-subscribe scenes="insurance" label="订阅保险办理提醒" />
-      <view class="pending-page k-pad-tab"><button class="finance-entry" hover-class="k-press" @click="openInsuranceFinance()">投保缴费、退费与本人保险余额 ›</button><view class="deadline-tip" @click="openDeadlineTip"><k-icon name="circle-alert" :size="18" color="#9A7442" /><text>投保办理：选择人员 → 店家缴费 → 登记保单</text><k-icon name="chevron-right" :size="20" color="muted" /></view><view class="pending-tabs"><text :class="{active:tab==='all'}" @click="tab='all'">全部 {{ tb.counts.all }}</text><text :class="{active:tab==='within7'}" @click="tab='within7'">7日内到店 {{ tb.counts.within7 }}</text><text :class="{active:tab==='overdue'}" @click="tab='overdue'">超时 {{ tb.counts.overdue }}</text></view><view class="selected-row"><text>已选择 {{ selected.length }} 项</text><text @click="onSelectedAction">{{ selected.length ? '清空' : '投保记录 〉' }}</text></view><view v-if="!pending.length" class="list-empty">{{ tbLoading ? '正在读取待申请名单…' : (tab === 'all' ? '暂无待申请保险的人员' : '这一栏暂无人员') }}</view><view v-for="(p,i) in pending" :key="p.appId" class="pending-card" @click="toggle(p.appId)"><view class="select-box" :class="{checked:selected.includes(p.appId)}"><k-icon v-if="selected.includes(p.appId)" name="check" :size="15" color="white" /></view><image :src="absUrl(p.avatar)" mode="aspectFill" /><view class="pending-name"><text>{{p.name}}</text><text>{{p.job}}</text></view><view class="pending-meta"><text>{{p.store}}</text><text>{{p.date}}</text><text :class="{late:p.late}">{{p.left}}</text></view></view><view v-if="!canBuy && !tbLoading" class="insurance-readonly">由合作店家提交申请并缴费，换工主理人登记真实保单。</view><view class="buy-row"><view class="select-box" :class="{checked:allSelected}" @click="toggleAll" /><text @click="toggleAll">全选</text><button :disabled="!canBuy || batchSubmitting" :style="canBuy ? '' : 'opacity:.5'" @click="openInsuranceFinance()"><text>选择人员并缴费</text></button></view></view><k-tabbar mode="staff" active="work" />
+      <view class="pending-page k-pad-tab"><button class="finance-entry" hover-class="k-press" @click="openInsuranceFinance()"><text>投保缴费、退费与本人保险余额</text><k-icon name="chevron-right" :size="12" color="muted" /></button><view class="deadline-tip" @click="openDeadlineTip"><k-icon name="circle-alert" :size="16" color="ochre" /><text>投保办理：选择人员 → 店家缴费 → 登记保单</text><k-icon name="chevron-right" :size="12" color="muted" /></view><view class="pending-tabs"><text :class="{active:tab==='all'}" @click="tab='all'">全部 {{ tb.counts.all }}</text><text :class="{active:tab==='within7'}" @click="tab='within7'">7日内到店 {{ tb.counts.within7 }}</text><text :class="{active:tab==='overdue'}" @click="tab='overdue'">超时 {{ tb.counts.overdue }}</text></view><view class="selected-row"><text>已选择 {{ selected.length }} 项</text><text @click="onSelectedAction">{{ selected.length ? '清空' : '投保记录 〉' }}</text></view><view v-if="!pending.length" class="list-empty">{{ tbLoading ? '正在读取待申请名单…' : (tab === 'all' ? '暂无待申请保险的人员' : '这一栏暂无人员') }}</view><view v-for="(p,i) in pending" :key="p.appId" class="pending-card" @click="toggle(p.appId)"><view class="select-box" :class="{checked:selected.includes(p.appId)}"><k-icon v-if="selected.includes(p.appId)" name="check" :size="13" color="white" :stroke="2.6" /></view><image :src="absUrl(p.avatar)" mode="aspectFill" /><view class="pending-name"><text>{{p.name}}</text><text>{{p.job}}</text></view><view class="pending-meta"><text>{{p.store}}</text><text>{{p.date}}</text><text :class="{late:p.late}">{{p.left}}</text></view></view><view v-if="!canBuy && !tbLoading" class="insurance-readonly">由合作店家提交申请并缴费，换工主理人登记真实保单。</view><view class="buy-row"><view class="select-box" :class="{checked:allSelected}" @click="toggleAll" /><text @click="toggleAll">全选</text><button :disabled="!canBuy || batchSubmitting" :style="canBuy ? '' : 'opacity:.5'" @click="openInsuranceFinance()"><text>选择人员并缴费</text></button></view></view><k-tabbar mode="staff" active="work" />
     </template>
     <template v-else-if="s===2">
       <k-topbar title="投保记录" back custom-back @back="backFrom(2)" />
-      <view class="policies k-pad-tab"><button class="finance-entry" hover-class="k-press" @click="openInsuranceFinance()">缴费、退费、余额与保单登记 ›</button><view class="policy-search" @click="askPolicyKeyword"><k-icon name="search" :size="20" color="muted" /><text>{{ pq.keyword || '搜索保单号 / 人员 / 门店' }}</text></view><view class="policy-filters"><text @click="pickPolicyStatus">{{ policyStatusLabel }}⌄</text><text @click="pickPolicyStore">{{ policyStoreLabel }}⌄</text><text @click="pickPolicyDays">{{ policyDaysLabel }}⌄</text><view class="pf-sort" @click="pickPolicySort"><text>{{ policySortLabel }}</text><k-icon name="list-filter" :size="17" color="ink" /></view></view><text class="policy-count">共 {{ policies.length }} 条投保记录</text><view v-for="p in policies" :key="p.applyId" class="policy-card"><view class="policy-head"><text>保单号：{{ p.no || '待保险公司出具' }}</text><button class="policy-status" :class="p.tone" @click="openInsuranceFinance(p)"><text>{{p.status}}</text><text class="policy-status__arrow">›</text></button></view><view class="policy-user"><image :src="absUrl(p.avatar)" mode="aspectFill" /><view><text>{{p.name}}</text><text>{{p.job}}</text></view></view><text>保障期限　　{{p.period}}</text><text>{{p.timeLabel}}　　{{p.time}}</text><view class="policy-actions"><button @click="showVoucher(p)"><k-icon name="receipt" :size="18" color="ink" /><text>查看凭证</text></button><button @click="showNotices(p)"><k-icon name="file-text" :size="18" color="ink" /><text>通知记录</text></button><button class="pa-reg" @click="openInsuranceFinance(p)"><k-icon name="file-pen" :size="18" color="red" /><text>缴费 / 退费 / 保单</text></button></view></view></view><k-tabbar mode="staff" active="work" />
+      <view class="policies k-pad-tab"><button class="finance-entry" hover-class="k-press" @click="openInsuranceFinance()"><text>缴费、退费、余额与保单登记</text><k-icon name="chevron-right" :size="12" color="muted" /></button><view class="policy-search" @click="askPolicyKeyword"><k-icon name="search" :size="16" color="muted" /><text>{{ pq.keyword || '搜索保单号 / 人员 / 门店' }}</text></view><view class="policy-filters"><view class="pf-dd" hover-class="k-press" @click="pickPolicyStatus"><text>{{ policyStatusLabel }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view><view class="pf-dd pf-dd--store" hover-class="k-press" @click="pickPolicyStore"><text>{{ policyStoreLabel }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view><view class="pf-dd" hover-class="k-press" @click="pickPolicyDays"><text>{{ policyDaysLabel }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view><view class="pf-sort" @click="pickPolicySort"><text>{{ policySortLabel }}</text><k-icon name="list-filter" :size="14" color="ink2" /></view></view><text class="policy-count">共 {{ policies.length }} 条投保记录</text><view v-for="p in policies" :key="p.applyId" class="policy-card"><view class="policy-head"><text>保单号：{{ p.no || '待保险公司出具' }}</text><button class="policy-status" :class="p.tone" @click="openInsuranceFinance(p)"><text>{{p.status}}</text><k-icon name="chevron-right" :size="10" color="muted" /></button></view><view class="policy-user"><image :src="absUrl(p.avatar)" mode="aspectFill" /><view><text>{{p.name}}</text><text>{{p.job}}</text></view></view><text>保障期限　　{{p.period}}</text><text>{{p.timeLabel}}　　{{p.time}}</text><view class="policy-actions"><button @click="showVoucher(p)"><k-icon name="receipt" :size="15" color="ink2" /><text>查看凭证</text></button><button @click="showNotices(p)"><k-icon name="file-text" :size="15" color="ink2" /><text>通知记录</text></button><button class="pa-reg" @click="openInsuranceFinance(p)"><k-icon name="file-pen" :size="15" color="red" /><text>缴费 / 退费 / 保单</text></button></view></view></view><k-tabbar mode="staff" active="work" />
     </template>
     <template v-else-if="s===3">
       <k-topbar title="二消订单" back custom-back @back="backFrom(3)" />
-      <view class="resale k-pad-tab"><view class="policy-search" @click="askResaleKeyword"><k-icon name="search" :size="20" color="muted" /><text>{{ rq.keyword || '搜索商品 / 用户 / 订单号 / 门店' }}</text></view><view class="policy-filters"><text @click="pickRsStatus">{{ rsStatusLabel }}</text><text @click="pickRsStore">{{ rsStoreLabel }}</text><text @click="pickRsDays">{{ rsDaysLabel }}</text><view class="pf-sort" @click="pickRsBiz"><text>{{ rq.biz ? (rq.biz === 'stay' ? '住宿' : '服务') : '筛选' }}</text><k-icon name="list-filter" :size="17" color="ink" /></view></view><view class="resale-tabs"><text class="active" :style="rq.tab === 'unused' ? '' : rsOff" @click="setRsTab('unused')">{{ rsTabText(0) }}</text><text :class="{ active: rq.tab === 'used' }" @click="setRsTab('used')">{{ rsTabText(1) }}</text><text :class="{ active: rq.tab === 'refunded' }" @click="setRsTab('refunded')">{{ rsTabText(2) }}</text></view><view v-if="rsLoaded && !orders.length" class="list-empty">暂无{{ rsStatusLabel.replace('⌄', '') }}的订单</view><view v-for="o in orders" :key="o.no" class="order-card"><view class="order-head"><text>订单号：{{o.no}}</text><text :class="o.tone">{{o.status}}</text></view><view class="order-main"><image :src="o.img" mode="aspectFill" /><view><text>{{o.title}}</text><text>用户：{{o.user}}</text><text>{{o.date}}</text><text>门店：{{o.store}}</text><text v-if="o.staff">核销员：{{o.staff}}</text></view></view><view class="order-bottom"><text>¥{{o.price}}</text><button :class="{disabled:o.disabled}" @click="onOrderBtn(o)"><text>{{o.button}}</text></button></view></view></view><k-tabbar mode="staff" active="work" />
+      <view class="resale k-pad-tab"><view class="policy-search" @click="askResaleKeyword"><k-icon name="search" :size="16" color="muted" /><text>{{ rq.keyword || '搜索商品 / 用户 / 订单号 / 门店' }}</text></view><view class="policy-filters"><view class="pf-dd" hover-class="k-press" @click="pickRsStatus"><text>{{ rsStatusLabel.replace('⌄', '') }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view><view class="pf-dd pf-dd--store" hover-class="k-press" @click="pickRsStore"><text>{{ rsStoreLabel.replace('⌄', '') }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view><view class="pf-dd" hover-class="k-press" @click="pickRsDays"><text>{{ rsDaysLabel.replace('⌄', '') }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view><view class="pf-sort" @click="pickRsBiz"><text>{{ rq.biz ? (rq.biz === 'stay' ? '住宿' : '服务') : '筛选' }}</text><k-icon name="list-filter" :size="14" color="ink2" /></view></view><view class="resale-tabs"><text class="active" :style="rq.tab === 'unused' ? '' : rsOff" @click="setRsTab('unused')">{{ rsTabText(0) }}</text><text :class="{ active: rq.tab === 'used' }" @click="setRsTab('used')">{{ rsTabText(1) }}</text><text :class="{ active: rq.tab === 'refunded' }" @click="setRsTab('refunded')">{{ rsTabText(2) }}</text></view><view v-if="rsLoaded && !orders.length" class="list-empty">暂无{{ rsStatusLabel.replace('⌄', '') }}的订单</view><view v-for="o in orders" :key="o.no" class="order-card"><view class="order-head"><text>订单号：{{o.no}}</text><text :class="o.tone">{{o.status}}</text></view><view class="order-main"><image :src="o.img" mode="aspectFill" /><view><text>{{o.title}}</text><text>用户：{{o.user}}</text><text>{{o.date}}</text><text>门店：{{o.store}}</text><text v-if="o.staff">核销员：{{o.staff}}</text></view></view><view class="order-bottom"><text>¥{{o.price}}</text><button :class="{disabled:o.disabled}" @click="onOrderBtn(o)"><text>{{o.button}}</text></button></view></view></view><k-tabbar mode="staff" active="work" />
     </template>
     <template v-else>
       <k-topbar title="扫码核销与退款" back custom-back @back="backFrom(4)" />
@@ -47,8 +47,9 @@ import { staffCan, loadStaffPerms } from '@/common/staff-perms.js'
 
 function openInsuranceFinance(row) {
   if (!currentInsuranceScope(insuranceScope())) return
+  if (s.value === 1 && wrongMerchantEntry()) return toast('该门店暂无员工授权，请从本店工作台进入')
   const store = row?.storeId || insuranceScopeId()
-  go('/pages/staff/insurance-account?storeId=' + encodeURIComponent(store || '') + (row?.applyId ? '&applyId=' + encodeURIComponent(row.applyId) : ''))
+  go('/pages/staff/insurance-account?storeId=' + encodeURIComponent(store || '') + (row?.applyId ? '&applyId=' + encodeURIComponent(row.applyId) : '') + (row?.registrationViaFinance && currentStaffStore.value?.roleCode === 'city_lead' ? '&registrationRole=city_lead' : ''))
 }
 const DEFAULT_AVATAR = '/static/media/profile-avatar.jpg'
 // 面试页"保险办理"里的三个页签会带 ?tab= 过来
@@ -59,7 +60,10 @@ let deepOrderNo = ''
 // 业务中心「扫一扫」扫到顾客的 10 位核销码会带 ?s=4&code= 过来：进页后直接核对这张码
 let deepVerifyCode = ''
 const insuranceStoreId = ref(null)
-const insuranceScopeId = () => insuranceStoreId.value || currentStaffStoreId()
+const wrongMerchantEntry = () => currentStaffStore.value?.roleCode === 'merchant' && insuranceStoreId.value != null
+  && String(insuranceStoreId.value) !== String(currentStaffStoreId())
+const insuranceScopeId = () => currentStaffStore.value?.roleCode === 'merchant'
+  ? currentStaffStoreId() : insuranceStoreId.value || currentStaffStoreId()
 const s = useScreen(4, {
   onLoad: (q) => {
     const before = s.value
@@ -69,9 +73,9 @@ const s = useScreen(4, {
       pq.value.status = entry[1]
       s.value = entry[0]
     }
-    if (s.value <= 2 && Number(q?.storeId) > 0) {
-      insuranceStoreId.value = Number(q.storeId)
-      pq.value.storeId = insuranceStoreId.value
+    if (s.value <= 2) {
+      insuranceStoreId.value = q?.storeId != null && /^[1-9]\d*$/.test(String(q.storeId)) ? q.storeId : null
+      if (insuranceStoreId.value != null) pq.value.storeId = insuranceStoreId.value
     }
     // 退款申请通知 / 待办的深链 ?tab=refund：直接落在「退款申请」页签（之前停在默认的「核销」页签上）
     if (q?.tab === 'refund') {
@@ -170,6 +174,7 @@ let policyNoticeRequest = 0
 const emptyToBuy = () => ({ counts: { all: 0, within7: 0, overdue: 0 }, rows: [] })
 const insuranceIdentityKey = () => JSON.stringify([
   getSessionRevision(), String(experience.account?.id || ''), getToken(), experience.mode,
+  currentStaffStore.value?.storeId, currentStaffStore.value?.cityId, currentStaffStore.value?.roleCode,
   staffStores.value.map(g => [String(g.storeId), g.roleCode || '', g.active]).sort((a,b) => a[0].localeCompare(b[0]))
 ])
 // 不含「核销 / 退款申请」页签：之前切一下页签就把已扫出的订单、核销码和退款数一起清掉，切回来得重扫。
@@ -194,6 +199,7 @@ async function loadToBuy() {
   if (!current()) return
   tbLoading.value = true
   try {
+    if (wrongMerchantEntry()) throw new Error('该门店暂无员工授权，请从本店工作台进入')
     const storeId = insuranceScopeId()
     const grant = staffStores.value.find(g => String(g.storeId) === String(storeId))
     if (!grant) throw new Error('该门店暂无员工授权')
@@ -250,16 +256,25 @@ const POLICY_STATUS = [{ v: '', l: '全部状态' }, { v: 'pending', l: '待登�
 const DAYS_OPTS = [{ v: 0, l: '全部日期' }, { v: 7, l: '近 7 天' }, { v: 30, l: '近 30 天' }, { v: 90, l: '近 90 天' }, { v: 365, l: '近一年' }]
 const SORT_OPTS = [{ v: '', l: '按申请时间' }, { v: 'start', l: '按起保日期' }]
 const policyStatusLabel = computed(() => (pq.value.status === 'effective' ? '已出单' : (POLICY_STATUS.find(o => o.v === pq.value.status) || POLICY_STATUS[0]).l))
-const policyStoreLabel = computed(() => {
-  const g = staffStores.value.find(x => x.storeId === pq.value.storeId)
-  return g ? g.storeName : '全部门店'
+const policyStores = computed(() => {
+  const selected = currentStaffStore.value
+  if (!selected) return []
+  return staffStores.value.filter(g => {
+    if (!g.storeId || g.sharedRecruitment || g.roleCode !== selected.roleCode) return false
+    if (String(g.storeId) === String(selected.storeId)) return true
+    if (selected.roleCode === 'city_lead' && selected.city && selected.city === g.city) return true
+    return selected.roleCode !== 'merchant' && !selected.storeId && selected.cityId && String(selected.cityId) === String(g.cityId)
+  })
 })
+const policyStoreFilter = computed(() => policyStores.value.find(g => String(g.storeId) === String(pq.value.storeId)) ||
+  (policyStores.value.length === 1 ? policyStores.value[0] : null))
+const policyStoreLabel = computed(() => policyStoreFilter.value?.storeName || '当前身份的门店')
 const policyDaysLabel = computed(() => (DAYS_OPTS.find(o => o.v === pq.value.days) || DAYS_OPTS[0]).l)
 const policySortLabel = computed(() => (pq.value.sort ? SORT_OPTS.find(o => o.v === pq.value.sort).l : '筛选'))
 // 登记保单号的入口：只给待处理的申请、且本人是那家门店的换工主理人或（角色切换前的）员工（服务端同样只认这些角色，这里只是不让别的角色看到按钮）
 const isManagerOf = (storeId) => staffStores.value.some(g => String(g.storeId) === String(storeId) && ['manager', 'staff', 'city_lead'].includes(g.roleCode))
 const policies = computed(() => (pol.value.rows || []).map(r => ({
-  ...r, rawStatus: r.status, status: r.statusLabel, avatar: r.avatar || DEFAULT_AVATAR, canRegister: r.status === 'pending' && isManagerOf(r.storeId)
+  ...r, rawStatus: r.status, status: r.statusLabel, avatar: r.avatar || DEFAULT_AVATAR, canRegister: !r.registrationViaFinance && r.status === 'pending' && isManagerOf(r.storeId)
 })))
 // 状态也是操作入口：换工主理人登记真实保单，其他员工可以查看待办说明。
 function openPolicyStatus(p) {
@@ -267,6 +282,7 @@ function openPolicyStatus(p) {
   const row = (pol.value.rows || []).find(r => String(r.applyId) === String(p.applyId))
   if (!row) return
   if (row.status !== 'pending') return showVoucher(p)
+  if (row.registrationViaFinance) return openInsuranceFinance(p)
   if (isManagerOf(row.storeId)) return registerPolicy({ ...p, storeId: row.storeId, canRegister: true })
   return alert('待登记保单', '投保申请已提交，尚未登记保险公司出具的保单号。请联系本店有保险审核权限的人员或平台管理员核对并登记真实保单。\n登记后刷新本页即可查看，是否生效以实际保单和保障起止日期为准。')
 }
@@ -276,12 +292,18 @@ async function loadPolicies() {
   const current = () => currentInsuranceScope(scope) && s.value === 2 && request === policiesRequest && filter === JSON.stringify(pq.value)
   policyNoticeRequest++; pol.value = { rows: [] }
   if (!current()) return
+  if (!policyStores.value.length) return
   try {
     const res = await apiStaffPolicies({
-      storeId: q.storeId || undefined, status: q.status || undefined, keyword: q.keyword || undefined,
+      storeId: policyStoreFilter.value?.storeId, status: q.status || undefined, keyword: q.keyword || undefined,
       days: q.days || undefined, sort: q.sort || undefined
     })
-    if (current()) pol.value = res.data || { rows: [] }
+    if (current()) {
+      const data = res.data || { rows: [] }
+      // 老接口的「全部门店」曾返回账号的全部身份，升级期间也按选中的范围展示。
+      const allowed = new Set(policyStores.value.map(g => String(g.storeId)))
+      pol.value = policyStoreFilter.value ? data : { rows: (data.rows || []).filter(row => allowed.has(String(row.storeId))) }
+    }
   } catch (e) {
     if (!current()) return
     pol.value = { rows: [] }
@@ -315,11 +337,14 @@ const pickPolicyStore = async () => {
   const scope = insuranceScope(), filter = JSON.stringify(pq.value)
   const current = () => currentInsuranceScope(scope) && s.value === 2 && filter === JSON.stringify(pq.value)
   if (!current()) return
-  const list = staffStores.value
-  const i = await pickPaged(['全部门店'].concat(list.map(g => g.storeName)), '选择门店')
+  const list = policyStores.value
+  if (!list.length) return
+  const options = list.map(g => g.storeName)
+  if (list.length > 1) options.unshift('当前身份的全部门店')
+  const i = await pickPaged(options, '选择门店')
   if (!current()) return
   if (i < 0) return
-  pq.value.storeId = i === 0 ? null : list[i - 1].storeId
+  pq.value.storeId = list.length === 1 ? list[0].storeId : i === 0 ? null : list[i - 1].storeId
   loadPolicies()
 }
 const showVoucher = (p) => {
@@ -747,16 +772,130 @@ onShow(() => { insurancePageActive = true; loadScreen(s.value) })
 </script>
 
 <style scoped lang="scss">
-.finance-entry{display:block;width:100%;min-height:48px;margin:12px 0;padding:12px;font-size:14px;color:var(--k-red-deep);background:var(--k-paper2);border-radius:12px;text-align:left;}
-.insurance-orders{background:var(--k-bg)}button{margin:0;padding:0;border:0;background:transparent}.pending-page,.policies,.resale,.verify{padding:0 14px calc(88px + var(--k-safe-bottom))}.list-empty{padding:28px 0;text-align:center;color:var(--k-muted);font-size:13px}.deadline-tip{height:40px;padding:0 10px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;align-items:center;gap:8px;color:var(--k-muted);font-size:11px}.deadline-tip>text{min-width:0;flex:1}.pending-tabs{height:48px;display:flex;gap:10px;align-items:center}.pending-tabs text,.resale-tabs text{height:32px;flex:1;border:1px solid var(--k-line2);border-radius:8px;background:var(--k-paper);display:flex;align-items:center;justify-content:center}.pending-tabs .active,.resale-tabs .active{background:var(--k-red);color:#fff;border-color:var(--k-red)}.selected-row{height:34px;display:flex;align-items:center;justify-content:space-between;font-family:var(--k-serif);font-size:14px;font-weight:700}.selected-row text:last-child{color:var(--k-muted)}.pending-card{height:66px;margin-bottom:8px;padding:8px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;align-items:center;gap:9px}.select-box{width:22px;height:22px;flex:0 0 auto;border:1px solid var(--k-line2);border-radius:4px;display:flex;align-items:center;justify-content:center}.select-box.checked{background:var(--k-red);border-color:var(--k-red)}.pending-card image{width:47px;height:47px;border-radius:50%}.pending-name{min-width:0;flex:1;display:flex;flex-direction:column;gap:7px}.pending-name text:first-child{font-family:var(--k-serif);font-size:14px;font-weight:700}.pending-name text:last-child{color:var(--k-muted);font-size:11px}.pending-name text,.pending-meta text{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.pending-meta{min-width:0;max-width:46%;display:flex;flex-direction:column;gap:5px;color:var(--k-muted);font-size:10px}.pending-meta text:last-child{color:var(--k-green);font-size:12px}.pending-meta text.late{color:var(--k-alert)}.buy-row{height:49px;display:flex;align-items:center;gap:10px}.buy-row>button{height:45px;margin-left:auto;width:218px;border-radius:8px;background:var(--k-red);color:#fff;font-family:var(--k-serif);font-size:16px;font-weight:700}
-.policy-search{height:37px;padding:0 11px;border:1px solid var(--k-line2);border-radius:19px;background:var(--k-paper);display:flex;align-items:center;gap:8px;color:var(--k-muted);font-size:12px}.policy-filters{height:51px;display:flex;align-items:center}.policy-filters>text{flex:1;min-width:0;padding:0 4px;display:block;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-right:1px solid var(--k-line);font-size:11px}.policy-count{display:block;margin:0 0 9px;font-family:var(--k-serif);font-size:14px;font-weight:700}.policy-card{margin-bottom:8px;padding:10px 10px 0;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;flex-direction:column;gap:7px;font-size:11px}.policy-head{display:flex;justify-content:space-between;gap:8px;font-family:var(--k-serif);font-size:14px;font-weight:700}.policy-head>text:first-child{min-width:0;word-break:break-all}.policy-head .policy-status{margin:0;display:flex;align-items:center;gap:4px;line-height:1.5;flex-shrink:0;align-self:flex-start;padding:4px 8px;border-radius:7px;font-family:var(--k-sans);font-size:11px}.green{background:var(--k-green-soft);color:var(--k-green)}.amber{background:var(--k-ochre-soft);color:#B36A20}.gray{background:#EEEAE4;color:var(--k-muted)}.policy-user{display:flex;align-items:center;gap:9px}.policy-user image{width:39px;height:39px;border-radius:50%}.policy-user>view{display:flex;flex-direction:column;gap:6px}.policy-user>view text:first-child{font-family:var(--k-serif);font-size:14px;font-weight:700}.policy-user>view text:last-child{color:var(--k-muted);font-size:10px}.policy-actions{height:39px;margin:3px -10px 0;border-top:1px solid var(--k-line);display:flex}.policy-actions button{flex:1;border-right:1px solid var(--k-line);display:flex;align-items:center;justify-content:center;gap:7px}.policy-actions button:last-child{border-right:0}.policy-actions .pa-reg{color:var(--k-red);font-weight:700}
-.resale-tabs{height:46px;display:flex;align-items:center;gap:10px}.order-card{margin-bottom:8px;padding:10px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper)}.order-head{display:flex;justify-content:space-between;gap:8px;font-family:var(--k-serif);font-size:14px;font-weight:700}.order-head>text:first-child{min-width:0;word-break:break-all}.order-head>text:last-child{flex-shrink:0;font-family:var(--k-sans);font-size:12px}.order-head .amber{background:none}.order-head .green{background:none}.order-head .gray{background:none}.order-main{display:flex;gap:10px;margin-top:8px}.order-main image{flex-shrink:0;width:74px;height:79px;border-radius:7px}.order-main>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:6px;color:var(--k-muted);font-size:10px}.order-main>view text:first-child{font-family:var(--k-serif);font-size:14px;font-weight:700;color:var(--k-ink)}.order-bottom{height:35px;display:flex;align-items:flex-end;justify-content:space-between}.order-bottom>text{font-size:19px}.order-bottom button{width:83px;height:34px;border-radius:7px;background:var(--k-red);color:#fff;font-family:var(--k-serif);font-size:13px;font-weight:700}.order-bottom button.disabled{background:#DDD8D1;color:var(--k-muted)}
-.verify-tabs{height:40px;border:1px solid var(--k-line2);border-radius:8px;display:flex}.verify-tabs text{flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--k-serif);font-size:15px;font-weight:700}.verify-tabs .active{color:var(--k-red);border-bottom:2px solid var(--k-red)}.scanner{height:200px;margin-top:9px;border-radius:9px;background:linear-gradient(135deg,#262827,#101212);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff}.scan-frame{position:relative;width:170px;height:105px;background:rgba(255,255,255,.06);border-bottom:2px solid rgba(218,192,147,.35)}.corner{position:absolute;width:15px;height:15px;border-color:#fff}.corner.tl{left:-2px;top:-2px;border-left:2px solid;border-top:2px solid}.corner.tr{right:-2px;top:-2px;border-right:2px solid;border-top:2px solid}.corner.bl{left:-2px;bottom:-2px;border-left:2px solid;border-bottom:2px solid}.corner.br{right:-2px;bottom:-2px;border-right:2px solid;border-bottom:2px solid}.scanner>text{margin-top:15px;font-size:12px}.lamp{width:34px;height:34px;margin-top:10px;border-radius:50%;background:#191B1B;display:flex;align-items:center;justify-content:center}.or{display:block;margin:12px 0 6px;font-family:var(--k-serif);font-size:14px;font-weight:700}.code-row{display:flex;gap:8px}.code-row>text{height:38px;min-width:0;flex:1;padding:0 10px;border:1px solid var(--k-line2);border-radius:7px;color:var(--k-light);display:flex;align-items:center}.code-row button{width:70px;border:1px solid var(--k-red-line);border-radius:7px;color:var(--k-red);font-family:var(--k-serif);font-size:14px;font-weight:700}.verify-title{display:block;margin:12px 0 7px;font-family:var(--k-serif);font-size:15px;font-weight:700}.verify-order,.staff-card{position:relative;padding:9px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;gap:10px}.verify-order image{flex-shrink:0;width:72px;height:83px;border-radius:7px}.verify-order>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:6px;color:var(--k-muted);font-size:10px}.verify-order>view text:first-child{padding-right:72px;font-family:var(--k-serif);font-size:14px;font-weight:700;color:var(--k-ink)}.verify-order>view text:last-child text{color:var(--k-red);font-size:14px}.verify-order>text{position:absolute;right:10px;top:9px;color:#B36A20}.staff-card{align-items:center}.staff-card image{width:42px;height:42px;border-radius:50%}.staff-card>view{display:flex;flex-direction:column;gap:8px}.staff-card>view text:first-child{font-family:var(--k-serif);font-size:14px;font-weight:700}.staff-card>view text:last-child{color:var(--k-muted);font-size:11px}.confirm{width:100%;height:47px;margin-top:10px;border-radius:8px;background:var(--k-red);color:#fff;font-family:var(--k-serif);font-size:17px;font-weight:700}
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边、不加阴影），页边距 12、卡片之间 8；正文 12–13、辅助 11、小标签 10–11（原来整页是 10–11 的小字加描边框）。
+   页签是 28 高的白色胶囊，选中是暖棕；搜索框 36 高；保单 / 订单状态是浅底小标签；主按钮（选择人员并缴费、去核销、确认核销）是暖棕胶囊。
+   金额、状态、保单号、办理说明一个字没动，缴费 / 退费 / 核销 / 退款的按钮都在 */
+.insurance-orders{--k-bg:#F7F5F2;--k-sh1:none;background:var(--k-bg)}
+.insurance-orders :deep(.k-navbar__title){font-family:var(--k-sans);font-size:16px;font-weight:600}
+button{margin:0;padding:0;border:0;background:transparent}
+.finance-entry{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:44px;margin:8px 0;padding:11px 12px;font-size:13px;line-height:22px;color:var(--k-red-deep);background:var(--k-paper);border-radius:12px;text-align:left}
+.finance-entry::after{border:0}
+.pending-page,.policies,.resale,.verify{padding:0 12px calc(88px + var(--k-safe-bottom))}
+.resale,.verify{padding-top:8px}
+/* 空状态放进白卡（词典「空状态」） */
+.list-empty{margin-bottom:8px;padding:28px 12px;border-radius:12px;background:var(--k-paper);text-align:center;color:var(--k-ink2);font-size:14px;font-weight:500}
+/* 1 待申请保险 */
+.deadline-tip{position:relative;min-height:44px;padding:0 12px;border-radius:0 0 12px 12px;background:var(--k-paper);display:flex;align-items:center;gap:8px;color:var(--k-ink2);font-size:12px}
+/* 11-18：「投保缴费…」和「投保办理…」两条拼成一张卡（词典「列表行」），中间一条左缩进 12 的发丝线；投保记录页那条单独的入口不变 */
+.pending-page .finance-entry{margin:8px 0 0;min-height:48px;border-radius:12px 12px 0 0;font-size:14px;color:var(--k-ink)}
+.deadline-tip::before{content:'';position:absolute;left:12px;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.deadline-tip>text{min-width:0;flex:1}
+.pending-tabs{height:44px;display:flex;gap:6px;align-items:center}
+/* 二消订单的第一个页签一直带 active，没选中时由脚本里的行内样式（rsOff：白底、深色字）盖回去，所以选中态只动底色和字色 */
+.pending-tabs text,.resale-tabs text{height:28px;flex:1;border-radius:999px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--k-ink)}
+/* 11-18 词典「筛选胶囊」：选中是浅棕底 + 深棕字，不再是整块实心渐变（实心只留给「选择人员并缴费」这类主按钮）；不加字重（rsOff 不重置字重） */
+.pending-tabs .active,.resale-tabs .active{background:var(--k-red-soft);color:var(--k-red-deep)}
+.pending-tabs text{color:var(--k-ink2)}.pending-tabs .active{color:var(--k-red-deep)}
+.selected-row{height:34px;padding:0 2px;display:flex;align-items:center;justify-content:space-between;font-family:var(--k-sans);font-size:14px;font-weight:600}
+.selected-row text:last-child{color:var(--k-red-deep);font-size:12px;font-weight:400}
+.pending-card{min-height:68px;margin-bottom:8px;padding:10px 12px;border-radius:12px;background:var(--k-paper);display:flex;align-items:center;gap:10px}
+.select-box{width:20px;height:20px;flex:0 0 auto;border:1px solid var(--k-line2);border-radius:4px;background:var(--k-paper);display:flex;align-items:center;justify-content:center}
+.select-box.checked{background:var(--k-red);border-color:var(--k-red)}
+.pending-card image{flex-shrink:0;width:44px;height:44px;border-radius:50%;background:var(--k-paper2)}
+.pending-name{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
+.pending-name text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}
+.pending-name text:last-child{color:var(--k-muted);font-size:11px}
+.pending-name text,.pending-meta text{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.pending-meta{min-width:0;max-width:46%;display:flex;flex-direction:column;gap:3px;color:var(--k-muted);font-size:11px;text-align:right}
+.pending-meta text:last-child{color:var(--k-green);font-size:12px;font-weight:500}
+.pending-meta text.late{color:var(--k-alert)}
+.buy-row{height:52px;display:flex;align-items:center;gap:10px;font-size:13px}
+.buy-row>button{height:44px;margin-left:auto;width:218px;border-radius:22px;background:linear-gradient(135deg,#B5814D,#8E5E33);color:#fff;font-family:var(--k-sans);font-size:15px;font-weight:600}
+/* 2 投保记录 */
+.policy-search{height:36px;padding:0 12px;border-radius:18px;background:var(--k-paper);display:flex;align-items:center;gap:8px;color:var(--k-muted);font-size:13px}
+/* 筛选：和评价管理、房源管理同一种白色小胶囊（28 高），右边的小箭头是图标，不再用「⌄」这个字（有的手机显示成方块）。按字数分宽度，门店名长也尽量显示全 */
+.policy-filters{height:44px;display:flex;align-items:center;gap:6px}
+.policy-filters>.pf-dd{flex:1 0 auto;min-width:0;height:28px;padding:0 8px;box-sizing:border-box;border-radius:999px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;gap:3px;font-size:12px;color:var(--k-ink2)}
+/* 只有门店名那一格会被挤短（别的三格字少、固定按字宽）；多出来的地方四格平分 */
+.policy-filters>.pf-dd--store{flex:1 1 auto}
+.pf-dd>text{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.policy-count{display:block;margin:0 2px 8px;font-family:var(--k-sans);font-size:14px;font-weight:600}
+.policy-card{margin-bottom:8px;padding:12px 12px 0;border-radius:12px;background:var(--k-paper);display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--k-ink2)}
+.policy-head{display:flex;justify-content:space-between;gap:8px;font-family:var(--k-sans);font-size:13px;font-weight:600;color:var(--k-ink)}
+.policy-head>text:first-child{min-width:0;word-break:break-all}
+.policy-head .policy-status{margin:0;display:flex;align-items:center;gap:2px;line-height:17px;flex-shrink:0;align-self:flex-start;padding:2px 6px;border-radius:4px;font-family:var(--k-sans);font-size:11px;font-weight:500}
+.green{background:var(--k-green-soft);color:var(--k-green)}
+.amber{background:var(--k-ochre-soft);color:var(--k-ochre-deep)}
+.gray{background:#F5F1EB;color:var(--k-muted)}
+.policy-user{display:flex;align-items:center;gap:10px}
+.policy-user image{flex-shrink:0;width:36px;height:36px;border-radius:50%;background:var(--k-paper2)}
+.policy-user>view{min-width:0;display:flex;flex-direction:column;gap:3px}
+.policy-user>view text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600;color:var(--k-ink)}
+.policy-user>view text:last-child{color:var(--k-muted);font-size:11px}
+.policy-actions{position:relative;height:39px;margin:3px -12px 0;display:flex}
+.policy-actions::before{content:'';position:absolute;left:12px;right:12px;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.policy-actions button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;color:var(--k-ink2)}
+/* 「缴费 / 退费 / 保单」字多：按自己的字宽占位，另外两个平分剩下的，窄屏（320）也不折行、不挤出卡片 */
+.policy-actions .pa-reg{flex:0 0 auto;padding-left:10px;padding-right:12px;color:var(--k-red-deep);font-weight:600}
+.policy-actions button text{white-space:nowrap}
+/* 3 二消订单 */
+.resale-tabs{height:44px;display:flex;align-items:center;gap:6px}
+.order-card{margin-bottom:8px;padding:12px;border-radius:12px;background:var(--k-paper)}
+.order-head{display:flex;justify-content:space-between;gap:8px;font-family:var(--k-sans);font-size:12px;color:var(--k-muted)}
+.order-head>text:first-child{min-width:0;word-break:break-all}
+.order-head>text:last-child{flex-shrink:0;font-family:var(--k-sans);font-size:12px;font-weight:600}
+.order-head .amber{background:none}
+.order-head .green{background:none}
+.order-head .gray{background:none}
+.order-main{display:flex;gap:10px;margin-top:8px}
+.order-main image{flex-shrink:0;width:72px;height:72px;border-radius:8px;background:var(--k-paper2)}
+.order-main>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px;color:var(--k-muted);font-size:11px}
+.order-main>view text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600;line-height:20px;color:var(--k-ink)}
+.order-bottom{margin-top:8px;display:flex;align-items:center;justify-content:space-between}
+.order-bottom>text{font-size:18px;font-weight:700;color:var(--k-red);font-variant-numeric:tabular-nums}
+/* 每张订单都有的「去核销」是词典「小按钮」浅色胶囊（28 高、12 / 500）；不可点是原配色整体变淡 */
+.order-bottom button{min-width:72px;height:28px;padding:0 12px;border-radius:999px;background:var(--k-red-soft);color:var(--k-red-deep);font-family:var(--k-sans);font-size:12px;font-weight:500}
+.order-bottom button.disabled{background:var(--k-red-soft);color:var(--k-red-deep);opacity:.45}
+/* 4 扫码核销与退款：第一个页签一直带 active，没选中时由行内样式（vOff：深色字、去掉下划线）盖回去，所以选中态只动字色和下划线。
+   下划线仍是 border-bottom（vOff 才盖得掉），用 border-image 只画中间 18 宽的一小段，和别的页签一样是一道短线；不认 border-image 的环境退回整条下划线 */
+.verify-tabs{height:40px;padding-bottom:4px;box-sizing:border-box;border-radius:12px;background:var(--k-paper);display:flex;overflow:hidden}
+.verify-tabs text{flex:1;padding-top:4px;display:flex;align-items:center;justify-content:center;font-family:var(--k-sans);font-size:14px;font-weight:600}
+.verify-tabs .active{color:var(--k-red-deep);border-bottom:2px solid var(--k-red);border-image:linear-gradient(90deg,transparent calc(50% - 9px),var(--k-red) calc(50% - 9px),var(--k-red) calc(50% + 9px),transparent calc(50% + 9px)) 1}
+.scanner{height:200px;margin-top:8px;border-radius:12px;background:linear-gradient(135deg,#262827,#101212);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff}
+.scan-frame{position:relative;width:170px;height:105px;background:rgba(255,255,255,.06);border-bottom:2px solid rgba(218,192,147,.35)}
+.corner{position:absolute;width:15px;height:15px;border-color:#fff}
+.corner.tl{left:-2px;top:-2px;border-left:2px solid;border-top:2px solid}
+.corner.tr{right:-2px;top:-2px;border-right:2px solid;border-top:2px solid}
+.corner.bl{left:-2px;bottom:-2px;border-left:2px solid;border-bottom:2px solid}
+.corner.br{right:-2px;bottom:-2px;border-right:2px solid;border-bottom:2px solid}
+.scanner>text{margin-top:15px;font-size:12px}
+.lamp{width:34px;height:34px;margin-top:10px;border-radius:50%;background:#191B1B;display:flex;align-items:center;justify-content:center}
+.or{display:block;margin:12px 2px 6px;font-family:var(--k-sans);font-size:14px;font-weight:600}
+.code-row{display:flex;gap:8px}
+.code-row>text{height:40px;min-width:0;flex:1;padding:0 12px;border:1px solid var(--k-line2);border-radius:12px;background:var(--k-paper);color:var(--k-light);display:flex;align-items:center;font-size:14px}
+.code-row button{width:72px;border:1px solid var(--k-red-line);border-radius:999px;background:var(--k-paper);color:var(--k-red-deep);font-family:var(--k-sans);font-size:14px;font-weight:600}
+.verify-title{display:block;margin:14px 2px 8px;font-family:var(--k-sans);font-size:15px;font-weight:700}
+.verify-order,.staff-card{position:relative;padding:12px;border-radius:12px;background:var(--k-paper);display:flex;gap:10px}
+.verify-order{margin-bottom:8px}
+.verify-order image{flex-shrink:0;width:72px;height:72px;border-radius:8px;background:var(--k-paper2)}
+.verify-order>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px;color:var(--k-muted);font-size:11px}
+.verify-order>view text:first-child{padding-right:72px;font-family:var(--k-sans);font-size:14px;font-weight:600;line-height:20px;color:var(--k-ink)}
+.verify-order>view text:last-child text{color:var(--k-red-deep);font-size:14px;font-weight:700}
+.verify-order>text{position:absolute;right:12px;top:12px;font-size:12px;font-weight:600;color:var(--k-ochre-deep)}
+.staff-card{align-items:center}
+.staff-card image{flex-shrink:0;width:40px;height:40px;border-radius:50%;background:var(--k-paper2)}
+.staff-card>view{display:flex;flex-direction:column;gap:3px}
+.staff-card>view text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}
+.staff-card>view text:last-child{color:var(--k-muted);font-size:11px}
+.confirm{width:100%;height:44px;margin-top:12px;border-radius:22px;background:linear-gradient(135deg,#B5814D,#8E5E33);color:#fff;font-family:var(--k-sans);font-size:16px;font-weight:600}
 /* 全局 button 的 line-height 是 inherit，不居中的话「核销」「确认核销」「去核销」「提交投保申请」的字贴在按钮顶上 */
 .buy-row>button,.order-bottom button,.code-row button,.confirm{display:flex;align-items:center;justify-content:center}
 /* 小程序的 text 里只能放文字，漏斗图标塞在里面真机不显示；筛选格改成 view 包「文字 + 图标」，文字过长时省略 */
-.policy-filters>.pf-sort{flex:1;min-width:0;padding:0 4px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px}.pf-sort>text{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.insurance-readonly{padding:12px 0;color:var(--k-muted);font-size:12px;line-height:1.6}
+.policy-filters>.pf-sort{flex:1 0 auto;min-width:0;height:28px;padding:0 8px;box-sizing:border-box;border-radius:999px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;color:var(--k-ink2)}
+.pf-sort>text{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* 窄屏（≤360）：胶囊的内边距和间隔收一点，四格都放得下 */
+@media (max-width:360px){.policy-filters{gap:4px}.policy-filters>.pf-dd,.policy-filters>.pf-sort{padding:0 5px;gap:2px}}
+.insurance-readonly{padding:12px 2px;color:var(--k-muted);font-size:12px;line-height:1.6}
 </style>
 
 <style scoped>

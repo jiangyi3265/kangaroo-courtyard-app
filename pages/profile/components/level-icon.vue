@@ -1,12 +1,14 @@
 <template>
   <view class="lv" :class="['lv--' + idx, { 'lv--off': off }]" :style="boxStyle" :aria-label="'会员等级 ' + (idx + 1)">
-    <view class="lv__crop" :style="cropStyle"><image class="lv__emblem" src="/pages/profile/static/member-travel-atlas.png" :style="spriteStyle" mode="scaleToFill" /></view>
+    <view class="lv__crop" :style="cropStyle"><image v-if="userIcons" class="lv__emblem" src="/pages/profile/static/apricot-levels.png" :style="spriteStyle" mode="scaleToFill" /><image v-else class="lv__emblem" src="/pages/profile/static/member-travel-atlas.png" :style="spriteStyle" mode="scaleToFill" /></view>
     <text v-if="px >= 40" class="lv__rank" :style="rankStyle">{{ rank }}</text>
   </view>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useUserIcons } from '@/common/user-icons/scope.js'
+const userIcons = useUserIcons()
 defineOptions({ options: { virtualHost: true, styleIsolation: 'apply-shared' } })
 const props = defineProps({
   level: { type: [Number, String], default: 0 },
@@ -20,7 +22,8 @@ const cropStyle = computed(() => ({ height: px.value * (idx.value < 3 ? 490 / 51
 const spriteStyle = computed(() => ({ width: px.value * 3 + 'px', height: px.value * 2 + 'px', left: -(idx.value % 3) * px.value + 'px', top: idx.value < 3 ? '0px' : -490 / 512 * px.value + 'px' }))
 const rank = computed(() => String(idx.value + 1).padStart(2, '0'))
 const boxStyle = computed(() => ({ width: px.value + 'px', height: px.value + 'px' }))
-const rankStyle = computed(() => ({ fontSize: Math.max(9, Math.round(px.value * .14)) + 'px' }))
+// 11-18 第三轮返修（第 4 轮）：等级角标数字最小 11 号（之前 9 号，比全站最小档还小）；纯展示
+const rankStyle = computed(() => ({ fontSize: Math.max(11, Math.round(px.value * .14)) + 'px' }))
 </script>
 
 <style scoped>
@@ -28,6 +31,6 @@ const rankStyle = computed(() => ({ fontSize: Math.max(9, Math.round(px.value * 
 .lv__crop { position: relative; overflow: hidden; width: 100%; height: 100%; }
 .lv__emblem { position: absolute; display: block; width: 300%; height: 200%; max-width: none; }
 .lv--off .lv__crop { filter: grayscale(1); opacity: .48; }
-.lv__rank { position: absolute; right: -2px; bottom: 0; min-width: 1.7em; padding: .15em .3em; border: 1px solid #D8C7B1; border-radius: 6px; box-sizing: border-box; text-align: center; background: #FCF9F3; color: #795331; font-family: var(--k-sans); font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
-.lv--off .lv__rank { color: #7A746D; border-color: #D6D0C7; }
+.lv__rank { position: absolute; right: -2px; bottom: 0; min-width: 1.7em; padding: .15em .3em; border: 1px solid var(--k-red-line); border-radius: 4px; box-sizing: border-box; text-align: center; background: var(--k-paper); color: var(--k-red-deep); font-family: var(--k-sans); font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.lv--off .lv__rank { color: var(--k-muted); border-color: var(--k-line2); }
 </style>

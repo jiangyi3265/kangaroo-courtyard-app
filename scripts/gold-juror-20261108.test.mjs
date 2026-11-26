@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import vm from 'node:vm'
 import { parse, babelParse, compileScript, compileTemplate } from '@vue/compiler-sfc'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const pageUrl = new URL('../pages/governance/mediation.vue', import.meta.url)
 const source = parse(fs.readFileSync(pageUrl, 'utf8')).descriptor.scriptSetup.content
@@ -20,7 +20,8 @@ const sample = () => ({
 function fixture() {
   const requests = [], current = sample()
   const context = vm.createContext({
-    ref, computed, onLoad() {}, onShow() {}, states: { ready: '待裁决' }, juryChoices: choices,
+    ref, computed, watch, getMessageScopeKey: () => 'city:7:city_lead',
+    onLoad() {}, onShow() {}, onHide() {}, onUnload() {}, states: { ready: '待裁决' }, juryChoices: choices,
     uni: {}, get: async path => ({ data: path === 'context' ? {} : current }),
     post: async (path, data) => { requests.push({ path, data }); return { data: null } }
   })

@@ -44,9 +44,9 @@ function runSetup(rel, stubs) {
 
 // ---------------------------------------------------------------- 每个页签的条件组
 
-test('四个页签各有自己的条件组：换宿七组照旧，兼职 = 食宿 / 日薪，全职 = 类型 / 食宿 / 月薪，线上 = 类型', () => {
+test('四个页签各有自己的条件组：换工八组含卫浴，兼职 = 食宿 / 日薪，全职 = 类型 / 食宿 / 月薪，线上 = 类型', () => {
   assert.deepEqual(F.GROUPS, {
-    volunteer: ['gender', 'skills', 'restModes', 'minStay', 'roomTypes', 'assured', 'workKind'],
+    volunteer: ['gender', 'skills', 'restModes', 'minStay', 'roomTypes', 'bathroom', 'assured', 'workKind'],
     parttime: ['board', 'payDay'],
     fulltime: ['categories', 'board', 'payMonth'],
     online: ['task']
@@ -61,7 +61,7 @@ test('四个页签各有自己的条件组：换宿七组照旧，兼职 = 食�
     ['食宿条件', ['包吃包住', '包住', '包吃', '不包食宿']],
     ['月薪（元/月）', ['3000以下', '3000–4500', '5000以上']]
   ])
-  assert.deepEqual(groups('volunteer').map(g => g[0]), ['性别偏好', '技能需求', '休息排班', '可停留时长', '住宿条件', '安心保障', '换工类型'])
+  assert.deepEqual(groups('volunteer').map(g => g[0]), ['性别偏好', '技能需求', '休息排班', '可停留时长', '住宿条件', '卫浴条件', '安心保障', '换工类型'])
   assert.deepEqual(groups('volunteer').find(g => g[0] === '可停留时长')[1], ['能待一周', '能待半个月', '能待20天', '能待一个月'])
   assert.deepEqual(groups('online'), [['任务类型', ['内容写作', '图片设计', '视频剪辑', '社群运营', '数据整理', '其他']]])
   // 任何一个页签的面板里都没有城市组（城市在胶囊行 + 选城市面板里单独选）

@@ -25,9 +25,9 @@ defineProps({ title: String, subtitle: String, compact: Boolean })
 <style scoped>
 .ww-hero {
 	position: relative;
-	height: 330px;
+	height: 340px;
 	overflow: hidden;
-	border-radius: 20px;
+	border-radius: 12px;
 }
 .ww-hero__background {
 	position: absolute;
@@ -57,35 +57,42 @@ defineProps({ title: String, subtitle: String, compact: Boolean })
 .ww-hero__shade {
 	position: absolute;
 	inset: 35% 0 0;
-	background: linear-gradient(transparent, rgba(25, 55, 41, 0.96));
+	background: linear-gradient(transparent, rgba(25, 55, 41, 0.62) 46%, rgba(25, 55, 41, 0.96));
 	z-index: 2;
 }
 .ww-hero__text {
 	position: absolute;
-	bottom: 20px;
-	left: 20px;
-	right: 20px;
+	bottom: 16px;
+	left: 16px;
+	right: 16px;
 	text-align: center;
 	color: #fff5df;
 	z-index: 3;
 }
 .ww-hero__title {
 	display: block;
-	font-size: 30px;
+	font-size: 24px;
 	font-weight: 700;
+	line-height: 1.3;
 	letter-spacing: 1px;
+	text-shadow: 0 1px 6px rgba(15, 35, 26, 0.6);
 }
 .ww-hero__subtitle {
 	display: block;
-	margin: 6px 0 16px;
-	font-size: 14px;
+	margin: 4px 0 16px;
+	font-size: 13px;
+	line-height: 1.5;
+	opacity: 0.92;
+	text-shadow: 0 1px 4px rgba(15, 35, 26, 0.7);
 }
 .ww-hero--compact {
-	height: 235px;
-	border-radius: 20px 20px 0 0;
+	height: 220px;
+	border-radius: 12px 12px 0 0;
 }
 .ww-hero--compact .ww-hero__cast {
 	inset: 5px 0 25px;
+	transform: scale(0.88);
+	transform-origin: 50% 100%;
 }
 .ww-hero--compact .ww-hero__actor {
 	height: 200px;

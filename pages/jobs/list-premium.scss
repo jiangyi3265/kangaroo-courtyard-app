@@ -29,8 +29,6 @@
 .fchips { gap: 6px; min-height: 36px; }
 .fchip-main { height: 36px; padding: 0 6px 0 12px; border: 0; border-left: 1px solid rgba(154,107,63,.22); border-radius: 0; background: transparent; color: var(--jobs-ink); font-size: 14px; font-weight: 500; gap: 5px; }
 .fchip-main.on, .fchip-main.open { background: rgba(255,253,250,.85); border-color: transparent; border-radius: 12px; color: var(--jobs-accent-strong); }
-.fchip-main__caret { border-top-color: var(--jobs-ink); border-left-width: 4px; border-right-width: 4px; border-top-width: 5px; }
-.fchip-main__caret.up { border-bottom-color: var(--jobs-ink); }
 .fchip { min-height: 28px; height: auto; font-size: 12px; font-weight: 500; border-radius: 14px; color: var(--jobs-accent-strong); background: var(--k-red-soft); box-shadow: none; }
 .fchip--add { min-height: 36px; padding: 0 10px 0 2px; font-size: 14px; font-weight: 600; gap: 5px; color: var(--jobs-ink); background: transparent; }
 .online-scope { font-size: 12px; color: var(--k-ink2); }
@@ -111,6 +109,43 @@
 .card--photo > view:last-child { padding-bottom: 10px; }
 /* 角标随封面一起缩小，斜带仍压在左上角、不被矮封面切掉字 */
 .card .card__badge { position: absolute; left: 0; top: 0; right: auto; width: 120px; height: 120px; overflow: hidden; z-index: 2; pointer-events: none; transform: scale(.86); transform-origin: 0 0; }
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板，参考小红书）：岗位排成两列，一屏能看 4 个。
+   卡片上的信息一项不少（紧急、标题、类型、排班、标签、满月红包、关键词、期限 / 工时 / 食宿、保障、各类型的补充说明），只是收小、放不下就换行。
+   上面 11-03 的单列规则保留不动，这里用 .job-feed 开头的规则盖过去。 */
+.job-feed { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: start; margin-top: 4px; }
+.job-feed .card { margin-top: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+.job-feed .card--photo { padding: 0; }
+.job-feed .card--photo .card__left { height: 128px; min-height: 0; max-height: none; border-radius: 0; }
+.job-feed .card__img { border-radius: 0; }
+.job-feed .card .card__badge { transform: scale(.68); }
+.job-feed .card__location, .job-feed .card__badge + .card__location { padding: 14px 8px 6px; font-size: 11px; line-height: 14px; font-weight: 500; }
+.job-feed .card--photo .card__main { padding: 8px 10px 0; }
+.job-feed .card .title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 14px; line-height: 20px; }
+.job-feed .card__open { display: none; }
+.job-feed .card__subtitle { font-size: 11px; line-height: 16px; }
+.job-feed .card__meta { gap: 3px 6px; margin-top: 4px; }
+.job-feed .card__category { padding: 0 5px; border-radius: 4px; font-size: 11px; line-height: 16px; }
+.job-feed .card__arrangement { gap: 3px; font-size: 11px; line-height: 16px; }
+.job-feed .card .price__num { font-size: 15px; font-variant-numeric: tabular-nums; }
+.job-feed .card .loc { font-size: 11px; }
+.job-feed .card--photo .card__tags { margin: 6px 10px 0; gap: 4px; }
+.job-feed .card .tag { min-height: 17px; padding: 0 5px; border-radius: 4px; font-size: 11px; line-height: 17px; }
+.job-feed .card .tag--gift { gap: 2px; }
+.job-feed .card__keywords, .job-feed .tag--gift + .card__keywords { flex-basis: 100%; margin-left: 0; padding-left: 0; font-size: 11px; line-height: 16px; }
+.job-feed .tag--gift + .card__keywords::before { display: none; }
+.job-feed .card__trust { margin-left: 0; font-size: 11px; }
+.job-feed .card .card__facts { display: flex; flex-wrap: wrap; gap: 3px 8px; padding-top: 6px; border-top: 1px solid var(--k-line); }
+.job-feed .card--photo .card__facts { margin: 6px 10px 0; }
+.job-feed .card__fact, .job-feed .card__facts--1 .card__fact { min-height: 18px; padding: 0; gap: 3px; justify-content: flex-start; font-size: 11px; font-weight: 500; }
+.job-feed .card__fact + .card__fact::before { display: none; }
+.job-feed .card__fact--board, .job-feed .card__facts--1 .card__fact--board { padding: 0 5px; border-radius: 4px; }
+.job-feed .card--photo .card__details { margin: 6px 10px 0; padding-top: 6px; gap: 2px 8px; }
+.job-feed .card__detail { gap: 3px; font-size: 11px; line-height: 16px; }
+.job-feed .card--photo .card__extra { margin: 6px 10px 0; }
+
+.job-feed .card--compact { grid-template-columns: 36px minmax(0, 1fr); gap: 8px; padding: 10px; }
+.job-feed .card__empty { width: 36px; height: 36px; }
+
 .train { height: 100px; border-radius: 12px; box-shadow: 0 3px 10px rgba(94,65,36,.07); }
 .train__copy { left: 14px; top: 12px; right: 80px; gap: 5px; }
 .train__title { font-size: 16px; }
@@ -140,3 +175,607 @@
   .card--photo { padding: 4px; gap: 0; }
   .card--photo .title { font-size: 15px; }
 }
+
+/* 2026-11-17 改版「小而精」第二步：列表上半部分（页签、搜索、城市、「全国 / 筛选」行、数量行）和其余状态（培训横幅、没照片的紧凑卡、空状态、紧急标签）。
+   页面底色统一成 #F7F5F2；顶部一块是白底，最上面带一点很浅的暖色（和首页一样）。入口、筛选项、胶囊、文字一项不少，只是收小、做细。
+   上面旧规则保留不动，这里放在最后盖过去。 */
+.jobs { --k-bg: var(--k-page); --jobs-header: var(--k-paper); background: var(--k-page); }
+/* 顶栏底色是模板里写死的，这里盖成和下面渐变起点一样的浅暖色 */
+.jobs :deep(.k-topbar) { background: var(--k-paper) !important; }
+.jobs :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 17px; font-weight: 600; color: var(--k-ink); }
+.jobs-discovery__backdrop { border-radius: 0; background: var(--k-paper); }
+.jobs-discovery__wash { background: var(--k-paper); }
+.jobs-discovery__controls { padding: 0 12px 6px; }
+/* 纸飞机和虚线留着，收小、放淡，不抢筛选行 */
+.jobs-discovery__decor { right: 12px; bottom: 12px; width: 56px; height: 24px; opacity: .65; }
+
+.jobs-discovery__trail { left: 2px; top: 11px; width: 34px; height: 10px; border-bottom-width: 1px; }
+/* 四个类型页签：没选中 15 / 500，选中 16 / 700 深墨字 + 一道暖棕短线 */
+.job-kinds { height: 40px; margin: 0; gap: 4px; align-items: stretch; }
+.job-kind { height: 40px; padding: 0 1px 8px; font-family: var(--k-sans); font-size: 15px; font-weight: 500; color: var(--k-ink2); }
+.job-kind.active { font-size: 15px; font-weight: 700; color: var(--k-ink); } /* 第二轮：选中只加粗、不放大，切换时整排不跳 */
+.job-kind__bar, .job-kind.active .job-kind__bar { bottom: 3px; width: 18px; height: 3px; margin-left: -9px; border-radius: 2px; }
+.job-kind.active .job-kind__bar { background: var(--k-grad-brown); }
+/* 搜索框的样子在 job-search 组件里；「搜索」钮里的放大镜已换成字，这里从页面再盖一次，小程序端也生效 */
+.jobs :deep(.job-search--travel .js-go .k-icon) { display: none; }
+/* 已选城市：浅棕小胶囊，点一下去掉 */
+.city-tags { margin: 2px 0; gap: 6px; }
+.city-tag { min-height: 28px; padding: 0 8px 0 7px; gap: 3px; border: 0; border-radius: 14px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+
+.city-tags__reset { min-height: 28px; padding: 0 4px; font-size: 12px; color: var(--k-muted); }
+/* 「全国 / 筛选」行：看上去 28 高，透明边把可点范围撑到 36；已选条件是 28 高的浅棕胶囊，放不下就横滑 */
+.fchips-wrap { margin-top: 0; }
+.fchips { gap: 4px; min-height: 36px; }
+.fchip { min-height: 28px; height: 28px; padding: 0 8px 0 10px; gap: 3px; border-radius: 14px; background: var(--k-red-soft); box-shadow: none; font-size: 12px; font-weight: 500; color: var(--k-red-deep); }
+.fchip--add { min-height: 36px; height: 36px; padding: 0 6px 0 0; gap: 3px; border-radius: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--k-ink); }
+.fchip-main { height: 36px; padding: 0 9px; gap: 4px; border: 4px solid transparent; border-radius: 18px; background: var(--k-paper2) padding-box; font-size: 13px; font-weight: 500; color: var(--k-ink); }
+.fchip-main.on, .fchip-main.open { border-color: transparent; border-radius: 18px; background: var(--k-red-soft) padding-box; color: var(--k-red-deep); }
+
+/* 第二轮：实心小三角换成线条小 V，和旁边「全国」的下拉箭头一个样子 */
+.online-scope { font-size: 12px; color: var(--k-muted); }
+/* 数量 / 订阅 / 刷新：数量 13 / 600，右边两项是 12 的辅助字 */
+.jobs-body { padding: 8px 12px calc(104px + var(--k-safe-bottom)); }
+.filter-summary { min-height: 28px; font-size: 12px; }
+.filter-summary view { min-height: 32px; }
+.list-status { margin-top: 0; min-height: 34px; gap: 10px; }
+.list-status .count { font-size: 13px; font-weight: 600; color: var(--k-ink); }
+.bell, .refresh { height: 32px; min-height: 32px; gap: 3px; font-size: 12px; font-weight: 400; color: var(--k-muted); }
+.bell.on { color: var(--k-red-deep); }
+
+.bell + .refresh::before { left: -10px; height: 10px; }
+/* 空状态：一张白卡，字居中 */
+.empty-jobs { margin-top: 4px; padding: 28px 16px; border-radius: 12px; background: var(--k-paper); text-align: center; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+/* 全职的培训横幅：照片完整露出，字用底部向上的黑色渐变托住，「培训活动」是白色小标签，「去报名」是白色小胶囊 */
+.train { height: 96px; margin-top: 0; margin-bottom: 4px; border-radius: 12px; box-shadow: none; background: linear-gradient(120deg, var(--k-red-soft), var(--k-paper2)); }
+.train__shade { background: linear-gradient(180deg, rgba(20, 14, 10, .06) 0%, rgba(20, 14, 10, .62) 100%); }
+.train__shade--plain { background: transparent; }
+.train__copy { left: 12px; right: 88px; top: auto; bottom: 10px; gap: 3px; }
+.train__tag, .train__shade--plain ~ .train__copy .train__tag { height: 17px; padding: 0 5px; gap: 2px; border-radius: 4px; background: rgba(255, 255, 255, .94); box-shadow: none; font-size: 11px; font-weight: 500; color: var(--k-red-deep); }
+.train__title { font-size: 15px; font-weight: 600; line-height: 21px; }
+.train__meta { font-size: 11px; line-height: 16px; }
+.train__shade--plain ~ .train__copy .train__title { color: var(--k-ink); }
+.train__shade--plain ~ .train__copy .train__meta { color: var(--k-ink2); }
+.train__roo { right: 16px; top: 8px; width: 40px; height: 44px; }
+.train__go { right: 10px; bottom: 10px; height: 26px; min-height: 26px; padding: 0 6px 0 10px; gap: 0; border-radius: 13px; background: rgba(255, 255, 255, .94); box-shadow: none; font-size: 12px; font-weight: 600; }
+/* 没有照片的紧凑卡：图标放在 36 的圆角方块里；远程、补充说明都按两列卡片的小字号 */
+.job-feed .card__empty { border-radius: 10px; background: linear-gradient(160deg, var(--k-red-soft), var(--k-paper2)); }
+.job-feed .card--compact .card__main { padding-top: 0; }
+.job-feed .card .price { margin-top: 2px; }
+.job-feed .card .price__unit { font-size: 11px; color: var(--k-muted); }
+.job-feed .card .loc { margin-top: 2px; gap: 3px; line-height: 16px; }
+
+.job-feed .card .remote { height: 17px; padding: 0 5px; gap: 2px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+
+.job-feed .card .meta { margin-top: 0; padding-top: 6px; gap: 2px 8px; font-size: 11px; line-height: 16px; }
+/* 带小钟的那一行（兼职的排班说明）：图标留在行首，字放不下就在图标右边折行，不把图标单独甩在一行 */
+.job-feed .card .meta:not(.meta--text) { flex-wrap: nowrap; align-items: flex-start; gap: 3px; }
+.job-feed .card .meta:not(.meta--text) :deep(.k-icon) { margin-top: 2px; }
+.job-feed .card .meta:not(.meta--text) text { min-width: 0; }
+.job-feed .card .meta__item { align-items: flex-start; gap: 3px; }
+.job-feed .card .meta__item :deep(.k-icon) { margin-top: 2px; }
+.job-feed .card__extra .tags { margin-top: 6px; gap: 4px; }
+/* 「紧急招募」小标签：两列卡片里按标签规格（17 高、10 号字），颜色仍按紧急程度 */
+.job-feed :deep(.job-urgency) { display: flex; width: fit-content; margin-bottom: 4px; padding: 0 5px; border-radius: 4px; font-size: 11px; font-weight: 500; line-height: 17px; }
+.job-feed :deep(.job-urgency__label) { gap: 3px; }
+
+.list-end { padding: 16px 0 4px; font-size: 11px; color: var(--k-muted); }
+/* 筛选、选城市两个面板的主按钮：暖棕渐变胶囊（面板自己的样式在各自组件里） */
+.jobs :deep(.fp__ok), .jobs :deep(.cp__ok) { background: var(--k-grad-brown); border-color: transparent; }
+@media (max-width: 359px) {
+  .jobs-body { padding-left: 10px; padding-right: 10px; }
+  .job-kind { font-size: 14px; }
+  .job-kind.active { font-size: 14px; }
+  .fchip--add, .fchip-main { font-size: 12px; }
+  .list-status { gap: 8px; }
+  .list-status .count { font-size: 12px; }
+  .bell, .refresh { font-size: 11px; }
+  .bell { padding: 0; }
+  .jobs-discovery__decor { width: 42px; }
+  .jobs-discovery__trail { width: 20px; }
+}
+/* 2026-11-18 复查：能点的小胶囊看上去还是 28 高，外面一圈透明边把可点范围撑到 36，位置和间距不变
+   （已选城市原来 34、「重置城市」和「重置全部」原来 36，收小以后不能比原来难点；已选条件、订阅顺手也撑到 36）。 */
+.city-tags { margin: -2px -4px; gap: 0; }
+.city-tag { min-height: 36px; border: 4px solid transparent; border-radius: 18px; background: var(--k-red-soft) padding-box; }
+.city-tags__reset { min-height: 36px; padding: 0 4px 0 6px; }
+.fchips__scroll { margin-left: -4px; }
+.fchips__inner { gap: 0; }
+.fchips__inner .fchip { height: 36px; min-height: 36px; border: 4px solid transparent; border-radius: 18px; background: var(--k-red-soft) padding-box; }
+.fchips__inner .online-scope { margin-left: 4px; }
+.filter-summary view { min-height: 36px; margin: -2px 0; }
+.list-status { min-height: 36px; }
+.bell { height: 36px; min-height: 36px; }
+/* 2026-11-18 看图评审后的小修（只动两列卡片里的细节和「筛选」胶囊的位置，卡片上的信息一项不少）：
+   ① 卡片里横线太多（兼职卡连着三道）：期限 / 工时 / 食宿、保障、补充说明这三块里，排在最前面的那块上面留一道线，后面的不再画线，贴近一点；
+   ② 兼职卡「每天 8 小时」和下面门店写的排班说明用同一种字重和颜色、同一种小钟，图标和字的间距都是 3（原来排班说明没写时中间空了一大截）；
+   ③ 关键词之间的圆点跟在前一个词后面，折行时行首不再挂一个圆点；
+   ④ 小标签字重统一 500；排班固定另起一行（类型标签长短不一时，同屏两张卡不会一张同行、一张两行）；
+   ⑤ 线上任务「交付日期：11月20日 18:00 前」在窄卡片里改在时间前面折行，不让最后一个「前」字单独掉到下一行；
+   ⑥ 线上任务页签没有「全国」，「筛选」排在最左：把它那圈透明边收回来，和搜索框、卡片的左边对齐。 */
+.job-feed .card .card__facts ~ .card__details, .job-feed .card .card__facts ~ .card__extra, .job-feed .card .card__details ~ .card__extra { padding-top: 0; border-top: 0; }
+.job-feed .card--photo .card__facts ~ .card__details, .job-feed .card--photo .card__facts ~ .card__extra, .job-feed .card--photo .card__details ~ .card__extra { margin-top: 4px; }
+.job-feed .card--compact .card__facts ~ .card__details, .job-feed .card--compact .card__facts ~ .card__extra, .job-feed .card--compact .card__details ~ .card__extra { margin-top: -4px; }
+.job-feed .card .card__facts ~ .card__extra .meta, .job-feed .card .card__details ~ .card__extra .meta { padding-top: 0; }
+.job-feed .card .meta:not(.meta--text) { font-weight: 500; color: var(--k-ink); }
+.job-feed .card .meta__days--none { display: none; }
+.job-feed .card .meta__days--none + .meta__time { margin-left: 0; }
+.job-feed .card__keywords text + text::before { content: none; }
+.job-feed .card__keywords text:not(:last-child)::after { content: '·'; margin-left: 4px; }
+.job-feed .card__category, .job-feed .card .tag--gift, .job-feed .card .tag--alert { font-weight: 500; }
+.job-feed .card__arrangement { flex: 1 0 100%; }
+@media (max-width: 405px) { .job-feed .card .meta__item > text { max-width: 10em; } }
+.fchips > .fchip-main:first-child { margin-left: -4px; }
+
+/* ===================== 2026-11-18 第三轮「逐页精修」（r3jobsa） =====================
+   主人：「一进去没有一种特别精致的感觉」「图标用得比较杂」。两列卡片原来每张 8–9 行、5 种颜色的小标签，像信息表。
+   这一轮把卡片收成「一张 4:3 照片 + 标题 + 两三行说明」：
+   ① 照片固定 4:3（按卡片宽算高度，320 宽也不变形）；「紧急招募」挪到照片右上角的白色小胶囊（和详情页角标同一种），正文少一行；
+   ② 标题 14 / 600 两行；兼职 / 全职 / 线上的价格紧跟标题，17 / 700 等宽数字，是卡片上唯一的大字；
+   ③ 换工类型、排班、房型并成一行 11 号灰字（「其他 · 做一休一 · 三人间」），不再一枚杏色标签 + 一行带图标的字；
+   ④ 期限 / 工时 / 食宿紧跟在后（只有「包吃包住」是豆绿小标签），性别、红包是同一种浅米小标签，关键词是一行灰字；
+   ⑤ 去掉卡里的横线，行距统一 6；行内小图标一律 12 号灰色（原来小钟一会儿棕一会儿灰）；
+   ⑥ 没有照片的卡（线上任务）改成占满一行的横排卡：左边 44 的浅棕圆角方块 + 线性图标，右边标题 / 价格 / 门店 / 交付时间。
+   卡片上的每一项信息都还在，只是换了排法。45° 斜带「袋鼠实拍 · 含保险」是主人定的，原样保留。 */
+.job-feed { gap: 10px 8px; grid-auto-flow: row dense; }
+.job-feed .card { position: relative; }
+.job-feed .card--photo .card__left { height: 0; padding-bottom: 75%; }
+.job-feed .card--photo .card__img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.job-feed .card__location, .job-feed .card__badge + .card__location { padding: 20px 8px 6px; font-size: 11px; line-height: 16px; font-weight: 500; }
+
+/* 紧急招募：照片右上角白色小胶囊；最急的一档保留深红底白字 */
+.job-feed .card--photo :deep(.job-urgency) { position: absolute; top: 8px; right: 8px; z-index: 3; height: 20px; margin: 0; padding: 0 7px 0 6px; border-radius: 10px; background: rgba(255, 255, 255, .94); font-size: 11px; font-weight: 600; line-height: 20px; }
+.job-feed .card--photo :deep(.job-urgency--4) { background: var(--k-alert); }
+
+/* 正文：标题 → 价格 → 一行灰字说明；左右 10、行距 6 */
+.job-feed .card--photo { padding-bottom: 12px; }
+.job-feed .card--photo > view:last-child { padding-bottom: 0; }
+.job-feed .card--photo .card__main { order: 1; display: flex; flex-direction: column; padding: 10px 10px 0; }
+.job-feed .card__main > .card__head { order: 1; }
+.job-feed .card__main > .price { order: 2; }
+.job-feed .card__main > .card__meta { order: 3; }
+.job-feed .card__main > .loc { order: 4; }
+.job-feed .card .title { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--k-ink); }
+.job-feed .card .price { margin-top: 4px; align-items: baseline; gap: 2px; }
+.job-feed .card .price__num { font-size: 17px; font-weight: 700; line-height: 22px; color: var(--k-red-deep); font-variant-numeric: tabular-nums; }
+.job-feed .card .price__unit { font-size: 11px; font-weight: 400; color: var(--k-muted); }
+.job-feed .card__meta { margin-top: 4px; gap: 0; font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.job-feed .card__category { padding: 0; border-radius: 0; background: transparent; color: var(--k-ink2); font-size: 11px; font-weight: 500; line-height: 16px; }
+.job-feed .card__arrangement { flex: 0 1 auto; gap: 0; font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.job-feed .card__arrangement :deep(.k-icon) { display: none; }
+.job-feed .card__category + .card__arrangement::before { content: '·'; margin: 0 4px; color: var(--k-light); }
+/* 期限 / 工时 / 食宿：紧跟说明行，灰色 12 号小图标 + 11 号字；食宿是唯一的豆绿小标签 */
+.job-feed .card--photo .card__facts { order: 2; margin: 6px 10px 0; padding-top: 0; border-top: 0; gap: 4px 8px; align-items: center; }
+.job-feed .card__fact, .job-feed .card__facts--1 .card__fact { min-height: 17px; gap: 3px; font-size: 11px; font-weight: 500; line-height: 16px; color: var(--k-ink2); }
+.job-feed .card__fact--board, .job-feed .card__facts--1 .card__fact--board { height: 17px; min-height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; }
+
+/* 性别、满月红包：同一种浅米小标签；名额已满 / 已暂停仍是状态色；关键词另起一行灰字 */
+.job-feed .card--photo .card__tags { order: 3; margin: 6px 10px 0; gap: 4px; }
+.job-feed .card .tag { height: 17px; min-height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-paper2); color: var(--k-ink2); font-size: 11px; font-weight: 500; line-height: 17px; }
+.job-feed .card .tag--gift { gap: 2px; background: var(--k-red-soft); color: var(--k-red-deep); }
+.job-feed .card .tag--alert { background: var(--k-alert-soft); color: var(--k-alert); }
+.job-feed .card .tag--muted { background: var(--k-paper2); color: var(--k-muted); }
+.job-feed .card__keywords, .job-feed .tag--gift + .card__keywords { flex-basis: 100%; margin-top: 2px; font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.job-feed .card__keywords, .job-feed .tag--gift + .card__keywords { gap: 0; }
+.job-feed .card__keywords text:not(:last-child)::after { margin: 0 4px; color: var(--k-light); }
+.job-feed .card__trust { font-size: 11px; color: var(--k-green); }
+/* 安心商家 / 含保险（没挂斜带的卡）、各类型的补充说明：都是 11 号，不画线 */
+.job-feed .card--photo .card__details { order: 4; margin: 6px 10px 0; padding-top: 0; border-top: 0; }
+.job-feed .card--photo .card__extra { order: 5; margin: 6px 10px 0; padding-top: 0; border-top: 0; }
+.job-feed .card--photo .card__facts ~ .card__details, .job-feed .card--photo .card__facts ~ .card__extra, .job-feed .card--photo .card__details ~ .card__extra { margin-top: 6px; }
+.job-feed .card__detail { font-size: 11px; color: var(--k-muted); }
+.job-feed .card__detail--safe { color: var(--k-green); }
+.job-feed .card .meta, .job-feed .card .meta:not(.meta--text) { margin-top: 0; padding-top: 0; gap: 3px; font-size: 11px; font-weight: 400; line-height: 16px; color: var(--k-muted); }
+/* 全职「培训 / 试用期」和福利一样做成浅米小标签（字不变） */
+.job-feed .card .meta--text { gap: 4px; }
+.job-feed .card__extra > .meta--text > text { padding: 0 5px; border-radius: 4px; background: var(--k-paper2); color: var(--k-ink2); font-size: 11px; font-weight: 500; line-height: 17px; }
+.job-feed .card__extra .tags { margin-top: 4px; }
+/* 线上任务的「交付日期」：日期和时间不拆开 */
+.job-feed .card .meta__item { align-items: center; gap: 4px; white-space: nowrap; }
+.job-feed .card .meta__item :deep(.k-icon) { margin-top: 0; }
+@media (max-width: 405px) { .job-feed .card .meta__item > text { max-width: none; } }
+/* 没有照片的卡：占满一行的横排卡（左边 44 的浅棕圆角方块 + 线性图标，右边一列字），和两列照片卡并排时不留空格（dense） */
+.job-feed .card--compact { grid-column: 1 / -1; grid-template-columns: 44px minmax(0, 1fr); column-gap: 12px; row-gap: 6px; padding: 14px 12px; border-radius: 12px; }
+.job-feed .card__empty { width: 44px; height: 44px; border-radius: 12px; background: var(--k-red-soft); }
+
+.job-feed .card--compact .card__main { display: flex; flex-direction: column; padding: 0; }
+.job-feed .card--compact .title { font-size: 15px; line-height: 22px; -webkit-line-clamp: 1; }
+.job-feed .card--compact .card__subtitle { margin-top: 0; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.job-feed .card--compact .price { margin-top: 2px; }
+.job-feed .card--compact .loc { margin-top: 2px; font-size: 11px; color: var(--k-muted); }
+.job-feed .card--compact .card__tags, .job-feed .card--compact .card__facts, .job-feed .card--compact .card__details, .job-feed .card--compact .card__extra { grid-column: 2 / -1; margin: 0; padding: 0; border: 0; }
+.job-feed .card--compact .card__facts ~ .card__details, .job-feed .card--compact .card__facts ~ .card__extra, .job-feed .card--compact .card__details ~ .card__extra { margin-top: 0; }
+.job-feed .card--compact :deep(.job-urgency) { margin-bottom: 4px; }
+/* 空列表：白卡里 56 的浅棕圆角方块 + 32 号线性图标 + 说明，不再只有一行字 */
+.empty-box { margin-top: 4px; padding: 32px 24px; border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.empty-box__icon { width: 56px; height: 56px; border-radius: 16px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+.empty-box .empty-jobs { margin: 0; padding: 0; border-radius: 0; background: transparent; max-width: 240px; font-size: 13px; line-height: 20px; color: var(--k-ink2); }
+@media (max-width: 359px) {
+  .job-feed { gap: 8px 8px; }
+  .job-feed .card--photo .card__main { padding: 8px 8px 0; }
+  .job-feed .card--photo .card__facts, .job-feed .card--photo .card__tags, .job-feed .card--photo .card__details, .job-feed .card--photo .card__extra { margin-left: 8px; margin-right: 8px; }
+  .job-feed .card .title { font-size: 13px; line-height: 19px; }
+  .job-feed .card .price__num { font-size: 16px; }
+  /* 窄卡放不下「类型 · 排班 · 房型」一行：排班房型另起一行，行首不挂圆点 */
+  .job-feed .card__arrangement { flex-basis: 100%; }
+  .job-feed .card__category + .card__arrangement::before { content: none; }
+}
+
+/* ===================== 2026-11-18 第三轮返修（r3jobsa 评审第 1 轮） =====================
+   评审：两列卡片照片只占卡高 44%，照片下面 5–7 行像信息表；同一排两张卡底边不齐；没照片的卡占满一行打断网格；兼职三张卡排法各不相同。
+   改法（卡片上的字一个不少，模板只换了包裹层和先后）：
+   1. 换宿 / 兼职 / 全职一律两列方卡（card--tile）：照片 1:1（320 宽 4:3）；没照片的也留在两列里，同比例浅暖渐变 + 56 浅棕方块里 32 号 house 图标；
+   2. 固定顺序：标题 14/600 两行 → 价格 17/700 → 说明行「类型 · 排班 · 房型」12 灰单行 → 「最短30天 · 每天4小时」12 灰单行
+      → 一行小标签（食宿 / 性别 / 红包 / 安心商家，18 高，放不下的藏起来不折行）→ 关键词 11 灰单行省略 → 各类型补充说明（单行省略、不再放第二个小钟）；
+   3. 同一排两张卡拉成一样高（stretch），行距列距都是 8；
+   4. 线上任务仍是横排卡（card--row）：价格挪到标题右边，各行间距 4，「远程」标签里不再重复电脑图标。 */
+.job-feed { align-items: stretch; gap: 8px; grid-auto-flow: row; }
+.job-feed .card--tile { grid-column: auto; display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 0 0 12px; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.job-feed .card--tile > view:last-child { padding-bottom: 0; }
+.job-feed .card--tile > .card__left { order: 0; position: relative; flex: none; width: 100%; height: 0; min-height: 0; max-height: none; padding-bottom: 100%; border-radius: 0; overflow: hidden; }
+.job-feed .card--tile > .card__main { order: 1; display: flex; flex-direction: column; padding: 10px 10px 0; }
+.job-feed .card--tile > .card__facts { order: 2; }
+.job-feed .card--tile > .card__chips { order: 3; }
+.job-feed .card--tile > .card__keywords { order: 4; }
+.job-feed .card--tile > .card__extra { order: 5; }
+.job-feed .card--tile .card__img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 0; }
+.job-feed .card--tile .card__empty { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 0; background: linear-gradient(160deg, var(--k-red-soft) 0%, var(--k-paper2) 100%); display: flex; align-items: center; justify-content: center; }
+.job-feed .card--tile .card__empty-box { width: 56px; height: 56px; border-radius: 16px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+
+/* 紧急招募：照片（或占位图）右上角白色小胶囊 */
+.job-feed .card--tile :deep(.job-urgency) { position: absolute; top: 8px; right: 8px; z-index: 3; display: flex; height: 20px; margin: 0; padding: 0 7px 0 6px; border-radius: 10px; background: rgba(255, 255, 255, .94); font-size: 11px; font-weight: 600; line-height: 20px; }
+.job-feed .card--tile :deep(.job-urgency--4) { background: var(--k-alert); }
+
+.job-feed .card--tile .title { font-size: 14px; font-weight: 600; line-height: 20px; -webkit-line-clamp: 2; }
+.job-feed .card--tile .price { margin-top: 4px; }
+.job-feed .card--tile .loc { order: 4; margin-top: 4px; font-size: 12px; line-height: 18px; }
+/* 说明行：类型 · 排班 · 房型，单行省略 */
+.job-feed .card--tile .card__meta { flex-wrap: nowrap; align-items: center; min-width: 0; margin-top: 4px; overflow: hidden; white-space: nowrap; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.job-feed .card--tile .card__category { flex: 0 0 auto; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); }
+.job-feed .card--tile .card__arrangement { flex: 0 1 auto; flex-basis: auto; min-width: 0; overflow: hidden; font-size: 12px; line-height: 18px; }
+.job-feed .card--tile .card__arrangement text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.job-feed .card--tile .card__category + .card__arrangement::before { content: '·'; flex: 0 0 auto; margin: 0 4px; color: var(--k-light); }
+/* 期限 · 工时：一行灰字，不带图标；食宿挪到下面的小标签行 */
+.job-feed .card--tile > .card__facts { display: flex; flex-wrap: nowrap; align-items: center; gap: 0; min-width: 0; margin: 4px 10px 0; padding: 0; border: 0; overflow: hidden; white-space: nowrap; }
+.job-feed .card--tile .card__fact, .job-feed .card--tile .card__facts--1 .card__fact { flex: 0 1 auto; min-width: 0; min-height: 18px; padding: 0; gap: 0; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); }
+.job-feed .card--tile .card__fact text { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.job-feed .card--tile .card__fact :deep(.k-icon) { display: none; }
+.job-feed .card--tile .card__fact--board { display: none; }
+.job-feed .card--tile .card__fact + .card__fact::before { content: '·'; display: inline; position: static; width: auto; height: auto; margin: 0 4px; background: transparent; color: var(--k-light); }
+/* 小标签行：18 高、11 号、4 圆角，一行放不下的藏起来 */
+.job-feed .card--tile > .card__main { flex: none; }
+.job-feed .card--tile > .card__chips { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px; min-width: 0; height: auto; margin: 0 10px; }
+.job-feed .card--tile .card__chips .tag, .job-feed .card--tile .card__chips .card__detail, .job-feed .card--tile .card__chips .card__trust, .job-feed .card--tile .card__chips .remote { margin-top: 6px; }
+.job-feed .card--tile > .card__chips:empty { display: none; }
+.job-feed .card--tile .card__chips > .card__tags { flex: 0 1 auto; flex-wrap: wrap; gap: 0 4px; min-width: 0; margin: 0; }
+.job-feed .card--tile .card__chips > .card__details { flex: 0 0 auto; flex-wrap: nowrap; gap: 4px; margin: 0; padding: 0; border: 0; }
+.job-feed .card--tile .card__chips .tag { flex: 0 0 auto; height: 18px; min-height: 18px; max-width: none; padding: 0 6px; border-radius: 4px; font-size: 11px; font-weight: 500; line-height: 18px; white-space: nowrap; }
+.job-feed .card--tile .card__chips .tag--board { background: var(--k-green-soft); color: var(--k-green); }
+
+.job-feed .card--tile .card__detail { flex: 0 0 auto; height: 18px; padding: 0 6px; gap: 0; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; font-weight: 500; line-height: 18px; white-space: nowrap; }
+.job-feed .card--tile .card__detail :deep(.k-icon) { display: none; }
+.job-feed .card--tile .card__trust { flex: 0 0 auto; height: 18px; padding: 0 6px; border-radius: 4px; background: var(--k-green-soft); font-size: 11px; line-height: 18px; white-space: nowrap; }
+.job-feed .card--tile .card__trust :deep(.k-icon) { display: none; }
+/* 关键词：一行灰字，放不下省略 */
+.job-feed .card--tile > .card__keywords { display: block; flex-basis: auto; margin: 6px 10px 0; padding: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.job-feed .card--tile > .card__keywords text, .job-feed .card--tile .card__extra > .meta:not(.meta--text) text { display: inline; white-space: nowrap; } /* 网页版 text 自带 pre-line，单独再写一次不折行 */
+/* 补充说明（兼职排班 / 全职培训、试用期、福利）：放最后，单行省略，不再放第二个小钟 */
+.job-feed .card--tile > .card__extra { width: auto; margin: 6px 10px 0; padding: 0; border: 0; min-width: 0; }
+.job-feed .card--tile .card__extra > .meta:not(.meta--text) { display: block; margin: 0; padding: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.job-feed .card--tile .card__extra > .meta:not(.meta--text) :deep(.k-icon) { display: none; }
+.job-feed .card--tile .card__extra > .meta:not(.meta--text) text { display: inline; }
+.job-feed .card--tile .card__extra > .meta--text { display: flex; flex-wrap: nowrap; gap: 4px; margin: 0; padding: 0; overflow: hidden; }
+.job-feed .card--tile .card__extra > .meta--text > text { flex: 0 1 auto; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 6px; border-radius: 4px; background: var(--k-paper2); color: var(--k-ink2); font-size: 11px; line-height: 18px; }
+.job-feed .card--tile .card__extra > .tags { flex-wrap: nowrap; gap: 4px; height: 18px; margin-top: 4px; overflow: hidden; }
+.job-feed .card--tile .card__extra > .tags .tag { flex: 0 0 auto; height: 18px; min-height: 18px; padding: 0 6px; font-size: 11px; line-height: 18px; white-space: nowrap; }
+/* 线上任务横排卡：价格放标题右边（18/700 等宽），各行间距 4；「远程」标签里不再重复电脑图标 */
+.job-feed .card--row .card__main { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; align-items: start; }
+.job-feed .card--row .card__main > view, .job-feed .card--row .card__main > :deep(.job-urgency) { grid-column: 1 / -1; }
+.job-feed .card--row .card__main > .card__head { grid-column: 1; }
+.job-feed .card--row .card__main > .price { grid-column: 2; margin-top: 0; justify-content: flex-end; }
+.job-feed .card--row .card__main > .price .price__num { font-size: 18px; line-height: 22px; }
+.job-feed .card--row .card__main > .loc, .job-feed .card--row .card__main > .card__meta { margin-top: 4px; }
+.job-feed .card--row .card__chips, .job-feed .card--row .card__keywords { grid-column: 2 / -1; margin: 0; }
+.job-feed .card--row .card__chips:empty { display: none; }
+.job-feed .card--row .card__chips > .card__tags { margin: 0; }
+.job-feed .card--row .remote :deep(.k-icon) { display: none; }
+.job-feed .card--row { row-gap: 4px; }
+.job-feed .card--row .card__empty-box { display: flex; align-items: center; justify-content: center; }
+/* 空列表：标题 14/500 + 说明 12 灰 + 36 高「重置条件」 */
+.empty-box { gap: 0; padding: 32px 24px; }
+.empty-box__title { margin-top: 12px; font-size: 14px; font-weight: 500; line-height: 20px; color: var(--k-ink); }
+.empty-box .empty-jobs { margin-top: 4px; max-width: 240px; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.empty-box__btn { margin-top: 16px; height: 36px; padding: 0 20px; border-radius: 18px; background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-red-line); display: flex; align-items: center; font-size: 13px; font-weight: 500; color: var(--k-red-deep); }
+/* 筛选面板：选中的选项更醒目（浅棕底 + 深棕 600 + 细边），没选中的浅米底 */
+@media (max-width: 359px) {
+  .job-feed .card--tile > .card__left { padding-bottom: 75%; }
+  .job-feed .card--tile > .card__main { padding: 8px 8px 0; }
+  .job-feed .card--tile > .card__facts, .job-feed .card--tile > .card__chips, .job-feed .card--tile > .card__keywords, .job-feed .card--tile > .card__extra { margin-left: 8px; margin-right: 8px; }
+  .job-feed .card--tile .title { font-size: 13px; line-height: 19px; }
+  .job-feed .card--tile .card__meta, .job-feed .card--tile .card__category, .job-feed .card--tile .card__arrangement, .job-feed .card--tile .card__fact { font-size: 11px; line-height: 16px; }
+  .job-feed .card--tile .card__arrangement { flex-basis: auto; }
+  .job-feed .card--tile .card__category + .card__arrangement::before { content: '·'; }
+  .job-feed .card--tile .card__chips .tag, .job-feed .card--tile .card__detail, .job-feed .card--tile .card__trust { padding: 0 4px; font-size: 11px; }
+}
+
+/* ===================== 2026-11-18 第三轮返修第 2 轮（r3jobsa 评审第 2 轮） =====================
+   ① 小标签行不再「放不下就藏」：一律折行，一枚都不裁（原来 10 张换宿卡里 6 张看不到「名额已满 / 满月红包」）；
+      「名额已满 / 已暂停招聘」挪到照片（或占位图）右下角 20 高小胶囊；标签顺序：包吃包住 → 满月红包 → 安心商家 / 含保险 → 性别；
+   ② 说明行不再截成「双…」：换工类型（深一点）和「排班 · 房型」各是一整块，放不下时「排班 · 房型」整块换到下一行，不截字、不挂圆点；
+   ③ 页面左右边距统一 16，卡片内边距 12：右边客服浮钮只压到卡片外沿，压不到字；照片 390 / 320 都是 4:3；
+   ④ 全职「培训 / 试用期」改成两行 11 号灰字，福利小标签可以折行；线上任务的「远程」改成灰字；
+   ⑤ 「全国」「筛选」同一种 32 高浅米胶囊；筛选面板没选中的选项白底细边、选中浅棕底深棕字；空状态说明放宽到 264，不再把「条件」拆开。 */
+.jobs-discovery__controls { padding-left: 16px; padding-right: 16px; }
+.jobs-body { padding-left: 16px; padding-right: 16px; }
+.jobs-discovery__decor { right: 16px; }
+/* 照片右下角的状态胶囊（在地点那一行上面） */
+.job-feed .card__states { position: absolute; right: 8px; bottom: 28px; z-index: 3; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
+.job-feed .card__empty + .card__states { bottom: 8px; }
+.job-feed .card__state { height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(0, 0, 0, .45); color: var(--k-paper); font-size: 11px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.job-feed .card__state--alert { background: var(--k-alert); }
+/* 卡片：4:3 照片，内边距 12 */
+.job-feed .card--tile > .card__left { padding-bottom: 75%; }
+.job-feed .card--tile > .card__main { padding: 12px 12px 0; }
+.job-feed .card--tile > .card__facts, .job-feed .card--tile > .card__chips, .job-feed .card--tile > .card__keywords, .job-feed .card--tile > .card__extra { margin-left: 12px; margin-right: 12px; }
+/* 说明行：换工类型 + 「排班 · 房型」，整块换行，不截断 */
+.job-feed .card--tile .card__meta { flex-wrap: wrap; column-gap: 6px; row-gap: 0; overflow: visible; white-space: normal; }
+.job-feed .card--tile .card__category { flex-basis: 100%; color: var(--k-ink2); font-weight: 500; } /* 换工类型单独一行，每张卡的说明行一样排，不再一会儿一行一会儿两行 */
+.job-feed .card--tile .card__category + .card__arrangement::before { content: none; display: none; }
+.job-feed .card--tile .card__arrangement { flex: 0 1 auto; max-width: 100%; overflow: visible; }
+.job-feed .card--tile .card__arrangement text { overflow: visible; white-space: normal; text-overflow: clip; }
+/* 小标签：行内排，放不下折到下一行 */
+.job-feed .card--tile > .card__chips { display: block; height: auto; max-height: none; margin-top: 2px; overflow: visible; font-size: 0; line-height: 0; }
+.job-feed .card--tile .card__chips > .card__tags, .job-feed .card--tile .card__chips > .card__details { display: inline; max-height: none; margin: 0; padding: 0; overflow: visible; }
+.job-feed .card--tile .card__chips .tag, .job-feed .card--tile .card__chips .card__detail, .job-feed .card--tile .card__chips .card__trust, .job-feed .card--tile .card__chips .remote { display: inline-flex; align-items: center; vertical-align: top; margin: 6px 4px 0 0; }
+.job-feed .card--tile .card__chips .tag--gift { background: var(--k-red-soft); color: var(--k-red-deep); }
+.job-feed .card--tile .card__chips .tag--onphoto { display: none; } /* 同一枚状态已经在照片右下角 */
+/* 安心商家 / 含保险（没挂斜带的卡）：浅米底 + 12 号绿色盾牌，不再和「包吃包住」两颗绿标签挨着 */
+.job-feed .card--tile .card__detail, .job-feed .card--tile .card__trust { gap: 4px; background: var(--k-paper2); color: var(--k-ink2); }
+.job-feed .card--tile .card__detail :deep(.k-icon), .job-feed .card--tile .card__trust :deep(.k-icon) { display: inline-flex; }
+/* 关键词：和标签隔开 8 */
+.job-feed .card--tile > .card__keywords { margin-top: 8px; padding-top: 0; }
+/* 补充说明 */
+.job-feed .card--tile .card__extra > .meta--text { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 0; overflow: visible; }
+.job-feed .card--tile .card__extra > .meta--text > text { max-width: 100%; padding: 0; border-radius: 0; background: transparent; overflow: visible; white-space: normal; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.job-feed .card--tile .card__extra > .tags { flex-wrap: wrap; height: auto; overflow: visible; }
+.job-feed .card--tile .card__extra > .tags .tag { background: var(--k-paper2); color: var(--k-ink2); }
+/* 线上任务：「远程」是灰字，不再是豆绿标签 */
+.job-feed .card--row .remote { height: auto; padding: 0; border-radius: 0; background: transparent; color: var(--k-muted); font-size: 11px; font-weight: 400; line-height: 16px; }
+/* 「全国」「筛选」 */
+.fchips { gap: 8px; }
+.fchip--add { height: 32px; min-height: 32px; padding: 0 10px 0 8px; gap: 4px; border-radius: 16px; background: var(--k-paper2); font-size: 13px; font-weight: 500; }
+.fchip-main { height: 32px; padding: 0 10px; border: 0; border-radius: 16px; background: var(--k-paper2); }
+.fchip-main.on, .fchip-main.open { border: 0; background: var(--k-red-soft); }
+.filter-summary { min-height: 24px; margin: 0 0 4px; font-size: 11px; color: var(--k-muted); }
+.filter-summary view { min-height: 24px; color: var(--k-red-deep); font-size: 11px; }
+.empty-box .empty-jobs { max-width: 264px; text-wrap: balance; }
+/* 筛选面板选项 */
+@media (max-width: 359px) {
+  .job-feed .card--tile > .card__left { padding-bottom: 75%; }
+  .job-feed .card--tile > .card__main { padding: 10px 10px 0; }
+  .job-feed .card--tile > .card__facts, .job-feed .card--tile > .card__chips, .job-feed .card--tile > .card__keywords, .job-feed .card--tile > .card__extra { margin-left: 10px; margin-right: 10px; }
+  .job-feed .card--tile .card__chips .tag, .job-feed .card--tile .card__chips .card__detail, .job-feed .card--tile .card__chips .card__trust { padding: 0 5px; font-size: 11px; }
+}
+
+/* ===================== 2026-11-18 第三轮返修第 3 轮（r3jobsa 评审第 3 轮） =====================
+   ① 两列瀑布：左右两个竖列（list.vue feedCols，按原顺序左右交替），每列按自己的高度往下排，不再被拉成一样高、底下空一截；
+   ② 卡里只留：标题 2 行 → 说明「类型 · 排班 · 房型」1 行 → 「期限 · 工时」1 行 → 小标签 1 行 → 关键词 1 行；行距 6/4/8/6；
+   ③ 紧急招募、名额已满都在照片右上角，同一种 22 高白底胶囊（名额已满灰字）；
+   ④ 「全国」「筛选」同一种芯片：13/500 墨色字 + 14 号线性图标 + 12 号 chevron-down，间距 4；定位针不再实心；
+   ⑤ 图标尺寸全部由模板 :size 决定（删掉了所有 :deep(.k-icon) 强压）。 */
+.jobs .job-feed { display: block; margin-top: 4px; }
+.jobs .job-feed--cols { display: flex; align-items: flex-start; gap: 8px; }
+.jobs .job-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.jobs .job-col > .card { margin: 0; }
+/* 文字区 */
+.jobs .job-feed .card--tile { padding-bottom: 12px; }
+.jobs .job-feed .card--tile > .card__main { padding: 12px 12px 0; }
+.jobs .job-feed .card--tile .title { font-size: 14px; font-weight: 600; line-height: 20px; }
+.jobs .job-feed .card--tile .price { margin-top: 4px; }
+.jobs .job-feed .card--tile .card__meta { display: block; margin-top: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.jobs .job-feed .card--tile .card__category { display: inline; padding: 0; background: transparent; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); }
+.jobs .job-feed .card--tile .card__arrangement { display: inline; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.jobs .job-feed .card--tile .card__arrangement text { display: inline; white-space: nowrap; }
+.jobs .job-feed .card--tile .card__category + .card__arrangement::before { content: '·'; display: inline; margin: 0 4px; color: var(--k-light); }
+.jobs .job-feed .card--tile > .card__facts { display: block; margin: 4px 12px 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.jobs .job-feed .card--tile .card__fact { display: inline; min-height: 0; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); }
+.jobs .job-feed .card--tile .card__fact text { display: inline; white-space: nowrap; }
+.jobs .job-feed .card--tile .card__fact + .card__fact::before { content: '·'; display: inline; position: static; margin: 0 4px; background: transparent; color: var(--k-light); }
+.jobs .job-feed .card--tile .card__fact--board { display: none; }
+/* 小标签：放不下就折到下一行，一枚都不藏（行距 4）；状态标签已在照片角上 */
+.jobs .job-feed .card--tile > .card__chips { display: block; margin: 4px 12px 0; overflow: visible; font-size: 0; line-height: 0; }
+.jobs .job-feed .card--tile .card__chips .tag, .jobs .job-feed .card--tile .card__chips .card__detail, .jobs .job-feed .card--tile .card__chips .card__trust, .jobs .job-feed .card--tile .card__chips .remote { display: inline-flex; align-items: center; gap: 2px; height: 20px; margin: 4px 4px 0 0; padding: 0 6px; border-radius: 4px; vertical-align: top; font-size: 11px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.jobs .job-feed .card--tile .card__chips .tag--onphoto { display: none; } /* 11-18 微信核对：上一条把它又显示出来了 —— 名额已满 / 已暂停已在照片角上，标签行收起 */
+.jobs .job-feed .card--tile > .card__keywords { margin: 6px 12px 0; font-size: 12px; line-height: 18px; }
+.jobs .job-feed .card--tile > .card__extra { margin: 6px 12px 0; }
+.jobs .job-feed .card--tile .card__extra > .meta:not(.meta--text), .jobs .job-feed .card--tile .card__extra > .meta--text > text { font-size: 12px; line-height: 18px; }
+.jobs .job-feed .card--tile .card__extra > .meta--text > text { display: block; width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.jobs .job-feed .card--tile .card__extra > .tags { flex-wrap: wrap; gap: 4px; height: auto; margin-top: 6px; overflow: visible; }
+.jobs .job-feed .card--tile .card__extra > .tags .tag { height: 20px; line-height: 20px; }
+/* 照片角上的状态：紧急招募 + 名额已满 / 已暂停，同一种白底胶囊，竖排在右上角 */
+.jobs .job-feed .card__states { top: 8px; right: 8px; bottom: auto; gap: 4px; }
+.jobs .job-feed .card__empty + .card__states { bottom: auto; }
+.jobs .job-feed .card__states :deep(.job-urgency) { position: static; display: inline-flex; height: 22px; margin: 0; padding: 0 8px; border-radius: 11px; background: rgba(255, 255, 255, .94); font-size: 11px; font-weight: 600; line-height: 22px; }
+.jobs .job-feed .card__states :deep(.job-urgency__label) { gap: 4px; }
+.jobs .job-feed .card__states :deep(.job-urgency--4) { background: var(--k-alert); }
+.jobs .job-feed .card__state, .jobs .job-feed .card__state--alert { height: 22px; padding: 0 8px; border-radius: 11px; background: rgba(255, 255, 255, .94); color: var(--k-ink2); font-size: 11px; font-weight: 600; line-height: 22px; }
+/* 没照片：浅暖渐变 + 56 白底圆角方块里 28 号房子 */
+.jobs .job-feed .card--tile .card__empty-box { width: 56px; height: 56px; border-radius: 16px; background: var(--k-paper); }
+/* 「全国」「筛选」芯片 */
+.jobs .fchips > .fchip-main:first-child { margin-left: 0; }
+.jobs .fchip--add, .jobs .fchip-main { height: 32px; min-height: 32px; padding: 0 10px 0 10px; gap: 4px; border: 0; border-radius: 16px; font-size: 13px; font-weight: 500; color: var(--k-ink); }
+.jobs .fchip--add .fchip__text, .jobs .fchip-main__text { font-size: 13px; font-weight: 500; color: var(--k-ink); }
+.jobs .bell, .jobs .refresh { gap: 4px; }
+/* 一屏三个「重置」：只有空状态里的按钮是主操作，另两个退成灰色文字链 */
+.jobs .city-tags__reset, .jobs .filter-summary view { font-size: 12px; font-weight: 400; color: var(--k-muted); background: transparent; box-shadow: none; }
+@media (max-width: 359px) {
+  .jobs .job-feed .card--tile > .card__main { padding: 10px 12px 0; }
+  .jobs .job-feed .card--tile > .card__facts, .jobs .job-feed .card--tile > .card__chips, .jobs .job-feed .card--tile > .card__keywords, .jobs .job-feed .card--tile > .card__extra { margin-left: 12px; margin-right: 12px; }
+  .jobs .job-feed .card--tile .title { font-size: 13px; line-height: 18px; }
+  .jobs .job-feed .card--tile .card__meta, .jobs .job-feed .card--tile .card__category, .jobs .job-feed .card--tile .card__arrangement, .jobs .job-feed .card--tile > .card__facts, .jobs .job-feed .card--tile .card__fact { font-size: 11px; line-height: 16px; }
+  .jobs .job-feed .card--tile .card__chips .tag, .jobs .job-feed .card--tile .card__chips .card__detail, .jobs .job-feed .card--tile .card__chips .card__trust { padding: 0 6px; font-size: 11px; }
+}
+/* ===================== 2026-11-18 第三轮返修第 4 轮（r3jobsa 评审第 4 轮） =====================
+   ① 换工类型不再压在照片上，回到说明行开头「直播换工 · 做三休一 · 双人间」，照片上只留斜带、状态胶囊、城市三样；
+   ② 小标签只有「包吃包住」浅绿，其余同一种浅米底 + 墨灰字、不带图标；③ 320 宽状态胶囊挪到城市行上面靠右，不再盖住斜带「含保险」；
+   ④ 没有小标签时不留空容器的 8px；⑤ 兼职：排班说明紧跟在说明行下面，关键词行只放关键词；
+   ⑥ 全职：「培训：…」「试用期：…」各一行 12 / 18、两行间 4（并成一行时试用期总被省略号吃掉）；⑦ 线上任务「远程」前面也有 12 号图标，三行左边齐。 */
+.jobs .job-feed .card--tile .card__chips .tag--gift, .jobs .job-feed .card--tile .card__chips .card__detail, .jobs .job-feed .card--tile .card__chips .card__trust { background: var(--k-paper2); color: var(--k-ink2); }
+.jobs .job-feed .card--tile .card__chips .tag--gift :deep(.k-icon), .jobs .job-feed .card--tile .card__chips .card__detail :deep(.k-icon), .jobs .job-feed .card--tile .card__chips .card__trust :deep(.k-icon) { display: none; }
+.jobs .job-feed .card--tile > .card__chips:empty { display: none; }
+.jobs--s2 .job-feed .card--tile > .card__extra { order: 2; margin-top: 4px; }
+.jobs--s2 .job-feed .card--tile .card__extra > .meta:not(.meta--text) { font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.jobs--s3 .job-feed .card--tile .card__extra > .meta--text { display: flex; flex-direction: column; align-items: stretch; gap: 4px; overflow: hidden; }
+.jobs--s3 .job-feed .card--tile .card__extra > .meta--text > text { display: block; width: auto; padding: 0; background: transparent; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); }
+.jobs .job-feed .card--row .remote { display: inline-flex; align-items: center; gap: 4px; }
+.jobs .job-feed .card--row .remote :deep(.k-icon) { display: inline-flex; }
+@media (max-width: 359px) {
+  .jobs .job-feed .card--tile .card__states { top: auto; bottom: 32px; right: 6px; }
+  .jobs .job-feed .card--tile .card__empty + .card__states { bottom: 8px; }
+  .jobs--s3 .job-feed .card--tile .card__extra > .meta--text, .jobs--s3 .job-feed .card--tile .card__extra > .meta--text > text { font-size: 11px; line-height: 16px; }
+}
+/* 空列表：白卡加高、内容竖向居中，下面不再空出 280 的灰底 */
+.jobs .empty-box { margin-top: 8px; min-height: 360px; justify-content: center; box-sizing: border-box; }
+/* ===================== 2026-11-18 第三轮返修第 5 轮（r3jobsa 评审第 5 轮） =====================
+   ① 说明行不再截字：换工类型单独一行（12/500 墨灰），「排班 · 房型」另起一行，放不下就折行，和改前一样全文可见；
+   ② 小标签折行不藏（上面第 3 轮那条已改）；全职福利小标签、关键词、「期限 · 工时」、兼职排班、全职培训 / 试用期都能折行，不出现截一半的省略号；
+   ③ 关键词每个词不拆开，「·」跟在前一个词后面；④ 照片上的状态胶囊 320 宽也在右上角（和 390 一样）；
+   ⑤ 空列表白卡收到 280 高。 */
+.jobs .job-feed .card--tile .card__meta { display: block; margin-top: 6px; overflow: visible; white-space: normal; text-overflow: clip; }
+.jobs .job-feed .card--tile .card__meta > .card__category { display: block; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--k-ink2); white-space: normal; }
+.jobs .job-feed .card--tile .card__meta > .card__arrangement { display: block; margin-top: 2px; overflow: visible; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.jobs .job-feed .card--tile .card__meta > .card__category + .card__arrangement::before { content: none; display: none; }
+.jobs .job-feed .card--tile .card__meta > .card__arrangement :deep(.k-icon) { display: none; }
+.jobs .job-feed .card--tile .card__meta > .card__arrangement text { display: inline; overflow: visible; white-space: normal; text-overflow: clip; overflow-wrap: anywhere; }
+.jobs .job-feed .card--tile > .card__facts { overflow: visible; white-space: normal; text-overflow: clip; }
+.jobs .job-feed .card--tile .card__fact { display: inline-block; white-space: nowrap; }
+.jobs .job-feed .card--tile .card__fact.card__fact--board { display: none; } /* 食宿已在下面的小标签里 */
+.jobs .job-feed .card--tile > .card__keywords { display: block; overflow: visible; white-space: normal; text-overflow: clip; }
+.jobs .job-feed .card--tile > .card__keywords text { display: inline-block; white-space: nowrap; }
+.jobs .job-feed .card--tile .card__extra > .meta:not(.meta--text) { overflow: visible; white-space: normal; text-overflow: clip; }
+.jobs .job-feed .card--tile .card__extra > .meta:not(.meta--text) text { display: inline; white-space: normal; overflow-wrap: anywhere; }
+.jobs .job-feed .card--tile .card__extra > .meta--text > text { overflow: visible; white-space: normal; text-overflow: clip; overflow-wrap: anywhere; }
+.jobs--s3 .job-feed .card--tile .card__extra > .meta--text > text { overflow: visible; white-space: normal; text-overflow: clip; }
+.jobs .empty-box { min-height: 280px; }
+@media (max-width: 359px) {
+  .jobs .job-feed .card--tile .card__states { top: 8px; right: 8px; bottom: auto; }
+  .jobs .job-feed .card--tile .card__empty + .card__states { top: 8px; bottom: auto; }
+  .jobs .job-feed .card--tile .card__states :deep(.job-urgency), .jobs .job-feed .card--tile .card__state { padding: 0 6px; }
+  .jobs .job-feed .card--tile .card__meta > .card__category, .jobs .job-feed .card--tile .card__meta > .card__arrangement { font-size: 11px; line-height: 16px; }
+  .jobs--s2 .job-feed .card--tile .card__extra > .meta:not(.meta--text) { font-size: 11px; line-height: 16px; } /* 兼职排班说明和上面几行同一档 11 号 */
+}
+/* ===================== 2026-11-18 第四轮「高级感」（r3jobsa） =====================
+   ① 卡片文字区只剩四档：标题 14/600 → 价格 18/700 → 一段灰字说明（类型 500 墨灰 · 排班 · 房型 · 期限 · 工时，整段折行、不截字，
+      「·」和后一个词绑在一起，不会单独留在行尾）→ 同一种浅米小标签（只有「安心商家 / 含保险」是浅绿）+ 11 号灰色关键词；
+      行高 18、行间 2；说明到小标签 8；小标签上下 4；小标签到关键词 8；全职「培训 / 试用期」是最后一组 11/16 脚注；
+   ② 照片左下角的地点最多两行、不再被省略号吃掉；③「全国 / 筛选」没选条件时灰底（--k-fill），有条件生效才是浅棕选中态；
+   ④ 纸飞机装饰改 16 号线性、整体放淡；⑤ 线上任务左侧方块 40、圆角 12，和标题首行顶对齐。 */
+.jobs .jobs-discovery__decor { opacity: .35; }
+.jobs .jobs-discovery::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+/* 「全国」「筛选」：看上去 28 高（透明边把可点范围撑到 36） */
+.jobs .fchips { gap: 4px; }
+.jobs .fchip--add, .jobs .fchip-main { height: 36px; min-height: 36px; padding: 0 10px; gap: 4px; border: 4px solid transparent; border-radius: 18px; background: var(--k-fill) padding-box; box-shadow: none; box-sizing: border-box; color: var(--k-ink2); font-size: 12px; font-weight: 400; }
+.jobs .fchip--add .fchip__text, .jobs .fchip-main__text { font-size: 12px; font-weight: 400; color: var(--k-ink2); }
+.jobs .fchips--city .fchip--add, .jobs .fchip-main.on { background: var(--k-red-soft) padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); }
+.jobs .fchips--city .fchip--add .fchip__text, .jobs .fchip-main.on .fchip-main__text { color: var(--k-red-deep); font-weight: 500; }
+.jobs .fchip-main.open:not(.on) { background: var(--k-fill) padding-box; }
+.jobs .fchips > .fchip--add, .jobs .fchips > .fchip-main:first-child { margin-left: -4px; }
+/* 照片上的地点：最多两行，不截字 */
+.jobs .job-feed .card--tile .card__location { align-items: flex-start; padding: 24px 8px 6px; }
+.jobs .job-feed .card--tile .card__location :deep(.k-icon) { flex: none; margin-top: 2px; }
+.jobs .job-feed .card--tile .card__location text { min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; font-size: 11px; line-height: 16px; }
+/* 标题 → 价格 → 说明段 */
+.jobs .job-feed .card--tile .title { font-size: 14px; font-weight: 600; line-height: 20px; }
+.jobs .job-feed .card .price { margin-top: 4px; align-items: baseline; gap: 2px; }
+.jobs .job-feed .card .price__num { font-size: 18px; font-weight: 700; line-height: 22px; color: var(--k-red); font-variant-numeric: tabular-nums; }
+.jobs .job-feed .card .price__unit { font-size: 11px; font-weight: 400; color: var(--k-muted); }
+.jobs .job-feed .card--tile .card__main > .card__desc { order: 3; display: block; margin-top: 4px; font-size: 12px; line-height: 18px; color: var(--k-muted); white-space: normal; }
+.jobs .job-feed .card--tile .card__main > .card__desc:empty { display: none; }
+.jobs .job-feed .card--tile .card__desc > .card__meta, .jobs .job-feed .card--tile .card__desc > .card__facts { display: inline; margin: 0; padding: 0; border: 0; overflow: visible; white-space: normal; text-overflow: clip; font-size: 12px; line-height: 18px; }
+.jobs .job-feed .card--tile .card__desc .card__category { display: inline-block; margin: 0; padding: 0; background: transparent; vertical-align: top; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--k-ink2); white-space: nowrap; }
+.jobs .job-feed .card--tile .card__desc .card__arrangement, .jobs .job-feed .card--tile .card__desc .card__fact { display: inline-block; max-width: 100%; min-height: 0; margin: 0; padding: 0; vertical-align: top; overflow: visible; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); white-space: normal; }
+.jobs .job-feed .card--tile .card__desc .card__arrangement text, .jobs .job-feed .card--tile .card__desc .card__fact text { display: inline; overflow: visible; white-space: normal; text-overflow: clip; }
+.jobs .job-feed .card--tile .card__desc .card__arrangement :deep(.k-icon), .jobs .job-feed .card--tile .card__desc .card__fact :deep(.k-icon) { display: none; }
+.jobs .job-feed .card--tile .card__desc .card__category + .card__arrangement::before, .jobs .job-feed .card--tile .card__desc .card__fact::before { content: '·'; display: inline; position: static; width: auto; height: auto; margin: 0 4px; background: transparent; color: var(--k-light); }
+.jobs .job-feed .card--tile .card__desc > .card__facts:first-child > .card__fact:first-child::before { content: none; margin: 0; }
+.jobs .job-feed .card--tile .card__desc .card__fact.card__fact--board { display: none; } /* 食宿在下面的小标签里 */
+/* 兼职：门店写的排班说明 / 上班时间紧跟说明段，同一档 12/18、行间 2 */
+.jobs--s2 .job-feed .card--tile > .card__extra { order: 2; margin: 2px 12px 0; }
+.jobs--s2 .job-feed .card--tile .card__extra > .meta { display: block; min-height: 0; margin: 0; padding: 0; overflow: visible; white-space: normal; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.jobs--s2 .job-feed .card--tile .card__extra > .meta :deep(.k-icon) { display: none; }
+.jobs--s2 .job-feed .card--tile .card__extra > .meta > text { display: inline; margin: 0; font-size: 12px; line-height: 18px; white-space: normal; overflow-wrap: anywhere; }
+.jobs--s2 .job-feed .card--tile .card__extra > .meta > text:not(.meta__days--none) + .meta__time::before { content: '·'; margin: 0 4px; color: var(--k-light); }
+/* 小标签：同一种浅米底 20 高 11/500；只有安心商家 / 含保险是浅绿 */
+.jobs .job-feed .card--tile > .card__chips { margin: 4px 12px 0; }
+.jobs .job-feed .card--tile .card__chips .tag, .jobs .job-feed .card--tile .card__chips .card__detail, .jobs .job-feed .card--tile .card__chips .card__trust { display: inline-flex; align-items: center; gap: 2px; height: 20px; margin: 4px 4px 0 0; padding: 0 6px; border: 0; border-radius: 4px; background: var(--k-paper2); color: var(--k-ink2); vertical-align: top; font-size: 11px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.jobs .job-feed .card--tile .card__chips .card__detail--safe, .jobs .job-feed .card--tile .card__chips .card__trust { background: var(--k-green-soft); color: var(--k-green); }
+.jobs .job-feed .card--tile .card__chips .tag--onphoto { display: none; } /* 名额已满 / 已暂停已在照片右上角 */
+/* 关键词：11 号灰字，词与词隔 8，不再挂「·」 */
+.jobs .job-feed .card--tile > .card__keywords { display: block; margin: 8px 12px 0; padding: 0; overflow: visible; white-space: normal; font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.jobs .job-feed .card--tile > .card__keywords text { display: inline-block; margin: 0 8px 0 0; white-space: nowrap; }
+.jobs .job-feed .card--tile > .card__keywords text::before, .jobs .job-feed .card--tile > .card__keywords text::after { content: none; display: none; }
+/* 全职：培训 / 试用期是最后一组 11/16 脚注，两条间 4，和上面隔 8 */
+.jobs--s3 .job-feed .card--tile > .card__extra { margin: 8px 12px 0; }
+.jobs--s3 .job-feed .card--tile .card__extra > .meta--text { gap: 4px; }
+.jobs--s3 .job-feed .card--tile .card__extra > .meta--text > text { font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.jobs--s3 .job-feed .card--tile .card__extra > .tags { gap: 4px; margin-top: 4px; }
+.jobs--s3 .job-feed .card--tile .card__extra > .tags .tag { height: 20px; padding: 0 6px; border-radius: 4px; background: var(--k-paper2); color: var(--k-ink2); font-size: 11px; font-weight: 500; line-height: 20px; }
+/* 线上任务：40 方块、和标题首行顶对齐；信息行 18 行高 */
+.jobs .job-feed .card--row { grid-template-columns: 40px minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; }
+.jobs .job-feed .card--row > .card__left { width: 40px; height: 40px; min-height: 40px; align-self: start; grid-row: 1 / span 4; }
+.jobs .job-feed .card--row .card__empty, .jobs .job-feed .card--row .card__empty-box { width: 40px; height: 40px; border-radius: 12px; }
+.jobs .job-feed .card--row .loc, .jobs .job-feed .card--row .remote, .jobs .job-feed .card--row .meta__item { min-height: 18px; font-size: 12px; line-height: 18px; }
+@media (max-width: 359px) {
+  .jobs .job-feed .card--tile > .card__chips, .jobs .job-feed .card--tile > .card__keywords, .jobs--s2 .job-feed .card--tile > .card__extra, .jobs--s3 .job-feed .card--tile > .card__extra { margin-left: 10px; margin-right: 10px; }
+  .jobs .job-feed .card--tile > .card__main { padding: 10px 10px 0; }
+  .jobs .job-feed .card--tile .card__desc, .jobs .job-feed .card--tile .card__desc > .card__meta, .jobs .job-feed .card--tile .card__desc > .card__facts, .jobs .job-feed .card--tile .card__desc .card__category, .jobs .job-feed .card--tile .card__desc .card__arrangement, .jobs .job-feed .card--tile .card__desc .card__fact, .jobs--s2 .job-feed .card--tile .card__extra > .meta, .jobs--s2 .job-feed .card--tile .card__extra > .meta > text { font-size: 11px; line-height: 16px; }
+  .jobs .job-feed .card--tile .card__chips .tag, .jobs .job-feed .card--tile .card__chips .card__detail, .jobs .job-feed .card--tile .card__chips .card__trust { padding: 0 5px; font-size: 11px; }
+}
+/* 第四轮：说明段里的「·」不许出现在行首或行尾 —— 每个词前面带一个 12 宽的「·」并和词绑在一起；整段往左挪 12、再裁掉左边 12，
+   换到新行开头的那一个「·」正好落在被裁掉的地方，字仍对齐卡片左线（词太长自己折行时，第二行和第一行的字对齐） */
+.jobs .job-feed .card--tile .card__main > .card__desc { margin-left: -12px; -webkit-clip-path: inset(0 0 0 12px); clip-path: inset(0 0 0 12px); }
+.jobs .job-feed .card--tile .card__desc .card__category { padding-left: 12px; }
+.jobs .job-feed .card--tile .card__desc .card__arrangement, .jobs .job-feed .card--tile .card__desc .card__fact { padding-left: 12px; text-indent: -12px; }
+.jobs .job-feed .card--tile .card__desc .card__category + .card__arrangement::before, .jobs .job-feed .card--tile .card__desc .card__arrangement::before, .jobs .job-feed .card--tile .card__desc .card__fact::before, .jobs .job-feed .card--tile .card__desc > .card__facts:first-child > .card__fact:first-child::before { content: '·'; display: inline-block; width: 12px; margin: 0; text-indent: 0; text-align: center; color: var(--k-light); }
+/* 第四轮：岗位名不再截成两行加省略号（320 宽时长标题第三行被吃掉），放不下就多一行 */
+.jobs .job-feed .card .title, .jobs .job-feed .card--compact .title, .jobs .job-feed .card--tile .title { display: block; -webkit-line-clamp: unset; overflow: visible; overflow-wrap: anywhere; }
+
+/* ===================== 2026-11-19 第四轮返修（r3jobsa 复评遗留） =====================
+   ① 说明段：CSS 加的「·」和数据里自带的「 · 」一个样子（18 宽、--k-muted）；类型固定占第一行（12/18、500、墨灰），排班、房型、期限、工时从第二行接着排；
+   ② 照片上的地点只在空格处换行（「伊犁哈萨克自治州」整块换到第二行）；
+   ③ 标题、全职脚注用 text-wrap:balance 均分折行（不支持的微信退回普通折行）；小于 360 宽：标题 13/18、卡片左右内边距 8，不再单字成行；
+   ④ 线上任务：价格和标题顶对齐；店名 / 远程 / 交付三行的小图标退成 --k-light。 */
+.jobs .job-feed .card--tile .card__main > .card__desc { margin-left: -18px; -webkit-clip-path: inset(0 0 0 18px); clip-path: inset(0 0 0 18px); }
+.jobs .job-feed .card--tile .card__desc .card__category { display: block; padding-left: 18px; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--k-ink2); white-space: normal; }
+.jobs .job-feed .card--tile .card__desc .card__arrangement, .jobs .job-feed .card--tile .card__desc .card__fact { padding-left: 18px; text-indent: -18px; }
+.jobs .job-feed .card--tile .card__desc .card__category + .card__arrangement::before, .jobs .job-feed .card--tile .card__desc .card__arrangement::before, .jobs .job-feed .card--tile .card__desc .card__fact::before, .jobs .job-feed .card--tile .card__desc > .card__facts:first-child > .card__fact:first-child::before { width: 18px; color: var(--k-muted); }
+.jobs .job-feed .card--tile .card__location text { word-break: keep-all; }
+.jobs .job-feed .card--tile .title { text-wrap: balance; }
+.jobs .job-feed .card--row .price { align-self: start; margin-top: 0; }
+.jobs .job-feed .card--row .price__num, .jobs .job-feed .card--row .price__unit { line-height: 22px; }
+@media (max-width: 359px) {
+  .jobs .job-feed .card--tile .title { font-size: 13px; line-height: 18px; }
+  .jobs .job-feed .card--tile > .card__main { padding-left: 8px; padding-right: 8px; }
+  .jobs .job-feed .card--tile > .card__chips, .jobs .job-feed .card--tile > .card__keywords, .jobs--s2 .job-feed .card--tile > .card__extra, .jobs--s3 .job-feed .card--tile > .card__extra { margin-left: 8px; margin-right: 8px; }
+  .jobs--s3 .job-feed .card--tile .card__extra > .meta--text > text { letter-spacing: -0.2px; }
+}
+
+/* ===================== 2026-11-19 微信实拍返修（r3jobsa） =====================
+   ① 全职脚注不再均分折行（balance 把「培训」拆成「培 / 训」），回到普通折行；脚注和上面的关键词之间一条发丝线、上下各 8，分得出段；
+   ② 小标签一行只有一种底色：「安心商家 / 含保险」也用浅米底，只靠绿字 + 12 号绿盾区分；
+   ③ 关键词之间加回 12 宽的「·」并和后一个词绑在一起（同说明段的办法：整行左挪 12 再裁掉 12，换到行首的「·」落在裁掉的地方），
+      「奖金 / 提成」不再像一个词被拆开；④ 纸飞机装饰不再像灰掉的按钮：暖棕线条、虚线用主色描边色，整体 .6。 */
+.jobs .jobs-discovery__decor { opacity: .6; }
+.jobs .jobs-discovery__trail { border-bottom-color: var(--k-red-line); }
+.jobs .job-feed .card--tile .card__chips .card__detail--safe, .jobs .job-feed .card--tile .card__chips .card__trust { gap: 4px; background: var(--k-paper2); color: var(--k-green); }
+.jobs .job-feed .card--tile .card__chips .card__detail--safe :deep(.k-icon), .jobs .job-feed .card--tile .card__chips .card__trust :deep(.k-icon) { display: inline-block; }
+.jobs .job-feed .card--tile > .card__keywords { margin-left: 0; -webkit-clip-path: inset(0 0 0 12px); clip-path: inset(0 0 0 12px); }
+.jobs .job-feed .card--tile > .card__keywords text { margin: 0; }
+.jobs .job-feed .card--tile > .card__keywords text::before { content: ''; display: inline-block; width: 3px; height: 3px; margin: 0 4px 0 5px; border-radius: 50%; background: var(--k-light); vertical-align: middle; } /* 画出来的点：不靠字体里「·」的位置，微信系统字里也正好居中 */
+.jobs--s3 .job-feed .card--tile > .card__extra { position: relative; padding-top: 8px; }
+.jobs--s3 .job-feed .card--tile > .card__extra::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+@media (max-width: 359px) {
+  .jobs .job-feed .card--tile > .card__keywords { margin-left: -4px; -webkit-clip-path: inset(0 0 0 12px); clip-path: inset(0 0 0 12px); }
+}
+/* ⑤ 线上任务卡左边的图标方块：不再是每张一样的浅杏实底，改成白底 + 发丝框 + 灰色线性图标，退到辅助层 */
+.jobs .job-feed .card--row .card__empty, .jobs .job-feed .card--row .card__empty-box { background: var(--k-paper); }
+.jobs .job-feed .card--row .card__empty-box { box-shadow: inset 0 0 0 1px var(--k-line); }

@@ -143,7 +143,7 @@ test('详情模板：所有要求两列横排；标签后面不写冒号；工�
     const line = ref.split(NL).find(l => l.trim().startsWith(sel))
     assert.ok(line && /font-weight: 700/.test(line), sel)
   }
-  assert.match(ref, /\.sp-work__tab \{ margin: job-ref\(-3\) 0 job-ref\(-9\); \}/)
+  assert.match(ref, /\.sp-work__tab \{ flex: 0 0 100%; \}/)
 })
 
 // ---------------------------------------------------------------- 发布表单：年龄段、性格（V67 可配）

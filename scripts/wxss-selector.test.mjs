@@ -29,3 +29,20 @@ test('no selector starts with a bare pseudo-class after a combinator', () => {
   }
   assert.deepEqual(bad, [])
 })
+
+// 2026-11-18：Vue 只会转换一个选择器里的第一个 :deep()，`.a :deep(.b) + :deep(.b)` 里第二个原样留进 wxss，
+// 微信编译报错，整个分包（攒局）打不开。要写成 `.a :deep(.b + .b)`。
+test('no selector uses :deep() twice', () => {
+  const bad = []
+  for (const f of files) {
+    if (!f.endsWith('.vue')) continue
+    const src = readFileSync(f, 'utf8')
+    for (const m of src.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)) {
+      const css = m[1].replace(/\/\*[\s\S]*?\*\//g, '')
+      for (const rule of css.matchAll(/([^{}]+)\{/g)) {
+        for (const sel of rule[1].split(',')) if ((sel.match(/:deep\(/g) || []).length > 1) bad.push(`${f}: ${sel.trim()}`)
+      }
+    }
+  }
+  assert.deepEqual(bad, [])
+})

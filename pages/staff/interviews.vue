@@ -5,9 +5,9 @@
       <view class="schedule k-pad-tab">
         <view style="padding:12px 16px"><k-button type="outline" block @click="s=5" :label="canEditSlots ? '设置可预约时段' : '查看可预约时段'" /></view>
         <!-- 2026-11-03 主人：简化选日期——‹ 今天 › 左右箭头直接翻天（按周时翻周），点中间直接出日历（默认选中正在看的那天）；不再先弹「昨天 / 今天 / 明天 / 后天 / 其他」菜单（写法参考 daily.vue） -->
-        <view class="date-row"><view class="date-nav"><button class="date-arrow" aria-label="前一天" @click="moveDay(-1)"><k-icon name="chevron-left" :size="22" color="ink" :stroke="2" /></button><button class="date-pill" @click="pickDay"><text>{{ dayPill }}</text><k-icon name="calendar-days" :size="15" color="red" :stroke="1.8" /></button><button class="date-arrow" aria-label="后一天" @click="moveDay(1)"><k-icon name="chevron-right" :size="22" color="ink" :stroke="2" /></button></view><text class="date-title">{{ sched.title }}</text><button class="date-pill week" @click="toggleWeek"><text>{{ range === 'week' ? '按天' : '本周' }}</text></button></view>
+        <view class="date-row"><view class="date-nav"><button class="date-arrow" aria-label="前一天" @click="moveDay(-1)"><k-icon name="chevron-left" :size="16" color="ink2" :stroke="1.8" /></button><button class="date-pill" @click="pickDay"><text>{{ dayPill }}</text><k-icon name="calendar-days" :size="14" color="muted" :stroke="1.8" /></button><button class="date-arrow" aria-label="后一天" @click="moveDay(1)"><k-icon name="chevron-right" :size="16" color="ink2" :stroke="1.8" /></button></view><text class="date-title">{{ sched.title }}</text><button class="date-pill week" @click="toggleWeek"><text>{{ range === 'week' ? '按天' : '本周' }}</text></button></view>
         <view class="summary-card"><text class="summary-title">{{ summaryLabel }} <text class="red-text">{{ sum.total }}</text> 场</text><view class="summary-grid"><view class="summary-item amber"><text>待确认</text><text>{{ sum.pending }}</text></view><view class="summary-item indigo"><text>即将开始</text><text>{{ sum.upcoming }}</text></view><view class="summary-item green"><text>已改期</text><text>{{ sum.rescheduled }}</text></view></view></view>
-        <view class="interview-list"><view v-for="item in rows" :key="item.interviewId" class="interview-card" :class="item.tone"><view class="interview-copy"><view class="time-line"><text class="time">{{ item.time }}</text><text class="status">{{ statusText(item) }}</text></view><text class="person">{{ personLine(item.name, item) }}</text><text class="job">{{ item.job }}</text><text class="place">{{ item.place }}</text><text class="source">{{ item.note }}</text></view><view class="interview-actions"><button class="video-button" @click="openDetail(item)"><k-icon name="video" :size="17" color="white" /><text>面试详情</text></button><button class="change-button" :disabled="!canEditSlots || item.appStatus !== 'interview_booked'" @click="quickReschedule(item)"><k-icon name="pencil" :size="17" color="ink" /><text>改期</text></button></view></view></view>
+        <view class="interview-list"><view v-for="item in rows" :key="item.interviewId" class="interview-card" :class="item.tone"><view class="interview-copy"><view class="time-line"><text class="time">{{ item.time }}</text><text class="status">{{ statusText(item) }}</text></view><text class="person">{{ personLine(item.name, item) }}</text><text class="job">{{ item.job }}</text><text class="place">{{ item.place }}</text><text class="source">{{ item.note }}</text></view><view class="interview-actions"><button class="video-button" @click="openDetail(item)"><k-icon name="video" :size="14" color="red" /><text>面试详情</text></button><button class="change-button" :disabled="!canEditSlots || item.appStatus !== 'interview_booked'" @click="quickReschedule(item)"><k-icon name="pencil" :size="14" color="red" /><text>改期</text></button></view></view></view>
       </view><k-tabbar mode="staff" active="work" />
     </template>
     <template v-else-if="s===2">
@@ -20,35 +20,36 @@
           <template v-if="dm"><view v-if="dm.code" class="tm-row"><text>会议号</text><text class="tm-code">{{ groupCode(dm.code) }}</text></view><view v-if="dm.link" class="tm-row"><text>链接</text><text class="tm-link" user-select>{{ dm.link }}</text></view><view v-if="dm.pwd" class="tm-row"><text>密码</text><text class="tm-code">{{ dm.pwd }}</text></view><text v-if="dm.note" class="meeting-copy">{{ dm.note }}</text></template>
           <text v-else class="meeting-copy">{{ d.meetingInfo || '尚未填写腾讯会议号：请先在腾讯会议里预定会议，再把会议号填到这里。' }}</text>
           <text class="meeting-hint">{{ meetingHint }}</text>
+          <text v-if="dm" class="meeting-hint">点「进入腾讯会议」加入。若只提供链接，复制链接后在浏览器打开；有密码时按提示输入。</text>
           <view v-if="dm" class="meeting-host-guide"><text class="meeting-host-guide__title">主持人开会提醒</text><text>先用创建会议的账号开始会议，再到“管理成员 → 等候中”准入候选人。若看不到对方，请先核对双方会议号是否一致。</text><k-button type="outline" size="md" :disabled="meetingRefreshing || editingMeeting || meetingSaving" :label="meetingRefreshing ? '正在刷新…' : '刷新会议信息'" @click="refreshMeetingInfo(true)" /><text v-if="meetingRefreshError" class="meeting-error">{{ meetingRefreshError }}</text></view>
           <view class="meeting-actions"><k-button v-if="dm" icon="video" label="进入腾讯会议" @click="joinMeeting" /><k-button v-if="dm" type="outline" :label="dm.code ? '复制会议号' : '复制入会链接'" @click="copyCode" /><k-button v-else-if="d.meetingInfo" type="outline" label="复制会议信息" @click="copyMeeting" /><k-button v-if="d.canEditMeeting && !editingMeeting" :type="dm ? 'outline' : 'primary'" :label="dm ? '修改会议信息' : d.meetingInfo ? '改填腾讯会议号' : '填写腾讯会议号'" @click="editMeeting" /></view>
           <!-- 四栏都是单行 input（不用原生 textarea，免得盖住底部导航）；保存成 formatTencentMeeting 的固定写法，候选人就能一键进入。
                2026-11-03 主人：会议号栏可整段粘贴腾讯会议邀请或链接，失焦时拆到会议号 / 密码 / 链接三栏 -->
-          <view v-if="editingMeeting" class="meeting-editor"><text v-if="d.meetingInfo && !dm" class="meeting-hint">上方原来的会议信息里没认出腾讯会议号，填写会议号保存后会替换它。</text><view class="tm-field"><text>腾讯会议号</text><input v-model="mCode" :disabled="meetingSaving" maxlength="2000" placeholder="可整段粘贴腾讯会议邀请" aria-label="腾讯会议号" @blur="fillCode" /></view><view class="tm-field"><text>会议密码</text><input v-model="mPwd" :disabled="meetingSaving" maxlength="40" placeholder="选填，没有就空着" aria-label="会议密码" @blur="fillCode" /></view><view class="tm-field"><text>入会链接</text><input v-model="mLink" :disabled="meetingSaving" maxlength="300" placeholder="选填，meeting.tencent.com 开头" aria-label="入会链接" @blur="fillCode" /></view><view class="tm-field"><text>备注</text><input v-model="mNote" :disabled="meetingSaving" maxlength="200" placeholder="选填，如：请提前 5 分钟入会" aria-label="备注" /></view><text v-if="meetingError" class="meeting-error">{{ meetingError }}</text><view class="meeting-actions"><k-button :disabled="meetingSaving || !(mCode.trim() || mLink.trim())" :label="meetingSaving ? '正在保存…' : '保存会议信息'" @click="saveMeeting" /><k-button type="outline" :disabled="meetingSaving" label="取消" @click="editingMeeting=false" /></view></view>
+          <view v-if="editingMeeting" class="meeting-editor"><text v-if="d.sharedMeeting" class="meeting-hint">这是多人面试，保存后同一场次的候选人都会看到新的会议邀请。</text><text v-if="d.meetingInfo && !dm" class="meeting-hint">上方原来的会议信息里没认出腾讯会议号，填写会议号保存后会替换它。</text><view class="tm-field"><text>腾讯会议号</text><input v-model="mCode" :disabled="meetingSaving" maxlength="2000" placeholder="可整段粘贴腾讯会议邀请" aria-label="腾讯会议号" @blur="fillCode" /></view><view class="tm-field"><text>会议密码</text><input v-model="mPwd" :disabled="meetingSaving" maxlength="40" placeholder="选填，没有就空着" aria-label="会议密码" @blur="fillCode" /></view><view class="tm-field"><text>入会链接</text><input v-model="mLink" :disabled="meetingSaving" maxlength="300" placeholder="选填，meeting.tencent.com 开头" aria-label="入会链接" @blur="fillCode" /></view><view class="tm-field"><text>备注</text><input v-model="mNote" :disabled="meetingSaving" maxlength="200" placeholder="选填，如：请提前 5 分钟入会" aria-label="备注" /></view><text v-if="meetingError" class="meeting-error">{{ meetingError }}</text><view class="meeting-actions"><k-button :disabled="meetingSaving || !(mCode.trim() || mLink.trim())" :label="meetingSaving ? '正在保存…' : '保存会议信息'" @click="saveMeeting" /><k-button type="outline" :disabled="meetingSaving" label="取消" @click="editingMeeting=false" /></view></view>
         </view>
-        <view v-if="d.videoEnabled" class="detail-section devices"><text class="section-title">设备状态</text><view class="device-row"><view class="device"><k-icon name="camera" :size="34" color="ink" /><view><text>摄像头</text><text>{{ dev.camera }}</text></view></view><view class="device"><k-icon name="mic" :size="34" color="ink" /><view><text>麦克风</text><text>{{ dev.mic }}</text></view></view><view class="device"><k-icon name="wifi" :size="34" color="ink" /><view><text>网络</text><text>{{ dev.net }}</text></view></view></view></view>
+        <view v-if="d.videoEnabled" class="detail-section devices"><text class="section-title">设备状态</text><view class="device-row"><view class="device"><k-icon name="camera" :size="24" color="ink" /><view><text>摄像头</text><text>{{ dev.camera }}</text></view></view><view class="device"><k-icon name="mic" :size="24" color="ink" /><view><text>麦克风</text><text>{{ dev.mic }}</text></view></view><view class="device"><k-icon name="wifi" :size="24" color="ink" /><view><text>网络</text><text>{{ dev.net }}</text></view></view></view></view>
         <view class="detail-section outline"><text class="section-title">面试提纲</text><view v-for="(q,i) in shownQuestions" :key="q" class="question"><text>{{i+1}}</text><text>{{q}}</text></view><text class="expand" @click="allQ=!allQ">{{ allQ ? '收起⌃' : '展开全部⌄' }}</text></view>
         <!-- 2026-11-03 主人：简化——原来的「会议信息与操作」菜单和上面的腾讯会议栏重复，去掉；电话联系 / 标记结束 / 双向确认各自一个大按钮，不用再翻菜单 -->
         <view class="detail-section operations"><text class="section-title">面试操作</text><view class="operation-grid"><button class="op-btn" :disabled="!canCall" @click="callCandidate"><k-icon name="phone" :size="18" :color="canCall ? 'ink' : 'light'" /><text>电话联系</text></button><button class="op-btn" :disabled="!d.canFinish" @click="finishInterview"><k-icon name="check-check" :size="18" :color="d.canFinish ? 'ink' : 'light'" /><text>标记结束</text></button><button class="op-btn primary" @click="s=3"><k-icon name="handshake" :size="18" color="white" /><text>双向确认</text></button><button class="op-btn" :disabled="!d.canReschedule" @click="doReschedule"><k-icon name="calendar-clock" :size="18" :color="d.canReschedule ? 'ink' : 'light'" /><text>改期</text></button></view><text v-if="opHint" class="op-hint">{{ opHint }}</text></view>
         <!-- 2026-11-03 主人：简化——评分直接在页面里点 5 颗星，评语在页面输入框里写，点「保存评价」；不再先弹「5 星 / 4 星…」菜单再弹系统输入框 -->
         <view class="detail-section" v-if="d.canRecordResult"><text class="section-title">面试结果</text><text class="rate-label">独立记录本次面试判断，不代替双方录用确认。</text><view class="operation-grid"><button v-for="item in interviewResults" :key="item.value" class="op-btn" :class="{primary:d.staffResult===item.value}" :disabled="rateSaving" @click="saveInterviewResult(item.value)">{{ item.label }}</button></view></view>
-        <view class="detail-section rating"><text class="section-title">面试后评价 <text class="muted">（面试结束后可填写）</text></text><view class="stars" aria-label="面试评分"><button v-for="n in 5" :key="n" class="star-btn" :aria-label="n + ' 星'" :disabled="!d.canRate" @click="pickStar(n)"><k-icon name="star" :size="34" :color="n <= rateStars ? '#D79446' : '#B7B7B0'" :fill="n <= rateStars" /></button></view><text class="rate-label">{{ ratingHint }}</text><template v-if="d.canRate"><view class="tm-field"><text>评语</text><input v-model="rateNote" :disabled="rateSaving" maxlength="200" placeholder="选填，如：沟通顺畅，有咖啡经验" aria-label="面试评语" /></view><view class="meeting-actions"><k-button :disabled="rateSaving || !rateStars" :label="rateSaving ? '正在保存…' : '保存评价'" @click="saveRating" /></view></template></view>
+        <view class="detail-section rating"><text class="section-title">面试后评价 <text class="muted">（面试结束后可填写）</text></text><view class="stars" aria-label="面试评分"><button v-for="n in 5" :key="n" class="star-btn" :aria-label="n + ' 星'" :disabled="!d.canRate" @click="pickStar(n)"><k-icon name="star" :size="28" :color="n <= rateStars ? '#D79446' : 'light'" :fill="n <= rateStars" /></button></view><text class="rate-label">{{ ratingHint }}</text><template v-if="d.canRate"><view class="tm-field"><text>评语</text><input v-model="rateNote" :disabled="rateSaving" maxlength="200" placeholder="选填，如：沟通顺畅，有咖啡经验" aria-label="面试评语" /></view><view class="meeting-actions"><k-button :disabled="rateSaving || !rateStars" :label="rateSaving ? '正在保存…' : '保存评价'" @click="saveRating" /></view></template></view>
       </view><k-tabbar mode="staff" active="work" />
     </template>
     <template v-else-if="s===3">
       <k-topbar title="双向确认" back custom-back @back="s=2" />
       <view class="confirm-page k-pad-tab">
-        <view class="confirm-alert"><k-icon name="triangle-alert" :size="28" color="#D79446" /><view><text>{{ alertTitle }}</text><text>{{ alertSub }}</text></view></view>
+        <view class="confirm-alert"><k-icon name="triangle-alert" :size="18" color="ochre" /><view><text>{{ alertTitle }}</text><text>{{ alertSub }}</text></view></view>
         <view class="confirm-info"><text class="section-title">面试信息</text><text>候选人：　{{ personLine(d.maskedName, d) }}</text><text>岗位：　　{{ d.jobTitle || '' }}</text><text>面试时间：{{ d.dateText || '' }}</text><text>面试方式：{{ dm ? '腾讯会议' : d.meetingInfo ? '外部会议' : '电话或另行沟通' }}</text></view>
-        <view class="confirm-card"><text class="section-title">用户（{{ d.maskedName || '' }}）确认</text><view class="confirm-person"><image class="confirm-avatar" :src="avatarOf(d)" mode="aspectFill" /><view class="confirm-copy"><text>{{ d.maskedName || '' }} · 候选人</text><text>{{ userLine }}</text></view><view class="confirmed"><text>{{ userState }}</text><view v-if="userConfirmed" class="confirm-badge"><k-icon name="check" :size="22" color="white" /></view></view></view><view v-if="feedbackRows.length" class="feedback-list"><view v-for="f in feedbackRows" :key="f.label" class="feedback-row"><text>{{ f.label }}</text><text :class="{ warn: f.warn }">{{ f.value }}</text></view></view><text v-else-if="feedbackEmpty" class="feedback-empty">{{ feedbackEmpty }}</text><view class="confirm-actions"><button class="pass" @click="userSide"><text>确认合适</text></button><button class="fail" @click="userSide"><text>不合适</text></button><button class="pending" @click="userSide"><text>待处理</text></button></view></view>
-        <view class="confirm-card shop-card"><text class="section-title">商家（{{ d.storeName || '' }}）确认</text><view class="confirm-person"><view class="shop-avatar"><k-icon name="coffee" :size="40" color="ink" /></view><view class="confirm-copy"><text>{{ d.storeName || '' }}</text><text>{{ storeLine }}</text></view><view class="confirmed"><text>{{ storeConfirmed ? '已确认' : '待确认' }}</text><view v-if="storeConfirmed" class="confirm-badge"><k-icon name="check" :size="22" color="white" /></view></view></view><view class="confirm-actions"><button class="pass" :disabled="!canHire" @click="storePass"><text>确认合适</text></button><button class="fail" :disabled="!canHire" @click="storeFail"><text>不合适</text></button><button class="pending" @click="storeLater"><text>待处理</text></button></view></view>
-        <view class="result-card"><text class="section-title">确认结果</text><view class="result-copy"><view v-if="storeConfirmed" class="confirm-badge result-badge"><k-icon name="check" :size="26" color="white" /></view><view><text>{{ result.title }}</text><text>{{ result.sub }}</text><text>{{ result.time }}</text></view></view><button @click="openContract"><text>{{ contractLabel }}</text></button></view>
+        <view class="confirm-card"><text class="section-title">用户（{{ d.maskedName || '' }}）确认</text><view class="confirm-person"><image class="confirm-avatar" :src="avatarOf(d)" mode="aspectFill" /><view class="confirm-copy"><text>{{ d.maskedName || '' }} · 候选人</text><text>{{ userLine }}</text></view><view class="confirmed" :class="{ 'is-reject': userState === '不合适' }"><text>{{ userState }}</text><view v-if="userConfirmed" class="confirm-badge"><k-icon name="check" :size="16" color="white" /></view></view></view><view v-if="feedbackRows.length" class="feedback-list"><view v-for="f in feedbackRows" :key="f.label" class="feedback-row"><text>{{ f.label }}</text><text :class="{ warn: f.warn }">{{ f.value }}</text></view></view><text v-else-if="feedbackEmpty" class="feedback-empty">{{ feedbackEmpty }}</text><view class="confirm-actions"><button class="pass" @click="userSide"><text>确认合适</text></button><button class="fail" @click="userSide"><text>不合适</text></button><button class="pending" @click="userSide"><text>待处理</text></button></view></view>
+        <view class="confirm-card shop-card"><text class="section-title">商家（{{ d.storeName || '' }}）确认</text><view class="confirm-person"><view class="shop-avatar"><k-icon name="coffee" :size="26" color="ink" /></view><view class="confirm-copy"><text>{{ d.storeName || '' }}</text><text>{{ storeLine }}</text></view><view class="confirmed"><text>{{ storeConfirmed ? '已确认' : '待确认' }}</text><view v-if="storeConfirmed" class="confirm-badge"><k-icon name="check" :size="16" color="white" /></view></view></view><view class="confirm-actions"><button class="pass" :disabled="!canHire" @click="storePass"><text>确认合适</text></button><button class="fail" :disabled="!canHire" @click="storeFail"><text>不合适</text></button><button class="pending" @click="storeLater"><text>待处理</text></button></view></view>
+        <view class="result-card"><text class="section-title">确认结果</text><view class="result-copy"><view v-if="storeConfirmed" class="confirm-badge result-badge"><k-icon name="check" :size="20" color="white" /></view><view><text>{{ result.title }}</text><text>{{ result.sub }}</text><text>{{ result.time }}</text></view></view><button @click="openContract"><text>{{ contractLabel }}</text></button></view>
       </view><k-tabbar mode="staff" active="work" />
     </template>
     <template v-else-if="s===4">
       <k-topbar title="保险办理" back custom-back @back="backInsurance" />
       <view class="insurance-page k-pad-tab">
-        <view class="insurance-tabs"><view class="active" @click="openInsuranceList('toBuy')"><text>待申请　{{ insCounts.toBuy }}</text></view><view @click="openInsuranceList('effective')"><k-icon name="lock" :size="19" color="muted" /><text>已出单 {{ insCounts.effective }}</text></view><view @click="openInsuranceList('all')"><k-icon name="badge-check" :size="19" color="muted" /><text>全部 {{ insCounts.all }}</text></view></view>
+        <view class="insurance-tabs"><view class="active" @click="openInsuranceList('toBuy')"><text>待申请　{{ insCounts.toBuy }}</text></view><view @click="openInsuranceList('effective')"><k-icon name="lock" :size="14" color="muted" /><text>已出单 {{ insCounts.effective }}</text></view><view @click="openInsuranceList('all')"><k-icon name="badge-check" :size="14" color="muted" /><text>全部 {{ insCounts.all }}</text></view></view>
         <view class="insured-card"><image class="insured-avatar" :src="avatarOf(cand)" mode="aspectFill" /><view><text>{{ personLine(cand.name, cand) }}</text><text>{{ cand.jobTitle || '' }}</text><text>到店日期：{{ cand.arrivalText || '' }}</text></view></view><text class="insurance-title">保险方案</text>
         <view v-if="insuranceLoading" class="insurance-help">正在读取保险方案…</view>
         <view v-else-if="insuranceError" class="insurance-help"><text>{{ insuranceError }}</text><k-button type="outline" label="重新加载" @click="reloadInsurance" /></view>
@@ -57,18 +58,18 @@
           <template v-else>
             <view v-if="renewing && lastEndDate" class="insurance-help"><text>上一张保单保障到 {{ lastEndDate }}，可以续保：选好方案，起保日期最早从 {{ insuranceMinDate }} 开始。</text></view>
             <view v-if="!plans.length" class="insurance-help"><text class="section-title">暂无可选保险方案</text><text>请平台管理员在后台「员工运营 → 保险方案」设置保费、保障天数并上架。</text><k-button type="outline" label="刷新方案" @click="toInsurance" /></view>
-            <view v-for="plan in plans" :key="plan.planId" class="plan-card" :class="{selected:plan.planId===selPlan}" @click="!insuranceSubmitting && (selPlan=plan.planId)"><view class="radio"><k-icon v-if="plan.planId===selPlan" name="check" :size="14" color="white" /></view><view class="plan-copy"><text>{{plan.name}}</text><text>{{plan.desc}}</text></view><view class="plan-price"><text>¥{{plan.priceYuan}}</text><text>/ {{plan.days}}天</text></view></view>
+            <view v-for="plan in plans" :key="plan.planId" class="plan-card" :class="{selected:plan.planId===selPlan}" @click="!insuranceSubmitting && (selPlan=plan.planId)"><view class="radio"><k-icon v-if="plan.planId===selPlan" name="check" :size="12" color="white" /></view><view class="plan-copy"><text>{{plan.name}}</text><text>{{plan.desc}}</text></view><view class="plan-price"><text>¥{{plan.priceYuan}}</text><text>/ {{plan.days}}天</text></view></view>
           </template>
-          <view class="insurance-row" @click="pickStart"><text>保障期限</text><text>{{ periodText || '请先选择保险方案' }}</text><k-icon v-if="!lockedInsurance" name="calendar-days" :size="20" color="ink" /></view>
+          <view class="insurance-row" @click="pickStart"><text>保障期限</text><text>{{ periodText || '请先选择保险方案' }}</text><k-icon v-if="!lockedInsurance" name="calendar-days" :size="16" color="muted" /></view>
           <view class="insurance-row total"><text>参考保费合计</text><text>{{ premiumText }}</text></view>
           <view class="insurance-help"><text>参考保费与保障天数由后台保险方案统一设置；选择方案后可用日历调整起保日期，结束日期自动计算。</text><text>店家在缴费页面直接付款，退费可选择原路退回或预存保险余额。付款不代表已有保障，以实际保单为准。</text></view>
           <button class="buy" :disabled="insuranceLoading || !!insuranceError" @click="openInsuranceFinance"><text>投保、缴费与退费</text></button>
         </template>
-        <view v-if="apply" class="success-card"><k-icon name="shield-check" :size="55" color="green" /><view><text>{{ applyTitle }}</text><text>保单号：{{ apply.policyNo || '待保险公司出具' }}</text><text>{{ apply.policyIssued ? '保单起保日期' : '拟起保日期' }}：{{ apply.startDate || '待核实' }}</text><text v-if="apply.startDate && apply.endDate">保障期限：{{ apply.startDate }} 至 {{ apply.endDate }}</text></view><text>{{ apply.statusLabel }}</text></view>
+        <view v-if="apply" class="success-card"><k-icon name="shield-check" :size="36" color="green" /><view><text>{{ applyTitle }}</text><text>保单号：{{ apply.policyNo || '待保险公司出具' }}</text><text>{{ apply.policyIssued ? '保单起保日期' : '拟起保日期' }}：{{ apply.startDate || '待核实' }}</text><text v-if="apply.startDate && apply.endDate">保障期限：{{ apply.startDate }} 至 {{ apply.endDate }}</text></view><text>{{ apply.statusLabel }}</text></view>
         <view v-if="apply" class="notice-card"><text class="section-title">通知记录</text><view><text>{{ noticeUser.text }}</text><text>{{ noticeUser.state }}</text></view><view><text>{{ noticeStore.text }}</text><text>{{ noticeStore.state }}</text></view></view>
       </view><k-tabbar mode="staff" active="work" />
     </template>
-    <template v-else-if="s===5"><k-topbar :title="canEditSlots ? '面试时段设置' : '可预约时段'" back custom-back @back="backSlots" /><view class="interview-store">{{ scopedStoreName }}</view><view v-if="scopeError" class="interview-store">{{ scopeError }}</view><k-interview-slots v-else-if="scopeReady" :store-id="scopedStoreId" :can-edit="canEditSlots" /></template>
+    <template v-else-if="s===5"><k-topbar :title="canEditSlots ? '面试时段设置' : '可预约时段'" back custom-back @back="backSlots" /><view class="interview-store">{{ scopedStoreName }}</view><view v-if="scopeError" class="interview-store">{{ scopeError }}</view><k-interview-slots v-else-if="scopeReady && hasStaffAccess" :key="slotEditorKey" :store-id="scopedStoreId" :can-edit="canEditSlots" /></template>
     <k-date-picker v-if="dayCalendar" title="查看哪一天的面试" :value="dayCalendarValue" @cancel="dayCalendar=false" @confirm="confirmDay" />
     <k-date-picker v-if="insuranceCalendar" title="选择起保日期" :value="startDate" :min-date="insuranceMinDate" :max-date="shiftDate(todayCn(), 90)" @cancel="insuranceCalendar=false" @confirm="confirmStart" />
   </view>
@@ -114,6 +115,7 @@ let deepInsuranceAppId = 0
 let insuranceFromApplication = false
 // 报名详情「设置面试时段」直接打开第 5 屏（?s=5）：之前返回落到从没看过的面试日程，要再按一次才回到那位候选人；
 // 现在直接打开的这一屏返回来源页，从日程里点进来的仍回日程（与保险办理 backInsurance 同一口径）
+let rescheduleInterviewId = 0
 let slotsFromLink = false
 const requestedStoreId = ref(null)
 const scopeReady = ref(false)
@@ -122,7 +124,18 @@ const scopedStoreId = computed(() => requestedStoreId.value || currentStaffStore
 const scopedStoreName = computed(() => staffStores.value.find(g => String(g.storeId) === String(scopedStoreId.value))?.storeName || '')
 const s = useScreen(5, { onLoad: (q) => { slotsFromLink = Number(q?.s) === 5; deepId = Number(q?.id) || 0; deepInsuranceAppId = Number(q?.s) === 4 ? Number(q?.appId) || 0 : 0; insuranceFromApplication = deepInsuranceAppId > 0; requestedStoreId.value = Number(q?.storeId) > 0 ? Number(q.storeId) : null; loadSchedule() } })
 const backInsurance = () => insuranceFromApplication ? back() : (s.value = 3)
-const backSlots = () => { if (slotsFromLink) return back(); s.value = 1; loadSchedule() }
+const backSlots = async () => {
+  if (rescheduleInterviewId) {
+    const id = rescheduleInterviewId
+    rescheduleInterviewId = 0
+    s.value = 2
+    try { await loadDetail(id) } catch (e) { toast(errText(e, '面试详情加载失败')) }
+    return
+  }
+  if (slotsFromLink) return back()
+  s.value = 1
+  loadSchedule()
+}
 
 // ---------------- 按角色显隐 ----------------
 // 权限表取自服务端（staff-perms.js，与各写接口校验同一张表）。这一页可能经 ?storeId= 或消息深链打开
@@ -145,6 +158,7 @@ function canAt(storeId, item, action) {
 }
 // 新增 / 关闭面试时段服务端要「岗位管理·编辑」（主理人、管家）；普通员工只能查看时段，不再给一个点了必被拒的入口
 const canEditSlots = computed(() => canAt(scopedStoreId.value, 'jobs', 'edit'))
+const slotEditorKey = computed(() => [getSessionRevision(), experience.account?.id, experience.mode, scopedStoreId.value, canEditSlots.value].join(':'))
 
 // ---------------- 通用 ----------------
 const errText = (e, dft) => (e && e.message) || dft
@@ -205,6 +219,8 @@ const summaryLabel = computed(() => (range.value === 'week' ? '本周面试' : (
 async function loadSchedule() {
   await ensureSession()
   if (!hasStaffAccess.value) {
+    scopeReady.value = false
+    scopeError.value = '请先登录有门店授权的员工账号'
     if (deepInsuranceAppId) { insuranceLoading.value = false; insuranceError.value = '请先登录有门店授权的员工账号' }
     return
   }
@@ -217,8 +233,8 @@ async function loadSchedule() {
   // 报名详情直接办理保险，无需先找到历史面试。仍先读取真实报名并核对门店，不能把URL参数当成候选人数据。
   if (deepInsuranceAppId) {
     const appId = deepInsuranceAppId, epoch = insuranceEpoch
-    const identity = insuranceIdentityKey(), storeId = scopedStoreId.value, screen = s.value
-    const current = () => insurancePageActive && epoch === insuranceEpoch && identity === insuranceIdentityKey()
+    const identity = interviewIdentityKey(), storeId = scopedStoreId.value, screen = s.value
+    const current = () => insurancePageActive && epoch === insuranceEpoch && identity === interviewIdentityKey()
       && experience.mode === 'staff' && !!experience.account && hasStaffAccess.value
       && String(storeId) === String(scopedStoreId.value) && appId === deepInsuranceAppId && screen === s.value
     try {
@@ -237,19 +253,19 @@ async function loadSchedule() {
     }
     return
   }
+  const notificationId = deepId
+  if (notificationId) {
+    deepId = 0
+    openDetail({ interviewId: notificationId })
+  }
   try {
     const date = serverToday.value ? shiftDate(serverToday.value, dayOffset.value) : undefined
     const res = await apiStaffInterviews({ storeId: scopedStoreId.value, range: range.value, date })
     sched.value = res.data || { title: '', rows: [], summary: {} }
     if (!serverToday.value && range.value === 'day' && dayOffset.value === 0) serverToday.value = sched.value.date || ''
     if (rows.value.some(r => r.tone === 'blue')) tick()
-    if (deepId) {
-      const id = deepId
-      deepId = 0
-      openDetail({ interviewId: id })
-    }
   } catch (e) {
-    toast(errText(e, '面试日程加载失败'))
+    if (!notificationId) toast(errText(e, '面试日程加载失败'))
   }
 }
 // 2026-11-03 主人：简化——点日期直接出日历（默认选中正在看的那天，第一次就是今天），不再先弹「昨天 / 今天 / 明天 / 后天 / 其他」菜单。
@@ -408,19 +424,30 @@ async function saveMeeting() {
   finally { meetingSaving.value = false }
 }
 
+let detailRequest = 0
+let interviewPageUnloaded = false
 async function loadDetail(id) {
+  const request = ++detailRequest
+  const identity = interviewIdentityKey(), scope = scopedStoreId.value
+  const current = () => !interviewPageUnloaded && request === detailRequest && identity === interviewIdentityKey() && scope === scopedStoreId.value
   editingMeeting.value = false
-  const res = await apiStaffInterviewDetail(id)
-  d.value = res.data || {}
+  let res
+  try { res = await apiStaffInterviewDetail(id) }
+  catch (e) { if (current()) throw e; return false }
+  if (!current()) return false
+  if (String(res?.data?.interviewId) !== String(id)) throw new Error('未读取到本次面试')
+  if (requestedStoreId.value && String(res.data.storeId) !== String(requestedStoreId.value)) throw new Error('该面试不属于指定门店')
+  d.value = res.data
   const cur = (d.value.slots || []).find(x => x.current)
   selSlot.value = cur ? cur.slotId : null
   rateStars.value = Number(d.value.rating) || 0
   rateNote.value = d.value.staffNote || ''
   if (d.value.deadlineTs) tick()
+  return true
 }
 async function openDetail(item) {
   try {
-    await loadDetail(item.interviewId)
+    if (!await loadDetail(item.interviewId)) return
     allQ.value = false
     s.value = 2
     checkDevices()
@@ -467,21 +494,38 @@ async function checkDevices() {
   // #endif
 }
 
+async function addRescheduleSlot(interview) {
+  if (!canAt(interview.storeId, 'jobs', 'edit')) return toast('门店暂无其他可约时段，请联系门店添加')
+  if (!(await modal('暂无其他面试时段', '要为这场面试添加可约时段吗？保存后返回即可改期。')).confirm) return
+  requestedStoreId.value = interview.storeId
+  rescheduleInterviewId = interview.interviewId
+  s.value = 5
+}
+
 async function doReschedule() {
-  if (!d.value.interviewId) return
-  if (!d.value.canReschedule) return toast('当前状态不能改期')
-  const target = (d.value.slots || []).find(x => x.slotId === selSlot.value)
-  if (!target || target.current) return toast('请先在上方选一个新的时段')
+  const interview = d.value
+  const id = interview.interviewId
+  if (!id) return
+  if (!interview.canReschedule) return toast('当前状态不能改期')
+  const open = (interview.slots || []).filter(slot => !slot.current)
+  let target = open.find(slot => slot.slotId === selSlot.value)
+  if (!target) {
+    if (!open.length) return addRescheduleSlot(interview)
+    const index = await sheet(open.map(slot => slot.date + ' ' + slot.time))
+    if (index < 0) return
+    target = open[index]
+  }
   const r = await modal('确认改期', `把面试改到 ${target.date} ${target.time}？候选人会收到站内通知。`)
-  if (!r.confirm) return
+  if (!r.confirm || d.value.interviewId !== id) return
   await once(async () => {
     try {
-      const res = await apiStaffReschedule(d.value.interviewId, target.slotId)
+      const res = await apiStaffReschedule(id, target.slotId)
       toast(res.msg || '已改期')
-      await loadDetail(d.value.interviewId)
+      if (d.value.interviewId === id) await loadDetail(id)
       loadSchedule()
     } catch (e) {
       toast(errText(e, '改期失败'))
+      if (e?.code === 409 && d.value.interviewId === id) await loadDetail(id)
     }
   })
 }
@@ -493,7 +537,7 @@ async function quickReschedule(item) {
     const res = await apiStaffInterviewDetail(item.interviewId)
     if (!res.data?.canReschedule) return toast('当前无改期权限或面试状态不允许')
     const open = ((res.data || {}).slots || []).filter(x => !x.current)
-    if (!open.length) return toast(canEditSlots.value ? '门店暂无其他可约时段，请返回日程点击设置可预约时段' : '门店暂无其他可约时段，请联系本店换工主理人或小院主理人添加')
+    if (!open.length) return addRescheduleSlot(res.data)
     const i = await sheet(open.map(x => `${x.date} ${x.time}`))
     if (i < 0 || acting) return
     acting = true
@@ -504,6 +548,7 @@ async function quickReschedule(item) {
     } finally { acting = false }
   } catch (e) {
     toast(errText(e, '改期失败'))
+    if (e?.code === 409) loadSchedule()
   }
 }
 
@@ -645,7 +690,7 @@ const contractLabel = computed(() => {
 })
 async function openContract() {
   if (!d.value.appId) return
-  if (d.value.jobType === 'volunteer' && (!contractSigned.value || String(d.value.contractVersion || '').startsWith('W'))) { go(R.staffApplications + '?appId=' + d.value.appId + '&storeId=' + d.value.storeId); return }
+  if (d.value.jobType === 'volunteer' && (!contractSigned.value || String(d.value.contractVersion || '').startsWith('W'))) { go('/pages/staff/applications?appId=' + d.value.appId + '&storeId=' + d.value.storeId); return /* 2026-11-18：这里原来写 R.staffApplications，但本页没引入路由表 R，走到这一步会报错；直接写地址（和 common/routes.js 里的一致） */ }
   let content
   if (contractSigned.value) {
     content = (d.value.contractSignTime
@@ -681,11 +726,11 @@ const insuranceStoreId = ref(null)
 let insuranceRequest = 0
 let insurancePageActive = true
 let insuranceEpoch = 0
-const insuranceIdentityKey = () => JSON.stringify([
+const interviewIdentityKey = () => JSON.stringify([
   getSessionRevision(), String(experience.account?.id || ''), getToken(), experience.mode,
   staffStores.value.map(g => [String(g.storeId), g.roleCode || '', g.active]).sort((a,b) => a[0].localeCompare(b[0]))
 ])
-const insuranceContextKey = () => JSON.stringify([insuranceIdentityKey(), s.value, String(d.value.appId || ''), String(appStoreId.value || '')])
+const insuranceContextKey = () => JSON.stringify([interviewIdentityKey(), s.value, String(d.value.appId || ''), String(appStoreId.value || '')])
 const insuranceScope = () => ({ epoch: insuranceEpoch, key: insuranceContextKey() })
 const currentInsuranceScope = scope => insurancePageActive && !!getToken() && !!experience.account && experience.mode === 'staff'
   && s.value === 4 && hasStaffAccess.value && scope.epoch === insuranceEpoch && scope.key === insuranceContextKey()
@@ -846,7 +891,7 @@ const openInsuranceList = (tab) => {
 watch(insuranceContextKey, clearInsuranceState, { flush: 'sync' })
 let meetingAway = false
 onHide(() => { meetingAway = true; insurancePageActive = false; clearInsuranceState() })
-onUnload(() => { insurancePageActive = false; clearInsuranceState() })
+onUnload(() => { interviewPageUnloaded = true; insurancePageActive = false; clearInsuranceState() })
 onShow(() => { insurancePageActive = true; if (meetingAway && s.value === 2) refreshMeetingInfo(); meetingAway = false; if (s.value === 4) { if (deepInsuranceAppId) loadSchedule(); else if (d.value.appId) toInsurance() } })
 </script>
 
@@ -874,4 +919,99 @@ onShow(() => { insurancePageActive = true; if (meetingAway && s.value === 2) ref
 .rating{padding-bottom:8px}.rating .section-title{margin-bottom:4px}.muted{font-family:var(--k-sans);font-size:11px;color:var(--k-muted);font-weight:400}.stars{display:flex;justify-content:center;gap:4px}.star-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center}.star-btn[disabled]{opacity:.6}.rate-label{display:block;text-align:center;color:var(--k-muted);font-size:12px;line-height:1.6}
 .confirm-page{padding:0 14px calc(90px + var(--k-safe-bottom))}.confirm-alert{height:49px;padding:0 12px;border:1px solid #E6C791;border-radius:9px;background:#FFF5E3;display:flex;align-items:center;gap:10px}.confirm-alert>view{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}.confirm-info,.confirm-card,.result-card{margin-top:9px;padding:12px;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper)}.confirm-info{min-height:127px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;font-size:12px}.confirm-info .section-title{margin-bottom:3px}.confirm-person{display:flex;align-items:center;gap:11px}.confirm-avatar,.shop-avatar{width:51px;height:51px;border-radius:12px}.shop-avatar{border:1px solid var(--k-line2);background:var(--k-paper2);display:flex;align-items:center;justify-content:center}.confirm-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:8px;font-size:12px}.confirm-copy text:first-child{font-family:var(--k-serif);font-size:15px;font-weight:700}.confirm-copy text:last-child{color:var(--k-muted)}.confirmed{display:flex;align-items:center;gap:6px;color:var(--k-green);font-weight:700}.confirm-badge{width:34px;height:34px;border-radius:50%;background:var(--k-green);display:flex;align-items:center;justify-content:center}.result-badge{width:42px;height:42px;flex:0 0 auto}.confirm-actions{display:flex;gap:10px;margin-top:10px}.confirm-actions button{height:38px;flex:1;display:flex;align-items:center;justify-content:center;border-radius:7px;background:var(--k-paper);font-family:var(--k-serif);font-size:14px;font-weight:700}.confirm-actions .pass{border:1px solid var(--k-green);color:var(--k-green)}.confirm-actions .fail{border:1px solid var(--k-alert);color:var(--k-alert)}.confirm-actions .pending{border:1px solid #D69242;color:#B66A19}.shop-card{min-height:141px;box-sizing:border-box;padding-top:9px;padding-bottom:9px}.shop-card .section-title{margin-bottom:4px}.shop-card .confirm-actions{margin-top:7px}.shop-card .confirm-actions button{height:34px}.result-card{background:#F4F8F1}.result-copy{display:flex;align-items:center;gap:12px}.result-copy>view:last-child{display:flex;flex-direction:column;gap:3px;color:var(--k-muted);font-size:11px}.result-copy>view:last-child text:first-child{color:var(--k-green);font-family:var(--k-serif);font-size:16px;font-weight:700}.result-card>button{width:100%;height:38px;display:flex;align-items:center;justify-content:center;margin-top:5px;border-radius:7px;background:var(--k-red);color:#fff;font-family:var(--k-serif);font-size:15px;font-weight:700}
 .insurance-page{padding:0 14px calc(88px + var(--k-safe-bottom))}.insurance-tabs{height:42px;display:flex}.insurance-tabs>view{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;color:var(--k-muted);font-size:13px}.insurance-tabs>view.active{height:31px;border-radius:8px;background:var(--k-red);color:#fff}.insured-card{min-height:83px;padding:9px;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper);display:flex;gap:12px}.insured-avatar{width:61px;height:61px;border-radius:8px}.insured-card>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:7px}.insured-card>view text:first-child,.insured-card>view text:nth-child(2){font-family:var(--k-serif);font-size:15px;font-weight:700}.insured-card>view text:last-child{font-size:11px;color:var(--k-muted)}.insurance-title{display:block;margin:12px 0 7px;font-family:var(--k-serif);font-size:16px;font-weight:700}.plan-card{height:54px;margin-bottom:7px;padding:7px 10px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;align-items:center;gap:10px}.plan-card.selected{border:1.5px solid var(--k-red)}.radio{width:21px;height:21px;border:1.5px solid var(--k-line2);border-radius:50%;display:flex;align-items:center;justify-content:center}.selected .radio{background:var(--k-red);border-color:var(--k-red)}.plan-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:5px}.plan-copy text:first-child{font-family:var(--k-serif);font-size:13px;font-weight:700}.plan-copy text:last-child{color:var(--k-muted);font-size:10px}.plan-copy text{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.plan-price{flex-shrink:0;display:flex;align-items:baseline;gap:3px;color:var(--k-muted);font-size:12px}.plan-price text:first-child{color:var(--k-red);font-family:var(--k-serif);font-size:20px;font-weight:700}.insurance-row{height:38px;margin-bottom:6px;padding:0 10px;border:1px solid var(--k-line2);border-radius:8px;background:var(--k-paper);display:flex;align-items:center;gap:8px;font-size:12px}.insurance-row>text:first-child{font-family:var(--k-serif);font-size:14px;font-weight:700}.insurance-row>text:nth-child(2){margin-left:auto}.insurance-row.total>text:last-child{color:var(--k-red);font-size:21px;font-weight:700}.buy{width:100%;height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--k-red);color:#fff;font-family:var(--k-serif);font-size:16px;font-weight:700}.success-card{position:relative;min-height:95px;box-sizing:border-box;margin-top:10px;padding:9px 12px;border:1px solid #CDDCC8;border-radius:10px;background:#F4F8F1;display:flex;align-items:center;gap:12px}.success-card>view{min-width:0;flex:1;padding-right:56px;display:flex;flex-direction:column;gap:4px;color:var(--k-muted);font-size:10px}.success-card>view text:first-child{font-family:var(--k-serif);font-size:15px;font-weight:700;color:var(--k-ink)}.success-card>text{position:absolute;right:12px;top:10px;padding:3px 8px;border:1px solid var(--k-green);border-radius:12px;color:var(--k-green);font-size:11px}.notice-card{margin-top:9px;padding:10px;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper)}.notice-card>view{display:flex;justify-content:space-between;margin-top:7px;color:var(--k-muted);font-size:11px}.notice-card>view text:last-child{color:var(--k-green)}
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边），标题用系统黑体；面试卡的状态换成统一的小标签（琥珀 = 待确认，蓝 = 即将开始，绿 = 已确认，红 = 要处理），
+   按钮收成胶囊（主按钮暖棕渐变，改期和次要操作白底细边）。会议号、输入框的字号不动。按钮、文字一个不少。共用写法在 ./work-lite.scss。 */
+@import './work-lite.scss';
+.interview-page{@include lite-page}
+.schedule>view:first-child{padding:10px 12px 4px!important}.schedule>view:first-child :deep(.k-button.is-lg){height:40px;font-size:14px;font-weight:500}
+.date-row{height:44px;padding:0 12px 0 0}.date-pill{height:36px;border:0;border-radius:18px;font-size:12px}.date-title{font-family:var(--k-sans);font-size:14px;font-weight:600}
+.summary-card{margin:0 12px 8px;padding:10px;border:0;border-radius:12px}.summary-title{font-family:var(--k-sans);font-weight:600}
+.summary-item{height:36px;border:0;background:#F7F5F2;font-family:var(--k-sans);font-size:12px;font-weight:500;gap:8px}.summary-item text:last-child{font-size:18px;font-weight:700}.summary-item.amber{color:var(--k-ochre-deep)}
+.interview-list{padding:0 12px 86px}
+.interview-card{margin-bottom:8px;padding:10px 10px 10px 14px;border:0;border-radius:12px;overflow:hidden}.interview-card:before{width:3px;border-radius:0}.interview-card.amber:before{background:var(--k-ochre)}
+.status{height:17px;padding:0 5px;border-radius:4px;background:var(--k-ochre-soft);color:var(--k-ochre-deep);font-size:10px;font-weight:500;line-height:17px}.blue .status{background:var(--k-indigo-soft)}.green .status{background:var(--k-green-soft)}
+.person{font-family:var(--k-sans);font-weight:600}.job,.place,.source{font-size:11px}
+.interview-actions{width:96px}
+.video-button,.change-button{border-radius:999px;font-family:var(--k-sans);font-size:13px;font-weight:600;gap:5px}
+.video-button{background:linear-gradient(135deg,#B5814D,#8E5E33);border:0;box-shadow:none}.change-button{color:var(--k-red-deep)}.change-button[disabled]{opacity:.45}
+.detail{padding:0 12px calc(88px + var(--k-safe-bottom))}
+.candidate-card{padding:12px;border:0;border-radius:12px}.candidate-name,.candidate-job{font-family:var(--k-sans);font-size:14px;font-weight:600}.candidate-side{font-size:11px}.candidate-side text:first-child{font-size:14px}
+.detail-section{margin-top:8px;padding:12px;border:0;border-radius:12px}
+.section-title{margin-bottom:8px;font-family:var(--k-sans);font-size:15px}
+.slot{border:0;background:#F7F5F2}.slot text:first-child{font-family:var(--k-sans);font-weight:600}.slot.selected{border:0;background:var(--k-red-soft);box-shadow:inset 0 0 0 1px var(--k-red)}/* 选中的小勾挪到右上角外沿、做成小圆点：原来贴在右下角，会压到下面那行日期（窄屏更明显） */
+.slot-check{top:-6px;right:-6px;bottom:auto;width:18px;height:18px;border-radius:50%;box-shadow:0 0 0 2px var(--k-paper)}.slot-check :deep(.k-icon){width:12px!important;height:12px!important}
+.device{border:0;background:#F7F5F2}.device>view text:last-child{font-size:11px}
+/* 窄屏（320 宽）：三格设备状态放不下 11 号字，「使用时授权」会折成两行顶出格子；字回到 10、间距收一点，格子也允许跟着长高 */
+@media (max-width:359px){.device{height:auto;min-height:54px;padding:6px 4px;gap:5px}.device>view text:last-child{font-size:10px}.device :deep(.k-icon){width:20px!important;height:20px!important}}
+.question{font-size:12px}.expand{font-size:12px}
+/* 「面试结果」那句说明跟着标题靠左，和下面三个按钮之间留一点空（评价区星星下面那句仍居中） */
+.section-title+.rate-label{text-align:left}.rate-label+.operation-grid{margin-top:8px}
+.meeting-copy,.meeting-hint,.meeting-error{font-size:13px}.meeting-host-guide__title{font-size:13px}.meeting-actions :deep(.k-button.is-lg){height:40px;font-size:14px}
+.op-btn{height:44px;border-radius:999px;font-family:var(--k-sans);font-size:14px;font-weight:600}.op-btn.primary{background:linear-gradient(135deg,#B5814D,#8E5E33);border-color:transparent}
+.confirm-page{padding:0 12px calc(90px + var(--k-safe-bottom))}
+.confirm-alert{height:auto;min-height:48px;padding:8px 12px;border:0;border-radius:12px;background:var(--k-ochre-soft)}.confirm-alert>view{gap:2px;font-weight:600}
+.confirm-info,.confirm-card,.result-card{margin-top:8px;border:0;border-radius:12px}
+.confirm-copy{gap:4px}.confirm-copy text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}.confirmed{font-size:12px;font-weight:600}
+.confirm-avatar,.shop-avatar{width:46px;height:46px}.shop-avatar{border:0;background:#F5F1EB}
+.confirm-badge{width:26px;height:26px}.result-badge{width:36px;height:36px}
+.confirm-actions{gap:8px}.confirm-actions button{height:36px;border-radius:999px;font-family:var(--k-sans);font-size:13px;font-weight:600}.confirm-actions .pending{border-color:var(--k-ochre);color:var(--k-ochre-deep)}.shop-card .confirm-actions button{height:36px}
+.feedback-list{background:#F7F5F2}
+.result-card{background:var(--k-green-soft)}.result-copy>view:last-child text:first-child{font-family:var(--k-sans);font-size:15px}
+.result-card>button{height:40px;margin-top:8px;border-radius:999px;background:linear-gradient(135deg,#B5814D,#8E5E33);font-family:var(--k-sans);font-size:14px;font-weight:600}
+.insurance-page{padding:0 12px calc(88px + var(--k-safe-bottom))}
+.insurance-tabs{height:46px;align-items:center;gap:6px}.insurance-tabs>view{height:30px;border-radius:999px;background:var(--k-paper);font-size:12px;gap:4px}.insurance-tabs>view.active{height:30px;border-radius:999px;background:linear-gradient(135deg,#B5814D,#8E5E33);font-weight:600}
+/* 三个页签看着是 30 高的胶囊，上下各多出一圈看不见的可点范围（原来整行 42 高都能点） */
+.insurance-tabs>view{position:relative}.insurance-tabs>view::after{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}
+.insured-card{padding:12px;border:0;border-radius:12px}.insured-avatar{width:56px;height:56px}.insured-card>view{gap:4px}.insured-card>view text:first-child,.insured-card>view text:nth-child(2){font-family:var(--k-sans);font-size:14px;font-weight:600}
+.insurance-title{margin:16px 2px 8px;font-family:var(--k-sans);font-size:15px}
+.plan-card{height:56px;margin-bottom:8px;padding:8px 12px;border:0;border-radius:12px}.plan-card.selected{border:0;background:var(--k-red-soft);box-shadow:inset 0 0 0 1px var(--k-red)}
+.plan-copy{gap:3px}.plan-copy text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}.plan-copy text:last-child{font-size:11px}.plan-price text:first-child{font-family:var(--k-sans);font-size:18px}
+.insurance-row{height:44px;margin-bottom:8px;padding:0 12px;border:0;border-radius:12px;font-size:13px}.insurance-row>text:first-child{font-family:var(--k-sans);font-weight:600}.insurance-row.total>text:last-child{font-size:18px}
+.insurance-help{padding:10px 2px;font-size:12px}
+.buy{border-radius:999px;background:linear-gradient(135deg,#B5814D,#8E5E33);font-family:var(--k-sans);font-size:15px;font-weight:600}
+.success-card{margin-top:8px;padding:12px;border:0;border-radius:12px;background:var(--k-green-soft)}.success-card>view{font-size:11px}.success-card>view text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}
+.success-card>text{top:12px;height:17px;padding:0 5px;border:0;border-radius:4px;background:var(--k-paper);font-size:10px;font-weight:500;line-height:17px}
+.notice-card{margin-top:8px;padding:12px;border:0;border-radius:12px}.notice-card>view{font-size:12px}
+.interview-store{padding:10px 12px;font-size:13px}
+/* 2026-11-18 第二轮精修（面试日程、详情、双向确认、保险、时段），按精修词典统一：
+   面试卡左边的彩色竖条只留在「要门店处理」（红色状态）的卡上，其余状态靠小标签区分；卡上的「面试详情」「改期」都是 32 高的浅底 / 白底小按钮，一屏不再有好几个实心块；
+   顶部三格是数据格（数字在上 18/700 ink、说明在下 11 muted）；次按钮统一白底 + 暖棕细边 + 深棕字；候选人卡的提交时间换到下面一行；会议操作两列对齐；
+   确认按钮用浅底语义色（通过绿、不合适红、待处理中性）；「待确认」用赭色、「不合适」用提醒红；结果卡一律白底（不铺大块绿底），录用已确认时靠绿勾和绿字标题区分；保险页签是筛选胶囊的选中样子。按钮、文字一个不少 */
+.interview-card{padding-left:12px}.interview-card:before{content:none}.interview-card.red:before{content:''}
+.interview-actions{width:88px;gap:8px;justify-content:center}
+.video-button,.change-button{height:32px;font-size:12px;font-weight:500}
+.video-button{border:0;background:var(--k-red-soft);color:var(--k-red-deep)}
+/* 小程序的 button[disabled] 自带冷灰底灰字、优先级更高：不可点时仍是原配色整体变淡 */
+.interview-actions .change-button[disabled]{background:var(--k-paper);color:var(--k-red-deep)}
+.summary-item{height:auto;padding:4px 0;flex-direction:column-reverse;gap:2px;background:transparent}
+.summary-item text:first-child{font-size:11px;font-weight:400;color:var(--k-muted)}
+.summary-item text:last-child{font-size:18px;font-weight:700;line-height:1.2;color:var(--k-ink);font-variant-numeric:tabular-nums}
+.schedule>view:first-child :deep(.k-button.is-lg){height:36px;font-size:13px}
+.interview-page :deep(.k-button.is-outline){border-color:var(--k-red-line);color:var(--k-red-deep)}
+.section-title{font-size:16px;line-height:22px}
+/* 详情：报名时间单独一行（之前挤在右边，把岗位名压成两行），上面一条发丝线 */
+.detail .candidate-card{flex-wrap:wrap;row-gap:8px}
+.detail .candidate-side{position:relative;flex:0 0 100%;flex-direction:row;align-items:center;justify-content:space-between;padding-top:8px}
+.detail .candidate-side::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.slot.selected,.plan-card.selected{box-shadow:inset 0 0 0 1px var(--k-red-line)}
+/* 会议操作：主按钮（进入会议 / 填写会议号）排在最前、占满一行；其余次按钮两个一行平分，只剩一个时自己占满一行，不留半格空位 */
+.meeting-info>.meeting-actions{display:flex;flex-wrap:wrap;gap:8px}
+.meeting-info>.meeting-actions :deep(.k-button){flex:1 1 40%;min-width:0;width:auto;height:40px;padding:0 8px}
+.meeting-info>.meeting-actions :deep(.k-button.is-primary){flex-basis:100%;order:-1}
+.rate-label+.operation-grid .op-btn.primary{border-color:transparent;background:var(--k-red-soft);color:var(--k-red-deep)}
+.operation-grid .op-btn[disabled]{background:var(--k-paper);color:var(--k-ink)}
+.confirm-actions .pass,.confirm-actions .fail,.confirm-actions .pending{border:0;font-weight:500}
+.confirm-actions .pass,.confirm-actions .pass[disabled]{background:var(--k-green-soft);color:var(--k-green)}
+.confirm-actions .fail,.confirm-actions .fail[disabled]{background:var(--k-alert-soft);color:var(--k-alert)}
+.confirm-actions .pending,.confirm-actions .pending[disabled]{background:#F5F1EB;color:var(--k-ink2)}
+.confirm-actions button[disabled]{opacity:.45}
+/* 还没确认、没有对勾徽标时「待确认」用赭色，候选人选了「不合适」用提醒红（已确认的仍是绿字 + 绿勾）；结果卡白底，录用已确认时标题是绿字 */
+.confirmed>text:last-child{color:var(--k-ochre-deep)}.confirmed.is-reject>text:last-child{color:var(--k-alert)}
+.result-card{background:var(--k-paper)}.result-copy>view:last-child text:first-child{color:var(--k-ink)}.result-copy>.result-badge+view>text:first-child{color:var(--k-green)}
+.confirm-alert>view>text:first-child{font-size:13px;font-weight:600;color:var(--k-ink)}.confirm-alert>view>text:last-child{font-size:12px;font-weight:400;color:var(--k-ink2)}
+.insurance-tabs>view{height:28px;border-radius:14px}.insurance-tabs>view.active{height:28px;background:var(--k-red-soft);color:var(--k-red-deep);font-weight:500}
+.insured-card>view text:nth-child(2){font-size:13px;font-weight:400;color:var(--k-ink2)}
+.radio{width:18px;height:18px}.insurance-title{font-size:16px}
+/* 时段页：门店名和下面的时段表单左边对齐 */
+.interview-store{padding:10px 16px 0}
 </style>

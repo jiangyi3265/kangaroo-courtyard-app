@@ -6,6 +6,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parse } from '@vue/compiler-sfc'
 import * as T from '../pages/jobs/trip-share.js'
+import { API_BASE } from '../common/config.js'
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = (rel) => fs.readFileSync(path.join(APP, rel), 'utf8')
@@ -73,8 +74,12 @@ test('复制给亲友的一段话：网页版用当前站点，地址里没有�
   assert.equal(T.tripCopyText(trip, 'http://127.0.0.1:5491/#/pages/jobs/apply?jobId=12'),
     '小杨 11月7日 到 平潭袋鼠小院 做换工，预计待一个月。行程：http://127.0.0.1:5491/#/pages/jobs/itinerary?jobId=12&date=2026-11-07&days=30&name=' + encodeURIComponent('小杨'))
   const copied = T.tripCopyText({ ...trip, days: 0 })
-  assert.match(copied, /^小杨 11月7日 到 平潭袋鼠小院 做换工。行程：https:\/\/daishu\.oksja\.cn\/#\/pages\/jobs\/itinerary\?/)
+  assert.equal(copied, '小杨 11月7日 到 平潭袋鼠小院 做换工。行程：' + API_BASE +
+    '/#/pages/jobs/itinerary?jobId=12&date=2026-11-07&days=&name=' + encodeURIComponent('小杨'))
   assert.doesNotMatch(copied, /138/)
+  for (const href of ['about:blank', 'invalid']) {
+    assert.equal(T.tripCopyText({ ...trip, days: 0 }, href), copied)
+  }
 })
 
 test('转发：有行程发行程，没有发岗位详情；本地占位图、空封面不传 imageUrl', () => {
@@ -116,8 +121,10 @@ test('小入口窄屏不截断：角色、地点都写全，放不下就在两�
   const d = sfc('pages/jobs/components/safety-share.vue')
   const t = norm(d.template.content)
   // 2026-11-03 主人：「安全负责人 · 换工主理人」改成一句「有问题找当地主理人」
-  assert.match(t, /<text class="ss-label">\{\{ isService \? '有问题找客服' : '有问题找当地主理人' \}\}<\/text>/)
+  assert.match(t, /<text class="ss-label">\{\{ isService \? '有问题找客服' : '有问题找' \+ contactParty \}\}<\/text>/)
   assert.doesNotMatch(t, /<text>安全负责人 ·/)
+  assert.match(t, /userRoleWording\(safety\.roleLabel\)/)
+  assert.match(t, /直接联系这位当地主理人/)
   assert.match(t, /<view class="ss-name ss-name--small ss-name--pair"><text>\{\{ shareWhen \}\}<\/text><text>\{\{ sharePlace \}\}<\/text><\/view>/)
   assert.match(d.styles.map(s => s.content).join('\n'), /\.ss-label--pair, \.ss-name--pair \{[^}]*flex-wrap: wrap;[^}]*white-space: normal;/)
 })
@@ -157,7 +164,7 @@ test('安全负责人组件：接口写在组件里不进 api.js；四种情况�
   // 线上任务、已结束的不出
   assert.match(s, /!d\.online && !d\.ended && !!d\.trip && !!d\.safety/)
   // 有人：进门店会话；没人：微信里是客服会话按钮，网页版去客服中心
-  assert.match(s, /go\(R\.chat \+ '\?appId=' \+ safety\.value\.appId\)/)
+  assert.match(s, /safety\.value\.designated \? '&contact=lead' : ''/)
   assert.match(s, /go\('\/pages\/notice\/support'\)/)
   assert.match(tpl, /#ifdef MP-WEIXIN -->\s*<button v-if="isService" class="ss-act" open-type="contact" :session-from="contactFrom"/)
   assert.match(tpl, /#ifndef MP-WEIXIN -->\s*<view v-if="isService" class="ss-act"[^>]*@click="openSupport"/)
@@ -168,7 +175,7 @@ test('安全负责人组件：接口写在组件里不进 api.js；四种情况�
   assert.match(s, /const editName = async/)
   assert.doesNotMatch(s, /apiSaveResume|\/app\/resume/)
   assert.match(tpl, /不会带上你的手机号/)
-  assert.match(tpl, /当地主理人暂时读不到，点这里重试/)
+  assert.match(tpl, /联系人信息暂时读不到，点这里重试/)
   for (const m of tpl.matchAll(/<view\b[^>]*@click[^>]*>/g)) assert.match(m[0], /hover-class/, m[0])
   assert.doesNotMatch(s.slice(s.indexOf('const shareTrip'), s.indexOf('const shareTitle')), /contactPhone|phoneNumber/, '门店联系电话不进入分享行程')
 })

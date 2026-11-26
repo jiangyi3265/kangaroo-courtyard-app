@@ -3,41 +3,41 @@
   <page-meta :page-style="aiOpen ? 'overflow: hidden' : ''" />
   <!-- page-meta 必须是页面第一个节点：AI袋鼠弹层开着时锁住页面滚动（网页版由弹层自己锁 body） -->
   <!-- #endif -->
-  <view class="k-page msg-page" :class="{ 'msg-page--user': !staff }">
+  <view class="k-page msg-page" :class="[$userSurface, { 'msg-page--user': !staff }]">
     <k-topbar title="消息">
       <template #left><view v-if="unreadCount" class="read-all" role="button" aria-label="将当前身份消息全部标为已读" hover-class="k-press" @click="readAll">全部已读</view></template>
     </k-topbar>
-    <k-subscribe scenes="" label="微信订阅提醒" />
     <view class="k-pad-tab">
       <view class="entries">
         <view v-for="e in entries" :key="e.type" class="entry" hover-class="k-press-s" @click="openEntry(e)">
-          <view class="tile" :class="'t-' + e.tone"><k-icon :name="e.icon" :size="23" color="white" :stroke="2" :fill="e.type === 'like'" /><text v-if="e.badge" class="badge">{{ e.badge > 99 ? '99+' : e.badge }}</text></view>
+          <view class="tile" :class="'t-' + e.tone"><k-icon :name="e.icon" :size="22" color="red" /><text v-if="e.badge" class="badge">{{ e.badge > 99 ? '99+' : e.badge }}</text></view>
           <text>{{ e.label }}</text>
         </view>
+        <view class="entries__sub"><k-subscribe scenes="" label="微信订阅提醒" /></view>
       </view>
       <view v-if="!guest" class="categories" role="tablist" aria-label="消息分类">
         <button v-for="item in categories" :key="item.key" class="category" :class="{ 'category--active': activeCategory === item.key }" :data-category="item.key" role="tab" :aria-selected="activeCategory === item.key" hover-class="k-press" @click="selectCategory(item.key)">
-          <k-icon :name="item.icon" :size="18" :stroke="2" :color="activeCategory === item.key ? 'white' : item.color" />
-          <text>{{ item.label }}</text><text v-if="item.unread" class="category__dot" />
+          <k-icon :name="item.icon" :size="16" :color="activeCategory === item.key ? 'red' : 'muted'" />
+          <text>{{ item.label }}</text><text v-if="item.unread" class="category-count">{{ item.unread > 99 ? '99+' : item.unread }}</text>
         </button>
       </view>
       <view v-if="!guest" class="sec"><text>{{ activeLabel }}消息</text><text v-if="recentUnread" class="sec__count">{{ recentUnread }}</text><button class="manage-messages" @click="managing = !managing">{{ managing ? '完成' : '管理' }}</button></view>
       <text v-if="!guest" class="retention-tip">历史消息保留 · 长按可删除</text>
       <view v-if="ready && categoryRows.length && (activeCategory !== 'group' || groupChatEnabled)" class="list">
         <view v-for="m in categoryRows" :key="m.id" class="row" :class="{ 'row--unread': !m.read }" hover-class="k-press" @click="openMessage(m)" @longpress.stop="removeMessage(m)">
-          <view class="ava" :class="m.ini ? 'ava--ini' : 't-' + m.k[1]" :style="{ background: m.color }"><text v-if="m.ini">{{ m.ini }}</text><k-icon v-else :name="m.k[0]" :size="22" :stroke="2" color="white" /><view v-if="m.avatar" class="ava__img" :style="m.avatar" /></view>
+          <view class="ava" :class="m.ini ? 'ava--ini' : 't-' + m.k[1]" :style="{ background: m.color }"><text v-if="m.ini">{{ m.ini }}</text><k-icon v-else :name="m.k[0]" :size="20" color="red" /><view v-if="m.avatar" class="ava__img" :style="m.avatar" /></view>
           <view class="row__main">
             <view class="row__head"><text v-if="m.k[2]" class="tag" :class="'g-' + m.k[1]">{{ m.k[2] }}</text><text class="row__title k-ellipsis">{{ m.name || m.title }}</text></view>
             <text v-if="m.source" class="row__source k-ellipsis">{{ m.source }}</text>
             <text class="row__desc k-ellipsis">{{ m.desc }}</text>
             <text v-if="m.wordingUpdated" class="wording-original" @click.stop="alert('消息原文', m.originalText)">称呼已更新 · 查看原文</text>
           </view>
-          <view class="row__side"><text>{{ m.time }}</text><view v-if="!m.read" class="unread-label"><text class="dot" /><text>未读</text></view></view>
+          <view class="row__side"><text>{{ m.time }}</text><text v-if="!m.read" class="count-pill">{{ m.unread > 99 ? '99+' : m.unread }}</text></view>
           <button v-if="managing" class="message-delete" :disabled="deleting" aria-label="删除消息" @click.stop="removeMessage(m)"><k-icon name="trash-2" :size="18" color="alert" /></button>
         </view>
       </view>
       <view v-else-if="ready && !failed" class="empty">
-        <view class="empty__ring"><k-icon name="message-circle" :size="36" color="muted" /></view>
+        <view class="empty__ring"><k-icon name="message-circle" :size="32" color="red" /></view>
         <text class="empty__title">{{ empty[0] }}</text>
         <text v-if="empty[1]" class="empty__copy">{{ empty[1] }}</text>
         <k-button type="secondary" size="sm" :label="empty[2]" @click="emptyAction" />
@@ -45,7 +45,7 @@
       <view v-else-if="!ready && !failed" class="list-loading"><view /><view /><text>正在加载{{ activeLabel }}消息…</text></view>
       <text v-if="failed && !paging" class="more" @click="load(failed === 2)">加载失败，点这里重试</text>
       <text v-else-if="paging || (categoryRows.length >= PAGE && experience.messagesMore === false)" class="more">{{ paging ? '加载中…' : '没有更多了' }}</text>
-      <view class="help" hover-class="k-press" @click="aiOpen = true"><k-icon name="headset" :size="18" color="muted" /><text>联系袋鼠全球青年客服</text><k-icon name="chevron-right" :size="14" color="muted" /></view>
+      <view class="help" hover-class="k-press" @click="aiOpen = true"><k-icon name="headset" :size="16" color="muted" /><text>联系袋鼠全球青年客服</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
     </view>
     <k-tabbar active="messages" :mode="experience.mode" />
     <!-- 「联系袋鼠小院客服」：AI袋鼠在本页底部弹出，不跳页 -->
@@ -80,13 +80,15 @@ import { showMessagePreview } from '@/common/message-preview.js'
 
 // 老链接：?s=4 客服中心搬进了分包客服页（评价页「联系客服」还在用），?s=2「系统」页签换成了「系统通知」子页。
 // 用 redirectTo 换掉本页，客服页返回时回到原来那一页
-const legacyUrl = (q) => q.s === '4' ? R.support : q.s === '2' ? R.inbox + '?type=system' : ''
+const legacyUrl = (q) => /^\d+$/.test(q.subscriptionId || '')
+  ? '/pages/profile/subscription-message?id=' + q.subscriptionId + '&mode=' + (q.mode === 'staff' ? 'staff' : 'user') + '&scope=' + (/^(?:store|city|service-city)%3A[\w%.~-]*$/i.test(q.scope || '') ? q.scope : encodeURIComponent(q.scope || ''))
+  : q.s === '4' ? R.support : q.s === '2' ? R.inbox + '?type=system' : ''
 let leaving = ''
 const aiOpen = ref(false)
 const managing = ref(false)
 const deleting = ref(false)
 let suppressOpenUntil = 0
-onLoad((q) => { leaving = legacyUrl(q || {}); if (leaving) uni.redirectTo({ url: leaving }) })
+onLoad((q) => { leaving = legacyUrl(q || {}); if (leaving) uni.redirectTo({ url: leaving, fail: () => { leaving = ''; refreshInbox() } }) })
 
 // 每条消息归哪一组，和服务端 KgMessageMapper.xml 的 bucketOf 同一口径。
 // 只在服务端还没分组（老接口，列表没回 hasMore）时用来在本地挑出下面列表该放的行
@@ -188,11 +190,11 @@ const rows = computed(() => visibleMessages.value
   .filter(m => experience.messagesMore !== null || bucketOf(m, staff.value) === 'main')
   .map(m => {
     const shown = messageWording(m)
-    return { id: m.id, title: oneLine(shown.title), desc: oneLine(shown.content), time: formatTime(m.createTime), read: !!m.read, route: m.route || '', k: kindOf(m), ini: m.category === 'chat' ? oneLine(m.title).slice(0, 1) : '', name: oneLine(m.peerName), source: oneLine(shown.sourceLabel), avatar: avatarStyle(m.peerAvatar), category: m.category, bizType: m.bizType, color: TOPICS.find(t => t[0] === m.category)?.[3] || '#69727B', wordingUpdated: shown.title !== (m.title || '') || shown.content !== (m.content || '') || shown.sourceLabel !== (m.sourceLabel || ''), originalText: [m.title, m.sourceLabel, m.content].filter(Boolean).join('\n\n') }
+    return { id: m.id, title: oneLine(shown.title), desc: oneLine(shown.content), time: formatTime(m.createTime), read: !!m.read, unread: Number(m.unreadCount || 1), route: m.route || '', k: kindOf(m), ini: m.category === 'chat' ? oneLine(m.title).slice(0, 1) : '', name: oneLine(m.peerName), source: oneLine(shown.sourceLabel), avatar: avatarStyle(m.peerAvatar), category: m.category, bizType: m.bizType, color: TOPICS.find(t => t[0] === m.category)?.[3] || '#69727B', wordingUpdated: shown.title !== (m.title || '') || shown.content !== (m.content || '') || shown.sourceLabel !== (m.sourceLabel || ''), originalText: [m.title, m.sourceLabel, m.content].filter(Boolean).join('\n\n') }
   }))
 const categoryRows = computed(() => rows.value.filter(m => m.category === activeCategory.value && bucketOf(m, staff.value) === 'main'))
-const recentUnread = computed(() => ready.value ? categoryRows.value.filter(m => !m.read).length : 0)
-const empty = computed(() => guest.value ? ['登录后查看消息', '', '去登录']
+const recentUnread = computed(() => categories.value.find(c => c.key === activeCategory.value)?.unread || 0)
+const empty = computed(() => guest.value ? ['登录后查看消息', '登录后可查看报名、面试、订单等通知', '去登录']
   : ['暂无' + activeLabel.value + '消息', '这类消息会单独显示在这里，可切换上方分类查看其他消息', staff.value ? '返回工作台' : '去首页看看'])
 const emptyAction = () => (guest.value ? go(R.login) : relaunch(staff.value ? R.staff : R.home))
 
@@ -202,7 +204,7 @@ const openMessage = (m) => {
   if (managing.value || deleting.value || Date.now() < suppressOpenUntil) return
   if (!m.read) {
     const count = categoryCounts.value.find(c => c.category === m.category)
-    if (count) count.unread = Math.max(0, Number(count.unread || 0) - 1)
+    if (count) count.unread = Math.max(0, Number(count.unread || 0) - m.unread)
   }
   const scope = messageScope()
   Promise.resolve(markMessageRead(m.id)).then(() => { if (scope === messageScope()) scheduleExpiry() })
@@ -230,16 +232,18 @@ const removeMessage = async (m) => {
 }
 // 左上角「全部已读」清掉当前身份所有分组的未读，公告的角标也一起清（2026-10-17；公告要弹的照样在首页弹一次）
 const readAll = async () => {
+  const scope = messageScope()
   try {
     await markAllMessagesRead()
+    if (scope !== messageScope()) return
     badgeCleared.value = clearNoticeBadge(notices.value)
     buckets.value = null
     categoryCounts.value = categoryCounts.value.map(c => ({ ...c, unread: 0 }))
     // 回读服务端首次已读时间，覆盖设备时钟或其他设备已读造成的本地估计差异。
-    await load()
-    toast('已全部标为已读')
+    if (pageVisible) await load()
+    if (pageVisible && scope === messageScope()) toast('已全部标为已读')
   } catch (e) {
-    toast(e?.message || '操作失败，请稍后再试')
+    if (pageVisible && scope === messageScope()) toast(e?.message || '操作失败，请稍后再试')
   }
 }
 
@@ -321,7 +325,9 @@ const refreshInbox = async () => {
   noticeSeen.value = readSeenNotices()
   badgeCleared.value = readNoticeBadgeCleared()
   // 公告取不到时只是「系统通知」少算几个角标，不影响消息
-  apiNotices().then(r => { notices.value = r.data || [] }, () => {})
+  apiNotices().then(r => {
+    if (show === showRequest && scope === messageScope()) notices.value = r.data || []
+  }, () => {})
   if (!experience.account) {
     ready.value = true
     return
@@ -343,6 +349,7 @@ watch(messageScope, () => {
   showRequest++
   seq++
   categoryScope = ''
+  notices.value = []
   categoryCounts.value = []
   buckets.value = null
   ready.value = false
@@ -355,43 +362,46 @@ onShow(refreshInbox)
 </script>
 
 <style scoped lang="scss">
-.wording-original { display: block; font-size: 11px; line-height: 18px; color: var(--k-muted); text-decoration: underline; margin-top: 3px; }
-/* 2026-10-17 主人：有消息时整页白扁扁的不好看。改成奶白底 + 两张白卡：上面三个入口一张、下面「最近消息」一张（圆角 16px、柔和阴影、行间细线从头像右边起）；
-   未读的行标题加粗、底色带一点暖色，红点外面一圈浅红。只改样式，主包里不加图片 */
-.msg-page{background:var(--k-bg)}
-.read-all{padding:8px 10px;line-height:20px;color:var(--k-red-deep);font-size:12px;font-weight:600;background:var(--k-paper2);border:1px solid var(--k-line);border-radius:18px;white-space:nowrap}.read-all:active{opacity:.7}
-.entries{display:grid;grid-template-columns:repeat(3,1fr);margin:10px 16px 0;padding:16px 0 14px;border-radius:16px;background:var(--k-paper);box-shadow:var(--k-sh1)}
-.entry{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--k-ink)}
-.tile{position:relative;width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center}
-.badge{position:absolute;top:-5px;right:-7px;min-width:18px;height:18px;padding:0 4px;border:2px solid var(--k-paper);border-radius:9px;background:var(--k-alert);color:#fff;font-size:11px;line-height:14px;text-align:center}
-/* 10-18 打磨：入口方块和头像用同色系的浅渐变 + 一圈白色内高光，不再是平涂色块；「最近消息」改成正文色粗标题 */
-.t-indigo{background:linear-gradient(145deg,#EEF2F6,var(--k-indigo-soft))}.t-green{background:linear-gradient(145deg,#EFF5EA,var(--k-green-soft))}.t-red{background:linear-gradient(145deg,#FBF1E6,var(--k-red-soft))}.t-ochre{background:linear-gradient(145deg,#FCF3E4,var(--k-ochre-soft))}
-.tile{box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 2px 6px rgba(58,50,43,.06)}
-.sec{display:block;padding:20px 20px 10px;font-family:var(--k-display-font);font-size:16px;font-weight:700;color:var(--k-ink)}
-.list{margin:0 16px;border-radius:16px;background:var(--k-paper);box-shadow:var(--k-sh1);overflow:hidden}
-.row{position:relative;height:74px;padding:0 14px;display:flex;align-items:center;gap:12px}
-.row+.row::before{content:'';position:absolute;left:72px;right:14px;top:0;height:1px;background:var(--k-line)}
-.row--unread{background:linear-gradient(90deg,#FFF8EF 0%,var(--k-paper) 70%)}
-.ava{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(58,50,43,.05)}
-/* 私信头像：对方名字的第一个字，暖棕渐变圆（10-18，代替一样的气泡图标） */
-.ava--ini{background:linear-gradient(145deg,#C79A69,var(--k-red));color:#fff;font-size:18px;font-weight:600}
+.wording-original { display: block; font-size: 11px; line-height: 16px; color: var(--k-muted); margin-top: 4px; }
+.read-all{line-height:20px;white-space:nowrap}.read-all:active{opacity:.7}
+.entries{display:grid;grid-template-columns:repeat(3,1fr)}
+.entry{display:flex;flex-direction:column;align-items:center}
+.tile{position:relative;display:flex;align-items:center;justify-content:center}
+.badge{position:absolute;padding:0 4px;border:2px solid var(--k-paper);border-radius:9px;background:var(--k-alert);color:#fff;text-align:center}
+.tile,.ava{background:var(--k-red-soft)!important}
+.row{position:relative;display:flex;align-items:center}
+.row+.row::before{content:'';position:absolute;top:0;height:1px;background:var(--k-line)}
+.ava{flex:none;display:flex;align-items:center;justify-content:center}
+.ava--ini{background:var(--k-red-soft)!important;color:var(--k-red-deep)}
 .row__main{flex:1;min-width:0;overflow:hidden}
-.row__head{display:flex;align-items:center;gap:6px}
-.tag{flex:none;padding:0 5px;border-radius:4px;font-size:11px;line-height:17px}
+.row__head{display:flex;align-items:center}
+.tag{flex:none;padding:0 5px;border-radius:4px;font-size:11px;line-height:17px;font-weight:500}
 .g-ochre{background:var(--k-ochre-soft);color:var(--k-ochre-deep)}.g-red{background:var(--k-red-soft);color:var(--k-red-deep)}
-.row__title{flex:1;min-width:0;font-size:15px;font-weight:500;color:var(--k-ink2)}
-.row--unread .row__title{font-weight:600;color:var(--k-ink)}
-.row__desc{display:block;margin-top:4px;font-size:13px;color:var(--k-muted)}
-.row__side{align-self:stretch;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:8px;font-size:11px;color:var(--k-muted)}
+.row__title{flex:1;min-width:0}
+.row__desc{display:block;color:var(--k-muted)}
+.row__side{align-self:stretch;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;color:var(--k-muted)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--k-alert)}
-.row__side .dot{box-shadow:0 0 0 3px var(--k-alert-soft)}
-.empty{display:flex;flex-direction:column;align-items:center;gap:10px;margin:12px 16px 0;padding:32px 24px 24px;border-radius:16px;background:var(--k-paper);box-shadow:var(--k-sh1);text-align:center}
-.empty__ring{width:80px;height:80px;margin-bottom:6px;border-radius:50%;background:var(--k-paper2);display:flex;align-items:center;justify-content:center}
-.empty__title{font-family:var(--k-display-font);font-size:16px;font-weight:700}
-.empty__copy{margin-bottom:8px;font-size:13px;color:var(--k-muted)}
-.more{display:block;padding:14px 0 0;text-align:center;font-size:12px;color:var(--k-light)}
-.help{padding:18px 0;text-align:center;font-size:12px;color:var(--k-muted)}
-/* 10-19 复查（有消息时不要一片白）：暖米渐变底，白卡加暖色细边和柔阴影 */
-.msg-page{--k-bg:#F7EFE6;background:linear-gradient(180deg,#F7EFE6 0,#F7EFE6 200px,#FBF7F1 560px,#FBF7F1 100%)}.entries,.list,.empty{border-radius:20px;border:1px solid rgba(160,120,80,.12);box-shadow:0 8px 24px rgba(120,84,48,.1)}
+.empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 16px;text-align:center}
+.empty__ring{width:56px;height:56px;margin-bottom:4px;border-radius:16px;background:var(--k-red-soft);display:flex;align-items:center;justify-content:center}
+.empty__title{font-size:14px;font-weight:500;color:var(--k-ink2)}
+.empty__copy{margin-bottom:8px;color:var(--k-muted)}
+.more{display:block;padding:14px 0 0;text-align:center;font-size:12px;color:var(--k-muted)}
+.help{text-align:center;color:var(--k-muted)}
 @import './messages-home.scss';
+
+.msg-page.user-surface {
+  background: var(--k-page);
+  .entries { margin-top: 10px; box-shadow: var(--k-sh1); }
+  .tile { width: 41px; height: 41px; border-radius: 11px; }
+  .categories { margin: 10px 16px 0; padding: 4px; gap: 1px 2px; border-radius: 12px; background: var(--k-paper); }
+  .category { height: 44px; border-radius: 9px; line-height: 18px; }
+  .category--active { color: var(--k-red-deep); background: var(--k-red-soft); }
+  .category--active::before { display: none; }
+  .row--unread { background: #FFF9F0; }
+  .row__source { background: var(--k-red-soft); color: var(--k-red-deep); }
+  .empty { padding: 24px 16px; }
+  .empty__ring { width: 49px; height: 49px; border-radius: 15px; background: var(--user-icon-field); box-shadow: none; }
+  .empty__copy { max-width: 20em; }
+  .help { min-height: 44px; margin-top: 6px; }
+}
 </style>

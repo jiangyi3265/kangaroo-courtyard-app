@@ -1,5 +1,5 @@
 // 2026-10-18 晚主人反馈 D 组（「我的」+ 会员 + 消息）的回归：node --test，不构建、不发请求。
-//   1. 「我的行程」（profile/orders 第 1 屏）：分类 旅居订单（进行中 / 已完成 / 退款）、参与活动、兼职 / 全职 / 换宿旅行（主人原话的顺序），有线上任务才多一类；
+//   1. 「我的行程」（profile/orders 第 1 屏）：分类 旅居订单（进行中 / 已完成 / 退款）、参与活动、兼职 / 全职 / 换工旅行（主人原话的顺序），有线上任务才多一类；
 //      老链接 ?tab=待付款 / 退款 落到旅居订单对应小页签；没指定时停在第一个有内容的分类；
 //   2. 「简历与机会」：简历页概览下半部分是技能匹配机会（同一个接口），老路由 profile/resume、profile/opportunities 都还在；
 //   3. 「成为商家」：profile 分包里的新页面 + 两个新接口（V56），前端先挡漏填，服务端照样校验；
@@ -11,6 +11,7 @@ import path from 'node:path'
 import vm from 'node:vm'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
+import { emptyMerchantForm } from '../pages/profile/merchant-draft.js'
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(APP, 'package.json'))
@@ -52,7 +53,7 @@ test('我的行程：旅居订单分 进行中（含待付款）/ 已完成 / �
   t.after(h.stop)
   await h.load({})
   await h.run('loadOrders()')
-  assert.deepEqual(h.json('cats.value.map(c => c.label)'), ['旅居订单', '参与活动', '兼职旅行', '全职旅行', '换宿旅行'])
+  assert.deepEqual(h.json('cats.value.map(c => c.label)'), ['旅居订单', '参与活动', '兼职旅行', '全职旅行', '换工旅行'])
   assert.deepEqual(h.json('cats.value.map(c => c.count)'), [4, 1, 0, 1, 1])
   assert.equal(h.run('cat.value'), 'stay')
   assert.deepEqual(h.json('filteredOrders.value.map(o => o.title)'), ['A', 'C'])
@@ -61,7 +62,7 @@ test('我的行程：旅居订单分 进行中（含待付款）/ 已完成 / �
   h.run("staySub.value = '退款'")
   assert.deepEqual(h.json('filteredOrders.value.map(o => o.title)'), ['D'])
   h.run("pickCat('volunteer')")
-  assert.deepEqual(h.json('filteredOrders.value.map(o => o.title)'), ['F'], '换宿旅行不分小页签，已结束的也在')
+  assert.deepEqual(h.json('filteredOrders.value.map(o => o.title)'), ['F'], '换工旅行不分小页签，已结束的也在')
   assert.equal(h.json('catLink.value').url, '/t', '原来的行程时间线从这里进')
   h.run("pickCat('activity')")
   assert.equal(h.json('catLink.value').url, '/am?tab=mine', '原来的「我的活动」从这里进')
@@ -148,16 +149,17 @@ test('成为商家：profile 分包新页面，两个接口；前端先挡漏填
   assert.doesNotMatch(tpl + readSfc('pages/profile/merchant.vue').scriptSetup.content, /\d+\s*万|免费|保证|零风险|无押金/)
   const toasts = [], posted = []
   const h = runSetup('pages/profile/merchant.vue', {
-    toast: (m) => toasts.push(m), errText: (e, d) => d, experience: { account: { nickname: '阿杰' } }, uni: { pageScrollTo() {} }, staffStores: vue.ref([]),
+    emptyMerchantForm,
+    toast: (m) => toasts.push(m), errText: (e, d) => d, experience: { account: { id: 7, nickname: '阿杰', phoneVerified: true, phone: '139****5678' } }, uni: { pageScrollTo() {} }, staffStores: vue.ref([]),
     apiSubmitMerchantApply: async (b) => { posted.push(b); return { data: { approved: false, message: '已提交，袋鼠小院会尽快电话联系你', latest: { open: true, status: 'new' } } } }
   })
   t.after(h.stop)
   await h.run('submit()')
   assert.equal(toasts.pop(), '请填写联系人')
-  h.run("form.contactName = '阿杰'; form.phone = '1391234'")
+  h.run("form.contactName = '阿杰'")
   await h.run('submit()')
-  assert.equal(toasts.pop(), '请填写 11 位手机号')
-  h.run("Object.assign(form, { phone: '13912345678', city: '大理', storeType: 'homestay', storeName: '喜洲小院' })")
+  assert.equal(toasts.pop(), '请选择城市')
+  h.run("Object.assign(form, { city: '大理', storeType: 'homestay', storeName: '喜洲小院' })")
   await h.run('submit()')
   assert.equal(posted.length, 1)
   assert.equal(posted[0].wantTypes, undefined, '不再传想招的人')

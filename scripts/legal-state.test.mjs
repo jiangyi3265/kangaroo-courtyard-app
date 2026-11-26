@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loadLegalVersions } from '../pages/auth/legal-state.js'
+import { loadLegalVersions } from '../common/legal-state.js'
 const document = version => ({ data: { configured: true, html: '<p>真实已发布正文</p>', version } })
 test('both documents must be published before authorization can proceed', async () => {
   const calls=[]

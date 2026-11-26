@@ -10,6 +10,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readPercent, nextRead, BOTTOM_SLACK } from '../pages/jobs/contract-read.js'
+import { readingClock, AGREEMENT_READ_SECONDS } from '../common/agreement-progress.js'
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(APP, 'package.json'))
@@ -59,7 +60,7 @@ function load(stubs = () => ({})) {
   const calls = { toast: [], scrolled: [], pageScroll: [] }
   Object.assign(sandbox, {
     ref: vue.ref, computed: vue.computed, watch: vue.watch, onBeforeUnmount() {}, useScreen: () => vue.ref(1), R: {},
-    getCurrentInstance: () => null, onPageScroll: (fn) => { calls.pageScroll.push(fn) }, readPercent, nextRead,
+    getCurrentInstance: () => null, onPageScroll: (fn) => { calls.pageScroll.push(fn) }, readPercent, nextRead, readingClock, AGREEMENT_READ_SECONDS,
     errText: (e, dft) => (e && e.message) || dft, todayCn: () => '2026-11-03', shiftDate: (d) => d, releaseArrivalImages() {},
     toast: (m) => { calls.toast.push(m) }, alert: () => Promise.resolve()
   }, stubs(calls))
@@ -81,6 +82,7 @@ const fakeUni = (calls, rect, vh = 800) => ({
 const terms = `[{ icon: 'house', title: '工作范围', desc: 'a' }, { icon: 'house', title: '食宿安排', desc: 'b' }]`
 
 test('页面滑动时量进度；没滑到底点「去签署」只提示，不替用户滑到底、不进签署屏', async (t) => {
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'] })
   let rect = { top: 600, height: 800 }
   const h = load(calls => ({ uni: fakeUni(calls, () => rect) }))
   t.after(h.stop)
@@ -88,6 +90,7 @@ test('页面滑动时量进度；没滑到底点「去签署」只提示，不�
   h.run(`c.value = { terms: ${terms}, canSign: true, sign: null, arrival: {} }`)
   await h.run('measureRead()')
   assert.equal(h.run('readPct.value'), 25)
+  t.mock.timers.tick(5000)
   await h.run('toSign()')
   assert.equal(h.run('s.value'), 1)
   assert.deepEqual(h.calls.toast, ['请往下滑，读完全部条款后再签署'])
@@ -104,19 +107,27 @@ test('页面滑动时量进度；没滑到底点「去签署」只提示，不�
 })
 
 test('量不到正文时不能绕过阅读直接签署', async (t) => {
-  const h = load()
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'] })
+  let rect = { top: 0, height: 1600 }
+  const h = load(calls => ({ uni: fakeUni(calls, () => rect) }))
   t.after(h.stop)
   h.run(`c.value = { terms: ${terms}, canSign: true, sign: null, arrival: {} }`)
+  await h.run('measureRead()')
+  t.mock.timers.tick(5000)
+  rect = null
   await h.run('toSign()')
-  assert.equal(h.run('readPct.value'), 0)
+  assert.equal(h.run('readPct.value'), 50)
   assert.equal(h.run('s.value'), 1)
   assert.match(h.calls.toast[0], /阅读进度/)
 })
 
 test('滑到底但门店还没确认录用：照旧按真实状态说明，不进签署屏', async (t) => {
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'] })
   const h = load(calls => ({ uni: fakeUni(calls, () => ({ top: 0, height: 300 })) }))
   t.after(h.stop)
   h.run(`c.value = { terms: ${terms}, canSign: false, status: 'interview_done', sign: null, arrival: {} }`)
+  await h.run('measureRead()')
+  t.mock.timers.tick(5000)
   await h.run('toSign()')
   assert.equal(h.run('s.value'), 1)
   assert.deepEqual(h.calls.toast, ['门店确认录用后才能签署'])

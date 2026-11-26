@@ -82,8 +82,8 @@ test('N2 报名进度 / 交付 / 面试页：「联系当地主理人 / 联系�
   assert.match(deliver, /可以先私信\{\{ a\.contactSpecialist \? '袋鼠工作人员' : '当地主理人' \}\}沟通/)
   assert.doesNotMatch(deliver, /联系主理人|联系专员/)
   const interview = shown('pages/jobs/interview.vue')
-  assert.match(interview, /await sheet\(\['联系当地主理人', '联系平台客服'\]\)/)
-  assert.match(interview, /可联系当地主理人或平台客服/)
+  assert.match(interview, /await sheet\(\['联系商家', '联系平台客服'\]\)/)
+  assert.match(interview, /可联系商家或平台客服/)
   assert.doesNotMatch(interview, /联系主理人(?!或)|联系专员/)
 })
 
@@ -138,7 +138,12 @@ test('N2 用户端页面（jobs / stays / community / profile / messages / home�
       const rel = path.relative(APP, f).replace(/\\/g, '/')
       // 换叫法的那几行正则（.replace(/换工主理人…/)）是代码不是给人看的字，跳过
       const text = shown(rel).split('\n').filter(l => !l.includes('.replace(/')).join('\n')
-      if (INTERNAL.test(text)) bad.push(rel)
+      if (rel === 'pages/profile/team-reports.vue') {
+        assert.match(text, /v-else-if="!allowed"/)
+        assert.match(text, /get\('\/app\/team-reports\/access'\)/)
+        assert.match(text, /<template v-else>[\s\S]+roleName\(r\.roleCode\)/)
+        if (INTERNAL.test(text.replace(/^const roleName = .*$/m, ''))) bad.push(rel)
+      } else if (INTERNAL.test(text)) bad.push(rel)
     }
   }
   assert.deepEqual(bad, [])

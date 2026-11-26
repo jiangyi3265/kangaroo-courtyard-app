@@ -1,28 +1,30 @@
 <template>
-  <view class="k-page activity-page">
+  <view class="k-page activity-page" :class="$userSurface">
     <view v-if="landingError" class="scan-status" role="alert">{{ landingError }}</view>
     <!-- 1 活动列表 -->
     <template v-if="s === 1">
-      <k-topbar title="活动" back>
-        <template #left><view class="city-select" @click="pickCity"><k-icon name="chevron-down" :size="13" color="ink" /><text>{{ city }}</text><k-icon name="chevron-down" :size="13" color="ink" /></view></template>
-        <view class="search" @click="askSearch"><k-icon name="search" :size="18" color="light" /><text class="search__text">{{ searchText }}</text><view class="search__btn"><text>搜索</text></view></view>
-        <view class="k-tabs activity-tabs"><view v-for="tab in tabs" :key="tab" class="k-tabs__item" :class="{ active: activeTab === tab }" @click="setTab(tab)"><text>{{ tab }}</text></view></view>
+      <k-topbar title="活动" back bg="var(--k-paper)">
+        <template #left><view class="city-select" hover-class="k-press" @click="pickCity"><k-icon name="chevron-down" :size="14" color="ink" /><text>{{ city }}</text><k-icon name="chevron-down" :size="14" color="ink" /></view></template>
+        <view class="search" hover-class="k-press" @click="askSearch"><k-icon name="search" :size="18" color="light" /><text class="search__text">{{ searchText }}</text><view class="search__btn"><text>搜索</text></view></view>
+        <view class="k-tabs activity-tabs"><view v-for="tab in tabs" :key="tab" class="k-tabs__item" :class="{ active: activeTab === tab }" hover-class="k-press" @click="setTab(tab)"><text>{{ tab }}</text></view></view>
       </k-topbar>
     <k-subscribe scenes="activity" label="订阅活动提醒" />
       <view class="list-body k-pad-tab">
         <!-- 之前「为你推荐」这一屏没有任何入口（没有按钮、也没有页面带 ?view=recommend 进来）；现在列表顶部加一行入口 -->
-        <view class="remind-row" @click="openRecommend"><text>为你推荐</text><k-icon name="chevron-right" :size="16" color="muted" /></view>
-        <view class="remind-row"><text>有新活动提醒我</text><view class="switch" :class="{ on: remind }" @click="toggleRemind"><view class="switch__knob" /></view></view>
+        <view class="remind-row" hover-class="k-press" @click="openRecommend"><k-icon name="sparkles" :size="16" color="red" /><text>为你推荐</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
+        <view class="remind-row"><k-icon name="calendar-plus" :size="16" color="red" /><text>有新活动提醒我</text><view class="switch" :class="{ on: remind }" :aria-disabled="!listLoaded || remindBusy" @click="toggleRemind"><view class="switch__knob" /></view></view>
+        <view v-if="listError" class="empty-tip"><text>{{ listError }}</text><k-button type="outline" size="sm" @click="loadList">重新读取活动</k-button></view>
+        <text v-else-if="!listLoaded && !landingError" class="empty-tip">正在读取活动…</text>
         <view v-for="group in activityGroups" :key="group.date" class="date-group">
           <text class="date-title">{{ group.date }}</text>
-          <view v-for="item in group.items" :key="item.activityId" class="activity-item" @click="open(item)">
+          <view v-for="item in group.items" :key="item.activityId" class="activity-item" hover-class="k-press-s" @click="open(item)">
             <!-- 10-16 反馈：卡片上直接收藏（右上角的心），收藏的活动在「我的活动 → 收藏」里看报名截止时间 -->
-            <view class="activity-item__photo"><image class="activity-item__img" :src="item.img" mode="aspectFill" /><view class="fav-dot" hover-class="k-press" @click.stop="toggleFav(item)"><k-icon name="heart" :size="17" :color="item.favorited ? 'red' : 'ink'" :fill="!!item.favorited" :stroke="1.8" /></view></view>
+            <view class="activity-item__photo"><image class="activity-item__img" :src="item.img" mode="aspectFill" /><view class="fav-hit" hover-class="press-stop" hover-stop-propagation><view class="fav-dot" hover-class="k-press" @click.stop="toggleFav(item)"><k-icon name="heart" :size="16" :color="item.favorited ? 'red' : 'ink'" :fill="!!item.favorited" /></view></view></view>
             <view class="activity-item__copy"><text class="activity-item__title">{{ item.title }}</text><view class="meta"><k-icon name="clock" :size="14" color="muted" /><text>{{ item.time }}</text></view><view class="meta"><k-icon name="map-pin" :size="14" color="muted" /><text>集合：{{ item.place }}</text></view><view v-if="item.deadlineLine" class="meta meta--deadline"><k-icon name="calendar-clock" :size="14" color="muted" /><text>{{ item.deadlineLine }}</text></view><view class="item-status"><text class="kind" :class="`kind--${item.tone}`">{{ item.kind }}</text><text class="quota" :class="{ few: item.few && !item.full, full: item.full }">{{ item.full ? '已满可候补' : (item.few ? '名额紧张' : '名额充足') }}</text></view><view class="signup"><view class="avatar-stack"><image v-for="(a, i) in item.avatars" :key="i" class="small-avatar" :src="a" mode="aspectFill" /></view><text>{{ item.count }}人已报名</text></view></view>
           </view>
         </view>
         <!-- 之前没有活动时只有一片空白 -->
-        <view v-if="listLoaded && !activityGroups.length" class="empty-tip"><text>{{ keyword ? '没有搜到相关活动，换个关键词试试' : '这里暂时没有活动，换个城市或页签看看' }}</text></view>
+        <view v-if="listLoaded && !activityGroups.length" class="empty-tip"><view class="empty-ico"><k-icon name="calendar" :size="32" color="red" /></view><text class="empty-tip__title">{{ keyword ? '没有搜到相关活动，' : '这里暂时没有活动，' }}</text><text class="empty-tip__sub">{{ keyword ? '换个关键词试试' : '换个城市或页签看看' }}</text></view>
       </view>
       <k-tabbar active="community" />
     </template>
@@ -31,16 +33,16 @@
     <template v-else-if="s === 2">
       <k-topbar title="为你推荐" back custom-back @back="leaveRecommend" />
       <view class="ai-body k-pad-tab">
-        <view class="ai-banner"><view><text class="ai-banner__title">为你推荐个性活动</text><text class="ai-banner__sub">根据你的收藏、报名与行程推荐</text></view><image class="ai-banner__img" src="/static/media/activity-ai-banner.jpg" mode="aspectFit" /></view>
+        <view class="ai-banner"><view><text class="ai-banner__title">为你推荐个性活动</text><text class="ai-banner__sub">根据你的收藏、报名与行程推荐</text></view><view class="ai-banner__ico"><k-icon name="sparkles" :size="24" color="red" /></view></view>
         <text class="ai-section-title">个性推荐</text>
-        <view v-if="recLoaded && !recommended.length" class="empty-tip"><text>暂时没有为你推荐的活动，收藏或报名几场后推荐会更准</text></view>
-        <view v-for="item in recommended" :key="item.activityId" class="rec-card" @click="open(item)">
+        <view v-if="recLoaded && !recommended.length" class="empty-tip"><view class="empty-ico"><k-icon name="sparkles" :size="32" color="red" /></view><text class="empty-tip__title">暂时没有为你推荐的活动，</text><text class="empty-tip__sub">收藏或报名几场后推荐会更准</text></view>
+        <view v-for="item in recommended" :key="item.activityId" class="rec-card" hover-class="k-press-s" @click="open(item)">
           <view class="rec-photo"><image class="rec-img" :src="item.img" mode="aspectFill" /><text class="reason-chip" :class="`reason-chip--${item.tone}`">{{ item.reason }}</text></view>
           <view class="rec-copy"><text class="rec-title">{{ item.title }}</text><text class="rec-reason">推荐理由：{{ item.desc }}</text><view class="meta"><k-icon name="map-pin" :size="14" color="muted" /><text>{{ item.distance }}</text><text class="quota rec-quota" :class="{ full: item.full }">{{ item.full ? '已满可候补' : (item.few ? '名额较少' : '名额充足') }}</text></view><view class="meta"><k-icon name="clock" :size="14" color="muted" /><text>{{ item.time }}</text></view><view class="signup"><view class="avatar-stack"><image v-for="(a, i) in item.avatars" :key="i" class="small-avatar" :src="a" mode="aspectFill" /></view><text>{{ item.count }}人已报名</text></view></view>
         </view>
-        <view class="more-head"><text>更多活动</text><view class="filters"><view v-for="(filterText, filterIdx) in filters" :key="filterIdx" class="filter" @click="pickFilter(filterIdx)"><text>{{ filterText }}</text><k-icon name="chevron-down" :size="13" color="muted" /></view></view></view>
-        <view v-for="item in moreActivities" :key="item.activityId" class="more-item" @click="open(item)"><image class="more-img" :src="item.img" mode="aspectFill" /><view class="more-copy"><view class="k-between"><text class="more-title">{{ item.title }}</text><text class="kind kind--business">{{ item.kind }}</text></view><view class="meta"><k-icon name="clock" :size="14" color="muted" /><text>{{ item.time }}</text></view><view class="meta"><k-icon name="map-pin" :size="14" color="muted" /><text>集合：{{ item.place }}</text></view><view class="signup"><view class="avatar-stack"><image v-for="(a, i) in item.avatars" :key="i" class="small-avatar" :src="a" mode="aspectFill" /></view><text>{{ item.count }}人已报名</text><text class="distance">{{ item.distance }}</text></view></view></view>
-        <view v-if="recLoaded && !moreActivities.length" class="empty-tip"><text>没有符合筛选条件的活动</text></view>
+        <view class="more-head"><text>更多活动</text><view class="filters"><view v-for="(filterText, filterIdx) in filters" :key="filterIdx" class="filter" hover-class="k-press" @click="pickFilter(filterIdx)"><text>{{ filterText }}</text><k-icon name="chevron-down" :size="14" color="muted" /></view></view></view>
+        <view v-for="item in moreActivities" :key="item.activityId" class="more-item" hover-class="k-press-s" @click="open(item)"><image class="more-img" :src="item.img" mode="aspectFill" /><view class="more-copy"><view class="k-between"><text class="more-title">{{ item.title }}</text><text class="kind kind--business">{{ item.kind }}</text></view><view class="meta"><k-icon name="clock" :size="14" color="muted" /><text>{{ item.time }}</text></view><view class="meta"><k-icon name="map-pin" :size="14" color="muted" /><text>集合：{{ item.place }}</text></view><view class="signup"><view class="avatar-stack"><image v-for="(a, i) in item.avatars" :key="i" class="small-avatar" :src="a" mode="aspectFill" /></view><text>{{ item.count }}人已报名</text><text class="distance">{{ item.distance }}</text></view></view></view>
+        <view v-if="recLoaded && !moreActivities.length" class="empty-tip"><view class="empty-ico"><k-icon name="search" :size="32" color="red" /></view><text>没有符合筛选条件的活动</text></view>
       </view>
       <k-tabbar active="community" />
     </template>
@@ -48,23 +50,25 @@
     <!-- 3 活动详情 -->
     <template v-else-if="s === 3">
       <k-topbar :title="detail.productKind==='travel'?'旅游产品详情':'活动详情'" back custom-back @back="leaveDetail" />
-      <view class="detail-body k-pad-bottom">
-        <view v-if="detail.memberFree&&!detail.mySignupId&&memberActivityVouchers.length" style="padding:14px;background:#f4e9d8;border-radius:14px;margin:12px 0"><text>此活动可使用会员免费活动权益</text><button style="font-size:14px;margin-top:8px" @click="memberActivityId=memberActivityId?null:memberActivityVouchers[0].walletId">{{ memberActivityId?'已选择免费参加 · 点击取消':'选择免费活动权益' }}</button></view>
+      <view class="detail-body k-pad-bottom" :class="{ 'detail-body--loading': !detail.activityId }">
+        <!-- 11-18 返修：活动还没取到时显示骨架，不再露出「集合：」「名额 0/0」空字段 -->
+        <view v-if="!detail.activityId" class="dskel dskel--v7"><view class="dskel__img" /><view class="dskel__card"><view class="dskel__line dskel__line--title" /><view class="dskel__line dskel__line--title2" /><view class="dskel__line dskel__line--price" /><view class="dskel__sep" /><view v-for="n in 3" :key="n" class="dskel__info"><view class="dskel__dot" /><view class="dskel__line" :class="{ 'dskel__line--short': n === 3 }" /></view><view class="dskel__sep" /><view class="dskel__line dskel__line--name" /><view class="dskel__line" /><view class="dskel__line" /><view class="dskel__line dskel__line--short" /></view></view>
+        <view v-if="memberActivityVouchers.length && !detail.mySignupId" class="member-free" style="padding:14px;background:#f4e9d8;border-radius:14px;margin:12px 0"><text>此活动可使用会员免费活动权益</text><button class="member-free__btn" style="font-size:14px;margin-top:8px" @click="memberActivityId=memberActivityId?null:memberActivityVouchers[0].walletId">{{ memberActivityId?'已选择免费参加 · 点击取消':'选择免费活动权益' }}</button></view>
         <view v-if="pendingCheckin || checkinMessage" class="scan-status">
           <text>{{ checkinMessage || '请登录后完成活动签到' }}</text>
           <k-button v-if="pendingCheckin" size="sm" :label="experience.account ? '重试签到' : '登录并继续签到'" @click="resumeCheckin" />
         </view>
         <!-- 封面是员工上传的 /profile/upload/… 相对路径：小程序会当成包里的文件去找（空白），要和列表卡片一样先补全成服务器地址 -->
         <!-- 2026-10-16 主人反馈：大图之前是 166px 高、按比例裁满，竖一点的照片人头被裁掉。现在 4:3 的框里整张显示（aspectFit），两边空出来的地方垫同一张图的模糊放大版 -->
-        <view class="detail-hero-box"><image class="detail-hero-bg" :src="detail.img ? absUrl(detail.img) : '/static/media/cover-empty.png'" mode="aspectFill" /><image class="detail-hero" :src="detail.img ? absUrl(detail.img) : '/static/media/cover-empty.png'" mode="aspectFit" /></view>
-        <view class="detail-summary"><view class="detail-title-row"><text class="detail-kind">{{ detail.kind }}</text><text class="detail-title">{{ detail.title }}</text></view><text class="detail-slogan">{{ detail.slogan || detail.category || '' }}</text><view class="price-row"><view><text class="price">{{ priceMain }}</text><text v-if="priceSub" class="per">{{ priceSub }}</text></view><view v-if="detail.insured" class="insurance"><k-icon name="shield-check" :size="26" color="ochre" /><text>含户外保险</text></view></view><text v-if="feeNote" class="fee-note">{{ feeNote }}</text></view>
-        <view class="detail-info"><view class="detail-line"><k-icon name="clock" :size="18" color="ink" /><text>{{ detail.timeText }}</text></view><view class="detail-line detail-line--tap" hover-class="k-press" @click="openPlace(detail)"><k-icon name="map-pin" :size="18" color="ink" /><text class="detail-line__text">集合：{{ detail.place }}</text><text class="place-tag">{{ placeTag(detail) }}</text></view><view class="detail-line"><k-icon name="footprints" :size="18" color="ink" /><text>{{ detail.intensity || ('名额 ' + (detail.count || 0) + '/' + (detail.capacity || 0) + ' · 报名截止 ' + (detail.deadlineText || '')) }}</text></view></view>
+        <view class="detail-hero-box" :class="{ 'detail-hero-box--ph': !detail.img, 'detail-hero-box--short': !!detail.activityId && !detail.img }"><image class="detail-hero-bg" :src="detail.img ? absUrl(detail.img) : '/static/media/cover-empty.png'" mode="aspectFill" /><image class="detail-hero" :src="detail.img ? absUrl(detail.img) : '/static/media/cover-empty.png'" mode="aspectFit" /></view>
+        <view class="detail-summary"><view class="detail-title-row"><text class="detail-kind">{{ detail.kind }}</text><text class="detail-title">{{ detail.title }}</text></view><text class="detail-slogan">{{ detail.slogan || detail.category || '' }}</text><view class="price-row"><view><text class="price">{{ priceMain }}</text><text v-if="priceSub" class="per">{{ priceSub }}</text></view><view v-if="detail.insured" class="insurance"><k-icon name="shield-check" :size="12" color="green" /><text>含户外保险</text></view></view><text v-if="feeNote" class="fee-note">{{ feeNote }}</text></view>
+        <view class="detail-info"><view class="detail-line"><k-icon name="clock" :size="18" color="muted" /><text>{{ detail.timeText }}</text></view><view class="detail-line detail-line--tap" hover-class="k-press" @click="openPlace(detail)"><k-icon name="map-pin" :size="18" color="muted" /><text class="detail-line__text">集合：{{ detail.place }}</text><text class="place-tag">{{ placeTag(detail) }}</text></view><view class="detail-line"><k-icon name="footprints" :size="18" color="muted" /><text>{{ detail.intensity || ('名额 ' + (detail.count || 0) + '/' + (detail.capacity || 0) + ' · 报名截止 ' + (detail.deadlineText || '')) }}</text></view></view>
         <view class="detail-section host-section"><text class="detail-section__title">主办方</text><view class="host"><image class="host-logo" :src="hostLogo" mode="aspectFit" /><view class="host-copy"><view class="host-name-row"><text class="host-name">{{ detail.host.name }}</text><text class="host-chip">{{ (detail.host.chips || [])[0] }}</text><text v-if="(detail.host.chips || []).length > 1" class="host-chip">{{ detail.host.chips[1] }}</text></view><text class="host-meta">{{ hostMeta }}</text></view><k-button type="outline" size="xs" :disabled="!detail.host.userId && !detail.host.storeId" @click="showHost">{{ detail.host.userId || detail.host.storeId ? '查看主页' : '暂无主页' }}</k-button></view></view>
         <!-- 活动介绍（主办方可写 1000 字，保留换行）：先显示 3 行，「展开」在页面里直接展开全文和安全说明（原先弹窗显示，长介绍要在小框里滚） -->
-        <view class="detail-section intro" :class="{ 'intro--plain': !introFolds }"><text class="detail-section__title">活动介绍</text><text class="detail-text" :class="{ 'detail-text--open': introOpen }">{{ detail.intro || '主办方暂未填写活动介绍' }}</text><text v-if="introOpen && detail.safetyNote" class="detail-text detail-text--open detail-safety">安全说明：{{ detail.safetyNote }}</text><view v-if="introFolds" class="expand" @click="introOpen = !introOpen"><text>{{ introOpen ? '收起' : '展开' }}</text><k-icon :name="introOpen ? 'chevron-up' : 'chevron-down'" :size="15" color="muted" /></view></view>
+        <view class="detail-section intro" :class="{ 'intro--plain': !introFolds }"><text class="detail-section__title">活动介绍</text><text class="detail-text" :class="{ 'detail-text--open': introOpen }">{{ detail.intro || '主办方暂未填写活动介绍' }}</text><text v-if="introOpen && detail.safetyNote" class="detail-text detail-text--open detail-safety">安全说明：{{ detail.safetyNote }}</text><view v-if="introFolds" class="expand" @click="introOpen = !introOpen"><text>{{ introOpen ? '收起' : '展开' }}</text><k-icon :name="introOpen ? 'chevron-up' : 'chevron-down'" :size="16" color="muted" /></view></view>
         <view class="detail-section fee"><text class="detail-section__title">费用与保障</text><view class="fee-row"><text class="fee-label">{{ detail.feeKind === 'aa' ? 'AA 说明' : '费用包含' }}</text><text>{{ feeIncludes }}</text></view><view class="fee-row"><text class="fee-label">保障说明</text><text>{{ detail.insuranceDesc }}</text></view></view>
       </view>
-      <k-bottom pad="10px 16px"><view class="bottom-side" @click="favorite"><k-icon name="heart" :size="26" :color="detail.favorited ? 'red' : 'ink'" /><text>{{ detail.favorited ? '已收藏' : '收藏' }}</text></view><view class="bottom-main"><k-button size="lg" block @click="signup"><text class="signup-label">{{ signupLabel }}</text><text class="signup-price">{{ detail.priceText }}</text></k-button></view><!-- 之前点「分享」只弹一句「请点击右上角…」；现在小程序里一点就打开微信转发面板 --><!-- #ifdef MP-WEIXIN --><button v-if="communityEnabled" class="bottom-side share-btn" open-type="share"><k-icon name="share-2" :size="26" color="ink" /><text>分享</text></button><!-- #endif --><!-- #ifndef MP-WEIXIN --><view v-if="communityEnabled" class="bottom-side" @click="openShare"><k-icon name="share-2" :size="26" color="ink" /><text>分享</text></view><!-- #endif --></k-bottom>
+      <k-bottom pad="10px 16px"><view class="bottom-side" :class="{ 'is-loading': !detail.activityId }" hover-class="k-press" @click="favorite"><k-icon name="heart" :size="24" :color="detail.favorited ? 'red' : 'ink'" /><text>{{ detail.favorited ? '已收藏' : '收藏' }}</text></view><view class="bottom-main" :class="{ 'bottom-main--off': !detail.mySignupId && !detail.isOwner && detail.phase !== 'open', 'is-loading': !detail.activityId }"><k-button size="lg" block @click="signup"><text class="signup-label">{{ signupLabel }}</text><text class="signup-price">{{ detail.priceText }}</text></k-button></view><!-- 之前点「分享」只弹一句「请点击右上角…」；现在小程序里一点就打开微信转发面板 --><!-- #ifdef MP-WEIXIN --><button v-if="communityEnabled" class="bottom-side share-btn" :class="{ 'is-loading': !detail.activityId }" open-type="share"><k-icon name="share-2" :size="24" color="ink" /><text>分享</text></button><!-- #endif --><!-- #ifndef MP-WEIXIN --><view v-if="communityEnabled" class="bottom-side" :class="{ 'is-loading': !detail.activityId }" hover-class="k-press" @click="openShare"><k-icon name="share-2" :size="24" color="ink" /><text>分享</text></view><!-- #endif --></k-bottom>
     </template>
 
     <!-- 4 报名成功 -->
@@ -72,12 +76,14 @@
       <k-topbar :title="ticketTitle" back custom-back @back="openDetail(ticket.activityId)" />
       <k-order-mediation order-type="activity" :order-id="ticket.signupId" />
       <view class="success-body k-pad-tab">
-        <view class="success-head"><view><text class="success-title">{{ ticketTitle }}</text><text class="success-sub">{{ ticketSub }}</text></view><image v-if="ticket.status === 'confirmed'" class="success-stamp" src="/static/media/activity-stamp.jpg" mode="aspectFit" /></view>
-        <view class="ticket"><view class="ticket-top"><image class="ticket-img" :src="ticket.img ? absUrl(ticket.img) : '/static/media/cover-empty.png'" mode="aspectFill" /><view class="ticket-copy"><text class="detail-kind">{{ ticket.kind }}</text><text class="ticket-title">{{ ticket.title }}</text><view class="detail-line"><k-icon name="clock" :size="17" color="muted" /><text>{{ ticket.timeText }}</text></view><view class="detail-line detail-line--tap" hover-class="k-press" @click="openPlace(ticket)"><k-icon name="map-pin" :size="17" color="muted" /><text class="detail-line__text">集合：{{ ticket.place }}</text><text class="place-tag">{{ placeTag(ticket) }}</text></view></view></view><view class="ticket-dash" /><view class="ticket-data"><view v-for="row in ticketRows" :key="row.label" class="ticket-data__row"><text>{{ row.label }}</text><text>{{ row.value }}</text></view></view></view>
-        <view v-if="ticketLive" class="reminder"><k-icon name="bell" :size="23" color="ink" /><view><text class="reminder-title">集合提醒</text><text class="reminder-sub">{{ ticket.remindLabel }}</text></view><text class="reminder-link" @click="changeRemind">修改提醒</text></view>
+        <view class="success-head" :class="'success-head--' + (ticket.status || 'none')"><view class="success-ico"><k-icon :name="ticket.status === 'confirmed' ? 'check' : ticket.status === 'waitlist' ? 'hourglass' : ticket.status === 'pending_payment' ? 'wallet' : 'ticket'" :size="28" :color="ticket.status === 'confirmed' ? 'green' : 'red'" /></view><view><text class="success-title">{{ ticketTitle }}</text><text class="success-sub">{{ ticketSub }}</text></view><image v-if="ticket.status === 'confirmed'" class="success-stamp" src="/static/media/activity-stamp.jpg" mode="aspectFit" /></view>
+        <view class="ticket" :class="{ 'ticket--blank': ticketBlank }"><view class="ticket-top"><image class="ticket-img" :src="ticket.img ? absUrl(ticket.img) : '/static/media/cover-empty.png'" mode="aspectFill" /><view class="ticket-copy"><text class="detail-kind">{{ ticket.kind }}</text><text class="ticket-title">{{ ticket.title }}</text><view class="detail-line"><k-icon name="clock" :size="16" color="muted" /><text>{{ ticket.timeText }}</text></view><view class="detail-line detail-line--tap" hover-class="k-press" @click="openPlace(ticket)"><k-icon name="map-pin" :size="16" color="muted" /><text class="detail-line__text">集合：{{ ticket.place }}</text><text class="place-tag">{{ placeTag(ticket) }}</text></view></view></view><view class="ticket-dash" /><view class="ticket-data"><view v-for="row in ticketRows" :key="row.label" class="ticket-data__row"><text>{{ row.label }}</text><text :class="{ 'is-blank': row.value === '—' }">{{ row.value }}</text></view></view>
+          <!-- 11-18 返修：现场签到放进凭证卡底部，「去签到」是 44 高主按钮（整块仍然点了就去签到） -->
+          <view v-if="ticket.status === 'confirmed' && !ticket.checkedIn" class="reminder" hover-class="k-press" @click="selfCheckin"><k-icon name="scan-qr-code" :size="20" color="ink2" /><view><text class="reminder-title">现场签到</text><text class="reminder-sub">{{ ticket.checkinWindowText || '活动开始前2小时至结束期间可签到' }}</text><text class="reminder-sub">扫领队出示的二维码，或输入 6 位活动签到码</text></view><text class="reminder-link">去签到</text></view>
+        </view>
+        <view v-if="ticketLive" class="reminder"><k-icon name="bell" :size="20" color="ink2" /><view><text class="reminder-title">集合提醒</text><text class="reminder-sub">{{ ticket.remindLabel }}</text></view><text class="reminder-link" @click="changeRemind">修改提醒</text></view>
         <!-- 2026-11-03 主人：签到二维码生成失败的兜底。报名已确认、还没签到：现场扫领队出示的码（微信小程序码、普通二维码都认），或输入领队给的 6 位活动签到码 -->
-        <view v-if="ticket.status === 'confirmed' && !ticket.checkedIn" class="reminder" hover-class="k-press" @click="selfCheckin"><k-icon name="scan-qr-code" :size="23" color="ink" /><view><text class="reminder-title">现场签到</text><text class="reminder-sub">{{ ticket.checkinWindowText || '活动开始前2小时至结束期间可签到' }}</text><text class="reminder-sub">扫领队出示的二维码，或输入 6 位活动签到码</text></view><text class="reminder-link">去签到</text></view>
-        <view class="action-grid"><view v-for="action in successActions" :key="action.title" class="success-action" @click="action.click"><k-icon :name="action.icon" :size="34" color="ink" :stroke="1.4" /><view><text class="action-title">{{ action.title }}</text><text class="action-sub">{{ action.sub }}</text></view></view></view>
+        <view class="action-grid"><view v-for="action in successActions" :key="action.title" class="success-action" hover-class="k-press" @click="action.click"><view class="success-action__ico"><k-icon :name="action.icon" :size="20" color="ink2" /></view><view><text class="action-title">{{ action.title }}</text><text class="action-sub">{{ action.sub }}</text></view><k-icon class="success-action__go" name="chevron-right" :size="12" color="muted" /></view></view>
       </view>
       <k-tabbar active="community" />
     </template>
@@ -89,10 +95,10 @@
         <button class="activity-share-row" open-type="share"><k-icon name="message-circle" :size="24" color="green" /><view><text>微信好友 / 群</text><text class="activity-share-note">直接发送活动卡片</text></view><k-icon name="chevron-right" :size="18" /></button>
         <!-- #endif -->
         <!-- #ifdef H5 -->
-        <button v-if="systemShareAvailable" class="activity-share-row" @click="shareToSystem"><k-icon name="share-2" :size="24" color="ochre" /><view><text>选择软件分享</text><text class="activity-share-note">使用手机的分享菜单</text></view><k-icon name="chevron-right" :size="18" /></button>
+        <button v-if="systemShareAvailable" class="activity-share-row" @click="shareToSystem"><k-icon name="share-2" :size="24" color="red" /><view><text>选择软件分享</text><text class="activity-share-note">使用手机的分享菜单</text></view><k-icon name="chevron-right" :size="18" /></button>
         <!-- #endif -->
-        <button class="activity-share-row" @click="copyActivityLink"><k-icon name="link" :size="24" color="ochre" /><view><text>复制活动链接</text><text class="activity-share-note">粘贴到微信、QQ 等软件</text></view><k-icon name="chevron-right" :size="18" /></button>
-        <button class="activity-share-row" :disabled="posterBusy" @click="saveActivityPoster"><k-icon name="image" :size="24" color="ochre" /><view><text>{{ posterBusy ? '正在生成海报…' : '保存活动海报' }}</text><text class="activity-share-note">保存后可发到朋友圈或其他软件</text></view><k-icon name="chevron-right" :size="18" /></button>
+        <button class="activity-share-row" @click="copyActivityLink"><k-icon name="link" :size="24" color="red" /><view><text>复制活动链接</text><text class="activity-share-note">粘贴到微信、QQ 等软件</text></view><k-icon name="chevron-right" :size="18" /></button>
+        <button class="activity-share-row" :disabled="posterBusy" @click="saveActivityPoster"><k-icon name="image" :size="24" color="red" /><view><text>{{ posterBusy ? '正在生成海报…' : '保存活动海报' }}</text><text class="activity-share-note">保存后可发到朋友圈或其他软件</text></view><k-icon name="chevron-right" :size="18" /></button>
         <text class="activity-share-privacy">仅分享公开活动信息，报名人、手机号和订单信息不会出现在分享内容中。</text>
       </view>
     </view>
@@ -114,7 +120,7 @@ import { selectCity } from '@/common/city-picker.js'
 //   s=4 报名凭证：状态、签到码、集合提醒、活动群、取消报名（在线支付的开始前 24 小时以上可申请退款，人工审核）
 // ---------------------------------------------------------------------------
 import { ref, computed } from 'vue'
-import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onShow, onHide } from '@dcloudio/uni-app'
 import { useScreen, go, back, toast } from '@/common/screen.js'
 import {
   apiMemberWallet, apiActivities, apiActivityRecommend, apiActivity, apiActivitySignup, apiActivityFavorite, apiActivitySubscribe,
@@ -207,25 +213,43 @@ async function askSearch() {
 }
 const list = ref({ groups: [], subscribed: false })
 const listLoaded = ref(false)
+const listError = ref('')
+const remindBusy = ref(false)
+let listSequence = 0, remindRevision = 0
 const remind = computed(() => !!list.value.subscribed)
 async function loadList() {
+  const sequence = ++listSequence, revision = remindRevision
+  listLoaded.value = false
+  listError.value = ''
+  list.value = { groups: [], subscribed: false }
   try {
-    list.value = (await apiActivities({ source: SRC[activeTab.value], city: city.value })).data || list.value
+    const { data } = await apiActivities({ source: SRC[activeTab.value], city: city.value })
+    if (sequence !== listSequence) return
+    list.value = { groups: data?.groups || [], subscribed: revision === remindRevision ? !!data?.subscribed : remind.value }
     listLoaded.value = true
   } catch (e) {
-    fail(e, '活动加载失败')
+    if (sequence === listSequence) listError.value = e?.message || '活动加载失败'
   }
 }
 async function toggleRemind() {
+  if (!listLoaded.value || remindBusy.value) return
   // 新活动提醒按城市订阅：选的是「全部城市」时先让用户挑一个具体城市（关闭提醒不受影响）
   if (city.value === '全部城市' && !remind.value) return toast('先在左上角选一个城市，再开启新活动提醒')
+  const targetCity = city.value, owner = experience.account?.id, enabled = !remind.value
+  const current = () => city.value === targetCity && experience.account?.id === owner
+  remindBusy.value = true
   try {
-    const res = (await gated(() => apiActivitySubscribe(city.value, !remind.value))).data
+    const res = (await gated(() => {
+      if (!current()) throw Object.assign(new Error(), {silent:true})
+      return apiActivitySubscribe(targetCity, enabled)
+    })).data
+    if (!current()) return
+    remindRevision++
     list.value.subscribed = res.subscribed
     toast(res.message)
   } catch (e) {
-    fail(e, '设置失败')
-  }
+    if (current()) fail(e, '设置失败')
+  } finally { remindBusy.value = false }
 }
 const kw = (x) => !keyword.value || (x.title + x.place).includes(keyword.value)
 // 报名中且设了截止时间才多一行「截止 10月30日 18:00」（没设截止 = 开始前都能报，不占一行；320 宽一行放得下，不写「报名截止」四个字）
@@ -303,7 +327,12 @@ async function openDetail(id, checkin) {
     detail.value = (await apiActivity(id, { channel: channel.value, checkin: experience.account ? checkin || undefined : undefined })).data
     memberActivityId.value=null;memberActivityVouchers.value=[]
     rememberDestination(experience.account?.id, detail.value?.city)
-    if(detail.value.memberFree&&experience.account){try{const w=(await apiMemberWallet()).data;memberActivityVouchers.value=(w.rows||[]).filter(x=>x.status==='available'&&x.benefitCode==='activity')}catch{}}
+    if (detail.value.memberFree && detail.value.phase === 'open' && !detail.value.full && experience.account) {
+      try {
+        const { data } = await apiMemberWallet()
+        memberActivityVouchers.value = (data.rows || []).filter(x => x.status === 'available' && x.benefitCode === 'activity')
+      } catch {}
+    }
     // 换了一场活动，介绍回到收起状态
     if (String(detail.value.activityId) !== String(introFor)) { introOpen.value = false; introFor = detail.value.activityId }
     s.value = 3
@@ -423,9 +452,9 @@ async function signup() {
     : (d.feeKind === 'aa' ? `AA制：费用现场由参加的人平摊${aaYuan(d) ? '，预估约 ¥' + aaYuan(d) + '/人' : ''}，报名不用付钱。`
       : (d.feeFen > 0 ? `报名费 ${d.priceText}/人（${d.feeModeLabel}${d.feeMode === 'online' || d.source === 'user' ? '' : '，平台不代收'}）。` : '免费活动。'))
   const note = feeNote.value ? '\n' + feeNote.value : ''
-  if (!(await confirm(d.full ? '候补报名' : '确认报名', `${d.title}\n${d.timeText}\n集合：${d.place}\n${tip}${note}`)) || signing) return
   signing = true
   try {
+    if (!(await confirm(d.full ? '候补报名' : '确认报名', `${d.title}\n${d.timeText}\n集合：${d.place}\n${tip}${note}`))) return
     const res = (await gated(() => apiActivitySignup(d.activityId, channel.value,memberActivityId.value))).data
     toast(res.message)
     if (res.payNo) {
@@ -442,30 +471,37 @@ async function signup() {
 
 // ---------------- s=4 凭证 ----------------
 const ticket = ref({})
+let ticketRead = 0
+let ticketActionBusy = false
 async function openTicket(signupId) {
+  const read = ++ticketRead
   try {
-    ticket.value = (await apiSignup(signupId)).data
+    const { data } = await apiSignup(signupId)
+    if (read !== ticketRead) return
+    ticket.value = data
     s.value = 4
   } catch (e) {
-    fail(e, '报名记录不存在')
+    if (read === ticketRead) fail(e, '报名记录不存在')
   }
 }
 async function payTicket(signupId) {
-  // 之前这里没有接错误：查单 / 拉起支付失败（如「支付未完成，请稍后重试」）时页面毫无反应；现在提示原因并刷新凭证
+  if (ticketActionBusy) return
+  ticketActionBusy = true
   try {
-    const t = ticket.value.signupId === signupId ? ticket.value : (await apiSignup(signupId)).data
-    if (!t.payNo) return openTicket(signupId)
-    await payFlow(t.payNo)
+    const { data } = await apiSignup(signupId)
+    if (data.payNo) await payFlow(data.payNo)
   } catch (e) {
     fail(e, '支付未完成，请稍后重试')
+  } finally {
+    try { await openTicket(signupId) } finally { ticketActionBusy = false }
   }
-  openTicket(signupId)
 }
 const TITLES = { confirmed: ['报名成功', '期待与你一起出发！'], waitlist: ['候补中', '有人退出时按顺序递补，递补成功会通知你'], pending_payment: ['待支付', '名额已为你保留，请在截止前完成支付'],
   refund_pending: ['退款审核中', '审核通过后原路退回'], refunding: ['退款中', '预计 1–5 个工作日到账'], refunded: ['已退款', '报名费已原路退回'],
   cancelled: ['已取消', '你已取消本次报名'], closed: ['已关闭', '超时未支付，报名已关闭'] }
 const ticketTitle = computed(() => (TITLES[ticket.value.status] || ['报名详情'])[0])
 // 还有效的报名（报名成功 / 候补 / 待支付）才显示集合提醒、活动群：取消、退款审核中、已退款的之前照样盖「报名成功」章、能改提醒（服务端只给报名成功的发）
+const ticketBlank = computed(() => !ticket.value.title) // 纯展示：没取到报名数据时收起票据头部（空标签、空时间、「集合：」和复制）
 const ticketLive = computed(() => ['confirmed', 'waitlist', 'pending_payment'].includes(ticket.value.status))
 const ticketSub = computed(() => (TITLES[ticket.value.status] || ['', ''])[1] + (ticket.value.status === 'waitlist' && ticket.value.waitlistNo ? `（第 ${ticket.value.waitlistNo} 位）` : ''))
 // 申请退款时服务端就记下了应退金额：之前退款还在审核 / 退款中就显示「已退」，用户以为钱已经回来了
@@ -530,28 +566,29 @@ async function joinGroup() {
     fail(e, '暂时无法进群')
   }
 }
-async function cancelOrPay() {
+async function cancelTicket() {
   const t = ticket.value
-  if (t.status === 'pending_payment') return payTicket(t.signupId)
+  if (ticketActionBusy) return
   if (!t.canCancel) return toast('当前状态不能取消')
-  const tip = t.feeFen && t.status === 'confirmed' ? (t.refundable ? '取消后报名费将在人工审核后原路退回。' : '活动开始前 24 小时内取消，报名费不退。') : ''
-  if (!(await confirm('取消报名', `确认取消「${t.title}」的报名？${tip}`))) return
-  const reason = await prompt('取消原因（选填）', { placeholder: '例如：行程变化' })
-  if (reason === null) return
+  ticketActionBusy = true
   try {
+    const tip = t.feeFen && t.status === 'confirmed' ? (t.refundable ? '取消后报名费将在人工审核后原路退回。' : '活动开始前 24 小时内取消，报名费不退。') : ''
+    if (!(await confirm('取消报名', `确认取消「${t.title}」的报名？${tip}`))) return
+    const reason = await prompt('取消原因（选填）', { placeholder: '例如：行程变化' })
+    if (reason === null) return
     toast((await apiSignupCancel(t.signupId, reason)).msg)
-    openTicket(t.signupId)
+    await openTicket(t.signupId)
   } catch (e) {
     fail(e, '取消失败')
-  }
+  } finally { ticketActionBusy = false }
 }
 const successActions = computed(() => [
-  ticketLive.value && groupChatEnabled.value ? { title: '加入活动群', sub: '与同伴交流、获取最新通知', icon: 'users-round', click: joinGroup }
-    : { title: '查看活动详情', sub: '看看活动安排，可重新报名', icon: 'tent', click: () => openDetail(ticket.value.activityId) },
+  ticket.value.status === 'confirmed' && ticket.value.convId && groupChatEnabled.value ? { title: '加入活动群', sub: '与同伴交流、获取最新通知', icon: 'users-round', click: joinGroup }
+    : { title: '查看活动详情', sub: '查看时间、地点和活动安排', icon: 'tent', click: () => openDetail(ticket.value.activityId) },
   { title: '查看我的行程', sub: '报名后自动出现在行程里', icon: 'calendar-days', click: () => go(R.trip) },
   ...(communityEnabled.value ? [{ title: '分享到微信等软件', sub: '微信转发 · 链接 · 活动海报', icon: 'share-2', click: openShare }] : []),
-  ticket.value.status === 'pending_payment' ? { title: '去支付', sub: '完成支付后报名生效', icon: 'wallet', click: cancelOrPay }
-    : (ticket.value.canCancel ? { title: '取消报名', sub: '按活动须知处理退款', icon: 'circle-x', click: cancelOrPay } : { title: '返回首页', sub: '发现更多活动', icon: 'house', click: () => go(R.home) })
+  ...(ticket.value.status === 'pending_payment' ? [{ title: '去支付', sub: '完成支付后报名生效', icon: 'wallet', click: () => payTicket(ticket.value.signupId) }] : []),
+  ticket.value.canCancel ? { title: '取消报名', sub: ticket.value.status === 'pending_payment' ? '释放为你保留的名额' : '按活动须知处理退款', icon: 'circle-x', click: cancelTicket } : { title: '返回首页', sub: '发现更多活动', icon: 'house', click: () => go(R.home) }
 ])
 
 const shareOpen = ref(false)
@@ -593,7 +630,22 @@ const pageShareMessage = () => {
 
 onShareAppMessage((event) => shareWithCover(pageShareMessage(event)))
 onShareTimeline(() => timelineShare(pageShareMessage()))
-onShow(showPublicShareMenu)
+let hiddenWithTicket = false
+onHide(() => { hiddenWithTicket = s.value === 4 })
+onShow(async () => {
+  showPublicShareMenu()
+  const signupId = ticket.value.signupId
+  if (!hiddenWithTicket) return
+  hiddenWithTicket = false
+  if (s.value !== 4 || !signupId || ticketActionBusy) return
+  const read = ++ticketRead
+  try {
+    const { data } = await apiSignup(signupId)
+    if (read === ticketRead && s.value === 4 && ticket.value.signupId === signupId) ticket.value = data
+  } catch (e) {
+    if (read === ticketRead && s.value === 4) fail(e, '报名状态刷新失败')
+  }
+})
 </script>
 
 <style scoped lang="scss">
@@ -626,11 +678,11 @@ onShow(showPublicShareMenu)
 .meta { min-width: 0; display: flex; align-items: center; gap: 5px; color: var(--k-muted); font-size: 11px; }
 .meta text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item-status { display: flex; align-items: center; justify-content: space-between; }
-.kind { padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+.kind { padding: 2px 6px; border-radius: 4px; font-size: 11px; }
 .kind--yard { color: var(--k-green); background: var(--k-green-soft); }
 .kind--business { color: #9A672E; background: var(--k-ochre-soft); }
 .kind--user { color: #AD6A1D; background: #F5E7CE; }
-.quota { padding: 2px 7px; border: 1px solid #AEC7B5; border-radius: 5px; color: var(--k-green); font-size: 10px; }
+.quota { padding: 2px 7px; border: 1px solid #AEC7B5; border-radius: 5px; color: var(--k-green); font-size: 11px; }
 .quota.few { color: var(--k-alert); border-color: rgba(192,68,55,.45); } /* 名额紧张用提醒红 */
 .quota.full { color: var(--k-red-deep); background: var(--k-paper2); border-color: var(--k-line2); } /* 已满可候补：和首页一样奶油底深棕字，不用提醒红 */
 .signup { margin-top: auto; display: flex; align-items: center; gap: 7px; color: var(--k-muted); font-size: 11px; }
@@ -647,7 +699,7 @@ onShow(showPublicShareMenu)
 .rec-card + .rec-card { margin-top: 7px; }
 .rec-photo { position: relative; width: 112px; height: 90px; flex: 0 0 auto; }
 .rec-img { width: 112px; height: 90px; border-radius: 7px; }
-.reason-chip { position: absolute; top: 3px; left: 3px; padding: 2px 6px; border-radius: 4px; color: #fff; font-size: 10px; }
+.reason-chip { position: absolute; top: 3px; left: 3px; padding: 2px 6px; border-radius: 4px; color: #fff; font-size: 11px; }
 .reason-chip--green { background: var(--k-green); }.reason-chip--orange { background: #B7762D; }.reason-chip--blue { background: var(--k-indigo); }
 .rec-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .rec-title { display: block; line-height:1.5; white-space:normal; overflow-wrap:anywhere; }
@@ -656,7 +708,7 @@ onShow(showPublicShareMenu)
 .rec-quota { margin-left: auto; }
 .more-head { display: flex; align-items: center; justify-content: space-between; }
 .filters { display: flex; gap: 6px; }
-.filter { height: 25px; padding: 0 8px; border: 1px solid var(--k-line2); border-radius: 7px; background: var(--k-paper); display: flex; align-items: center; gap: 4px; font-size: 10px; }
+.filter { height: 25px; padding: 0 8px; border: 1px solid var(--k-line2); border-radius: 7px; background: var(--k-paper); display: flex; align-items: center; gap: 4px; font-size: 11px; }
 .more-item { min-height: 88px; padding: 7px 0; border-bottom: 1px solid var(--k-line); display: flex; gap: 10px; }
 .more-img { width: 92px; height: 82px; border-radius: 7px; flex: 0 0 auto; }
 .more-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -678,7 +730,7 @@ onShow(showPublicShareMenu)
 .detail-slogan { display: block; margin-top: 7px; color: var(--k-muted); font-size: 12px; }
 .price-row { display: flex; align-items: flex-end; justify-content: space-between; }
 .price { color: var(--k-red); font-family: var(--k-sans); font-size: 22px; font-weight: 700; }.per { color: var(--k-muted); font-size: 12px; }
-.insurance { width: 66px; height: 52px; margin-top: -31px; border: 1px solid #D2B17B; border-radius: 7px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #98672E; font-size: 10px; }
+.insurance { width: 66px; height: 52px; margin-top: -31px; border: 1px solid #D2B17B; border-radius: 7px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #98672E; font-size: 11px; }
 .detail-info { min-height: 70px; padding: 7px 14px; border-bottom: 1px solid var(--k-line); box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; }
 .detail-line { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .detail-section { padding: 9px 14px; border-bottom: 1px solid var(--k-line); box-sizing: border-box; }
@@ -688,7 +740,7 @@ onShow(showPublicShareMenu)
 .host-logo { width: 35px; height: 35px; border-radius: 50%; }
 .host-copy { min-width: 0; flex: 1; }
 .host-name-row { display: flex; align-items: center; gap: 6px; }.host-name { font-family: var(--k-serif); font-size: 15px; font-weight: 700; }
-.host-chip { padding: 2px 5px; border: 1px solid #D6BD98; border-radius: 4px; color: #95672F; font-size: 9px; }
+.host-chip { padding: 2px 5px; border: 1px solid #D6BD98; border-radius: 4px; color: #95672F; font-size: 11px; }
 .host-meta { display: block; margin-top: 4px; color: var(--k-muted); font-size: 11px; }
 .intro { min-height: 85px; position: relative; padding-bottom: 40px; }.detail-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; color: var(--k-ink2); font-size: 14px; line-height: 1.75; white-space: pre-line; }
 /* 展开后整段显示（保留换行、长网址也能折行）；介绍短到不用折叠时不留「展开」按钮的位置 */
@@ -708,7 +760,7 @@ onShow(showPublicShareMenu)
 .ticket-dash { margin: 12px -16px 9px; border-top: 1px dashed var(--k-line2); }
 .ticket-data { display: flex; flex-direction: column; gap: 7px; }.ticket-data__row { display: flex; font-size: 13px; }.ticket-data__row text:first-child { width: 82px; color: var(--k-muted); }
 .reminder { min-height: 64px; box-sizing:border-box; margin-top: 12px; padding: 12px 14px; border: 1px solid var(--k-line2); border-radius: 9px; background: var(--k-paper); display: flex; align-items: center; gap: 10px; }.reminder-title { display: block; font-family: var(--k-serif); font-size: 14px; font-weight: 700; }.reminder-sub { display: block; margin-top: 2px; color: var(--k-muted); font-size: 11px; }.reminder>view { flex:1; min-width:0; }.reminder-sub{line-height:1.6;overflow-wrap:anywhere}.reminder-link { flex:0 0 auto; white-space:nowrap; margin-left: auto; color: var(--k-green); font-size: 12px; font-weight: 600; }
-.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }.success-action { height: 80px; padding: 12px 14px; border: 1px solid var(--k-line2); border-radius: 9px; background: var(--k-paper); display: flex; align-items: center; gap: 12px; }.action-title { display: block; font-family: var(--k-serif); font-size: 15px; font-weight: 700; }.action-sub { display: block; margin-top: 5px; color: var(--k-muted); font-size: 10px; line-height: 1.4; }
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }.success-action { height: 80px; padding: 12px 14px; border: 1px solid var(--k-line2); border-radius: 9px; background: var(--k-paper); display: flex; align-items: center; gap: 12px; }.action-title { display: block; font-family: var(--k-serif); font-size: 15px; font-weight: 700; }.action-sub { display: block; margin-top: 5px; color: var(--k-muted); font-size: 11px; line-height: 1.4; }
 .activity-page { --k-bg:#FAF7F0;--k-paper:#FFFEFC;background:linear-gradient(135deg,#FFF8EE,#F9F8F3);font-family:var(--k-sans); }
 .activity-page .detail-summary { position:relative;margin:-14px 12px 0;border:0;border-radius:20px 20px 0 0;padding:18px 16px 14px;background:#FFFEFC;box-shadow:0 -2px 10px rgba(77,55,31,.025); }
 .activity-page .detail-title { font-family:var(--k-sans);font-size:23px;line-height:1.4;color:#473325; }
@@ -766,4 +818,428 @@ onShow(showPublicShareMenu)
 
 <style scoped>
 .rec-copy .meta{flex-wrap:wrap;min-height:18px;height:auto;line-height:1.5}.rec-copy .meta>text{min-width:0;overflow-wrap:anywhere}.more-head{flex-wrap:wrap;gap:6px}.filters{flex-wrap:wrap}.ai-banner{height:auto;min-height:64px}.ai-banner>view{min-width:0;flex:1}.ai-banner__img{flex-shrink:0;width:86px}
+</style>
+
+<style scoped lang="scss">
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板，参考小红书）：浅灰底上放白卡，不用阴影、不描边；卡片圆角 12、图片 8、标签 4；
+   标题 14–17、正文 13、辅助 11。功能和文字一个不少：选城市、搜索、四个页签、订阅提醒、为你推荐、新活动提醒开关、卡片上的收藏心、
+   名额状态、报名人数、详情里的地图导航 / 主办方主页 / 展开介绍 / 收藏 / 报名 / 分享、报名凭证上的提醒和签到都在。
+   上面的旧规则保留不动，这里用 .k-page.activity-page 开头的规则盖过去。 */
+.k-page.activity-page {
+  --k-bg: var(--k-page); --k-paper2: var(--k-fill); /* 本组暖米填充，只在根上定义一次 */
+  background: var(--k-page); font-family: var(--k-sans);
+  :deep(.k-topbar) { background: var(--k-page); }
+  :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+  .scan-status { margin: 8px 12px; padding: 10px 12px; border: 0; border-radius: 12px; background: #FFF8EE; font-size: 13px; }
+  /* 空状态：白卡内居中，字 14 / 500 二级墨，上下留白 28 */
+  .empty-tip { margin: 8px 0 0; padding: 28px 16px; border-radius: 12px; background: var(--k-paper); color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 1.6; }
+
+  /* ---------- 活动列表 ---------- */
+  .city-select { position: relative; margin-left: 0; gap: 2px; font-family: var(--k-sans); font-size: 13px; font-weight: 500; color: var(--k-ink2); } .city-select::before { content: ''; position: absolute; left: 0; right: -8px; top: -10px; bottom: -10px; } /* 字小了，上下各多出 10 的透明可点范围 */
+  .city-select > :deep(.k-icon:first-child) { display: none; }
+  .city-select :deep(.k-icon) { width: 12px !important; height: 12px !important; opacity: .7; }
+  .search { height: 36px; margin: 0 12px 4px; padding: 0 4px 0 12px; gap: 6px; border: 0; border-radius: 18px; background: var(--k-paper2); }
+  .search > :deep(.k-icon) { width: 16px !important; height: 16px !important; }
+  .search__text { color: var(--k-muted); font-size: 13px; }
+  .search__btn { height: 28px; padding: 0 13px; border-radius: 14px; background: linear-gradient(135deg, #B5814D, #8E5E33); color: #fff; font-family: var(--k-sans); font-size: 12px; font-weight: 600; }
+  .activity-tabs { padding: 0 12px; border-bottom: 0; background: transparent; }
+  /* 下划线页签：未选 14 / 400 浅灰，选中 14 / 600 深墨 + 16×3 暖棕短条，行高 40 */
+  .activity-tabs .k-tabs__item { height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; box-sizing: border-box; color: var(--k-muted); font-size: 14px; font-weight: 400; }
+  .activity-tabs .k-tabs__item.active { color: var(--k-ink); font-weight: 600; }
+  .activity-tabs .k-tabs__item.active::after { bottom: 4px; width: 16px; height: 3px; margin-left: -8px; border-radius: 2px; background: var(--k-red); }
+  :deep(.subscribe-entry) { padding: 8px 12px 0; }
+  :deep(.subscribe-entry button) { min-height: 36px; border: 0; border-radius: 12px; background: var(--k-paper); color: var(--k-ochre-deep); font-size: 12px; }
+  .list-body { padding: 8px 12px 100px; }
+  /* 「为你推荐」「有新活动提醒我」两行并成一张白卡，中间一道细线 */
+  .remind-row { height: 48px; padding: 0 12px; border-bottom: 0; background: var(--k-paper); font-family: var(--k-sans); font-size: 14px; font-weight: 400; color: var(--k-ink); }
+  .remind-row:first-child { border-radius: 12px 12px 0 0; }
+  .remind-row + .remind-row { border-radius: 0 0 12px 12px; box-shadow: inset 0 .5px 0 var(--k-line); }
+  .switch { position: relative; width: 40px; height: 24px; background: #D9D4CC; } .switch::before { content: ''; position: absolute; left: -8px; right: -8px; top: -10px; bottom: -10px; }
+  .switch.on { background: var(--k-green); }
+  .switch__knob { width: 20px; height: 20px; }
+  .switch.on .switch__knob { transform: translateX(16px); }
+  .date-title { margin: 14px 2px 8px; font-family: var(--k-sans); font-size: 14px; line-height: 20px; font-weight: 700; }
+  /* 活动卡：左边方图（圆角 8、右上角收藏心），右边标题两行 + 时间 / 集合 / 截止 + 两个小标签 + 报名人数 */
+  .activity-item { min-height: 0; margin-bottom: 8px; padding: 12px; gap: 10px; border-bottom: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .activity-item__photo { width: 104px; height: 104px; border-radius: 8px; overflow: hidden; background: var(--k-paper2); }
+  .activity-item__img { width: 104px; height: 104px; border-radius: 0; }
+  .fav-dot { width: 28px; height: 28px; background: rgba(255, 255, 255, .94); box-shadow: none; }
+  .fav-dot::before { content: ''; position: absolute; inset: -4px; }
+  /* .fav-hit 是心外面包的一层（不画样式、不占位置）：按心时挡住按压效果往上传，整张卡不跟着缩 */
+  .activity-item__copy { gap: 3px; }
+  .activity-item__title, .rec-title, .more-title { font-family: var(--k-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
+  .activity-item__title { overflow-wrap: anywhere; } /* 标题不截断：原来就是完整换行显示的，长标题照样全部露出来 */
+  .meta { gap: 4px; font-size: 11px; line-height: 16px; }
+  .meta :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+  .meta--deadline { color: var(--k-muted); }
+  .item-status { justify-content: flex-start; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .kind { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 11px; font-weight: 500; line-height: 17px; white-space: nowrap; }
+  .kind--business, .kind--user { background: var(--k-ochre-soft); color: var(--k-ochre-deep); }
+  .quota { height: 17px; padding: 0 5px; border: 0; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; font-weight: 500; line-height: 17px; white-space: nowrap; }
+  .quota.few { background: var(--k-alert-soft); color: var(--k-alert); }
+  .quota.full { background: var(--k-paper2); color: var(--k-ink2); }
+  .signup { gap: 6px; padding-top: 2px; font-size: 11px; line-height: 18px; } .signup .avatar-stack:empty { display: none; } /* 没有头像时去掉空壳，「0人已报名」和上面的标签左边对齐 */
+  .small-avatar { width: 18px; height: 18px; }
+
+  /* ---------- 为你推荐 ---------- */
+  .ai-body { padding: 8px 12px 100px; }
+  .ai-banner { padding: 10px 12px; border: 0; border-radius: 12px; background: var(--k-paper); }
+  .ai-banner__title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; }
+  .ai-banner__sub { margin-top: 3px; }
+  /* 右边的插画是带米黄纸底的 JPG：框按图片比例定（98×44），提亮到纸底变白，和白卡融在一起，不再像贴了一块方纸片 */
+  .ai-banner__img { width: 98px; height: 44px; border-radius: 8px; filter: brightness(1.1) contrast(1.08); }
+  .ai-section-title, .more-head > text { margin: 16px 2px 8px; font-family: var(--k-sans); font-size: 16px; line-height: 22px; font-weight: 700; color: var(--k-ink); }
+  .rec-card { min-height: 0; padding: 12px; gap: 10px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .rec-card + .rec-card { margin-top: 8px; }
+  .rec-photo { width: 96px; height: 96px; border-radius: 8px; overflow: hidden; background: var(--k-paper2); }
+  .rec-img { width: 96px; height: 96px; border-radius: 0; }
+  .reason-chip { top: 4px; left: 4px; height: 17px; padding: 0 6px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 17px; }
+  .reason-chip--green { background: rgba(255, 255, 255, .94); color: var(--k-green); }
+  .reason-chip--orange { background: rgba(255, 255, 255, .94); color: var(--k-ochre-deep); }
+  .reason-chip--blue { background: rgba(255, 255, 255, .94); color: var(--k-indigo); }
+  .rec-copy { gap: 3px; }
+  .rec-reason { font-size: 11px; line-height: 16px; }
+  .filters { gap: 6px; }
+  /* 筛选胶囊：28 高、圆角 14、12 号字 */
+  .filter { height: 28px; padding: 0 12px; gap: 2px; border: 0; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); font-size: 12px; }
+  .filter :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+  .more-item { min-height: 0; margin-top: 8px; padding: 12px; gap: 10px; border-bottom: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .more-img { width: 84px; height: 84px; border-radius: 8px; background: var(--k-paper2); }
+  .more-copy { gap: 3px; }
+
+  /* ---------- 活动详情 ---------- */
+  .detail-hero-box { background: var(--k-paper2); }
+  /* 没有封面：占位图标收到 36 左右、颜色放浅，底色和占位图同色（不再是半屏一个粗大的图标）；确认这场活动没传封面后，封面区高度减半 */
+  .detail-hero-box--ph { display: flex; align-items: center; justify-content: center; background: #F3EADF; }
+  .detail-hero-box--ph .detail-hero-bg { opacity: 0; }
+  .detail-hero-box--ph .detail-hero { width: 136px; height: 102px; opacity: .7; }
+  .detail-hero-box--short { height: 37.5vw; max-height: 180px; }
+  .detail-summary { min-height: 0; margin: -12px 12px 0; padding: 14px 12px 12px; border: 0; border-radius: 12px 12px 0 0; background: var(--k-paper); box-shadow: none; }
+  .detail-title-row { gap: 6px; }
+  .detail-kind { height: 17px; margin-top: 4px; padding: 0 5px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; font-weight: 500; line-height: 17px; }
+  .detail-title { font-family: var(--k-sans); font-size: 17px; line-height: 24px; font-weight: 700; color: var(--k-ink); }
+  .detail-slogan { margin-top: 4px; font-size: 12px; line-height: 17px; }
+  .price-row { align-items: center; margin-top: 6px; }
+  /* 价格：18 / 700 暖棕、等宽数字；单位 11 浅灰 */
+  .price { color: var(--k-red); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .per { font-size: 11px; color: var(--k-muted); }
+  /* 保险小标签：高 17、圆角 4、10 / 500 */
+  .insurance { flex-direction: row; width: auto; height: 17px; margin-top: 0; padding: 0 5px; gap: 2px; border: 0; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; font-weight: 500; line-height: 17px; }
+  .fee-note { margin-top: 6px; color: var(--k-muted); font-size: 11px; line-height: 17px; }
+  .detail-info { min-height: 0; margin: 0 12px; padding: 10px 12px 12px; gap: 7px; border: 0; border-radius: 0 0 12px 12px; background: var(--k-paper); box-shadow: inset 0 .5px 0 var(--k-line); }
+  .detail-line { gap: 6px; font-size: 13px; line-height: 19px; }
+  .detail-line :deep(.k-icon) { width: 14px !important; height: 14px !important; }
+  .place-tag { padding: 0 6px; border: 0; border-radius: 4px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 11px; line-height: 17px; }
+  .detail-section { margin: 8px 12px 0; padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .detail-section__title { margin-bottom: 8px; font-family: var(--k-sans); font-size: 16px; line-height: 22px; font-weight: 700; color: var(--k-ink); }
+  .host-section { min-height: 0; }
+  .host { gap: 8px; }
+  .host-logo { width: 36px; height: 36px; }
+  .host-name { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+  .host-chip { padding: 0 5px; border: 0; border-radius: 4px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 11px; line-height: 17px; }
+  .host-meta { margin-top: 2px; font-size: 11px; }
+  .host :deep(.k-button) { border-radius: 13px; }
+  .intro { min-height: 0; padding-bottom: 40px; }
+  .intro--plain { padding-bottom: 12px; }
+  .detail-text { font-size: 13px; line-height: 1.75; }
+  .expand { right: 12px; font-size: 12px; }
+  .fee { min-height: 0; }
+  .fee-row { gap: 10px; font-size: 13px; line-height: 1.7; }
+  .fee-label { min-width: 56px; color: var(--k-muted); }
+  /* 底部操作条：收藏 / 分享图标 20、字 10；报名是 44 高的暖棕渐变胶囊 */
+  :deep(.k-bottom) { border-top: 0; background: var(--k-paper); box-shadow: 0 -.5px 0 rgba(58, 50, 43, .1); }
+  :deep(.k-bottom__inner) { padding: 8px 12px !important; }
+  .bottom-side { width: 44px; min-height: 42px; justify-content: center; gap: 2px; color: var(--k-ink2); font-size: 11px; }
+  .bottom-side :deep(.k-icon) { width: 20px !important; height: 20px !important; }
+  .bottom-main :deep(.k-button) { height: 44px; border-radius: 22px; box-shadow: none; }
+  /* 报不了名（已结束 / 已截止 / 暂不可报名）时：原来的暖棕渐变整体淡到 .45（全站「不可点按钮」同一个样子）；照样能点，点了还是提示原因 */
+  .bottom-main--off :deep(.k-button) { opacity: .45; }
+  .signup-label { font-size: 15px; font-weight: 600; }
+  .signup-price { margin-left: 6px; font-size: 12px; font-weight: 400; }
+
+  /* ---------- 报名凭证 ---------- */
+  .success-body { padding: 0 12px 100px; }
+  .success-head { height: auto; min-height: 0; padding: 14px 4px 12px; gap: 12px; }
+  .success-title { color: var(--k-ink); font-family: var(--k-sans); font-size: 18px; line-height: 25px; } /* 这行也写「已取消 / 待支付 / 已关闭」，统一深色字，不再一律绿色 */
+  .success-sub { margin-top: 4px; font-size: 12px; line-height: 18px; }
+  .success-stamp { width: 64px; height: 64px; }
+  .ticket { padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .ticket-top { gap: 10px; }
+  .ticket-img { width: 80px; height: 80px; border-radius: 8px; background: var(--k-paper2); }
+  .ticket-copy { gap: 4px; }
+  .ticket-copy > .detail-kind { margin-top: 0; border-radius: 4px; }
+  .ticket-title { font-family: var(--k-sans); font-size: 15px; line-height: 21px; font-weight: 700; }
+  .ticket-copy .detail-line { gap: 5px; font-size: 12px; line-height: 18px; }
+  .ticket-dash { margin: 12px -12px 10px; border-top-color: var(--k-line); }
+  .ticket-data { gap: 6px; }
+  .ticket-data__row { font-size: 13px; line-height: 19px; }
+  .ticket-data__row text:first-child { width: 76px; }
+  .reminder { min-height: 56px; margin-top: 8px; padding: 10px 12px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .reminder-title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+  .reminder-link { color: var(--k-red-deep); font-weight: 500; }
+  /* 报名后的几个操作并成一张白卡里的列表行，行间发丝线（最后一行不画） */
+  .action-grid { gap: 0; margin-top: 8px; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+  .success-action { position: relative; min-height: 56px; padding: 10px 12px !important; gap: 10px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .success-action + .success-action::before { content: ""; position: absolute; top: 0; left: 12px; right: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; pointer-events: none; } /* 发丝线左边缩进 12，和列表行一个样子 */
+  .action-title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+  .action-sub { margin-top: 2px; font-size: 11px; }
+
+  /* 会员免费权益：浅赭黄小卡 + 浅棕底小按钮（盖过模板里的内联样式和微信默认灰按钮）。
+     按钮用块级 flex + 宽度跟着字走：不管选没选、屏幕宽窄，都固定在说明文字下一行、靠左，点一下不会跳行 */
+  .member-free { margin: 8px 12px 0 !important; padding: 12px !important; border-radius: 12px !important; background: var(--k-ochre-soft) !important; color: var(--k-ink); font-size: 13px; line-height: 1.6; }
+  .member-free__btn { display: flex; align-items: center; width: fit-content; max-width: 100%; height: 28px; line-height: 28px; margin: 8px 0 0 !important; padding: 0 12px; border: 0; border-radius: 14px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 12px !important; font-weight: 500; }
+  .member-free__btn::after { border: 0; }
+
+  /* ---------- 分享面板 ---------- */
+  .activity-share-panel { padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0; background: var(--k-paper); }
+  .activity-share-head { font-size: 16px; font-weight: 700; }
+  .activity-share-summary { margin: 4px 0 8px; font-size: 12px; }
+  .activity-share-row { gap: 12px; padding: 12px 0; border-bottom-color: var(--k-line); font-size: 14px; }
+  .activity-share-row > :deep(.k-icon) { width: 20px !important; height: 20px !important; }
+  .activity-share-row > :deep(.k-icon:last-child) { width: 14px !important; height: 14px !important; opacity: .6; }
+  .activity-share-note { margin-top: 1px; font-size: 11px; }
+
+  @media (max-width: 359px) {
+    .activity-item__photo, .activity-item__img { width: 88px; height: 88px; }
+    .rec-photo, .rec-img { width: 84px; height: 84px; }
+    .more-img { width: 76px; height: 76px; }
+    .ticket-img { width: 72px; height: 72px; }
+    .success-head { padding: 14px 4px 10px; }
+  }
+}
+</style>
+
+<style scoped lang="scss">
+/* ==========================================================================
+   11-18 第三轮精修：搜索钮退成浅棕小胶囊；「订阅活动提醒」并进下面的列表卡当第一行；空状态补图标；报名详情顶部收紧、虚线换发丝线。
+   ========================================================================== */
+.k-page.activity-page {
+  .search__btn { height: 28px; padding: 0 12px; border-radius: 14px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+  /* 订阅提醒 + 为你推荐 + 有新活动提醒我：同一张白卡的三行，每行 48 高、左对齐、行间发丝线 */
+  :deep(.subscribe-entry) { padding: 8px 12px 0; }
+  :deep(.subscribe-entry button) { justify-content: flex-start; gap: 8px; height: 48px; min-height: 48px; margin: 0; padding: 0 12px; border-radius: 12px 12px 0 0; background: var(--k-paper); color: var(--k-ink); font-size: 14px; line-height: 48px; }
+  :deep(.subscribe-entry button text) { flex: 1; text-align: left; }
+  .list-body { padding-top: 0; }
+  .remind-row:first-child { border-radius: 0; box-shadow: inset 0 .5px 0 var(--k-line); }
+  .date-title { margin: 20px 4px 8px; }
+  /* 空状态：白卡居中，56 浅棕方块 + 32 图标 + 一句话（14 / 500） */
+  .empty-tip { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 8px 0 0; padding: 32px 16px; }
+  .empty-ico { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: var(--k-red-soft); }
+  /* 为你推荐：区块标题 16 / 700，「更多活动」标题和右边三颗筛选钮在一条中线上 */
+  .ai-section-title { margin: 20px 4px 8px; font-size: 16px; line-height: 22px; font-weight: 700; }
+  .more-head { align-items: center; margin: 20px 0 8px; gap: 8px; }
+  .more-head > text { margin: 0 0 0 4px; font-size: 16px; line-height: 22px; font-weight: 700; }
+  /* 报名详情：顶上的大标题不再和顶栏一样大，收成 18 / 700 一行；票据中间的虚线换成发丝线 */
+  .success-head { height: auto; padding: 12px 4px 12px; }
+  .success-title { font-size: 18px; line-height: 26px; }
+  .success-sub { margin-top: 2px; font-size: 12px; }
+  .success-stamp { width: 64px; height: 64px; }
+  .ticket-dash { margin: 12px 0 10px; height: 1px; border-top: 0; background: var(--k-line); transform: scaleY(.5); }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 1 轮：提醒卡三行都是 16 图标 + 文字（文字左线一致）；活动卡标题 15/600 最多两行、信息行 12 号配 14 图标、方图 96；
+   日期组标题 16/700 对齐卡片外缘；「更多活动」卡和列表卡同一套（96 方图、类型标签在标题下面）；
+   报名凭证里「修改提醒」「去签到」挪到说明下面，不再贴着屏幕右边 */
+.k-page.activity-page {
+  .remind-row { justify-content: flex-start; gap: 8px; }
+  .remind-row > text { flex: 1; min-width: 0; }
+  .date-title { margin: 20px 0 8px; font-size: 16px; line-height: 22px; font-weight: 700; }
+  .activity-item__photo, .activity-item__img { width: 96px; height: 96px; }
+  .activity-item__title, .more-title { font-size: 15px; line-height: 21px; font-weight: 600; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .activity-item__copy, .more-copy { gap: 4px; }
+  .activity-item__copy .meta, .more-copy .meta { gap: 4px; font-size: 12px; line-height: 18px; }
+  .more-item { gap: 12px; }
+  .more-img { width: 96px; height: 96px; }
+  .more-copy > .k-between { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .reminder { flex-wrap: wrap; column-gap: 12px; row-gap: 4px; }
+  .reminder > view { flex: 1; min-width: 0; }
+  .reminder-link { flex: 0 0 100%; box-sizing: border-box; margin-left: 0; padding-left: 32px; font-size: 13px; line-height: 20px; }
+  @media (max-width: 359px) {
+    .activity-item__photo, .activity-item__img, .more-img { width: 88px; height: 88px; }
+  }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 2 轮：活动卡左图 96×128（3:4，和文字列一样高）；日期组标题 13/600 灰 + 暖棕小圆点；区块标题对齐卡片外沿；
+   320 宽「更多活动」时间行可两行；详情类型标签统一浅棕底暖棕字、名额图标换 users、没取到时显示骨架；
+   报名凭证：页头 56 方块图标 + 一句话（邮戳插画不再显示），凭证卡两侧半圆缺口做出票根感，现场签到在凭证卡底部、「去签到」44 高主按钮 */
+.k-page.activity-page {
+  .activity-item { align-items: flex-start; }
+  .activity-item__photo, .activity-item__img { width: 96px; height: 128px; }
+  .date-title { display: flex; align-items: center; gap: 6px; margin: 20px 0 8px; font-size: 13px; line-height: 20px; font-weight: 600; color: var(--k-muted); }
+  .date-title::before { content: ""; flex: 0 0 auto; width: 6px; height: 6px; border-radius: 3px; background: var(--k-red); }
+  .ai-section-title { margin-left: 0; margin-right: 0; padding-left: 0; }
+  .more-head > text { margin-left: 0; padding-left: 0; }
+  .detail-kind { background: var(--k-red-soft); color: var(--k-red-deep); }
+
+  .dskel { margin: 8px 0 0; }
+  .dskel__img { height: 200px; border-radius: 12px; background: var(--k-paper2); }
+  .dskel__card { margin-top: 8px; padding: 16px 12px; border-radius: 12px; background: var(--k-paper); }
+  .dskel__line { height: 14px; margin-top: 10px; border-radius: 7px; background: var(--k-paper2); }
+  .dskel__line--title { width: 60%; height: 18px; margin-top: 0; border-radius: 9px; }
+  .dskel__line--short { width: 72%; }
+  .detail-body--loading > .detail-hero-box, .detail-body--loading > .detail-summary, .detail-body--loading > .detail-info, .detail-body--loading > .detail-section { display: none; }
+
+  .success-head { display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 16px 4px 16px; }
+  .success-head > view:nth-child(2) { flex: 1; min-width: 0; }
+  .success-ico { flex: 0 0 56px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: var(--k-red-soft); }
+  .success-head--confirmed .success-ico { background: var(--k-green-soft); }
+  .success-title { font-size: 13px; line-height: 20px; font-weight: 500; color: var(--k-muted); }
+  .success-sub { margin-top: 2px; font-size: 18px; line-height: 26px; font-weight: 700; color: var(--k-ink); }
+  .success-stamp { display: none; }
+  .ticket { position: relative; }
+  .ticket-dash { position: relative; overflow: visible; margin: 12px -12px 10px; height: 0; border-top: 1px dashed var(--k-line2); background: transparent; transform: none; }
+  .ticket-dash::before, .ticket-dash::after { content: ""; position: absolute; top: -9px; width: 16px; height: 16px; border-radius: 8px; background: var(--k-bg); }
+  .ticket-dash::before { left: -8px; }
+  .ticket-dash::after { right: -8px; }
+  .reminder > :deep(.k-icon) { align-self: flex-start; margin-top: 2px; }
+  .ticket > .reminder { margin: 12px 0 0; padding: 12px 0 0; min-height: 0; border-radius: 0; background: transparent; box-shadow: inset 0 .5px 0 var(--k-line); }
+  .ticket > .reminder .reminder-link { display: flex; align-items: center; justify-content: center; height: 44px; margin-top: 8px; padding-left: 0; border-radius: 12px; background: var(--k-red); color: var(--k-paper); font-size: 15px; font-weight: 600; line-height: 44px; }
+  @media (max-width: 359px) {
+    .activity-item__photo, .activity-item__img { width: 88px; height: 118px; }
+    .more-copy .meta > text { white-space: normal; overflow: visible; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 第四轮：活动卡左图固定 96 方图（320 宽 88）；标题在逗号处换行、最多两行；日期组标题 15/600 墨色；
+   推荐 / 更多活动的时间行不折行；详情卡间距 12、卡内标题到内容 10；没取到报名数据时收起票据头部；「去签到」退成 40 高浅棕按钮 */
+.k-page.activity-page {
+  .activity-item__photo, .activity-item__img { width: 96px; height: 96px; }
+  .activity-item__title, .more-title, .rec-title { word-break: keep-all; overflow-wrap: anywhere; }
+  .date-title { font-size: 15px; line-height: 22px; font-weight: 600; color: var(--k-ink); }
+  .rec-copy .meta, .more-copy .meta { flex-wrap: nowrap; }
+  .rec-copy .meta > text, .more-copy .meta > text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rec-copy .meta > text:last-child, .more-copy .meta > text:last-child { flex: 0 0 auto; }
+  .detail-section { margin-top: 12px; }
+  .detail-section__title { display: block; margin-bottom: 10px; }
+  .ticket--blank .ticket-top, .ticket--blank .ticket-dash { display: none; }
+  .success-action { gap: 12px; }
+  .fee-row > text:last-child { word-break: keep-all; overflow-wrap: anywhere; }
+  .dskel { margin: 8px 12px 0; }
+  .dskel::after { content: ''; display: block; height: 160px; margin-top: 12px; border-radius: 12px; background: var(--k-paper); }
+  .ticket > .reminder .reminder-link { height: 40px; border-radius: 12px; background: var(--k-red-soft); color: var(--k-red-deep); line-height: 40px; }
+  @media (max-width: 359px) {
+    .activity-item__photo, .activity-item__img { width: 88px; height: 88px; }
+    .activity-item__title { font-size: 14px; line-height: 20px; }
+    .more-copy .meta > text { display: block; -webkit-line-clamp: unset; }
+    .rec-copy .meta, .more-copy .meta { font-size: 11px; }
+  }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 5 轮：骨架第三块放三条灰条；没取到报名数据时顶上那行「报名详情」做成 18 / 600 墨色标题；票据里没有值的「—」用浅灰 */
+.k-page.activity-page {
+  .dskel::after { height: 88px; background: linear-gradient(var(--k-paper2), var(--k-paper2)) 12px 16px / calc(100% - 24px) 12px no-repeat, linear-gradient(var(--k-paper2), var(--k-paper2)) 12px 38px / calc(90% - 24px) 12px no-repeat, linear-gradient(var(--k-paper2), var(--k-paper2)) 12px 60px / calc(60% - 24px) 12px no-repeat, var(--k-paper); }
+  .success-head--none .success-title { font-size: 18px; line-height: 26px; font-weight: 600; color: var(--k-ink); }
+  .ticket-data__row text.is-blank { color: var(--k-light); }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 6 轮：「为你推荐」顶部说明卡右边的手绘插画换成 44 浅棕方块 + 24 暖棕线性图标，和全组入口一种做法 */
+.k-page.activity-page {
+  .ai-banner { height: auto; min-height: 64px; }
+  .ai-banner__ico { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 14px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 夜 第四轮精修（以微信实拍为准）：
+   活动列表——顶栏连同搜索、页签一起白底，下沿发丝线；搜索提交改成「搜索」文字钮 + 竖线；空状态拆成标题 + 说明；
+   为你推荐——说明卡去掉卡底，筛选胶囊另起一行；两个空状态紧凑一档；
+   活动详情——骨架和真页面同结构、铺满，加载中底栏变淡不可点；
+   报名详情——页首缩成 40 方块 + 17 号标题，动作行加方块图标和箭头，票卡不再整块收起 */
+.k-page.activity-page {
+  /* 列表页：白色吸顶区 */
+  .search { background: var(--k-fill); }
+  .activity-tabs { box-shadow: inset 0 -.5px 0 var(--k-line); }
+  .search__btn { position: relative; height: 36px; padding: 0 8px 0 12px; border-radius: 0; background: transparent; color: var(--k-red); font-size: 13px; font-weight: 600; }
+  .search__btn::before { content: ''; position: absolute; left: 0; top: 11px; bottom: 11px; width: 1px; transform: scaleX(.5); background: var(--k-line2); }
+  .empty-tip { gap: 0; }
+  .empty-tip .empty-ico { margin-bottom: 12px; }
+  .empty-tip__title { font-size: 14px; font-weight: 500; line-height: 22px; color: var(--k-ink); }
+  .empty-tip__sub { margin-top: 4px; max-width: 260px; font-size: 12px; font-weight: 400; line-height: 1.6; color: var(--k-muted); text-align: center; }
+
+  /* 为你推荐 */
+  .ai-banner { min-height: 0; padding: 4px 4px 0; background: transparent; }
+  .ai-banner__ico { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 10px; }
+  .ai-banner__title { font-size: 17px; font-weight: 600; }
+  .more-head { flex-wrap: wrap; row-gap: 8px; }
+  .more-head > text { flex: 0 0 100%; }
+  .more-head .filters { flex: 0 0 100%; justify-content: flex-start; gap: 8px; }
+  .ai-body .empty-tip { padding: 24px 16px; }
+  .ai-body .empty-tip .empty-ico { width: 40px; height: 40px; border-radius: 10px; margin-bottom: 8px; }
+
+  /* 活动详情骨架 */
+  .dskel--v7 { margin: 0; min-height: calc(100vh - 120px); background: var(--k-paper); }
+  .dskel--v7::after { content: none; }
+  .dskel--v7 .dskel__img { height: 75vw; border-radius: 0; background: var(--k-fill); }
+  .dskel--v7 .dskel__card { margin: 0; padding: 16px 12px 24px; border-radius: 0; background: var(--k-paper); }
+  .dskel--v7 .dskel__line { height: 12px; margin-top: 10px; border-radius: 6px; background: var(--k-fill); }
+  .dskel--v7 .dskel__line--title { width: 82%; height: 20px; margin-top: 0; border-radius: 8px; }
+  .dskel--v7 .dskel__line--title2 { width: 48%; height: 20px; margin-top: 8px; border-radius: 8px; }
+  .dskel--v7 .dskel__line--price { width: 96px; height: 24px; margin-top: 16px; border-radius: 8px; }
+  .dskel--v7 .dskel__line--short { width: 60%; }
+  .dskel--v7 .dskel__line--name { width: 88px; height: 16px; margin-top: 0; }
+  .dskel--v7 .dskel__info { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .dskel--v7 .dskel__info .dskel__line { flex: 1; margin-top: 0; }
+  .dskel--v7 .dskel__info .dskel__line--short { flex: 0 0 60%; }
+  .dskel--v7 .dskel__dot { flex: none; width: 18px; height: 18px; border-radius: 6px; background: var(--k-fill); }
+  .dskel--v7 .dskel__sep { height: 1px; margin: 20px 0; transform: scaleY(.5); background: var(--k-line); }
+  .bottom-side.is-loading, .bottom-main.is-loading { opacity: .4; pointer-events: none; }
+
+  /* 报名详情 */
+  .success-head--none .success-ico { flex-basis: 40px; width: 40px; height: 40px; border-radius: 10px; }
+  .success-head--none .success-title { font-size: 17px; line-height: 24px; }
+  .success-action { align-items: center; min-height: 60px; }
+  .success-action__ico { flex: 0 0 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--k-red-soft); }
+  .success-action > view:nth-child(2) { flex: 1; min-width: 0; }
+  .success-action .action-title { font-size: 15px; font-weight: 500; }
+  .success-action + .success-action::before { left: 56px; }
+  .ticket--blank .ticket-top { display: flex; }
+  .ticket--blank .ticket-dash { display: block; }
+  .ticket--blank .ticket-title { display: block; width: 64%; min-height: 18px; border-radius: 6px; background: var(--k-fill); }
+}
+.k-page.activity-page :deep(.k-topbar) { background: var(--k-page); }
+</style>
+<style scoped lang="scss">
+/* 11-19 第四轮返修：报名详情没数据时，票头的标签、时间、集合地点都放骨架条（不再是小残块和空白），「复制」淡到 .4；
+   页首「报名详情」降一档，不和顶栏抢；活动卡「名额充足 / 较少 / 紧张」改成无底小字，同一行只留类型标签一种底色 */
+.k-page.activity-page {
+  .ticket--blank .detail-kind { display: block; width: 40px; min-width: 40px; height: 16px; padding: 0; border-radius: 4px; background: var(--k-fill); }
+  .ticket--blank .ticket-copy > .detail-line:not(.detail-line--tap) > text { display: block; width: 120px; height: 12px; margin-top: 4px; border-radius: 6px; background: var(--k-fill); }
+  .ticket--blank .detail-line--tap .detail-line__text { flex: 0 0 auto; }
+  .ticket--blank .detail-line--tap::after { content: ''; order: 1; flex: 0 1 100px; height: 12px; margin: 4px auto 0 4px; border-radius: 6px; background: var(--k-fill); }
+  .ticket--blank .place-tag { order: 2; opacity: .4; }
+  .success-head--none .success-title { font-size: 15px; font-weight: 600; line-height: 22px; }
+  .quota, .quota.few, .quota.full { height: auto; padding: 0; border: 0; border-radius: 0; background: transparent; font-size: 12px; line-height: 17px; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-19 微信实拍返修：空状态全组统一不套白卡（图标方块 + 两行同一档的字居中，放在内容区上部），标题和说明同一档 14/22/500 ink2，读起来是一句话；
+   页签改成左对齐（左起 12、间距 24，和攒局首页一样）；为你推荐说明区左边对齐卡片线，右上图标不加底色；
+   详情加载中主按钮做成骨架色（不写「暂不可报名」的意思）；报名详情页首对齐左线，动作行图标去掉浅棕方块、分隔线从 44 起 */
+.k-page.activity-page {
+  .empty-tip { margin: 24px 0 0; padding: 24px 16px; border-radius: 0; background: transparent; }
+  .empty-tip__title, .empty-tip__sub { max-width: 280px; margin-top: 0; font-size: 14px; font-weight: 500; line-height: 22px; color: var(--k-ink2); }
+  .ai-body .empty-tip { margin-top: 0; padding: 16px 16px 8px; }
+  .activity-tabs { justify-content: flex-start; gap: 24px; padding: 0 12px; }
+  .activity-tabs .k-tabs__item { flex: 0 0 auto; }
+  .ai-banner { padding: 4px 0 0; }
+  .ai-banner__ico { background: transparent; justify-content: flex-end; }
+  .bottom-main.is-loading { opacity: 1; }
+  .bottom-main.is-loading :deep(.k-button) { opacity: 1; background: var(--k-fill); color: var(--k-light); box-shadow: none; }
+  .success-head { padding: 16px 0; }
+  .success-action__ico { flex: 0 0 20px; width: 20px; height: 20px; border-radius: 0; background: transparent; }
+  .success-action + .success-action::before { left: 44px; }
+}
+
+.activity-page.user-surface {
+  .date-title { color: var(--k-red-deep); }
+  .activity-item { border-radius: 12px; box-shadow: var(--k-sh1); }
+  .activity-item__photo { overflow: hidden; border-radius: 9px; }
+  .activity-item__copy, .rec-copy { min-width: 0; }
+  .activity-item__title, .rec-title { line-height: 1.45; }
+  .meta, .quota { font-variant-numeric: tabular-nums; }
+}
 </style>

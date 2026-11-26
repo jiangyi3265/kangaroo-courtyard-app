@@ -2,7 +2,7 @@
   <!-- 岗位采访默认在原卡片内播放，用户可通过原生控件自行进入全屏。 -->
   <view v-if="src" class="svp" :class="{ 'svp--inline': inline }">
     <view v-if="!inline" class="svp__bar" :style="'padding-top: ' + top + 'px'">
-      <view class="svp__close" hover-class="k-press-s" @click="close"><k-icon name="x" :size="18" color="white" :stroke="2.2" /><text class="svp__close-text">关闭</text></view>
+      <view class="svp__close" hover-class="k-press-s" @click="close"><k-icon name="x" :size="18" color="white" /><text class="svp__close-text">关闭</text></view>
       <text v-if="title" class="svp__title">{{ title }}</text>
     </view>
     <video :id="vid" class="svp__video" :src="fullSrc" :poster="fullPoster" autoplay controls playsinline webkit-playsinline show-fullscreen-btn show-center-play-btn enable-progress-gesture object-fit="contain"

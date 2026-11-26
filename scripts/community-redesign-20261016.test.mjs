@@ -1,6 +1,6 @@
 // 2026-10-16 社区改版（对照主人样稿 21）的静态回归（node --test，不构建、不发请求）。
 // 守住这几件事：
-//   · 页签 全部 / 找搭子 / 旅居日常 / 经验分享；「经验分享」= 原「换工日记」（后端代码还是 diary），下面一行小字 全部 / 换宿旅行 / 线下兼职 / 全职，发 jobType；
+//   · 页签 全部 / 找搭子 / 旅居日常 / 经验分享；「经验分享」= 原「换工日记」（后端代码还是 diary），下面一行小字 全部 / 换工旅行 / 线下兼职 / 全职，发 jobType；
 //   · 找搭子留在社区页（不再跳 s=2）：分类小字 +「筛选」（日期 / 同行天数 / 同行性别 / 只看已验证）+ 出行安全须知 + apiBuddies 列表 +「发起认识一下」；
 //   · 顶栏「袋鼠小院」+ 袋鼠贴纸 + 城市（.brand__city 不改名）；白色搜索条 + 圆形搜索按钮，提示字不写「活动」；排序缩成页签右边的小「最新 ▾」，保留「已关注」；
 //   · 卡片按数据排：第一条带图的大图卡、挨着的带图两两一行、落单的右边小图、没图的文字卡（不拿占位图凑）、热门活动「去看看」卡插在「全部」里；
@@ -37,11 +37,11 @@ const css = (src) => parse(src).descriptor.styles.map(s => s.content).join('\n')
 
 test('页签、经验分享小字、发布类型的名字和顺序', () => {
   // 2026-10-17：「旅居日常」改名「旅居日常」（代码还是 daily）
-  assert.deepEqual(FEED_TABS, ['全部', '找搭子', '旅居日常', '经验分享'])
+  assert.deepEqual(FEED_TABS, ['全部', '找搭子', '经验分享', '旅居日常'])
   assert.equal(BUDDY_TAB, '找搭子')
   assert.equal(DIARY_TAB, '经验分享')
   assert.deepEqual(FEED_KIND, { 全部: '', 旅居日常: 'daily', 经验分享: 'diary' })
-  assert.deepEqual(JOB_CHIPS.map(j => j.label), ['换宿旅行', '线下兼职', '全职'])
+  assert.deepEqual(JOB_CHIPS.map(j => j.label), ['换工旅行', '线下兼职', '全职'])
   assert.deepEqual(JOB_CHIPS.map(j => j.key), ['volunteer', 'parttime', 'fulltime'])
   // 2026-10-17 发布页样稿 图 3 的顺序：找搭子 / 经验分享 / 旅居日常
   assert.deepEqual(PUBLISH_TYPES.map(t => t.name), ['找搭子', '经验分享', '旅居日常'])
@@ -123,7 +123,7 @@ test('经验分享的小字发 jobType；热门活动只插在「全部」里', 
   assert.doesNotMatch(index, /const goJobs = .*&city=/)
 })
 
-test('找搭子留在社区页：分类 + 筛选 + 安全须知 + apiBuddies 列表 + 发起认识一下', () => {
+test('找搭子留在社区页：分类 + 筛选 + 安全须知 + apiBuddies 列表 + 发起认识一下', async ctx => {
   const t = tpl(index)
   assert.doesNotMatch(index, /s\.value = 2; loadBuddies/, '点页签不再跳到单独一屏')
   assert.doesNotMatch(t, /s === 2/)
@@ -133,13 +133,23 @@ test('找搭子留在社区页：分类 + 筛选 + 安全须知 + apiBuddies 列
   assert.match(t, /v-for="c in cats"[^>]*@click="setCat\(c\)"/)
   assert.match(t, /class="bbar__filter"[^>]*hover-class="k-press" @click="openFilter"/)
   for (const s of ['出发日期', '同行天数', '同行性别', '只看已验证的发布者', '重置', '确定', '出行安全须知', '发起认识一下']) assert.ok(t.includes(s), s)
-  assert.match(t, /<view @click\.stop><k-button size="sm" @click\.stop="meet\(mate\)">\{\{[^<]*发起认识一下[^<]*\}\}<\/k-button><\/view>/, '按钮的 tap 不冒泡到卡片')
-  // 2026-10-19 起参数先放进 q（选的城市空着时同一份条件再看全国的，见 community-fallback-20261019.test.mjs）
-  assert.match(index, /const q = \{ city: city\.value,[^}]*category: CAT_KEY\[cat\.value\], verified: bq\.value\.verified, gender: bq\.value\.gender \|\| undefined, keyword: keyword\.value \|\| undefined \}[\s\S]*?apiBuddies\(q\)/)
+  assert.match(t, /<view v-if="privateChatEnabled \|\| mate\.author\.isMe" @click\.stop><k-button size="sm" @click\.stop="meet\(mate\)">\{\{[^<]*发起认识一下[^<]*\}\}<\/k-button><\/view>/, '按钮的 tap 不冒泡到卡片')
+  const queries = []
+  const h = runSetup(index, {
+    useScreen: () => vue.ref(1), CAT_KEY, shouldWiden: () => false,
+    apiBuddies: async q => { queries.push(plain(q)); return {data:{rows:[]}} }
+  })
+  ctx.after(h.stop)
+  h.run("city.value='大连'; keyword.value='出游'; bq.value={date:'2026-12-01',days:3,verified:true,gender:'female',activityPhase:'open'}")
+  for (const [label, category] of [['全部',undefined],['徒步登山','hike'],['本地类别','@本地类别']]) {
+    h.run('cat.value='+JSON.stringify(label))
+    await h.run('loadBuddies()')
+    assert.deepEqual(queries.at(-1), plain({city:'大连', keyword:'出游', date:'2026-12-01', days:3, verified:true, gender:'female', activityPhase:'open', category}))
+  }
   assert.match(index, /String\(e\.message \|\| ''\)\.includes\('个人资料'\)/, '性别限定 422 →「去填写」')
   assert.match(index, /apiCommunityRules\('buddy'\)/)
   // 没图的找搭子卡左边是分类图标 + 日期，不用「暂无图片」占位图
-  assert.match(t, /<image v-if="mate\.img" class="mate__img"/)
+  assert.match(t, /<post-photos v-if="mate\.imgs\.length" :photos="mate\.imgs"/)
   assert.doesNotMatch(index, /HOT_IMG|cover-empty\.png' : HOT|mate\.img \|\| /)
 })
 
@@ -183,7 +193,7 @@ test('发布页：经验分享走经历校验，兼职 / 全职经历带类型�
   assert.match(t, /@click="selected = item\.appId"/)
   assert.doesNotMatch(t.replace(/<!--[\s\S]*?-->/g, ''), /换工日记|换工经历/, '界面上不再出现旧名字（注释里说明改名的不算）')
   assert.match(publish, /toast\('请选择一段经历'\)/)
-  assert.match(mine, /<text>找搭子 · 旅居日常 · 经验分享<\/text>/)
+  assert.match(mine, /PUBLISH_TYPES\.map/); assert.match(mine, /@click="switchKind\(tab.key\)"/)
   assert.doesNotMatch(mine, /换工日记/)
 })
 
@@ -248,38 +258,57 @@ test('第一张热门活动卡下面有「更多活动 ›」，进完整的活�
   assert.match(tpl(index), /<view v-if="b\.moreActs" class="acts-more"><view class="acts-more__link" hover-class="k-press" @click="go\(R\.activity\)"><text>更多活动<\/text>/)
 })
 
-test('审核中的动态不能分享：复制链接、私信、小程序转发按钮都拦', () => {
+test('审核中的动态不能分享：复制链接、私信、小程序转发按钮都拦', async ctx => {
   assert.equal(canShare({ postId: 1, status: 'online' }), true)
   assert.equal(canShare({ postId: 1 }), true, '老接口没有 status 照常能分享')
   assert.equal(canShare({ postId: 1, status: 'pending' }), false)
   assert.equal(canShare({ postId: 1, status: 'rejected' }), false)
   assert.equal(canShare(null), false)
-  assert.match(index, /async function shareOther\(p\) \{\n[^\n]*\n  if \(!canShare\(p\)\) return toast\('动态审核通过后才能分享'\)/)
-  assert.match(index, /async function shareToChat\(p\) \{\n  if \(!p \|\| !p\.postId\) return\n  if \(!canShare\(p\)\) return toast\('动态审核通过后才能分享'\)/)
+  const notices = [], privateChatEnabled = vue.ref(true)
+  const h = runSetup(index, {
+    useScreen: () => vue.ref(1), canShare, privateChatEnabled,
+    toast: message => notices.push(message), sheet: () => assert.fail('审核中不应出现分享菜单'),
+    gated: () => assert.fail('审核中不应加载私信会话')
+  })
+  ctx.after(h.stop)
+  for (const action of ['shareOther','shareToChat']) {
+    await h.run(action+"({postId:1,status:'pending'})")
+    assert.equal(notices.at(-1),'动态审核通过后才能分享')
+  }
+  privateChatEnabled.value = false
+  await h.run("shareToChat({postId:1,status:'online'})")
+  assert.equal(notices.at(-1),'用户私信暂未开放')
   const t = tpl(index)
   assert.match(t, /<button v-if="canShare\(b\.post\)" class="fc__act fc__act--share share-btn" open-type="share"/)
-  assert.match(t, /<button v-if="canShare\(detail\)" class="actbar__item share-btn" open-type="share"/)
+  assert.match(t, /<button v-if="canShare\(detail\)" class="post-share share-btn" open-type="share"/)
   // 2026-10-17（community-pending-20261017）：不能分享时按钮还灰掉（--off）
   assert.match(t, /<view v-else class="fc__act fc__act--share fc__act--off" hover-class="k-press" @click="shareOther\(b\.post\)">/)
-  assert.match(t, /<view v-else class="actbar__item actbar__item--off" hover-class="k-press" @click="shareOther\(detail\)">/)
+  assert.match(t, /<view v-else class="post-share post-share--off" aria-label="分享帖子" hover-class="k-press" @click="shareOther\(detail\)">/)
   assert.match(index, /if \(hit && !canShare\(hit\)\) return \{ title: '袋鼠全球青年 · 同城社区', path: R\.community \}/)
 })
 
-test('文字卡正文保留摘要；卡片上只放一个验证标签', () => {
-  const c = css(index)
-  assert.match(c, /\.fc__text \{ display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;/)
-  // 验证信息保留为作者旁的小标记，行程认证优先，未认证时不显示。
-  assert.match(tpl(index), /<view v-if="b\.post\.verified \|\| b\.post\.phone" class="fc__verified">[\s\S]*?<text>\{\{ b\.post\.verified \? '行程已验证' : '手机已验证' \}\}<\/text>/)
+test('文字卡保留摘要，作者验证信息在详情展示', () => {
+  assert.match(css(index), /\.fc__text \{ display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;/)
+  const t = tpl(index)
+  const boundary = t.indexOf('<!-- 3 帖子详情 -->')
+  assert.ok(boundary > 0)
+  // 客户 #75 已确认去掉列表里的认证标签，详情仍由作者的实际认证状态控制。
+  const cardsEnd = t.indexOf('<k-tabbar active="community"')
+  assert.ok(cardsEnd > 0 && cardsEnd < boundary)
+  assert.doesNotMatch(t.slice(0,cardsEnd), /手机已验证|行程已验证/)
+  const detail = t.slice(boundary)
+  assert.match(detail, /<k-chip v-if="detail\.author\.phoneVerified"[^>]*>手机已验证<\/k-chip>/)
+  assert.match(detail, /<k-chip v-if="detail\.author\.tripVerified"[^>]*>行程已验证<\/k-chip>/)
 })
 
 test('后端：改名、jobType、topicLabel、经历放宽、后台选项', () => {
   assert.match(postJava, /KIND_LABEL\.put\("diary", "经验分享"\);/)
   assert.doesNotMatch(postJava, /KIND_LABEL\.put\("diary", "换工日记"\)/)
-  assert.match(postJava, /DIARY_JOB_LABEL\.put\("volunteer", "换宿旅行"\);\s*DIARY_JOB_LABEL\.put\("parttime", "线下兼职"\);\s*DIARY_JOB_LABEL\.put\("fulltime", "全职"\);/)
+  assert.match(postJava, /DIARY_JOB_LABEL\.put\("volunteer", "换工旅行"\);\s*DIARY_JOB_LABEL\.put\("parttime", "线下兼职"\);\s*DIARY_JOB_LABEL\.put\("fulltime", "全职"\);/)
   assert.match(postJava, /if \("diary"\.equals\(kind\) && jobType != null && DIARY_JOB_LABEL\.containsKey\(jobType\)\)/)
   assert.match(postJava, /m\.put\("topicLabel", topicLabel\(r, diaryJobs\)\);/)
   assert.match(postJava, /j\.job_type in \('volunteer','parttime','fulltime'\)/)
-  assert.match(postJava, /发布经验分享需要先选择一段已完成的换宿、兼职或全职经历/)
+  assert.match(postJava, /发布经验分享需要先选择一段已完成的换工、兼职或全职经历/)
   assert.match(ctlJava, /@RequestParam\(required = false\) String jobType\)/)
   assert.match(ctlJava, /posts\.feed\(AppUserContext\.currentUserId\(\), kind, city, sort, page, keyword, jobType\)/)
   assert.match(moduleJava, /"daily:旅居攻略,buddy:找搭子,diary:经验分享"/)
@@ -304,11 +333,65 @@ function runSetup(src, stubs) {
 const flush = () => new Promise(resolve => setImmediate(resolve))
 const plain = (v) => JSON.parse(JSON.stringify(v))
 
+test('桌游菜单进入对应的独立页面，取消或选择玩法都保持现有动态分类', async t => {
+  const destinations = [], menus = []
+  let choice = -1
+  const h = runSetup(index, {
+    useScreen: () => vue.ref(1), FEED_TABS,
+    R: { werewolf: '/pages/werewolf/index', undercover: '/pages/undercover/index' },
+    window: { matchMedia: () => ({ matches: true }) },
+    sheet: async labels => { menus.push(Array.from(labels)); return choice },
+    go: path => destinations.push(path)
+  })
+  t.after(h.stop)
+  h.run("pageShown.value = true; feedTab.value = '经验分享'")
+  await h.run('chooseTableGame()')
+  assert.deepEqual(destinations, [])
+  for (choice = 0; choice < 4; choice++) await h.run('chooseTableGame()')
+  assert.deepEqual(menus[0], ['袋鼠狼人杀', '谁是卧底', '好友桌游', '聚会小工具'])
+  assert.deepEqual(destinations, ['/pages/werewolf/index', '/pages/undercover/index', '/pages/party/index', '/pages/undercover/tools'])
+  assert.equal(h.run('feedTab.value'), '经验分享')
+})
+
+test('自动滚动只移动分类栏，触摸、筛选、选择玩法和离开页面时暂停', async t => {
+  const timers = new Set()
+  const h = runSetup(index, {
+    useScreen: () => vue.ref(1), FEED_TABS,
+    setTimeout: callback => { timers.add(callback); return callback },
+    clearTimeout: timer => timers.delete(timer)
+  })
+  t.after(h.stop)
+  const tick = () => {
+    assert.equal(timers.size, 1)
+    const [callback] = timers
+    timers.delete(callback)
+    callback()
+  }
+  h.run('pageShown.value = true')
+  await flush()
+  tick()
+  assert.equal(h.run('categoryAnchor.value'), 'feed-category-3')
+  tick()
+  assert.equal(h.run('categoryAnchor.value'), 'feed-category-0')
+  assert.equal(h.run('feedTab.value'), '全部')
+  for (const field of ['holdingCategories', 'sortOpen', 'filterOpen', 'gamePickerOpen']) {
+    h.run(field + '.value = true')
+    await flush()
+    assert.equal(timers.size, 0, field)
+    h.run(field + '.value = false')
+    await flush()
+    assert.equal(timers.size, 1, field)
+  }
+  h.run('pageShown.value = false')
+  await flush()
+  assert.equal(timers.size, 0)
+})
+
 test('H5：找搭子「筛选」弹层开着时锁住页面滚动，关掉、离开本页时还原，回来再锁（小程序仍用 page-meta）', async (t) => {
   const hooks = { show: [], hide: [], unload: [] }
   const doc = { documentElement: { style: { overflow: '' } }, body: { style: { overflow: 'scroll' } } }
   const h = runSetup(index, {
-    document: doc,
+    document: doc, communityEnabled: vue.ref(true),
     useScreen: () => vue.ref(1),
     onShow: (fn) => hooks.show.push(fn),
     onHide: (fn) => hooks.hide.push(fn),
@@ -349,6 +432,8 @@ test('H5：找搭子「筛选」弹层开着时锁住页面滚动，关掉、离
   h.run('s.value = 1')
   await flush()
   assert.equal(body(), 'hidden')
+  h.run('communityEnabled.value = false'); await flush(); assert.equal(body(), 'scroll')
+  h.run('communityEnabled.value = true'); await flush(); assert.equal(body(), 'hidden')
   // 页面关掉（onUnload）：还原
   fire('unload')
   assert.equal(body(), 'scroll')
@@ -367,9 +452,9 @@ test('H5：找搭子「筛选」弹层开着时锁住页面滚动，关掉、离
   assert.equal(doc.documentElement.style.overflow, '')
 
   // 源码：小程序的 page-meta 原样保留；H5 的锁只编进 H5；遮罩拦 touchmove、弹层自己不拦（超高时要能在弹层里滚）
-  assert.match(index, /^<template>\n  <!-- #ifdef MP-WEIXIN -->\n  <page-meta :page-style="filterOpen \? 'overflow: hidden' : ''" \/>/)
+  assert.match(index, /^<template>\n  <!-- #ifdef MP-WEIXIN -->\n  <page-meta :page-style="sheetShown \? 'overflow: hidden' : ''" \/>/)
   assert.match(index, /function lockPageScroll\(on\) \{\n  \/\/ #ifdef H5\n[\s\S]*?\n  \/\/ #endif\n\}/)
-  assert.match(index, /onUnload\(\(\) => lockPageScroll\(false\)\)/)
+  assert.match(index, /<!-- #endif -->\s*<k-community-gate>/)
   const tp = tpl(index)
   assert.match(tp, /<view v-if="filterOpen" class="k-mask" @click="filterOpen = false" @touchmove\.stop\.prevent \/>\n\s*<view v-if="filterOpen" class="k-sheet fsheet">\n/)
   assert.match(css(index), /\.fsheet \{ max-height: 82vh; overflow-y: auto; \}/)

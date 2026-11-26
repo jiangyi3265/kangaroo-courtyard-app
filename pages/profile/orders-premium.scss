@@ -10,3 +10,542 @@
 .oc__btns { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px; margin-top:14px; }.oc__btn { min-width:106px; height:38px; padding:0 17px; border-radius:999px; font-size:14px; }.oc__btn.is-primary { box-shadow:none; }
 .empty { border:0; box-shadow:none; background:transparent; padding:48px 16px; }
 @media(max-width:359px) { .oc__left,.oc__img { width:88px; }.oc__img { height:104px; }.oc__body { gap:11px; }.oc__title { font-size:15px; }.oc__price { font-size:21px; margin-left:0; }.oc__meta--row text { white-space:normal; }.oc__btn { min-width:94px; } }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：我的行程、评价管理、我的提醒、体验官申请 —— 浅灰底、白卡 12 圆角、不用阴影和描边，图、字和按钮收小一档。
+   功能和文字不变：分类、进行中 / 已完成 / 退款、跳转行、每张卡的类型 / 状态 / 金额 / 按钮都在，金额和状态文案不动；
+   小按钮看着 28–30 高，用透明的 ::after 把点按范围撑到 44。 */
+.orders { --k-bg:var(--k-page); --k-radius:12px; background:var(--k-page); }
+.orders :deep(.k-navbar__title) { font-family:var(--k-sans); font-size:16px; font-weight:600; }
+.orders .k-body { padding-left:12px; padding-right:12px; }
+.orders :deep(.k-button.is-lg) { height:44px; font-size:15px; box-shadow:none; }
+.orders :deep(.k-button.is-secondary) { color:var(--k-red-deep); }
+.sec-title { font-family:var(--k-sans); margin:14px 0 8px; }
+.sec-title--flat { margin:0; }
+.foot-note { margin-top:16px; font-size:11px; line-height:1.6; }
+.foot-note--tight { margin-top:12px; }
+/* 1 我的行程 */
+.cats { border-bottom:0; }
+.cats__item { height:40px; line-height:40px; }
+.cats__item.active { color:var(--k-red-deep); font-family:var(--k-sans); font-weight:600; }
+.cats__item.active::after { width:16px; height:3px; margin-left:-8px; background:var(--k-red); }
+.cats__n { top:3px; }
+.list { padding:8px 12px calc(96px + var(--k-safe-bottom)); gap:8px; }
+.subs { padding:3px; margin-bottom:0; border-radius:10px; background:#EFEBE5; }
+.subs__item { height:30px; border-radius:8px; font-size:13px; }
+.subs__item.on { background:var(--k-paper); color:var(--k-red-deep); font-weight:600; }
+.oc { margin-top:0; padding:12px; border:0; border-radius:12px; box-shadow:none; }
+.oc__head { gap:6px; height:20px; margin-bottom:10px; }
+.oc__ic { width:18px; height:18px; }
+.oc__type { font-family:var(--k-sans); font-size:13px; font-weight:600; color:var(--k-ink2); }
+.oc__status { padding:0 6px; border-radius:4px; background:var(--k-fill); color:var(--k-ink2); font-size:11px; font-weight:500; line-height:18px; }
+.oc__status.is-green { background:var(--k-green-soft); color:var(--k-green); }
+.oc__status.is-indigo { background:var(--k-indigo-soft); color:var(--k-indigo); }
+.oc__status.is-ochre { background:var(--k-ochre-soft); color:var(--k-ochre-deep); }
+.oc__status.is-red { background:var(--k-alert-soft); color:var(--k-alert); }
+.oc__status.is-gray { background:var(--k-fill); color:var(--k-muted); }
+.oc__body { gap:10px; }
+.oc__left { width:84px; }
+.oc__img { width:84px; height:84px; border-radius:8px; }
+.oc__img--empty { background:linear-gradient(145deg,#FCF4E8,#F4E4CC); }
+.oc__deposit { margin-top:4px; font-size:12px; font-weight:600; color:var(--k-red-deep); }
+.oc__title { font-family:var(--k-sans); font-size:14px; line-height:20px; font-weight:600; }
+.oc__meta { margin-top:4px; font-size:12px; line-height:17px; }
+.oc__meta--row { gap:6px; }
+.oc__loc { white-space:nowrap; }
+.oc__price { font-family:var(--k-sans); font-size:17px; line-height:22px; font-weight:700; color:var(--k-red-deep); }
+.oc__unit { font-size:11px; }
+.oc__signed { font-size:12px; }
+.oc__btns { gap:8px; margin-top:10px; }
+.oc__btn { position:relative; min-width:72px; height:30px; padding:0 14px; font-size:12px; font-weight:500; }
+.oc__btn::after, .rc__btn::after, .rem__open::after { content:""; position:absolute; left:0; right:0; top:-7px; bottom:-7px; }
+.oc__btn.is-outline { border-color:var(--k-red-line); background:var(--k-paper); color:var(--k-red-deep); }
+.oc__btn.is-primary { background:linear-gradient(135deg,#B5814D,#8E5E33); box-shadow:none; }
+.empty { padding:48px 16px; }
+.empty__ring { width:56px; height:56px; background:var(--k-paper); }
+/* 2 评价管理 */
+.tip { padding:8px 12px; background:#FFF8EE; }
+.rc { gap:10px; padding:12px; margin-bottom:8px; border:0; border-radius:12px; box-shadow:none; }
+.rc__name { font-family:var(--k-sans); font-size:14px; font-weight:600; }
+.rc__name--lg { font-size:15px; }
+.rc__time { font-size:11px; }
+.rc__deadline { font-size:12px; font-weight:500; color:var(--k-red-deep); }
+.rc__deadline--green { color:var(--k-green); }
+.rc__btn { position:relative; width:auto; min-width:64px; height:28px; padding:0 12px; border:1px solid var(--k-red-line); color:var(--k-red-deep); font-size:12px; font-weight:500; }
+.rights { border:0; }
+.rights__row { gap:10px; padding:12px; }
+.rights__ic { width:36px; height:36px; }
+.rights__title { font-family:var(--k-sans); font-size:14px; font-weight:600; }
+.rights__desc { margin-top:2px; }
+/* 3 我的提醒 */
+.rem-head { padding:2px 2px 8px; }
+.rem-card { border:0; }
+.rem { gap:10px; padding:12px; }
+.rem__ic { border-radius:10px; background:#F7F2EA; }
+.rem__title { font-family:var(--k-sans); font-size:14px; font-weight:600; }
+.rem__desc { font-size:11px; line-height:1.5; }
+.rem__freq { font-size:11px; }
+.rem__open { position:relative; border-radius:999px; border-color:var(--k-red-line); color:var(--k-red-deep); }
+.rem-label { margin:14px 2px 8px; font-size:12px; }
+/* 4 体验官攻略申请 */
+.perks { padding:12px 4px; border:0; }
+.perk__title { font-family:var(--k-sans); font-weight:600; }
+.city { min-width:52px; height:30px; padding:0 12px; border:0; border-radius:999px; background:var(--k-paper); font-size:13px; }
+/* 复查补充：分段页签（进行中 / 已完成 / 退款）和城市胶囊看着仍是 30 高，用透明的 ::after 上下各撑 3，点按范围回到 36；页内按钮统一成胶囊 */
+.subs__item, .city { position:relative; }
+.subs__item::after, .city::after { content:""; position:absolute; left:0; right:0; top:-3px; bottom:-3px; }
+.orders :deep(.k-button) { border-radius:999px; }
+/* 不能点的按钮（提交中）：11-18 第二轮起交给公共组件 —— 原配色整体 .45，不再盖成冷灰块 */
+
+/* 2026-11-18 评审修正（只动样子） */
+/* 1) 我的行程顶上一排分类：左右留 12（之前 6），最右边「换宿旅行」右上角的数字不再伸进页边距；六个分类时那一排已经排满，不动 */
+.cats__row:not(.cats__row--6) { padding:0 12px; }
+/* 2) 评价管理、体验官申请：细分隔线不要了，用留白分开（线还在模板里，只是不画出来）；紧跟在线后面的小标题上边距收到 4，和上面相隔 12–16 */
+.orders .k-divider { display:none; }
+.k-divider + .sec-title { margin-top:4px; }
+/* 3) 体验官申请顶上的横幅图：收进 12 页边距、圆角 12，和下面的白卡对齐（之前通栏贴边） */
+.hero { width:calc(100% - 24px); margin:8px 12px 0; border-radius:12px; }
+/* 4) 「申请条件」「申请信息」各放进一张白卡（模板里各包了一层），和上面三栏介绍一样是卡片，不再直接铺在灰底上 */
+.apply-card { margin-top:12px; padding:12px; border-radius:12px; background:var(--k-paper); }
+.apply-card ~ .apply-card { margin-top:8px; }
+.apply-card > .sec-title { margin-top:0; }
+
+/* 11-18 第二轮精修（只动样子） */
+/* 1) 我的行程顶上一排分类（下划线页签）：字 14，没选 400 灰、选中 600 墨色（不再放大一号），下面 16×3 暖棕短条，行高 40；六个分类或 320 宽时字收一档，放得下「换宿旅行」 */
+.cats__item { font-size:14px; font-weight:400; color:var(--k-muted); }
+.cats__item.active { font-size:14px; font-weight:600; color:var(--k-ink); }
+.cats__item.active .cats__n { color:var(--k-red-deep); }
+.cats__row--6 .cats__item, .cats__row--6 .cats__item.active { font-size:12px; }
+@media (max-width:359px) { .cats__item, .cats__item.active { font-size:13px; } .cats__row--6 .cats__item, .cats__row--6 .cats__item.active { font-size:12px; } }
+/* 2) 进行中 / 已完成 / 退款：分段控件 —— var(--k-fill) 外框 32 高、白块 28 高，字 13（选中 600 墨色、没选 400 二级墨）；透明 ::after 上下各撑 4，点按区 36 */
+.subs { gap:0; padding:2px; border-radius:16px; background:var(--k-fill); }
+.subs__item { height:28px; border-radius:14px; font-size:13px; font-weight:400; color:var(--k-ink2); }
+.subs__item.on { background:var(--k-paper); color:var(--k-ink); font-weight:600; }
+.subs__item::after { top:-4px; bottom:-4px; }
+/* 3) 行程卡：状态小标签 17 高 10 字；金额 18 / 700 暖棕、等宽数字；卡上按钮 28 高（透明 ::after 上下各撑 8，点按区 44） */
+.oc__status { padding:0 5px; font-size:10px; line-height:17px; }
+.oc__price { font-size:18px; font-weight:700; color:var(--k-red); font-variant-numeric:tabular-nums; }
+.oc__btn { height:28px; border-radius:14px; }
+.oc__btn::after { top:-8px; bottom:-8px; }
+/* 4) 没有行程 / 加载中：白卡里居中，图标圈 40、图标 22 灰 */
+.empty { gap:8px; margin-top:0; padding:28px 12px; border:0; border-radius:12px; background:var(--k-paper); box-shadow:none; }
+.empty__ring { width:40px; height:40px; background:var(--k-page); }
+.empty .k-meta { font-size:12px; line-height:1.6; }
+/* 5) 区块标题：卡外的（评价权益、可创作的城市）16 / 700、行高 22；卡里的（申请条件、申请信息）14 / 600 */
+.sec-title { font-size:16px; font-weight:700; line-height:22px; }
+.apply-card > .sec-title { font-size:14px; font-weight:600; }
+/* 6) 评价权益两枚图标：同一种浅棕圆底 + 暖棕图标（模板里改了底色类名和图标颜色） */
+.rights__ic.k-circle--soft-red { background:var(--k-red-soft); }
+
+/* ===================================================================================================
+   11-18 第三轮「逐页精修」（只动样子；功能、文字、点按区不变）
+   我的行程做成订单中心：卡头「类型 ··· 状态」一行、卡身 1:1 缩略图 + 标题 + 地点日期、金额靠右对齐到同一条线、
+   卡脚按钮之上一条发丝线；页边距 16、卡内 16、卡间 12。图标全部线性单色（类型 ink2、强调 red），不再按类别配蓝 / 赭色。
+   =================================================================================================== */
+.orders .k-body { padding-left:16px; padding-right:16px; }
+/* 顶上分类：数字跟在字后面同一基线（12 灰，选中跟着变深棕），不再是右上角的小上标；六个分类时位置不够，仍用上标 */
+.cats__row:not(.cats__row--6) .cats__item { align-items:center; gap:2px; }
+.cats__row:not(.cats__row--6) .cats__n { position:static; font-size:12px; font-weight:400; line-height:1; color:var(--k-muted); font-variant-numeric:tabular-nums; }
+.cats__row:not(.cats__row--6) .cats__item.active .cats__n { color:var(--k-red-deep); font-weight:600; }
+.cats__row:not(.cats__row--6) { padding:0 8px; gap:0; }
+@media (max-width:359px) { .cats__row:not(.cats__row--6) .cats__item, .cats__row:not(.cats__row--6) .cats__item.active { font-size:12px; } .cats__row:not(.cats__row--6) .cats__n { font-size:11px; } }
+.list { padding:12px 16px calc(96px + var(--k-safe-bottom)); gap:12px; }
+.subs { height:36px; box-sizing:border-box; }
+.subs__item { height:32px; border-radius:16px; }
+.jump { min-height:44px; padding:0 12px; gap:8px; border-radius:12px; background:var(--k-paper); }
+.jump__text { font-size:13px; color:var(--k-ink2); }
+/* 行程卡 */
+.oc { padding:0 16px; border-radius:12px; }
+.oc__head { position:relative; height:44px; margin:0; gap:6px; }
+.oc__head::after { content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--k-line); transform:scaleY(.5); }
+.oc__ic { width:16px; height:16px; border:0; }
+.oc__type { font-size:13px; font-weight:600; color:var(--k-ink); }
+/* 状态：卡头右边一行彩字（订单中心的写法），不再是小色块 */
+.oc__status { margin-left:auto; padding:0; border-radius:0; background:transparent; font-size:13px; font-weight:500; line-height:20px; }
+.oc__status.is-green { background:transparent; color:var(--k-green); }
+.oc__status.is-indigo { background:transparent; color:var(--k-indigo); }
+.oc__status.is-ochre { background:transparent; color:var(--k-alert); }
+.oc__status.is-red { background:transparent; color:var(--k-alert); }
+.oc__status.is-gray { background:transparent; color:var(--k-muted); }
+.oc__body { gap:12px; padding:14px 0; }
+.oc__left { width:80px; }
+.oc__img { width:80px; height:80px; border-radius:8px; }
+.oc__img--empty { background:var(--k-red-soft); }
+.oc__right { min-height:80px; }
+.oc__title { font-size:14px; font-weight:600; line-height:20px; color:var(--k-ink); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.oc__meta { margin-top:4px; gap:4px; font-size:12px; line-height:18px; color:var(--k-muted); }
+/* 日期在左、金额在右，同一行；金额 ¥ 跟数字一起 18 / 700 暖棕等宽，单位 11 灰，所有卡的金额右边对齐卡片内边距 */
+.oc__meta--row { flex-direction:row; align-items:flex-end; justify-content:space-between; flex-wrap:nowrap; gap:8px; margin-top:auto; padding-top:6px; }
+.oc__meta--row > .k-row { min-width:0; padding-bottom:2px; }
+.oc__meta--row > .k-row text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.oc__price { flex:0 0 auto; margin-left:auto; font-size:18px; line-height:22px; font-weight:700; color:var(--k-red); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.oc__unit { margin-left:1px; font-size:11px; font-weight:400; color:var(--k-muted); }
+.oc__signed { flex:0 0 auto; margin-left:auto; padding:0 6px; height:20px; line-height:20px; border-radius:4px; background:var(--k-green-soft); color:var(--k-green); font-size:11px; font-weight:500; white-space:nowrap; }
+.oc__deposit { margin-top:6px; font-size:11px; }
+/* 卡脚：按钮靠右，上面一条发丝线；28 高小按钮（透明 ::after 上下各撑 8，点按 44） */
+.oc__btns { position:relative; margin-top:0; padding:10px 0 12px; gap:8px; }
+.oc__btns::before { content:""; position:absolute; left:0; right:0; top:0; height:1px; background:var(--k-line); transform:scaleY(.5); }
+.oc__btns:empty { display:none; }
+.oc__btn { min-width:76px; height:30px; padding:0 14px; border-radius:15px; font-size:12px; font-weight:500; }
+.oc__btn.is-outline { border:1px solid var(--k-red-line); background:var(--k-paper); color:var(--k-ink); }
+.oc__btn.is-primary { background:var(--k-grad-brown); color:var(--k-paper); font-weight:600; }
+@media (max-width:359px) {
+  .list { padding-left:12px; padding-right:12px; }
+  .oc { padding:0 12px; }
+  .oc__left, .oc__img { width:72px; }
+  .oc__img { height:72px; }
+  .oc__right { min-height:72px; }
+  .oc__meta--row { flex-wrap:wrap; }
+}
+/* 空状态：56 浅棕方块 + 32 号线性图标 + 一句话（14 / 500） */
+.empty { gap:0; padding:32px 16px 28px; }
+.empty__ring { width:56px; height:56px; border-radius:16px; background:var(--k-red-soft); }
+.empty .k-meta { margin-top:12px; font-size:14px; font-weight:500; line-height:20px; color:var(--k-ink2); }
+
+/* 2 评价管理：没有评价时是白卡空状态（星星图标 + 一句话），有评价时这行字是列表上方 12 灰小字、没有底色条 */
+.orders .k-tabs__item { padding:9px 0; line-height:22px; color:var(--k-muted); font-weight:400; }
+.orders .k-tabs__item.active { color:var(--k-ink); font-weight:600; }
+.orders .k-tabs__item.active::after { width:16px; height:3px; margin-left:-8px; border-radius:2px; background:var(--k-red); }
+.orders .k-tabs { border-bottom:0; }
+.tip { margin:0; padding:12px 16px 0; background:transparent; font-size:12px; line-height:18px; color:var(--k-muted); }
+.tip--empty { display:flex; flex-direction:column; align-items:center; margin:12px 16px 0; padding:32px 16px 28px; border-radius:12px; background:var(--k-paper); }
+.tip--empty > text { margin-top:12px; font-size:14px; font-weight:500; line-height:20px; color:var(--k-ink2); }
+.tip + .k-body { padding-top:12px; }
+.rc { align-items:flex-start; gap:12px; padding:16px; margin-bottom:12px; }
+.rc__img { width:56px; height:56px; border-radius:8px; }
+.rc__name, .rc__name--lg { font-size:14px; font-weight:600; line-height:20px; }
+.rc__title { margin-top:2px; font-size:13px; line-height:18px; color:var(--k-ink2); }
+.rc__time { margin-top:2px; font-size:12px; line-height:18px; }
+.rc__deadline { margin-top:4px; font-size:12px; font-weight:500; line-height:18px; color:var(--k-alert); }
+.rc__deadline--green { color:var(--k-green); }
+.rc__btn { align-self:center; height:28px; min-width:64px; padding:0 12px; border:0; border-radius:14px; background:var(--k-red-soft); color:var(--k-red-deep); font-size:12px; font-weight:600; }
+.rc :deep(.k-chip) { align-self:center; }
+.sec-title { margin:24px 0 10px; }
+.k-divider + .sec-title { margin-top:24px; }
+.rights { border-radius:12px; }
+.rights__row { position:relative; gap:12px; padding:16px; }
+.rights__row--line { border-bottom:0; }
+.rights__row--line::after { content:""; position:absolute; left:64px; right:16px; bottom:0; height:1px; background:var(--k-line); transform:scaleY(.5); }
+.rights__ic { width:36px; height:36px; border-radius:10px; }
+.rights__title { font-size:14px; font-weight:600; line-height:20px; }
+.rights__desc { margin-top:2px; font-size:12px; line-height:1.6; }
+.foot-note { margin-top:16px; padding:0 8px; font-size:11px; line-height:1.6; color:var(--k-muted); }
+
+/* 3 我的提醒：每行左边 36 浅棕方块 + 20 号暖棕线性图标（一种颜色）；暂停的用灰色图标；行间发丝线从文字处开始 */
+.rem-head { align-items:center; padding:12px 0 10px; }
+.rem-head .k-small { font-size:12px; }
+.rem-edit { height:28px; padding:0 12px; border-radius:14px; background:var(--k-red-soft); color:var(--k-red-deep); font-size:12px; font-weight:500; line-height:28px; }
+.rem-card { border-radius:12px; overflow:hidden; }
+.rem { position:relative; gap:12px; min-height:64px; padding:12px 16px; box-sizing:border-box; }
+.rem--line { border-bottom:0; }
+.rem--line::after { content:""; position:absolute; left:64px; right:16px; bottom:0; height:1px; background:var(--k-line); transform:scaleY(.5); }
+.rem__ic { width:36px; height:36px; border-radius:10px; background:var(--k-red-soft); }
+.rem-card + .rem-label + .rem-card .rem__ic { background:var(--k-bg); }
+.rem__title { font-size:14px; font-weight:600; line-height:20px; color:var(--k-ink); }
+.rem__desc { margin-top:2px; font-size:12px; line-height:16px; color:var(--k-muted); }
+.rem__freq { margin-right:2px; font-size:12px; color:var(--k-muted); }
+.rem__open { width:auto; min-width:52px; height:28px; padding:0 12px; border:0; border-radius:14px; background:var(--k-red-soft); color:var(--k-red-deep); font-size:12px; font-weight:600; box-sizing:border-box; }
+.rem-label { margin:24px 0 10px; font-size:13px; font-weight:600; color:var(--k-ink2); }
+
+/* 4 旅行体验官攻略申请：三格介绍图标统一成浅棕圆底 + 暖棕线性图标（之前浅绿底配绿 / 赭色）；城市行末尾「查看全部」和城市同款胶囊 + 箭头；「开启」是 32 高小按钮 */
+.hero { width:calc(100% - 32px); margin:12px 16px 0; border-radius:12px; }
+.perks { margin-top:12px; padding:16px 4px; border-radius:12px; }
+.perk { gap:8px; }
+.perk--line { border-right:0; box-shadow:1px 0 0 0 var(--k-line); }
+.perk__ic { width:36px; height:36px; }
+.perk__ic.k-circle--soft-red { background:var(--k-red-soft); }
+.perk__title { font-size:13px; font-weight:600; line-height:18px; color:var(--k-ink); }
+.perk__desc { margin-top:2px; font-size:11px; line-height:1.5; }
+.perks + .k-between { margin-top:24px; }
+.perks + .k-between .k-small { font-size:12px; }
+.cities { gap:8px; margin-top:10px; }
+.city { height:32px; padding:0 14px; border-radius:16px; font-size:13px; color:var(--k-ink2); }
+.city__all { margin-left:0; gap:2px; padding:0 10px 0 14px; color:var(--k-muted); font-size:12px; }
+.apply-card { margin-top:24px; padding:16px; }
+.apply-card ~ .apply-card { margin-top:12px; }
+.apply-card > .sec-title { margin:0 0 12px; font-size:14px; font-weight:600; line-height:20px; }
+.apply-card .k-col.k-gap10 { gap:10px; margin-top:0; }
+.apply-card .k-col .k-small { font-size:13px; line-height:20px; color:var(--k-ink2); }
+.form__label { font-size:13px; font-weight:500; color:var(--k-ink2); }
+.apply-card .k-input { min-height:44px; border:0; border-radius:8px; background:var(--k-bg); }
+.apply-card .plan { min-height:88px; padding:12px 12px 22px; }
+.apply-card .add { width:44px; }
+.apply-card .k-row.k-gap8 { align-items:center; }
+.apply-card :deep(.k-button.locate-btn) { flex:0 0 auto; height:32px; padding:0 14px; border-radius:16px; font-size:13px; font-weight:600; }
+.apply-card + .k-button, .orders :deep(.k-button.k-mt20) { margin-top:24px; }
+.foot-note--tight { margin-top:12px; }
+/* 第三轮复查 1：「可创作的城市」标题和右边「N 个城市」同一行对齐（上面的区块标题间距规则别盖到它）；待评价的剩余天数用深棕，不用提醒红 */
+.sec-title.sec-title--flat { margin:0; line-height:22px; }
+.perks + .k-between { align-items:center; }
+.rc__deadline { color:var(--k-red-deep); }
+.rc__deadline.rc__deadline--green { color:var(--k-green); }
+.cats__row:not(.cats__row--6) .cats__item { gap:3px; }
+/* 窄屏：店名和「· 住宿」连成一段文字往下排（不再把店名挤成「丽江袋鼠小 / 院」、类型单独竖一列） */
+.rc > .k-flex1 { min-width:0; }
+.rc > .k-flex1 > .k-row { display:block; line-height:20px; }
+.rc > .k-flex1 > .k-row > .rc__name, .rc > .k-flex1 > .k-row > .rc__sub { display:inline; }
+.rc > .k-flex1 > .k-row > .rc__sub { margin-left:4px; white-space:nowrap; }
+.rc__btn, .rc :deep(.k-chip) { flex-shrink:0; }
+.oc__img { background:var(--k-red-soft); }
+/* 窄屏：「去评价」小胶囊挪到卡片右下角，左边的店名 / 房型就有整行宽度，不再把「· 住宿」挤到下一行 */
+@media (max-width: 374px) {
+  .rc { position:relative; }
+  .rc__btn { position:absolute; right:16px; bottom:16px; }
+}
+
+/* ===================================================================================================
+   11-18 第三轮返修（独立评审第 1 轮；只动样子）
+   =================================================================================================== */
+/* 1 分类页签：一行可横滑，左右 16 和下面的卡片对齐，每项按字的自然宽度、间距一律 20；数字 11 号灰 */
+.orders .cats__row, .orders .cats__row.cats__row--6, .orders .cats__row:not(.cats__row--6) { display:inline-flex; width:auto; min-width:100%; padding:0 16px; gap:20px; box-sizing:border-box; justify-content:flex-start; }
+.orders .cats__item, .orders .cats__row--6 .cats__item, .orders .cats__row:not(.cats__row--6) .cats__item { flex:0 0 auto; min-width:0; padding:0; font-size:14px; gap:2px; }
+.orders .cats__row .cats__item.active { font-size:14px; }
+.orders .cats__row .cats__n { position:static; font-size:11px; font-weight:400; line-height:1; color:var(--k-muted); }
+.orders .cats__row .cats__item.active .cats__n { color:var(--k-red-deep); font-weight:600; }
+/* 订单卡按钮：32 高、左右 14、圆角 16（全站卡内小按钮的档） */
+.orders .oc__btn { height:32px; padding:0 14px; border-radius:16px; }
+.orders .oc__btn::after { top:-6px; bottom:-6px; }
+/* 窄屏：日期和金额始终在同一行（金额收到 16），每张卡结构一样，不再有的卡金额掉到下一行 */
+@media (max-width:359px) {
+  .orders .oc__meta--row { flex-wrap:nowrap; gap:4px; }
+  .orders .oc__meta--row > .k-row { flex:1 1 auto; }
+  .orders .oc__price { font-size:16px; }
+}
+/* 空状态：一句标题下面再加一行 12 号说明 */
+.orders .empty__desc { margin-top:4px; font-size:12px; line-height:1.6; color:var(--k-muted); text-align:center; }
+/* 2 评价管理：缩略图位置先铺浅棕底 + 类型线性图标（住宿 bed / 换宿 house / 活动 ticket / 岗位 briefcase），有照片时照片盖在上面 */
+.orders .rc__ph { position:relative; flex:0 0 auto; width:56px; height:56px; border-radius:8px; overflow:hidden; background:var(--k-red-soft); display:flex; align-items:center; justify-content:center; }
+.orders .rc__ph .rc__img { position:absolute; left:0; top:0; width:100%; height:100%; }
+.orders .tip__desc { margin-top:4px; font-size:12px; line-height:1.6; color:var(--k-muted); text-align:center; }
+/* 3 我的提醒：频率挪到标题右边（12 号灰、同一行），右边只留开关，说明有整行宽度；上面的说明离顶栏 16 */
+.orders .rem-head { padding-top:4px; }
+.orders .rem__top { display:flex; align-items:center; gap:8px; min-width:0; }
+.orders .rem__top .rem__title { flex:0 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.orders .rem__top .rem__freq { flex:0 0 auto; margin:0; font-size:12px; line-height:20px; color:var(--k-muted); }
+.orders .rem > .k-flex1 { min-width:0; }
+/* 4 旅行体验官：纯色头卡（浅棕底，标题 20 / 700，两行 13 号说明，右边 40 方块 + 地图图标），不再用写死字的插画头图 */
+.orders .hero-card { display:flex; align-items:center; gap:12px; margin:12px 16px 0; padding:20px 16px; border-radius:12px; background:var(--k-red-soft); }
+.orders .hero-card__title { font-size:20px; font-weight:700; line-height:28px; color:var(--k-ink); }
+.orders .hero-card__desc { margin-top:2px; font-size:13px; line-height:20px; color:var(--k-ink2); }
+.orders .hero-card__title + .hero-card__desc { margin-top:6px; }
+.orders .hero-card__ic { flex:0 0 auto; width:40px; height:40px; border-radius:12px; background:var(--k-paper); display:flex; align-items:center; justify-content:center; }
+/* 三项权益：竖排三行列表（36 方块图标 + 标题 + 说明，左对齐），说明有整行宽度不再断词 */
+.orders .perks { display:flex; flex-direction:column; padding:4px 16px; }
+.orders .perk { flex:none; flex-direction:row; align-items:center; justify-content:flex-start; gap:12px; padding:12px 0; text-align:left; position:relative; }
+.orders .perk.perk--line { box-shadow:none; }
+.orders .perk.perk--line::after { content:""; position:absolute; left:48px; right:0; bottom:0; height:1px; background:var(--k-line); transform:scaleY(.5); }
+.orders .perk__ic { flex:0 0 auto; width:36px; height:36px; border-radius:10px; }
+.orders .perk > .k-col { flex:1; min-width:0; align-items:flex-start; }
+.orders .perk__title { font-size:14px; line-height:20px; }
+.orders .perk__desc { margin-top:0; font-size:12px; line-height:18px; color:var(--k-muted); text-align:left; }
+/* 城市胶囊：一行横滑（「查看全部」跟在最后），不再单独掉到第二行 */
+.orders .cities { flex-wrap:nowrap; overflow-x:auto; margin-left:-16px; margin-right:-16px; padding:0 16px; }
+.orders .cities::-webkit-scrollbar { display:none; }
+.orders .city { flex:0 0 auto; }
+/* 选择城市那一行：「开启」和下拉框一样 44 高 */
+.orders .apply-card :deep(.k-button.locate-btn) { height:44px; padding:0 16px; border-radius:22px; }
+
+/* ===================================================================================================
+   11-18 第三轮返修 2（独立评审第 2 轮；只动样子）
+   =================================================================================================== */
+/* 1 分类页签：滚动区本身从页边距开始（左边 16 放在滚动区外面，滚到第一个分类时 scrollLeft 就是 0，不会把它推到屏幕边）；右边 24 渐隐，看得出能横滑 */
+.orders .cats { margin-left: 16px; width: auto; -webkit-mask-image: linear-gradient(90deg, black 0, black calc(100% - 24px), transparent 100%); mask-image: linear-gradient(90deg, black 0, black calc(100% - 24px), transparent 100%); }
+.orders .cats__row, .orders .cats__row.cats__row--6, .orders .cats__row:not(.cats__row--6) { padding: 0 24px 0 0; }
+/* 订单按钮：32 高胶囊里字 13 / 500，主按钮 13 / 600 */
+.orders .oc__btn { font-size: 13px; font-weight: 500; }
+.orders .oc__btn.is-primary { font-weight: 600; }
+@media (max-width:359px) {
+  .orders .cats { margin-left: 12px; }
+  /* 窄屏：日期整段不截（「11.22—11.24（2 晚）」），金额放不下就换到下一行右对齐 */
+  .orders .oc__meta--row { flex-wrap: wrap; row-gap: 2px; }
+  .orders .oc__meta--row > .k-row { flex: 0 1 auto; min-width: 0; }
+  .orders .oc__meta--row > .k-row > text { white-space: nowrap; overflow: visible; text-overflow: clip; }
+  .orders .oc__price, .orders .oc__signed { margin-left: auto; }
+}
+/* 2 评价管理：第二行（房型 · 晚数）退成 13 / 400 ink2；「去评价」所有宽度都在卡片右下角；「已发布」标签和店名行对齐 */
+.orders .rc { position: relative; }
+.orders .rc__title { font-size: 13px; font-weight: 400; color: var(--k-ink2); }
+.orders .rc > .k-flex1 > .k-row { padding-right: 52px; }
+.orders .rc__btn { position: absolute; right: 16px; bottom: 16px; }
+.orders .rc :deep(.k-chip) { position: absolute; right: 16px; top: 16px; }
+/* 3 我的提醒：说明一行省略，每行一样高 */
+.orders .rem__desc { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 4 旅行体验官：头卡左边真文字（标题 20 / 700 + 两颗 22 高白底权益胶囊），右边露出原头图里的人物（图里写死的字裁在卡外，左缘 32 渐隐进底色） */
+.orders .hero-card { position: relative; overflow: hidden; height: 120px; padding: 16px 140px 16px 16px; box-sizing: border-box; align-items: center; }
+.orders .hero-card__copy { position: relative; z-index: 1; }
+.orders .hero-card__perks { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 8px; }
+.orders .hero-card__perks .hero-card__desc, .orders .hero-card__title + .hero-card__perks .hero-card__desc { margin-top: 0; height: 22px; padding: 0 8px; border-radius: 11px; background: var(--k-paper); color: var(--k-red-deep); font-size: 12px; font-weight: 500; line-height: 22px; white-space: nowrap; }
+.orders .hero-card__art { position: absolute; right: 0; top: 0; bottom: 0; width: 136px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent 0, black 32px); mask-image: linear-gradient(90deg, transparent 0, black 32px); }
+.orders .hero-card__img { position: absolute; right: -16px; bottom: 0; width: 364px; mix-blend-mode: multiply; }
+/* 城市：不横滑，自动换行；「查看全部」是暖棕字链接胶囊（右上「N 个城市」是同一个入口） */
+.orders .cities { flex-wrap: wrap; overflow: visible; margin-left: 0; margin-right: 0; padding: 0; }
+.orders .city.city__all { display: flex; align-items: center; background: transparent; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-weight: 500; }
+/* 选择城市旁的「开启」：和下拉框一样 44 高平底（圆角 8、浅棕底、深棕字 + 定位图标），不再是描边圆胶囊 */
+.orders .apply-card :deep(.k-button.locate-btn) { height: 44px; padding: 0 14px; border: 0; border-radius: 8px; background: var(--k-red-soft); box-shadow: none; color: var(--k-red-deep); font-size: 14px; font-weight: 500; }
+@media (max-width:359px) {
+  .orders .hero-card { padding-right: 112px; }
+  .orders .hero-card__art { width: 108px; }
+  .orders .hero-card__title { font-size: 18px; }
+}
+
+/* ===================================================================================================
+   11-18 第三轮返修 3（独立评审第 3 轮；只动样子）
+   =================================================================================================== */
+/* 1 分类页签：滚动区通栏，每个分类自带左边 16 的空（项与项之间仍是 20），左右都有渐隐 —— 滑动后左边的字是渐隐出去，不再硬切成「丁单3」；
+   scroll-into-view 把选中项对齐到左边时，它的字正好落在 16 页边上 */
+.orders .cats { margin-left: 0; -webkit-mask-image: linear-gradient(90deg, transparent 0, black 16px, black calc(100% - 24px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, black 16px, black calc(100% - 24px), transparent 100%); }
+.orders .cats__row, .orders .cats__row.cats__row--6, .orders .cats__row:not(.cats__row--6) { gap: 4px; padding: 0 24px 0 0; }
+.orders .cats__row .cats__item, .orders .cats__row:not(.cats__row--6) .cats__item { padding-left: 16px; }
+.orders .cats__row .cats__item.active::after { left: calc(50% + 8px); }
+/* 订单卡：缩略图到之前先露这一类的线性图标（和没图时一个样子），图到了盖住；按钮一样宽（最少 82） */
+.orders .oc__left { position: relative; }
+.orders .oc__ph { position: absolute; left: 0; top: 0; }
+.orders .oc__ph + .oc__img { position: relative; z-index: 1; background: transparent; }
+.orders .oc__btn { min-width: 82px; padding: 0 14px; box-sizing: border-box; }
+/* 2 评价管理：「去评价」中线和最后一行「还剩 N 天可评价」对齐；权益卡上下内边距 16 */
+.orders .rc__btn { bottom: 11px; }
+.orders .rights { padding-top: 0; padding-bottom: 0; }
+.orders .rights__row { padding-top: 14px; padding-bottom: 14px; }
+/* 3 我的提醒：说明最多两行（不再一行省略看不全） */
+.orders .rem__desc { overflow: hidden; white-space: normal; text-overflow: clip; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 18px; }
+/* 4 旅行体验官：「N 个城市 查看全部 >」在区块标题右边，右边线和页面内容对齐；城市胶囊一行横滑，右边 24 渐隐 */
+.orders .cities-more { flex: 0 0 auto; gap: 8px; margin-right: 0; padding-right: 0; }
+.orders .cities-more__all { margin-right: -6px; color: var(--k-red-deep); font-weight: 500; }
+.orders .cities { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; margin-right: -16px; padding-right: 24px; -webkit-mask-image: linear-gradient(90deg, black 0, black calc(100% - 24px), transparent 100%); mask-image: linear-gradient(90deg, black 0, black calc(100% - 24px), transparent 100%); }
+.orders .cities::-webkit-scrollbar { display: none; }
+.orders .city { flex: 0 0 auto; }
+.orders .apply-card .k-col.k-gap10 > .k-row { align-items: flex-start; }
+.orders .apply-card .k-col.k-gap10 > .k-row > .k-small { flex: 1; min-width: 0; line-height: 20px; }
+.orders .apply-card .k-col.k-gap10 > .k-row > :deep(.k-icon), .orders .apply-card .k-col.k-gap10 > .k-row > .k-icon { margin-top: 2px; flex: 0 0 auto; }
+@media (max-width:359px) {
+  .orders .cats { -webkit-mask-image: linear-gradient(90deg, transparent 0, black 12px, black calc(100% - 24px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, black 12px, black calc(100% - 24px), transparent 100%); }
+  .orders .cats__row, .orders .cats__row.cats__row--6, .orders .cats__row:not(.cats__row--6) { gap: 8px; }
+  .orders .cats__row .cats__item, .orders .cats__row:not(.cats__row--6) .cats__item { padding-left: 12px; }
+  .orders .cats__row .cats__item.active::after { left: calc(50% + 6px); }
+  /* 窄屏：每张卡都是同一种排法 —— 日期整行（不截字），金额固定在下一行右对齐、和缩略图底边齐（不再有的卡同一行、有的卡掉行） */
+  .orders .oc__meta--row { flex-wrap: wrap; row-gap: 2px; }
+  .orders .oc__meta--row > .k-row { flex: 0 0 100%; min-width: 0; }
+  .orders .oc__meta--row > .k-row > text { white-space: nowrap; overflow: visible; text-overflow: clip; }
+  .orders .oc__price, .orders .oc__signed { margin-left: auto; }
+  .orders .oc__price { font-size: 16px; line-height: 22px; }
+  .orders .oc__unit { font-size: 11px; }
+  .orders .cities { margin-right: -12px; }
+  .orders .apply-card .k-col.k-gap10 > .k-row > .k-small { font-size: 13px; }
+}
+
+/* ===================================================================================================
+   11-18 第三轮返修 4（独立评审第 4 轮；只动样子）
+   =================================================================================================== */
+/* 2 评价管理：缩略图 72 × 72（8 圆角），和右边四行字的高度相称，下面不再空一块 */
+.orders .rc__ph { width: 72px; height: 72px; border-radius: 8px; }
+/* 3 我的提醒：两个区块标题同一档（15 / 600 墨色），和下面的卡隔 12 */
+.orders .rem-head { padding: 4px 0 12px; }
+.orders .rem-head > text:first-child, .orders .rem-label { font-size: 15px; font-weight: 600; line-height: 21px; color: var(--k-ink); }
+.orders .rem-label { margin: 24px 0 12px; }
+/* 4 旅行体验官：三个区块都是「卡内标题」——可创作的城市也收进白卡（标题 15 / 600，城市胶囊换成页面底色）；申请条件 / 申请信息标题同一档 */
+.orders .apply-card > .sec-title, .orders .city-card .sec-title { margin: 0 0 12px; font-size: 15px; font-weight: 600; line-height: 21px; color: var(--k-ink); }
+.orders .city-card > .k-between { margin-top: 0; margin-bottom: 12px; }
+.orders .city-card .sec-title { margin: 0; }
+.orders .city-card .cities { margin-top: 0; margin-right: -16px; }
+.orders .city-card .city { background: var(--k-page); }
+@media (max-width:359px) {
+  /* 订单卡：日期 + 金额这一行移到图文行下面、横跨卡内整宽（隔 8），缩略图下面不再空一块 */
+  .orders .oc__body { position: relative; padding-bottom: 44px; }
+  .orders .oc__right { position: static; min-height: 0; }
+  .orders .oc__meta--row { position: absolute; left: 0; right: 0; bottom: 14px; flex-wrap: nowrap; align-items: center; margin: 0; padding: 0; }
+  .orders .oc__meta--row > .k-row { flex: 1 1 auto; padding-bottom: 0; }
+  /* 申请条件：卡片左右 12、勾和字隔 6，「风格真实友好」整句一行 */
+  .orders .apply-card { padding-left: 12px; padding-right: 12px; }
+  .orders .city-card .cities { margin-right: -12px; }
+  .orders .apply-card .k-col.k-gap10 > .k-row { gap: 6px; }
+}
+
+/* ===================================================================================================
+   11-18 第三轮返修 5（独立评审第 5 轮；只动样子）
+   =================================================================================================== */
+/* 2 评价管理：店名行回到一行 flex —— 店名太长时自己省略，「· 住宿」整块不拆、不会掉到下一行行首 */
+.orders .rc > .k-flex1 > .k-row { display: flex; flex-wrap: nowrap; align-items: baseline; min-width: 0; }
+.orders .rc > .k-flex1 > .k-row > .rc__name { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.orders .rc > .k-flex1 > .k-row > .rc__sub { display: block; flex: 0 0 auto; margin-left: 0; white-space: nowrap; }
+/* 3 我的提醒：开关打开时用品牌暖棕（不再是一列深绿，压过暖棕图标和标题） */
+/* 11-18 撤回：开关全站用绿色是主人定的，这一页不单独改暖棕 */
+/* 1 订单页签：数字和字隔 2，没选中的页签数字是灰色、选中的才是暖棕 */
+.orders .cats__row .cats__n { margin-left: 2px; color: var(--k-muted); }
+.orders .cats__row .cats__item.active .cats__n { color: var(--k-red-deep); }
+/* 4 旅行体验官：头卡右侧人物插画左缘渐隐加宽到 48，裁切边不再硬 */
+.orders .hero-card__art { -webkit-mask-image: linear-gradient(90deg, transparent 0, black 48px); mask-image: linear-gradient(90deg, transparent 0, black 48px); }
+@media (max-width: 374px) {
+  /* 2 评价管理窄屏：「已发布 / 已精选」标签和「去评价」一样放到卡片右下角，店名行拿回整行宽，「丽江袋鼠小院 · 住宿」不再被截 */
+  .orders .rc > .k-flex1 > .k-row { padding-right: 0; }
+  .orders .rc :deep(.k-chip) { top: auto; bottom: 16px; }
+}
+/* 2 评价管理页底说明：两行均匀断开，不再第二行只剩一个「示」字 */
+.orders .foot-note { text-wrap: balance; }
+
+/* ===================================================================================================
+   11-18 第四轮精修（微信实拍评审；只动样子）。前缀 .k-page.orders 压过上面各轮
+   =================================================================================================== */
+/* 1 我的行程：页签右边渐隐加到 40，看得出能滑、不像裁坏；跳转行不要白卡，退成分段控件下面一行 13 号文字链，订单卡上移 */
+.k-page.orders .cats { -webkit-mask-image: linear-gradient(90deg, transparent 0, black 16px, black calc(100% - 40px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, black 16px, black calc(100% - 40px), transparent 100%); }
+.k-page.orders .subs { height:32px;margin-bottom:0;padding:2px;border-radius:16px;background:var(--k-fill);box-sizing:border-box; }
+.k-page.orders .subs__item { height:28px;border-radius:14px;font-size:13px; }
+.k-page.orders .jump { min-height:32px;height:auto;margin:0;padding:0 4px;gap:6px;border:0;border-radius:0;background:transparent;box-shadow:none; }
+.k-page.orders .jump__text { flex:0 1 auto;font-size:13px;line-height:18px;color:var(--k-ink2);white-space:normal;overflow:visible;text-overflow:clip; }
+/* 订单卡：标题、地点、日期整段显示（不再两行 / 一行省略） */
+.k-page.orders .oc__title { display:block;overflow:visible;-webkit-line-clamp:unset; }
+.k-page.orders .oc__loc { white-space:normal;overflow:visible;text-overflow:clip; }
+.k-page.orders .oc__meta--row { flex-wrap:wrap;row-gap:2px; }
+.k-page.orders .oc__meta--row > .k-row { flex:0 1 auto;min-width:0; }
+.k-page.orders .oc__meta--row > .k-row text { overflow:visible;text-overflow:clip; }
+.k-page.orders .oc__price, .k-page.orders .oc__signed { margin-left:auto; }
+/* 2 评价管理：空状态说明 400 字重（和行程页一样）；空卡到「评价权益」24；店名放不下就换行，「· 住宿」跟在后面不拆 */
+.k-page.orders .tip__desc { font-weight:400; }
+.k-page.orders .tip--empty + .k-body { padding-top:0; }
+.k-page.orders .rc > .k-flex1 > .k-row > .rc__name { white-space:normal;overflow:visible;text-overflow:clip;word-break:break-all; }
+/* 3 我的提醒：iOS 通知设置式纯列表 —— 无底 20 号二级墨图标、标题 15 / 500、频率 11 浅灰紧跟标题、说明 12 灰整段；每行只剩绿开关一个颜色（开关绿色是主人定的）；发丝线从文字左线开始 */
+.k-page.orders .rem__ic, .k-page.orders .rem-card + .rem-label + .rem-card .rem__ic { flex:0 0 auto;width:20px;height:20px;border-radius:0;background:transparent; }
+.k-page.orders .rem--line::after { left:48px; }
+.k-page.orders .rem__top { flex-wrap:wrap;align-items:baseline;column-gap:6px;row-gap:0; }
+.k-page.orders .rem__top .rem__title { white-space:normal;overflow:visible;text-overflow:clip;font-size:15px;font-weight:500;line-height:21px; }
+.k-page.orders .rem__top .rem__freq { font-size:11px;font-weight:400;line-height:16px;color:var(--k-light); }
+.k-page.orders .rem__desc { display:block;margin-top:2px;overflow:visible;white-space:normal;-webkit-line-clamp:unset;font-size:12px;line-height:18px;color:var(--k-muted); }
+.k-page.orders .rem-edit { height:auto;padding:0;border-radius:0;background:transparent;color:var(--k-red);font-size:13px;font-weight:500;line-height:21px; }
+/* 4 旅行体验官：卡与卡一律隔 12；插画右移 8（宽 362 仍盖满卡高）、左缘渐隐 64，右边的爱心不再被切半 */
+.k-page.orders .perks { margin-top:12px; }
+.k-page.orders .apply-card, .k-page.orders .apply-card ~ .apply-card { margin-top:12px; }
+.k-page.orders .perk__desc { display:block;overflow:visible;-webkit-line-clamp:unset; }
+.k-page.orders .hero-card__art { -webkit-mask-image: linear-gradient(90deg, transparent 0, black 64px); mask-image: linear-gradient(90deg, transparent 0, black 64px); }
+.k-page.orders .hero-card__img { right:-8px;width:362px; }
+/* 第四轮复查：订单标题、评价房型、固定说明只在空格 / 标点处断行（「平潭袋鼠小院 ·」/「海景六人间床位」），不再掉单字 */
+.k-page.orders .oc__title, .k-page.orders .rc__title, .k-page.orders .empty__desc, .k-page.orders .tip__desc, .k-page.orders .perk__desc, .k-page.orders .jump__text { word-break:keep-all;overflow-wrap:break-word;overflow-wrap:anywhere; }
+/* ===================================================================================================
+   11-19 第四轮返修（独立复评；只动样子）
+   =================================================================================================== */
+/* 1 订单卡右列从上往下排：标题 → 地点 → 隔 8 → 日期和金额，不再把日期往缩略图底边贴（两张卡节奏一样） */
+@media (min-width:360px) {
+  .k-page.orders .oc__right { min-height:0;justify-content:flex-start; }
+  .k-page.orders .oc__meta--row { margin-top:8px;padding-top:0; }
+}
+/* 2 评价管理页底说明：最宽约 21 个字，固定在「；」处断成两行（微信字体更宽也不会掉一两个字的末行） */
+.k-page.orders .foot-note--review { max-width:21.5em;margin-left:auto;margin-right:auto;padding:0;word-break:keep-all;overflow-wrap:break-word;overflow-wrap:anywhere;text-wrap:wrap; }
+/* 3 我的提醒：频率小字用 muted（--k-light 在白底上太淡） */
+.k-page.orders .rem__top .rem__freq { color:var(--k-muted); }
+/* 4 旅行体验官头图：两条权益不再是像按钮的白胶囊，改成 14 号勾 + 13 号深棕字，无底色 */
+.k-page.orders .hero-card__perk { display:flex;align-items:center;gap:4px; }
+.k-page.orders .hero-card__perk > .k-icon, .k-page.orders .hero-card__perk > :deep(.k-icon) { display:block;flex:0 0 auto; }
+.k-page.orders .hero-card__perks .hero-card__perk .hero-card__desc { height:auto;margin:0;padding:0;border-radius:0;background:transparent;box-shadow:none;color:var(--k-red-deep);font-size:13px;font-weight:500;line-height:20px; }
+.k-page.orders .hero-card__perks { gap:4px; }
+/* ===================================================================================================
+   11-19 微信实拍返修（只动样子）
+   =================================================================================================== */
+/* 1 分类横滑条：右边渐隐拉长到 56（最后一项整个词逐渐变淡，看得出能往右滑，不像被硬切）；滑到底时最后一项完整露在渐隐外面 */
+.k-page.orders .cats { -webkit-mask-image: linear-gradient(90deg, transparent 0, black 16px, black calc(100% - 56px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, black 16px, black calc(100% - 56px), transparent 100%); }
+.k-page.orders .cats__row, .k-page.orders .cats__row.cats__row--6, .k-page.orders .cats__row:not(.cats__row--6) { padding-right:56px; }
+/* 2 评价权益、4 体验官功能列表：和「我的提醒」一样是无底 20 号线性图标（暖棕），图标列 20、到文字 12，图标对齐标题行；发丝线从文字左线开始 */
+.k-page.orders .rights__row { align-items:flex-start;gap:12px; }
+.k-page.orders .rights__ic, .k-page.orders .rights__ic.k-circle--soft-red, .k-page.orders .perk__ic, .k-page.orders .perk__ic.k-circle--soft-red { flex:0 0 auto;width:20px;height:20px;border-radius:0;background:transparent; }
+.k-page.orders .rights__row--line::after { left:48px; }
+.k-page.orders .perk { align-items:flex-start; }
+.k-page.orders .perk.perk--line::after { left:32px; }
+/* 4 体验官：头图两条权益和「申请条件」同一种勾（16 号暖棕圆勾，到字 6 / 8）；插画左移，右上角的爱心完整落在卡片里（离右边 14） */
+.k-page.orders .hero-card__perk { gap:6px; }
+.k-page.orders .hero-card__img { right:4px; }

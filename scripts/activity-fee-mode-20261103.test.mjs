@@ -13,6 +13,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { activitySchedule } from '../pages/community/activity-schedule.js'
+import { normalizeClock } from '../common/manual-time.js'
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(APP, 'package.json'))
@@ -131,7 +133,7 @@ test('活动详情：AA 按钮写「报名（现场AA）」，价格写约¥ / A
 
 // ---------------------------------------------------------------- 用户发起活动
 
-function mine() {
+function mine(stubs = {}) {
   const log = { created: [], toasts: [] }
   const h = runSetup('pages/community/activity-mine.vue', {
     useScreen: () => vue.ref(2), ensureSession: async () => {}, experience: { account: { phone: '13800001234' } },
@@ -141,11 +143,30 @@ function mine() {
     apiCreateActivity: async (p) => { log.created.push(plain(p)); return { data: { activityId: 9, status: 'open' } } },
     apiManageActivity: async () => ({ data: {} }),
     apiActivitySyncCommunity: async () => ({ msg: '已同步到社区' }),
-    uni: { getStorageSync: () => '', setStorageSync() {}, removeStorageSync() {} },
-    ...FORM
+    activitySchedule, normalizeClock, uni: { getStorageSync: () => '', setStorageSync() {}, removeStorageSync() {}, hideKeyboard() {} },
+    ...FORM, ...stubs
   })
   return { ...h, log }
 }
+
+test('#238 用户活动只填确定字段，保留自选结束日，换账号后确认不写入', async t => {
+  const activityText = await import('../common/activity-text.js')
+  const session = {account:{id:11}}
+  let respond
+  const h = mine({...activityText, experience:session, confirm:() => new Promise(resolve => {respond = resolve})})
+  t.after(h.stop)
+  h.run("schedule.value.endDate='2026-12-10'; activityText.value='集合时间：12月8日，人数：8-12人，每人30-50元'")
+  let paste = h.run('fillActivityText()')
+  respond(true)
+  await paste
+  assert.deepEqual(plain(h.run('[schedule.value.date, schedule.value.endDate, people.value, feeKind.value]')), ['2026-12-08','2026-12-10',10,'free'])
+  h.run("activityText.value='活动名称：海岛徒步'")
+  paste = h.run('fillActivityText()')
+  session.account.id++
+  respond(true)
+  await paste
+  assert.equal(h.run('activityTitle.value'), '')
+})
 
 test('用户发起活动：费用三选一（免费 / 收费 / AA制），收费只标价、到场付给发起人；发出去带 feeKind', { timeout: 5000 }, async (t) => {
   const h = mine()
@@ -182,15 +203,16 @@ test('用户发起活动：费用三选一（免费 / 收费 / AA制），收费
   assert.deepEqual(['feeKind', 'feeYuan', 'aaYuan'].map(k => h.log.created[1][k]), ['paid', '50', undefined])
 })
 
-test('用户发起活动：日期和时刻一个滚轮选（明天起 30 天），显示「11月4日 周三 14:00」；集合地点一行点了开地图', (t) => {
+test('用户发起活动：可按日历选择集合、结束和截止日期并保留任意分钟，集合地点支持地图', (t) => {
   const h = mine()
   t.after(h.stop)
-  const dates = plain(h.run('when.value.dates'))
-  assert.deepEqual([dates.length, dates[0]], [30, '2026-11-04'])
-  h.run('setWhen({ detail: { value: [0, 14, 0] } })')
-  assert.deepEqual([h.run('date.value'), h.run('time.value'), h.run('dateText.value')], ['2026-11-04', '14:00', '11月4日 周三'])
-  assert.match(h.template, /<picker mode="multiSelector" :range="when\.cols" :value="whenIndex\(\{ date, time \}, when\.dates\)" @change="setWhen">/)
-  assert.doesNotMatch(h.template, /k-date-picker|@click="pickDate"|@click="pickTime"|@click="pickMeetPoint"/)
+  for (const [index,key] of ['date','endDate','deadlineDate'].entries()) {
+    h.run(`pickScheduleDate(scheduleFields[${index}]); confirmDate('2026-11-04')`)
+    assert.equal(h.run(`schedule.value.${key}`),'2026-11-04')
+  }
+  h.run("schedule.value.time = '1437'; normalizeTime('time')")
+  assert.equal(h.run('schedule.value.time'),'14:37')
+  assert.match(h.template, /<k-date-picker v-if="calendarField"/)
   assert.match(h.template, /<view class="form-input" @click="pickPlace">/)
   assert.match(h.template, /横图、竖图都可以/)
   assert.doesNotMatch(h.template, /建议尺寸 16:9/)

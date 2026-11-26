@@ -18,7 +18,8 @@ test('reviewed manifest exactly covers current wrappers and their distinct kinds
  // 62 = 再加 2026-10-31 的「小院评论审核」（staycomment，V65）
  // 63 = 再加 2026-11-03 的「AI客服聊天记录」（supportchat，V72，只读）
  // V67 岗位要求选项（jobopt）同样由通用 CRUD 承载。
- assert.equal(manifest.filter(x=>x.kind==='ext-crud').length,64)
+ assert.equal(manifest.filter(x=>x.kind==='ext-crud').length,63)
+ assert.deepEqual(manifest.filter(x=>x.kind==='insurance-finance').map(x=>x.entity),['insapply'])
  assert.equal(manifest.filter(x=>x.kind==='application-list').length,2)
  for(const entry of manifest) assertExtensionSource(entry,await readFile(path.join(root,'RuoYi-Vue3/src/views',entry.component+'.vue'),'utf8'))
 })

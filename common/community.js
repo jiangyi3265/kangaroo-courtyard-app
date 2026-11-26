@@ -38,7 +38,7 @@ export async function gated(fn, opts = {}) {
     }
     if (e && e.code === 428) {
       const r = await modal('需要验证手机号', msg + '\n\n现在去验证？', { confirmText: '去验证' })
-      if (r.confirm) go(R.login + '?s=4')
+      if (r.confirm) go(R.login + '?s=4&mode=bind-phone&returnTo=previous')
       throw silent()
     }
     throw e

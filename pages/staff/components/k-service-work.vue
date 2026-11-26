@@ -2,7 +2,7 @@
   <view class="k-page service-work">
     <k-topbar :title="activeTab === 'business' ? '我的业务' : '商家服务工作台'" />
     <view class="k-body k-pad-tab">
-      <view class="req-store" hover-class="k-press-s" @click="switchStore"><view class="req-store__copy"><text class="req-store__eyebrow">商家服务人</text><text class="req-store__name">{{ identity.name }}</text><text class="identity-scope">{{ serviceCity ? serviceCity + ' · ' : '' }}商家申请统一处理</text><text class="identity-scope">在这里接收和处理本城商家申请，无需逐店切换身份</text></view><k-icon v-if="staffIdentities.length > 1" name="chevron-down" :size="20" /></view>
+      <view class="req-store" hover-class="k-press-s" @click="switchStore"><view class="req-store__copy"><text class="req-store__eyebrow">商家服务人</text><text class="req-store__name">{{ identity.name }}</text><text class="identity-scope">{{ serviceCity ? serviceCity + ' · ' : '' }}商家申请统一处理</text><text class="identity-scope">在这里接收和处理本城商家申请，无需逐店切换身份</text></view><k-icon v-if="staffIdentities.length > 1" name="chevron-down" :size="18" color="muted" /></view>
       <!-- 主人 2026-11-03：任务能发给全体员工、按岗位发，这个岗位也会收到管理员任务 -->
       <k-task-entry />
       <!-- 主人 2026-11-03：和小院主理人工作台一个样子——上面「优先处理」，下面「快捷入口」一个项目一个按钮，有待办的右上角红色数字 -->
@@ -11,7 +11,7 @@
         <view class="req-heading"><text>优先处理</text></view>
         <view class="sw-card">
           <view v-for="(it, i) in board.priority" :key="it.key + it.title" class="sw-prio" :class="{ line: i < board.priority.length - 1 }" hover-class="k-press" @click="open(it.key)">
-            <view class="k-circle sw-prio__icon" :class="'k-circle--' + it.tone"><k-icon :name="it.icon" :size="22" color="white" :stroke="2" /></view>
+            <view class="k-circle sw-prio__icon" :class="'k-circle--' + it.tone"><k-icon :name="it.icon" :size="18" color="red" :stroke="2" /></view>
             <view class="sw-prio__copy"><view class="sw-prio__row"><text class="sw-prio__num">{{ it.num }}</text><text class="sw-prio__title">{{ it.title }}</text></view><text class="sw-prio__sub">{{ it.sub }}</text></view>
             <view class="sw-go"><text>去处理</text></view>
           </view>
@@ -21,7 +21,7 @@
       <view class="req-heading"><text>快捷入口</text></view>
       <view class="sw-quick">
         <view v-for="q in board.quick" :key="q.key" class="sw-quick__item" hover-class="k-press-s" @click="open(q.key)">
-          <view class="sw-quick__icon"><k-icon :name="q.icon" :size="30" :color="q.color" :stroke="1.5" /><text v-if="q.badge" class="sw-quick__badge">{{ q.badge }}</text></view>
+          <view class="sw-quick__icon"><k-icon :name="q.icon" :size="22" color="red" :stroke="1.6" /><text v-if="q.badge" class="sw-quick__badge">{{ q.badge }}</text></view>
           <text class="sw-quick__label">{{ q.label }}</text>
         </view>
       </view>
@@ -38,7 +38,8 @@ import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/common/request.js'
 import { experience, currentStaffStore, staffIdentities, staffIdentityLabel, staffGrantKey, selectStaffStore, ensureSession, getSessionRevision, refreshAccount, staffStoreUrl } from '@/common/experience.js'
-import { go, toast } from '@/common/screen.js'
+import { toast } from '@/common/screen.js'
+import { goFromWorkbench as go } from '@/common/visit-subscriptions.js'
 import { pickPaged, errText } from '@/common/ui.js'
 import R from '@/common/routes.js'
 import KTaskEntry from './k-task-entry.vue'
@@ -115,23 +116,27 @@ onBeforeUnmount(() => { seq++ })
 
 <style scoped lang="scss">
 @import '../request-pages.scss';
-.identity-scope{display:block;margin-top:6px;font-size:12px;line-height:1.5;color:var(--k-muted);overflow-wrap:anywhere}
-/* 和小院主理人工作台（pages/staff/index.vue 的 .prio / .go-btn / .quick）同一个样子；格子三列，六个正好两排，字比那边大一号，年纪大的店员也看得清 */
-.sw-error { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 13px; line-height: 1.6; }
-.sw-calm { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--k-paper); font-size: 14px; color: var(--k-ink2); }
-.sw-card { border-radius: 14px; background: var(--k-paper); box-shadow: 0 6px 20px rgba(58,50,43,.08); overflow: hidden; }
-.sw-prio { display: flex; align-items: center; gap: 12px; padding: 12px; }
-.sw-prio.line { border-bottom: 1px solid var(--k-line); }
-.sw-prio__icon { width: 40px; height: 40px; }
-.sw-prio__copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡 12 圆角、去阴影（共用写法在 ../work-lite.scss；.req-* 在 ../request-pages.scss） */
+@import '../work-lite.scss';
+.service-work{@include lite-page}
+.identity-scope{display:block;margin-top:2px;font-size:12px;line-height:1.5;color:var(--k-muted);overflow-wrap:anywhere}
+/* 和小院主理人工作台（pages/staff/index.vue 的 .prio / .go-btn / .quick）同一个样子；格子三列，六个正好两排，放在一张白卡里，图标在浅暖色圆角方块里 */
+.sw-error { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: var(--k-alert-soft); color: var(--k-alert); font-size: 12px; line-height: 1.6; }
+.sw-calm { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 12px; border-radius: 12px; background: var(--k-paper); font-size: 13px; color: var(--k-ink2); }
+.sw-card { border-radius: 12px; background: var(--k-paper); box-shadow: none; overflow: hidden; }
+.sw-prio { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+/* 11-18 第二轮精修：行间发丝线；待办类型图标是浅暖色圆角方块 + 暖棕线性图标（和工作台首页、快捷入口一家） */
+.sw-prio + .sw-prio::before { content: ""; position: absolute; left: 12px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+.sw-prio__icon { width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(145deg, #FCF4E8, #F4E4CC); }
+.sw-prio__copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
 .sw-prio__row { display: flex; align-items: baseline; gap: 4px; }
-.sw-prio__num { font-size: 16px; font-weight: 700; color: var(--k-red); }
-.sw-prio__title { font-size: 15px; font-weight: 600; color: var(--k-ink); }
+.sw-prio__num { font-size: 16px; font-weight: 700; color: var(--k-red-deep); }
+.sw-prio__title { font-size: 14px; font-weight: 600; color: var(--k-ink); }
 .sw-prio__sub { font-size: 12px; color: var(--k-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.sw-go { flex: 0 0 auto; height: 32px; padding: 0 12px; border: 1px solid var(--k-ochre); border-radius: 6px; display: flex; align-items: center; color: #9A6A22; font-size: 13px; background: var(--k-paper); }
-.sw-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.sw-quick__item { height: 92px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; }
-.sw-quick__icon { position: relative; width: 30px; height: 30px; }
-.sw-quick__badge { position: absolute; top: -8px; right: -12px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--k-alert); color: #fff; font-size: 11px; line-height: 18px; text-align: center; font-weight: 600; }
-.sw-quick__label { font-size: 14px; color: var(--k-ink); }
+.sw-go { flex: 0 0 auto; display: flex; align-items: center; @include lite-pill; border-color: transparent; background: var(--k-red-soft); }
+.sw-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 0; padding: 14px 4px 12px; border-radius: 12px; background: var(--k-paper); }
+.sw-quick__item { min-height: 66px; border: 0; border-radius: 0; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.sw-quick__icon { position: relative; width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(145deg, #FCF4E8, #F4E4CC); display: flex; align-items: center; justify-content: center; }
+.sw-quick__badge { position: absolute; top: -5px; right: -8px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--k-alert); color: #fff; font-size: 10px; line-height: 16px; text-align: center; font-weight: 600; }
+.sw-quick__label { font-size: 12px; line-height: 17px; font-weight: 400; color: var(--k-ink2); }
 </style>

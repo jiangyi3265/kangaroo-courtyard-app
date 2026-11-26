@@ -22,7 +22,7 @@ function harness() {
     R: { login: '/login', jobApply: '/apply', jobTeam: '/team', jobDetail: '/detail', userProfile: '/user', chat: '/chat' },
     apiJobTeam: async id => { log.reads.push(id); if (state.fail) throw new Error('加载失败'); return { data: structuredClone(state.team) } },
     apiJobDetail: async () => { if (state.detailFail) throw new Error('详情暂不可用'); return { data: state.detail } },
-    apiJoinTeam: async (id, visible) => { log.joins.push([id, visible]); if (state.joinFail) throw new Error('网络断开'); state.team.joined = visible; return { data: structuredClone(state.team) } },
+    apiJoinTeam: async (id, visible) => { log.joins.push([id, visible]); if (state.joinFail) throw new Error('网络断开'); state.team.joined = visible; return { data: state.receiptOnly ? { joined: false } : structuredClone(state.team) } },
     apiChatOpen: async payload => { log.chats.push(payload); if (state.chatFail) throw new Error('对方不接受陌生人私信'); return { data: { convId: 91 } } }
   }
   vm.createContext(sandbox); vm.runInContext(code, sandbox)
@@ -70,6 +70,17 @@ test('私信复用会话接口，自己不能发起；重复点击一次请求�
   const h = harness(); await h.open(); await h.run('greet({ userId: 1, isMe: true })'); assert.equal(h.log.chats.length, 0)
   await Promise.all([h.run('greet({ userId: 2 })'), h.run('greet({ userId: 2 })')]); assert.equal(h.log.chats.length, 1); assert.equal(h.log.routes.at(-1), '/chat?convId=91')
   h.state.chatFail = true; await h.run('greet({ userId: 3 })'); assert.equal(h.log.routes.length, 1); assert.match(h.log.toasts.at(-1), /不接受/)
+})
+test('岗位下架时，退出成功的回执不会误报失败或保留旧伙伴列表', async () => {
+  const h = harness()
+  h.state.team.myAppId = 15
+  h.state.team.joined = true
+  await h.open()
+  h.state.receiptOnly = true
+  await h.run('setJoined(false)')
+  assert.match(h.log.toasts.at(-1), /已退出同行/)
+  assert.equal(h.run('team.value'), null)
+  assert.match(h.run('loadError.value'), /暂不可查看/)
 })
 test('离开页面后不再加载或导航，未知名额不当满员', async () => {
   const h = harness(); await h.open(); h.close(); await h.run('load()'); assert.equal(h.log.reads.length, 1)

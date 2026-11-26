@@ -239,7 +239,7 @@ test('组件：点文字进详情、点圆圈勾选、提交前确认、只传�
   // 能点的 view 要有按下效果
   for (const m of tpl.matchAll(/<view\b[^>]*@click[^>]*>/g)) if (!/class="k-mask"/.test(m[0])) assert.match(m[0], /hover-class/, m[0])
   // 只用主包已有的模块，新逻辑都在 jobs 分包
-  for (const m of s.matchAll(/from '(@\/[^']+)'/g)) assert.ok(['@/common/api.js', '@/common/share.js', '@/common/city-picker.js', '@/common/upload.js', '@/common/screen.js', '@/common/ui.js', '@/common/routes.js', '@/common/display-wording.js'].includes(m[1]), m[1])
+  for (const m of s.matchAll(/from '(@\/[^']+)'/g)) assert.ok(['@/common/api.js', '@/common/share.js', '@/common/experience.js', '@/common/city-picker.js', '@/common/upload.js', '@/common/screen.js', '@/common/ui.js', '@/common/routes.js', '@/common/display-wording.js'].includes(m[1]), m[1])
   assert.match(s, /import \{ displayWording \} from '@\/common\/display-wording\.js'/, '复用主包已有的展示称呼工具')
   const logic = src('pages/jobs/multi-apply.js')
   assert.doesNotMatch(logic, /from '@\//, '纯函数，不引 @/')

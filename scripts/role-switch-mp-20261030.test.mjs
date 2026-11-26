@@ -77,7 +77,7 @@ test('X-App-Client：正式版带微信给的版本号；体验版、开发版�
 test('新版提示：微信下载好新版后问一声，点重启才应用；老基础库没有这个接口时启动不受影响', () => {
   const source = src('App.vue').match(/<script>([\s\S]*?)<\/script>/)[1].replace(/^\s*import .+$/gm, '').replace('export default', 'globalThis.app =')
   const launch = (wx) => {
-    const context = vm.createContext({ wx, API_BASE: '/dev-api', ensureSession() {}, noteInviter() {}, installBackGuard() {}, startNewsPolling() {}, stopNewsPolling() {}, startStaffTaskReminders() {}, stopStaffTaskReminders() {}, console })
+    const context = vm.createContext({ wx, API_BASE: '/dev-api', ensureSession() {}, noteInviter() {}, installBackGuard() {}, startNewsPolling() {}, stopNewsPolling() {}, startStaffTaskReminders() {}, stopStaffTaskReminders() {}, watch: vue.watch, subscriptionScope: () => '', visitSubscriptions: { warm() {} }, console })
     vm.runInContext(source, context)
     context.app.onLaunch({})
   }
@@ -174,7 +174,7 @@ function cityWork(hubData, { summaryThrows } = {}) {
   return { ...h, calls }
 }
 
-test('工作台·切换前：hub 没有 cityRefundPending，不显示财务入口，也不去碰切换后才开放的接口（避免 403）', async (t) => {
+test('工作台·切换前：保险退费入口可见，活动财务入口仍按 hub 开关控制', async (t) => {
   const h = cityWork({ cityUnassigned: 2 })
   t.after(h.stop)
   await h.run('load()')
@@ -183,9 +183,10 @@ test('工作台·切换前：hub 没有 cityRefundPending，不显示财务入�
   assert.ok(!h.calls.some(u => u.includes('city-finance')), h.calls.join())
   assert.equal(plain(h.run('unassigned.value')), 2)
   assert.deepEqual(plain(h.run('overviewTiles.value.map(t => t.value)')), [1, 2, 3])
-  // 财务入口、本城数字都包在 v-if="switched" 里；只读说明切换前还是原话
+  // 保险退费已有独立的角色授权，活动财务未开放时也可以进入保险队列。
+  assert.match(h.template.slice(0,h.template.indexOf('<template v-if="switched">')), /insurance-account\?tab=refunds/)
   assert.match(h.template, /<template v-if="switched">[\s\S]*本城数字[\s\S]*活动退款审批[\s\S]*取消收费活动[\s\S]*我的钱包[\s\S]*荣誉与关怀[\s\S]*<\/template>\s*<view class="req-heading"><text>今日换工概况/)
-  assert.match(h.template, /这里只能查看。商家发布招募或提交需求时，你也会在「消息」里收到通知。/)
+  assert.doesNotMatch(h.template, /这里只能查看/)
 })
 
 test('工作台·切换后：不用发版，hub 带上字段就有本城数字、角标和四个入口', async (t) => {

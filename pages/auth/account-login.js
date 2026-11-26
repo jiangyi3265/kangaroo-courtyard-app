@@ -1,5 +1,5 @@
-import { restoreSession, loginWithWeixin, experience, getSessionRevision } from './experience.js'
-import { post } from './request.js'
+import { restoreSession, loginWithWeixin, experience, getSessionRevision } from '../../common/experience.js'
+import { post } from '../../common/request.js'
 
 // Account identity comes from the normal server-verified login. A phone number
 // is a separate, optional permission, requested only by a phone-dependent action.

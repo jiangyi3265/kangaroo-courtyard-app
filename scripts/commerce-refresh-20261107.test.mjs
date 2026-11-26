@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { parse, babelParse } from '@vue/compiler-sfc'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -24,7 +24,7 @@ function page(relativePath, overrides) {
   const statements = babelParse(script, { sourceType: 'module' }).program.body
   const body = statements.filter(node => node.type !== 'ImportDeclaration')
     .map(node => script.slice(node.start, node.end)).join('\n')
-  const scope = vm.createContext({ ref, onMounted() {}, onShow() {}, onLoad() {}, ...overrides })
+  const scope = vm.createContext({ ref, computed, getToken: () => 'test', onMounted() {}, onShow() {}, onLoad() {}, ...overrides })
   vm.runInContext(body, scope)
   return expression => vm.runInContext(expression, scope)
 }
@@ -139,3 +139,111 @@ for (const [label, relativePath] of [
     assert.equal(run('total.value'), 25)
   })
 }
+
+test('从兑换记录返回商城遇到断网时清掉旧订单、余额和页数', async () => {
+  let offline = false
+  const run = page('pages/profile/point-mall.vue', {
+    get: async url => {
+      if (offline) throw Error('网络断开')
+      return { data: url.endsWith('balance') ? { balance: 32 } : { rows: [{ orderId: 8 }], total: 26 } }
+    }
+  })
+  run("tab.value = 'orders'")
+  await run('load()')
+  offline = true
+  await run("switchTab('goods')")
+  assert.equal(run('rows.value.length'), 0)
+  assert.equal(run('total.value'), 0)
+  assert.equal(run('balance.value'), null)
+  assert.equal(run('error.value'), '网络断开')
+})
+
+test('连点确认收货只弹一次询问并只提交一次，取消后还可以操作', async () => {
+  let confirmations = 0, commands = 0
+  const prompt = deferred()
+  const run = page('pages/profile/point-mall.vue', {
+    modal: () => { confirmations++; return prompt.promise },
+    post: async () => { commands++ },
+    get: async () => ({ data: { rows: [], total: 0, balance: 5 } })
+  })
+  const a = run("command({orderId: 5}, 'receive')")
+  const b = run("command({orderId: 5}, 'receive')")
+  prompt.resolve({ confirm: false })
+  await Promise.all([a, b])
+  assert.equal(confirmations, 1)
+  assert.equal(commands, 0)
+  assert.equal(run('busy.value'), false)
+  const yes = page('pages/profile/point-mall.vue', {
+    modal: async () => ({ confirm: true }), post: async () => { commands++ },
+    get: async () => ({ data: { rows: [], total: 0, balance: 5 } })
+  })
+  await Promise.all([yes("command({orderId: 5}, 'receive')"), yes("command({orderId: 5}, 'receive')")])
+  assert.equal(commands, 1)
+})
+
+test('切换钱包筛选时旧账单不能显示、导出或改写新的日期', async () => {
+  const requests = Array.from({ length: 3 }, deferred)
+  let index = 0
+  const copies = []
+  const run = page('pages/manage/wallet.vue', {
+    watch() {}, useScreen: () => ref(2), apiWalletEntries: () => requests[index++].promise,
+    toast() {}, copy: text => copies.push(text), errText: e => e.message
+  })
+  const previous = run('loadEntries()')
+  run("from.value = '2026-10-01'; to.value = '2026-10-31'")
+  const latest = run('loadEntries()')
+  requests[1].resolve({ data: { rows: [{ id: 'OCT' }], from: '2026-10-01', to: '2026-10-31' } })
+  await latest
+  requests[0].resolve({ data: { rows: [{ id: 'NOV' }], from: '2026-11-01', to: '2026-11-25' } })
+  await previous
+  assert.equal(run('rows.value[0].id'), 'OCT')
+  assert.equal(run('from.value'), '2026-10-01')
+  run('exportEntries()')
+  assert.match(copies[0], /OCT/)
+  run("keyword.value = '新订单'")
+  const offline = run('loadEntries()')
+  run('exportEntries()')
+  requests[2].reject(Error('网络断开'))
+  await offline
+  run('exportEntries()')
+  assert.equal(copies.length, 1)
+  assert.equal(run('rows.value.length'), 0)
+})
+
+test('重新进入商城换了账号时清掉前一个账号的收货草稿', async () => {
+  let token = 'first'
+  const run = page('pages/profile/point-mall.vue', {
+    getToken: () => token,
+    get: async () => ({data: { rows: [], total: 0, balance: 20 }})
+  })
+  run("choose({goodsId: 9}); form.value = { recipient: '旧收货人', phone: '13800000000', address: '原收货地址' }")
+  token = 'second'
+  await run('load()')
+  assert.equal(run('selected.value'), null)
+  assert.equal(run('form.value.recipient'), '')
+  assert.equal(run('form.value.phone'), '')
+  assert.equal(run('form.value.address'), '')
+})
+
+test('连点提交结算只弹一次确认，取消后仍能正常提交', async () => {
+  const prompt = deferred()
+  let confirmations = 0
+  const posted = []
+  const run = page('pages/manage/wallet.vue', {
+    watch() {}, useScreen: () => ref(3), fmtNum: value => String(value),
+    confirm: () => ++confirmations === 1 ? prompt.promise : Promise.resolve(true),
+    apiWalletWithdraw: async body => { posted.push(body); return { data: {} } },
+    apiWallet: async () => ({ data: {} }), toast() {}
+  })
+  run("w.value = { payee: '测试收款人', availableFen: 5000 }; amountFen.value = 1000")
+  const a = run('submitWithdraw()')
+  const b = run('submitWithdraw()')
+  prompt.resolve(false)
+  await Promise.all([a, b])
+  assert.equal(confirmations, 1)
+  assert.equal(posted.length, 0)
+  await run('submitWithdraw()')
+  assert.equal(confirmations, 2)
+  assert.equal(posted.length, 1)
+  assert.equal(posted[0].amountFen, 1000)
+})

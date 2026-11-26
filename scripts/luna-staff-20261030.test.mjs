@@ -60,11 +60,11 @@ const can = (who) => (item, action) => (ROLES[who].perms[item] || []).includes(a
 
 // ---------------------------------------------------------------- 业务页
 
-function business(who, { hub } = {}) {
+function business(who, { hub, recruitmentOpen = true } = {}) {
   const r = ROLES[who], log = { gone: [], sheets: [], hubCalls: 0 }
   const s = vue.ref(1)
   const h = runSetup('pages/staff/business.vue', {
-    ...v, R, useScreen: () => s, onlineStaff: { value: false }, merchantStaff: { value: false }, merchantService: { value: who === 'service' }, cityLead: { value: false },
+    ...v, R, recruitmentEnabled: vue.ref(recruitmentOpen), useScreen: () => s, onlineStaff: { value: false }, merchantStaff: { value: false }, merchantService: { value: who === 'service' }, cityLead: { value: false },
     staffCan: can(who), currentStaffStore: { value: { roleCode: r.role, storeId: 102, roleName: r.roleName, alsoService: !!r.also } }, currentStaffStoreId: () => 102, currentAlsoService: { value: !!r.also },
     staffStoreUrl: storeUrl, go: (u) => log.gone.push(u), getSessionRevision: () => 1, ensureSession: async () => {}, hasStaffAccess: { value: true }, absUrl: x => x,
     apiStaffHub: async () => { log.hubCalls++; return { data: { storeId: 102, role: r.role, roleName: r.roleName, alsoService: !!r.also, ...hub } } },
@@ -135,10 +135,10 @@ const REVIEW = {
 }
 // 2026-11-03 主人简化：「下周任务」拆成「查看任务」+「发布任务」（发布只给主理人 / 管家 / 员工这些能经营的角色）
 const DAILY = {
-  keeper: ['周报管理', '查看任务', '发布任务', '日报管理', '数据看板'],
-  also: ['周报管理', '查看任务', '发布任务', '日报管理', '数据看板'],
+  keeper: ['日报与月度任务', '周报管理', '查看任务', '发布任务', '日报管理', '数据看板'],
+  also: ['日报与月度任务', '周报管理', '查看任务', '发布任务', '日报管理', '数据看板'],
   service: ['查看任务'],
-  manager: ['招募周报', '查看任务', '发布任务', '日报管理', '数据看板'],
+  manager: ['日报与月度任务', '招募周报', '查看任务', '发布任务', '日报管理', '数据看板'],
   staff: ['周报管理', '查看任务', '发布任务', '日报管理']
 }
 for (const who of Object.keys(ROLES)) {
@@ -190,7 +190,7 @@ test('业务页：兼任听 hub 的；hub 还没回来或是上一家店的，�
 test('业务页模板：普通小院主理人没有每日概况和换工主理人专区；兼任的每日概况是线上任务；换工主理人、员工不变', () => {
   const t = sfc('pages/staff/business.vue').template.content
   assert.match(t, /<template v-if="!isKeeper"><text class="group-title">每日概况<\/text><view class="owner-entry stay-entry daily-entry" hover-class="k-press-s" @click="go\(DAILY_PAGE\)">/)
-  assert.match(t, /<template v-else-if="alsoService"><text class="group-title">每日概况<\/text><view class="owner-entry stay-entry daily-entry" hover-class="k-press-s" @click="go\(staffStoreUrl\(ONLINE_DAILY_PAGE, hub\.storeId\)\)">/)
+  assert.match(t, /<template v-if="alsoService \|\| \(isCityLead && cityLeadFull\)"><text v-if="alsoService" class="group-title">每日概况<\/text><view class="owner-entry stay-entry daily-entry" hover-class="k-press-s" @click="go\(staffStoreUrl\(ONLINE_DAILY_PAGE, hub\.storeId\)\)">/)
   assert.match(t, /<text>线上任务招募概况<\/text><text>招募中 · 招募缺口 · 待审核报名<\/text>/)
   assert.match(t, /<template v-if="!isKeeper"><text class="group-title owner-title">换工主理人专区<\/text>/)
   // 旅居订单、日常管理对小院主理人还在
@@ -232,13 +232,13 @@ test('门店切换页的角色文字：兼任的写两个', () => {
 
 // ---------------------------------------------------------------- 工作台
 
-function workbench(who, { pms, hubData, online, onlineFail, volunteers } = {}) {
+function workbench(who, { pms, hubData, online, onlineFail, volunteers, recruitmentOpen = true } = {}) {
   const r = ROLES[who], log = { gets: [], gone: [], hub: [], todo: [] }
   const s = vue.ref(1)
   let shown = null
   const store = vue.ref({ roleCode: r.role, storeId: 102, storeName: '海边小院', roleName: r.roleName, alsoService: !!r.also })
   const h = runSetup('pages/staff/index.vue', {
-    ...v, R, DAILY_PAGE: '/pages/staff/volunteers', useScreen: () => s, onShow: (fn) => { shown = fn },
+    ...v, R, recruitmentEnabled: vue.ref(recruitmentOpen), DAILY_PAGE: '/pages/staff/volunteers', useScreen: () => s, onShow: (fn) => { shown = fn },
     onlineStaff: { value: false }, merchantStaff: { value: false }, merchantService: { value: who === 'service' }, cityLead: { value: false },
     experience: { account: { staffGrants: [] } }, ensureSession: async () => {}, hasStaffAccess: { value: true }, checkStaffTaskReminder() {}, hasManagerTasks: false,
     currentStaffStore: store, currentAlsoService: vue.computed(() => store.value.alsoService === true), staffStoreUrl: storeUrl, getSessionRevision: () => 1,
@@ -286,6 +286,20 @@ for (const who of Object.keys(ROLES)) {
     assert.deepEqual(w.json('publishEntries.value.map(p => p.label)'), PUBLISH[who])
   })
 }
+
+test('招聘关闭：不展示发布、人才库和招募岗位，仍可处理已有报名、任务和活动', (t) => {
+  const b = business('manager', { recruitmentOpen: false })
+  const w = workbench('keeper', { recruitmentOpen: false })
+  const m = merchantHome(false)
+  for (const view of [b, w, m]) t.after(view.stop)
+  const labels = b.json('frequent.value.map(item => item.label)')
+  for (const label of ['岗位管理', '人才库', '调度管理']) assert.ok(!labels.includes(label), label)
+  b.run("reviewEntries.value.find(item => item.label === '换工审核').open()")
+  assert.deepEqual(b.log.gone, ['/pages/staff/applications?jobType=volunteer&storeId=102'])
+  assert.deepEqual(w.json('publishEntries.value.map(entry => entry.label)'), ['活动'])
+  assert.match(m.template, /v-if="recruitmentEnabled" class="boards"/)
+  assert.deepEqual(m.json('otherLinks.value.map(link => link.label)'), ['线上任务与成果', '任务发布费用', '评价管理'])
+})
 
 test('工作台 普通小院主理人：今日概览是旅居订单三格，点了去订单台对应分组；不调换工接口，也不调兼任的接口', async (t) => {
   const w = workbench('keeper')
@@ -412,21 +426,23 @@ test('工作台：从换工主理人的店切到小院，停在「保险」页�
 
 // ---------------------------------------------------------------- 报名页
 
-function applications(role, { q = {}, permsFail = false, detail } = {}) {
-  const log = { lists: [], details: [] }
+function applications(role, { q = {}, permsFail = false, detail, overrides = {} } = {}) {
+  const log = { lists: [], details: [], notices: [] }
   const s = vue.ref(1)
   let boot = null, mounted = null
   const grants = [{ storeId: 102, roleCode: role, storeName: '海边小院', active: true }]
   const h = runSetup('pages/staff/applications.vue', {
     useScreen: (n, o) => { boot = o.onLoad; return s }, onMounted: (fn) => { mounted = fn }, R,
     experience: { account: { id: 1 } }, ensureSession: async () => {}, hasStaffAccess: { value: true }, currentStaffStore: { value: grants[0] }, currentStaffStoreId: () => 102, staffStores: { value: grants },
-    staffStoreUrl: storeUrl, onlineStaff: { value: false }, toast() {}, go() {}, loadStaffPerms: async () => null,
+    staffStoreUrl: storeUrl, onlineStaff: { value: false }, merchantStaff: { value: role === 'merchant' }, staffIdentities: { value: grants }, toast() {}, go() {}, loadStaffPerms: async () => null,
+    apiNotifyRecruitManager: async (storeId, appId) => { log.notices.push([storeId, appId]); return { data: {} } },
     staffCan: (item, action) => !permsFail && (role !== 'manager' || item !== 'online'),
     apiJobList: async () => ({ rows: [] }),
     apiStaffApplications: async (p) => { log.lists.push(plain(p)); return { rows: [], total: 0, hasMore: false } },
     apiStaffApplicationDetail: async (id) => { log.details.push(id); return { data: detail || { appId: id, jobType: 'volunteer', status: 'submitted' } } },
-    apiResumeForwards: async () => ({ data: [] }), get: async () => ({ data: {} }), releaseArrivalImages() {}, loadArrivalImages: async () => [], onBeforeUnmount() {}, onReachBottom() {}
+    apiResumeForwards: async () => ({ data: [] }), get: async () => ({ data: {} }), releaseArrivalImages() {}, loadArrivalImages: async () => [], onBeforeUnmount() {}, onReachBottom() {}, ...overrides
   })
+  s.value = Number(q.s) || 1
   boot(q)
   return { ...h, s, log, start: async () => { await mounted(); await flush() } }
 }
@@ -467,12 +483,32 @@ test('报名页 小院主理人：消息里的换工报名（?appId=）照样按
   assert.deepEqual(k.log.details, [901])
   assert.equal(k.s.value, 2)
 })
-test('报名页 小院主理人：第 3 屏（转发脱敏简历）不像专员那样被送回列表', async (t) => {
-  const k = applications('keeper', { q: { s: '3' } })
+test('报名页 小院主理人：按原报名授权进入旧简历深链，无报名的旧链接回列表', async (t) => {
+  const k = applications('keeper', {
+    q: { s: '3', appId: '901' }, detail: { appId: 901, storeId: 102, jobType: 'volunteer', canShareResume: true }
+  })
   t.after(k.stop)
-  k.s.value = 3
   await k.start()
   assert.equal(k.s.value, 3)
+  const blank = applications('keeper', { q: { s: '3' } })
+  t.after(blank.stop)
+  await blank.start()
+  assert.equal(blank.s.value, 1)
+})
+test('报名页 从另一工作台打开商家门店的原报名：旧分享入口回详情，站内通知带报名自己的门店', async (t) => {
+  const mixed = applications('manager', {
+    q: { s: '4', appId: '901' },
+    detail: { appId: 901, storeId: 208, jobType: 'parttime', canShareResume: false, canNotifyRecruitManager: true }
+  })
+  t.after(mixed.stop)
+  await mixed.start()
+  assert.equal(mixed.s.value, 2)
+  assert.equal(mixed.run('canShareResume.value'), false)
+  await mixed.run('notifyManager()')
+  assert.deepEqual(mixed.log.notices, [[208, 901]])
+  mixed.run('detail.value.canNotifyRecruitManager = false')
+  await mixed.run('notifyManager()')
+  assert.equal(mixed.log.notices.length, 1)
 })
 test('报名页 小院主理人：权限表读取失败时不来回改页签，照样取线上', async (t) => {
   const k = applications('keeper', { permsFail: true })
@@ -494,11 +530,11 @@ test('报名页 换工主理人、员工：页签不变，不强制线上', asyn
 
 // ---------------------------------------------------------------- 商家首页、活动页文案
 
-function merchantHome() {
+function merchantHome(recruitmentOpen = true) {
   const log = { gone: [] }
   const current = { value: { storeId: 9, storeName: '喜洲小院' } }
   const h = runSetup('pages/staff/components/k-merchant-work.vue', {
-    ...v, R, currentStaffStore: current, staffStores: { value: [current.value] }, ensureSession: async () => {}, getSessionRevision: () => 1,
+    ...v, R, recruitmentEnabled: vue.ref(recruitmentOpen), currentStaffStore: current, staffStores: { value: [current.value] }, ensureSession: async () => {}, getSessionRevision: () => 1,
     staffStoreUrl: url => url + (url.includes('?') ? '&' : '?') + 'storeId=9', go: u => log.gone.push(u), toast() {}, watch() {}, requestTone() {}
   })
   return { ...h, log }
@@ -506,13 +542,14 @@ function merchantHome() {
 test('商家首页：四个板块不动，业务入口包含「发布活动」，进创建屏', (t) => {
   const h = merchantHome()
   t.after(h.stop)
-  assert.deepEqual(h.json('boards.map(b => b.label)'), ['招募换工', '招募兼职', '招募全职', '线上任务'])
+  assert.deepEqual(h.json('boards.map(b => b.label)'), ['招募换工', '招募兼职', '招募全职', '发布任务'])
   const first = h.json("links.find(link => link.label === '发布活动')")
   assert.equal(first.label, '发布活动')
   // 2026-11-03 主人：简化商家端文案，商家看到的一律叫「袋鼠工作人员」
   assert.match(first.desc, /旅游产品.*工作人员审核/)
+  h.run("openBoard(boards.find(b => b.label === '发布任务').kind)")
   h.run("open(links.find(link => link.label === '发布活动').route)")
-  assert.deepEqual(h.log.gone, ['/pages/staff/activities?s=2&create=1&storeId=9'])
+  assert.deepEqual(h.log.gone, ['/pages/staff/online-jobs?s=1&storeId=9', '/pages/staff/activities?s=2&create=1&storeId=9'])
   assert.doesNotMatch(src('pages/staff/components/k-merchant-work.vue').split('</template>')[0], /平台审核/)
 })
 
@@ -521,9 +558,10 @@ test('商家首页：「发布活动」后面是「我的活动」，提交后�
   t.after(h.stop)
   assert.deepEqual(h.json('links.slice(2, 4).map(l => l.label)'), ['发布活动', '我的活动'])
   assert.deepEqual(h.json('activityLinks.map(l => l.label)'), ['账单与结算', '房源管理', '发布活动', '我的活动'])
-  assert.deepEqual(h.json('otherLinks.map(l => l.label)'), ['招募岗位', '线上任务与成果', '任务发布费用', '评价管理'])
+  assert.deepEqual(h.json('otherLinks.value.map(l => l.label)'), ['招募岗位', '线上任务与成果', '任务发布费用', '评价管理'])
   // 活动入口要在「我发布的」列表上面：列表长的时候放下面要滑好几屏
-  const homeTpl = src('pages/staff/components/k-merchant-work.vue').split('</template>')[0]
+  const homeTpl = h.template
+  assert.equal(homeTpl.split("open('/pages/governance/mediation')").length - 1, 1)
   assert.ok(homeTpl.indexOf('activityLinks') > homeTpl.indexOf('boards-tip') && homeTpl.indexOf('activityLinks') < homeTpl.indexOf('<text>我的需求') && homeTpl.indexOf('<text>我的需求') < homeTpl.indexOf('otherLinks'))
   h.run("open(links.find(link => link.label === '我的活动').route)")
   assert.deepEqual(h.log.gone, ['/pages/staff/activities?storeId=9'])
@@ -731,12 +769,12 @@ test('商家需求：退回失败（比如任务刚上架）提示原因，留�
 // ---------------------------------------------------------------- 审核活动页
 
 const ACT = { activityId: 31, title: '手作课', cover: '', category: '手作课程', startTime: '2026-11-03 14:00:00', endTime: '2026-11-03 17:00:00', deadline: null, city: '平潭', place: '小院一楼', feeFen: 5000, feeMode: 'offline', feeIncludes: null, priceText: '¥50.00', capacity: 20, intro: '做陶', safetyNote: null, storeId: 201, storeName: '海边咖啡', organizerName: '海边咖啡', creator: '林老板', submitTime: '2026-10-30 09:00:00', status: 'pending', statusLabel: '待审核' }
-function auditPage({ rows = [ACT], current = 102, also = false, confirmOk = true, reason = '时间不合适', postFail, listFail } = {}) {
+function auditPage({ rows = [ACT], current = 102, also = false, serviceRole = false, confirmOk = true, reason = '时间不合适', postFail, listFail } = {}) {
   const log = { gets: [], posts: [], toasts: [], selected: [] }
   let boot = null, store = current
   const s = vue.ref(1)
   const h = runSetup('pages/staff/service-activities.vue', {
-    ...v, useRequestList, useScreen: (n, o) => { boot = o.onLoad; return s }, ensureSession: async () => {}, hasStaffAccess: { value: true }, currentStaffStoreId: () => store, currentAlsoService: { value: also },
+    ...v, useRequestList, useScreen: (n, o) => { boot = o.onLoad; return s }, ensureSession: async () => {}, hasStaffAccess: { value: true }, currentStaffStoreId: () => store, currentAlsoService: { value: also }, merchantService: { value: serviceRole },
     selectStaffStore: async (id) => { log.selected.push(id); store = id }, absUrl: x => '/abs' + x, mdhm: x => String(x).slice(5, 16), toast: m => log.toasts.push(m),
     errText: (e, d) => (e && e.message) || d, confirm: async () => confirmOk, prompt: async () => reason, uni: { stopPullDownRefresh() {}, showToast() {} },
     get: async (url, params) => { log.gets.push([url, plain(params)]); if (listFail) throw listFail; return { data: { rows, total: rows.length, hasMore: false, city: '平潭', pageNum: 1, pageSize: 50 } } },
@@ -753,7 +791,7 @@ test('审核活动：按当前门店取待审核；空态、失败文字都在',
   assert.equal(h.run('coverOf(list.rows.value[0])'), '/static/media/cover-empty.png')
   assert.equal(h.run('coverOf({ cover: "/x.jpg" })'), '/abs/x.jpg')
   assert.match(h.template, /现在没有待审核的活动/)
-  assert.match(h.template, /<k-button label="重新加载" size="md" type="outline" @click="list\.reload" \/>/)
+  assert.match(h.template, /<k-button label="重新加载" size="md" type="outline" @click="retryEntry" \/>/)
   const broken = auditPage({ listFail: Object.assign(new Error('没有权限'), { code: 403 }) })
   t.after(broken.stop)
   await broken.boot()
@@ -794,6 +832,15 @@ test('审核活动：id 打开那一条；已经被处理的提示一声，停�
   await gone.boot({ id: '99' })
   assert.equal(gone.s.value, 1)
   assert.deepEqual(gone.log.toasts, ['这场活动已经处理过了'])
+})
+test('审核活动：多城商家服务人从消息进入，用提醒里的门店打开并提交同一场活动', async (t) => {
+  const h = auditPage({ current: 102, serviceRole: true })
+  t.after(h.stop)
+  await h.boot({ storeId: '201', id: '31' })
+  assert.equal(h.log.gets[0][1].storeId, '201')
+  assert.equal(h.run('current.value.activityId'), 31)
+  await h.run('audit(true)')
+  assert.deepEqual(h.log.posts, [['/app/staff/service/activities/31/audit?storeId=201', { pass: true }]])
 })
 test('审核活动：通过先确认；取消不发请求；成功回列表重取', async (t) => {
   const no = auditPage({ confirmOk: false })
@@ -914,7 +961,7 @@ function serviceWork({ auditFail, listFail } = {}) {
   const log = { gets: [], gone: [] }
   const current = { value: { storeId: 102, roleCode: 'merchant_service', storeName: '海边小院' } }
   const h = runSetup('pages/staff/components/k-service-work.vue', {
-    ...v, R, currentStaffStore: current, staffStores: { value: [current.value] }, ensureSession: async () => {}, getSessionRevision: () => 1, staffStoreUrl: storeUrl, go: u => log.gone.push(u), toast() {}, errText: (e, d) => d,
+    ...v, R, defineProps: () => ({ activeTab: 'work' }), currentStaffStore: current, staffStores: { value: [current.value] }, ensureSession: async () => {}, getSessionRevision: () => 1, staffStoreUrl: storeUrl, go: u => log.gone.push(u), toast() {}, errText: (e, d) => d,
     get: async (url, params) => {
       log.gets.push([url, plain(params)])
       if (url === v.SERVICE_ACTIVITIES_API) { if (auditFail) throw new Error('x'); return { data: { rows: [{ title: '海边音乐会', storeName: '海边咖啡' }], total: 3 } } }
@@ -1039,4 +1086,26 @@ test('守卫：商家服务人能进两个新页，别的页面还是送回；�
   for (const route of ['pages/staff/volunteers', 'pages/staff/dispatch', 'pages/staff/insurance', 'pages/staff/jobs', 'pages/staff/talents']) {
     assert.deepEqual(await runGuard({ route, current: 1, grants: luna }), [], route)
   }
+})
+
+
+test('报名详情切换同店身份后清空，上一身份迟到的详情不能显示', async t => {
+  let finish
+  const store = vue.ref({ storeId: 102, roleCode: 'manager' })
+  const h = applications('manager', { overrides: {
+    currentStaffStore: store,
+    apiStaffApplicationDetail: () => new Promise(resolve => { finish = resolve })
+  } })
+  t.after(h.stop)
+  await h.start()
+  const reading = h.run('openDetail({ appId: 79 })')
+  assert.equal(h.s.value, 2)
+  store.value = { storeId: 102, roleCode: 'merchant' }
+  finish({ data: { appId: 79, canAudit: true } })
+  await reading
+  await flush()
+  assert.equal(h.s.value, 1)
+  assert.equal(h.run('current.value'), null)
+  assert.equal(h.run('detail.value'), null)
+  assert.equal(h.run('canAudit.value'), false)
 })

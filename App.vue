@@ -1,4 +1,6 @@
 <script>
+	import { watch } from 'vue'
+	import { subscriptionScope, visitSubscriptions } from './common/visit-subscriptions.js'
 	import { ensureSession } from './common/experience.js'
 	import { noteInviter } from './common/invite.js'
 	import { installBackGuard } from './common/back-guard.js'
@@ -16,6 +18,7 @@
 			ensureSession()
 			noteInviter(options, ensureSession)
 			// #ifdef MP-WEIXIN
+			watch(subscriptionScope, () => visitSubscriptions.warm(), { immediate: true })
 			// 页内分屏时系统返回不再直接退出小程序（见 common/back-guard.js）
 			installBackGuard()
 			// 微信下载好新版本后提示重启；不重启的话下次冷启动也会用上新版
@@ -43,6 +46,9 @@
 			// #endif
 		},
 		onShow: function(options) {
+			// #ifdef MP-WEIXIN
+			visitSubscriptions.warm()
+			// #endif
 			startFeaturePolling()
 			console.log('App Show')
 			noteInviter(options, ensureSession)
@@ -51,6 +57,9 @@
 			startStaffTaskReminders()
 		},
 		onHide: function() {
+			// #ifdef MP-WEIXIN
+			visitSubscriptions.endVisit()
+			// #endif
 			stopFeaturePolling()
 			console.log('App Hide')
 			stopNewsPolling()
@@ -61,6 +70,7 @@
 
 <style lang="scss">
 	@import './styles/theme.scss';
+	@import './styles/user-surface.scss';
 	/* #ifdef MP-WEIXIN */
 	/* 返回拦截用的隐形 page-container（见 common/back-guard.js）显示时，微信基础库会给页面 body 写行内样式
 	   position: fixed + top: -滚动距离 来锁住页面滚动（togglePageScroll）——结果所有带返回箭头的页内分屏都滑不动：

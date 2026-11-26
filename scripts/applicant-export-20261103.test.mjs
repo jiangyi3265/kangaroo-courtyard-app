@@ -63,7 +63,7 @@ test('页面在 staff 分包，模板可编译；导出走 downloadDoc（凭证�
 
 test('报名管理里的入口：只有「岗位管理·导出」的角色看得到', () => {
   const src = read('pages/staff/applications.vue')
-  assert.match(src, /const canExportList = computed\(\(\) => staffCan\('jobs', 'export', applicationGrant\.value\)\)/)
+  assert.match(src, /const canExportList = computed\(\(\) => !!applicationGrant\.value && !applicationGrant\.value\.sharedRecruitment && staffCan\('jobs', 'export', applicationGrant\.value\)\)/)
   assert.match(src, /<view v-if="canExportList" class="applications-tools__export"><k-button type="secondary" block icon="file-down" label="导出名单" @click="go\(APPLICANT_EXPORT_PAGE\)" \/><\/view>/)
 })
 
@@ -77,4 +77,28 @@ test('服务端口径：按「岗位管理·导出」取门店、按开始时间
   assert.match(ctl, /@AppAuth\(staff = true, cityLead = true\)/)
   assert.match(ctl, /@GetMapping\("\/export\.xlsx"\)/)
   assert.match(ctl, /@GetMapping\("\/export\/preview"\)/)
+})
+test('同店兼任只按所选身份判断，跨店协作或未授权门店没有导出入口', () => {
+  const descriptor = compiler.parse(read('pages/staff/applications.vue')).descriptor
+  const source = descriptor.scriptSetup.content
+  const names = ['applicationGrant', 'restricted', 'canViewOnline', 'canExportList']
+  const defs = compiler.babelParse(source, { sourceType: 'module' }).program.body
+    .filter(node => node.type === 'VariableDeclaration' && names.includes(node.declarations[0].id.name))
+    .map(node => source.slice(node.start, node.end)).join('\n')
+  const state = Function('computed', 'currentStaffStore', 'applicationStoreId', 'staffStores', 'staffCan',
+    defs + '\nreturn { restricted, canExportList, canViewOnline }')
+  const manager = { storeId: 1, roleCode: 'manager' }
+  const online = { storeId: 1, roleCode: 'online_staff' }
+  const linked = { storeId: 2, roleCode: 'manager', sharedRecruitment: true }
+  const current = { value: online }, id = { value: 1 }
+  const run = state(fn => ({ get value() { return fn() } }), current, id,
+    { value: [manager, online, linked] }, (item, action, grant = manager) => grant.roleCode === 'manager')
+  assert.deepEqual([run.restricted.value, run.canExportList.value], [true, false])
+  current.value = manager
+  assert.deepEqual([run.restricted.value, run.canExportList.value], [false, true])
+  for (const storeId of [2, 3]) {
+    id.value = storeId
+    assert.equal(run.canExportList.value, false)
+    assert.equal(run.canViewOnline.value, false)
+  }
 })

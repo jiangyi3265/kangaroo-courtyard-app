@@ -13,7 +13,7 @@ function page(file, stubs = {}) {
   const context = { console, Date, Promise, Set, ref, computed }
   for (const node of nodes.filter(n => n.type === 'ImportDeclaration')) for (const spec of node.specifiers) context[spec.local.name] = () => {}
   Object.assign(context, { ref, computed, R: {}, experience: { account: { id: 7 }, mode: 'user' },
-    getSessionRevision: () => 1, messageWording: m => m, visibleMessages: ref([]),
+    getMessageScopeKey: () => context.experience.account?.id, getSessionRevision: () => 1, messageWording: m => m, visibleMessages: ref([]),
     setTimeout: (fn, delay) => { const id = ++next; timers.set(id, { fn, delay }); return id }, clearTimeout: id => timers.delete(id),
     onLoad: fn => { hooks.load = fn }, onShow: fn => { hooks.show = fn }, onHide: fn => { hooks.hide = fn }, onUnload: fn => { hooks.unload = fn }, onReachBottom: fn => { hooks.bottom = fn },
     apiMarkAllRead: async () => ({ data: { unreadIds: [9] } }), refreshUnread: () => calls.push('unread'),
@@ -24,19 +24,16 @@ function page(file, stubs = {}) {
   return { run: script => vm.runInContext(script, context), timers, hooks, calls, context }
 }
 
-test('分类页批量首次已读安排到期查询，再次标读不延长期限', async () => {
-  const h = page('pages/notice/inbox.vue')
-  h.run('rows.value = [{ id: 9, read: false, fresh: true }, { id: 8, read: true, expiresAt: Date.now() + 100000 }]')
-  const oldExpiry = h.run('rows.value[1].expiresAt')
-  await h.run('markUpTo("user", rows.value)')
-  assert.equal(h.run('rows.value[0].read'), true)
-  assert.equal(h.run('rows.value[0].fresh'), true, '保留进入时的新消息分组')
-  assert.equal(h.run('rows.value[1].expiresAt'), oldExpiry)
-  assert.equal(h.timers.size, 1)
-  assert.ok([...h.timers.values()][0].delay <= 101000, '按最早的服务端期限刷新')
-  const expiry = h.run('rows.value[0].expiresAt')
-  await h.run('markUpTo("user", rows.value)')
-  assert.equal(h.run('rows.value[0].expiresAt'), expiry)
+test('分类页只标已点开的那条，数字消失，其他通知和历史消息保留', async () => {
+  const marks = []
+  const h = page('pages/notice/inbox.vue', {apiMarkRead: async id => { marks.push(id); return {data:{updated:1}} }})
+  h.run('rows.value = [{id:9,read:false,fresh:true},{id:8,read:false,fresh:true}]')
+  h.run('open(rows.value[0])')
+  await new Promise(resolve => setImmediate(resolve))
+  assert.deepEqual(marks,[9])
+  assert.equal(h.run('rows.value[0].fresh'),false)
+  assert.equal(h.run('rows.value[1].fresh'),true)
+  assert.equal(h.run('rows.value[0].expiresAt'),undefined)
 })
 
 test('分类页到期重新查询，不自行删除未读或聊天内容；离页取消计时', async () => {
@@ -57,12 +54,12 @@ test('分类页到期重新查询，不自行删除未读或聊天内容；离�
 
 test('分类页已读响应回来前换账号不修改新账号消息', async () => {
   let resolve
-  const h = page('pages/notice/inbox.vue', { apiMarkAllRead: () => new Promise(r => { resolve = r }) })
+  const h = page('pages/notice/inbox.vue', { apiMarkRead: () => new Promise(r => { resolve = r }) })
   h.run('rows.value = [{ id: 9, read: false }]')
-  const marking = h.run('markUpTo("user", rows.value)')
+  h.run('open(rows.value[0])')
   h.context.experience.account = { id: 8 }
   h.run('rows.value = [{ id: 9, read: false }]')
-  resolve({ data: { unreadIds: [9] } }); await marking
+  resolve({ data: { updated: 1 } }); await new Promise(r => setImmediate(r))
   assert.equal(h.run('rows.value[0].read'), false)
   assert.equal(h.timers.size, 0)
 })
@@ -81,18 +78,11 @@ test('主列表全部已读后回读服务端期限并安排到期刷新', async
   assert.equal(visible.value[0].expiresAt, expiry)
 })
 
-test('分类页旧已读消息点击成功才补期限，失败不补、已有期限不延期', async () => {
-  let resolve, reject, calls = 0
-  const h = page('pages/notice/inbox.vue', { apiMarkRead: () => { calls++; return new Promise((yes, no) => { resolve = yes; reject = no }) } })
-  h.run('rows.value = [{ id: 9, read: true, fresh: false }, { id: 8, read: true, fresh: false, expiresAt: 1234 }]; open(rows.value[0])')
-  assert.equal(h.run('rows.value[0].expiresAt'), undefined)
-  reject(new Error('offline')); await Promise.resolve(); await Promise.resolve()
-  assert.equal(h.run('rows.value[0].expiresAt'), undefined)
-  h.run('open(rows.value[0])'); resolve({ data: { updated: 1 } }); await Promise.resolve()
-  const expiry = h.run('rows.value[0].expiresAt')
-  assert.ok(expiry > Date.now())
-  h.run('open(rows.value[0]); open(rows.value[1])')
-  assert.equal(calls, 2)
-  assert.equal(h.run('rows.value[0].expiresAt'), expiry)
-  assert.equal(h.run('rows.value[1].expiresAt'), 1234)
+test('重新打开旧已读消息不重复写已读，也不给历史记录增加期限', () => {
+  const writes = []
+  const h = page('pages/notice/inbox.vue', {apiMarkRead: id => writes.push(id)})
+  h.run('rows.value = [{id:9,read:true},{id:8,read:true,expiresAt:1234}];open(rows.value[0]);open(rows.value[1])')
+  assert.deepEqual(writes,[])
+  assert.equal(h.run('rows.value[0].expiresAt'),undefined)
+  assert.equal(h.run('rows.value[1].expiresAt'),1234)
 })

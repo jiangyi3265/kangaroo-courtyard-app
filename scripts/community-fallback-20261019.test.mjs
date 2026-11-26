@@ -1,10 +1,10 @@
 // 2026-10-19 社区「选的城市空着时先看全国的」回归（node --test，不构建、不发请求）。
-// 总负责人在微信模拟器里发现：模拟器定位在大连、主人人在伊犁，社区默认是自己的城市，这个城市一条动态都没有时整页只剩「这里还没有动态」。
+// 客户 #65：默认展示全国。用户主动选城后，空列表才尝试显示全国内容。
 // 守住这几件事：
 //   · 没在搜索、不是「已关注」、选的不是「全部城市」、这个页签第一页一条都没有 → 再取一次全国的同一页签（找搭子同样，分类 / 筛选条件照带）；
 //   · 列表上面一行暖色小字「X还没有…，先看看全国的」+「只看X」；点「只看X」回到只看这个城市（原来的空状态，下面多一个「看看全国的」）；
 //   · 往下翻页接着翻全国的；全国也空着 / 全国那次没取到 → 照常是这个城市的空状态；
-//   · 记住的社区城市不改（不调 saveCommunityCity）；「我的 → 全国攻略」（?tab=guide&all=1）本来就是全部城市，只取一次。
+//   · 只有用户主动选城时保存选择，自动回退不会覆盖所选城市；「我的 → 全国攻略」（?tab=guide&all=1）本来就是全部城市，只取一次。
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -48,12 +48,12 @@ test('widenNotice：按页签说，找搭子带了分类 / 筛选时说「符合
 })
 
 // 跑 index.vue 的 <script setup>（同 profile-mine-20261018.test.mjs 的做法）：接口换成按城市返回的假数据，记下每次请求
-function runIndex({ feedRows = {}, buddyRows = {}, startCity = '大连', failAll = false } = {}) {
+function runIndex({ feedRows = {}, buddyRows = {}, savedCity = '大连', failAll = false } = {}) {
   const script = sfc.scriptSetup.content
   const ast = compiler.babelParse(script, { sourceType: 'module' })
   const body = ast.program.body.filter(n => n.type !== 'ImportDeclaration').map(n => script.slice(n.start, n.end)).join('\n')
   const calls = { feed: [], buddies: [], saved: [] }
-  let loadOpts
+  let loadOpts, selectedCity
   const page = (rows) => ({ data: { rows, hots: [], hasMore: rows.length >= 2 } })
   const sandbox = { console }
   for (const n of ast.program.body.filter(n => n.type === 'ImportDeclaration')) for (const s of n.specifiers) sandbox[s.local.name] = () => new Promise(() => {})
@@ -62,7 +62,8 @@ function runIndex({ feedRows = {}, buddyRows = {}, startCity = '大连', failAll
     uni: { getSystemInfoSync: () => ({ windowWidth: 375 }), hideKeyboard() {}, stopPullDownRefresh() {} },
     useScreen: (n, opts) => { loadOpts = opts; return vue.ref(1) },
     ensureSession: async () => {}, experience: { account: { id: 7 } },
-    communityCity: () => startCity, saveCommunityCity: (c) => calls.saved.push(c),
+    selectCity: async () => selectedCity,
+    communityCity: () => savedCity, saveCommunityCity: (c) => calls.saved.push(c),
     apiFeed: async (q) => {
       calls.feed.push({ ...q })
       if (failAll && q.city === ALL_CITIES) throw new Error('boom')
@@ -81,6 +82,14 @@ function runIndex({ feedRows = {}, buddyRows = {}, startCity = '大连', failAll
   return {
     calls, flush, stop: () => scope.stop(),
     load: async (q = {}) => { await loadOpts.onLoad(q); await flush() },
+    selectFromNationwide: async city => {
+      assert.deepEqual(calls.feed.map(q => q.city), [ALL_CITIES], '首次打开只请求全国，已有选城记录也一样')
+      assert.deepEqual(calls.saved, [], '默认全国不会覆盖已保存的城市')
+      calls.feed.length = 0
+      selectedCity = city
+      await vm.runInContext('pickCity()', sandbox)
+      await flush()
+    },
     run: (code) => vm.runInContext(code, sandbox),
     json: (code) => JSON.parse(vm.runInContext('JSON.stringify(' + code + ')', sandbox))
   }
@@ -90,6 +99,7 @@ test('大连一条动态都没有：自动再取全国的同一页签，列表�
   const h = runIndex({ feedRows: { [ALL_CITIES]: [11, 12] } })
   t.after(h.stop)
   await h.load()
+  await h.selectFromNationwide('大连')
   assert.deepEqual(h.calls.feed.map(q => q.city), ['大连', ALL_CITIES])
   assert.equal(h.calls.feed[1].page, 1)
   assert.equal(h.calls.feed[1].sort, 'new')
@@ -98,7 +108,7 @@ test('大连一条动态都没有：自动再取全国的同一页签，列表�
   assert.equal(h.run('wideText.value'), '大连还没有动态，先看看全国的')
   assert.deepEqual(h.json('posts.value.map(p => p.postId)'), [11, 12])
   assert.equal(h.run('city.value'), '大连', '顶栏还是大连')
-  assert.deepEqual(h.calls.saved, [], '记住的社区城市不改')
+  assert.deepEqual(h.calls.saved, ['大连'], '用户选择的大连只保存一次，全国回退不覆盖它')
   // 往下翻：接着翻全国的第 2 页
   await h.run('loadFeed(true)')
   assert.deepEqual(h.calls.feed.at(-1), { kind: undefined, city: ALL_CITIES, sort: 'new', keyword: undefined, page: 2 })
@@ -109,6 +119,7 @@ test('点「只看大连」：回到只看大连（空状态 + 「看看全国�
   const h = runIndex({ feedRows: { [ALL_CITIES]: [11] } })
   t.after(h.stop)
   await h.load()
+  await h.selectFromNationwide('大连')
   h.calls.feed.length = 0
   h.run('onlyThisCity()'); await h.flush()
   assert.deepEqual(h.calls.feed.map(q => q.city), ['大连'], '只取大连，不再看全国')
@@ -130,12 +141,14 @@ test('搜索、「已关注」、本城有内容、全国也空着、全国那�
   const has = runIndex({ feedRows: { 大连: [1], [ALL_CITIES]: [11] } })
   t.after(has.stop)
   await has.load()
+  await has.selectFromNationwide('大连')
   assert.deepEqual(has.calls.feed.map(q => q.city), ['大连'])
   assert.equal(has.run('feedWide.value'), false)
 
   const h = runIndex({ feedRows: { [ALL_CITIES]: [11] } })
   t.after(h.stop)
   await h.load()
+  await h.selectFromNationwide('大连')
   h.calls.feed.length = 0
   h.run("kwDraft.value = '咖啡'; runSearch()"); await h.flush()
   assert.deepEqual(h.calls.feed.map(q => [q.city, q.keyword]), [['大连', '咖啡']], '搜索时不换成全国的')
@@ -149,6 +162,7 @@ test('搜索、「已关注」、本城有内容、全国也空着、全国那�
   const none = runIndex({ feedRows: {} })
   t.after(none.stop)
   await none.load()
+  await none.selectFromNationwide('大连')
   assert.deepEqual(none.calls.feed.map(q => q.city), ['大连', ALL_CITIES])
   assert.equal(none.run('feedWide.value'), false, '全国也空着：照常是大连的空状态')
   assert.equal(none.run('feedLoaded.value'), true)
@@ -156,6 +170,7 @@ test('搜索、「已关注」、本城有内容、全国也空着、全国那�
   const bad = runIndex({ feedRows: {}, failAll: true })
   t.after(bad.stop)
   await bad.load()
+  await bad.selectFromNationwide('大连')
   assert.equal(bad.run('feedWide.value'), false)
   assert.equal(bad.run('feedFailed.value'), false, '全国那次没取到不算加载失败，照常显示大连的空状态')
   assert.equal(bad.run('feedLoaded.value'), true)
@@ -173,6 +188,7 @@ test('找搭子页签：大连没人找搭子 → 同样的分类 / 筛选条件
   const h = runIndex({ buddyRows: { [ALL_CITIES]: [21, 22] } })
   t.after(h.stop)
   await h.load()
+  await h.selectFromNationwide('大连')
   h.run("onFeedTab('找搭子')"); await h.flush()
   assert.deepEqual(h.calls.buddies.map(q => q.city), ['大连', ALL_CITIES])
   assert.equal(h.run('buddyWide.value'), true)

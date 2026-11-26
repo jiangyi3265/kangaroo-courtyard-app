@@ -126,17 +126,19 @@ watch(() => props.appId, load, { immediate: true })
 </script>
 
 <style scoped lang="scss">
-.employment { padding: 16px 0; border-bottom: 1px solid var(--k-line); }
-.employment__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.employment__title { font-size: 16px; font-weight: 600; color: var(--k-ink); }
-.employment__state { display: block; font-size: 15px; font-weight: 600; color: var(--k-ink); }
-.employment__line, .employment__muted { display: block; margin-top: 8px; font-size: 14px; line-height: 1.6; color: var(--k-muted); overflow-wrap: anywhere; }
-.employment__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+/* 2026-11-17 改版「小而精」：标题 15、状态 14、说明 13，按钮收成胶囊；填写的地方（日期、核验依据）字号不动，只把圆角收到 10 */
+.employment { padding: 12px 0; border-bottom: 1px solid var(--k-line); }
+.employment :deep(.k-button) { border-radius: 999px; }
+.employment__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.employment__title { font-size: 15px; font-weight: 700; color: var(--k-ink); }
+.employment__state { display: block; font-size: 14px; font-weight: 600; color: var(--k-ink); }
+.employment__line, .employment__muted { display: block; margin-top: 6px; font-size: 13px; line-height: 1.6; color: var(--k-muted); overflow-wrap: anywhere; }
+.employment__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .employment__form { margin-top: 16px; }
 .employment__label { display: block; margin: 12px 0 8px; font-size: 15px; color: var(--k-ink2); }
 .employment__date { display: flex; flex-wrap: wrap; gap: 10px; }
 .employment__date picker { flex: 1; min-width: 120px; }
-.employment__picker { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); font-size: 15px; }
-.employment__note { box-sizing: border-box; width: 100%; min-height: 88px; padding: 12px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); font-size: 15px; line-height: 1.6; }
-.employment__error { display: block; margin-top: 12px; font-size: 14px; line-height: 1.6; color: var(--k-alert); }
+.employment__picker { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); font-size: 15px; }
+.employment__note { box-sizing: border-box; width: 100%; min-height: 88px; padding: 12px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); font-size: 15px; line-height: 1.6; }
+.employment__error { display: block; margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--k-alert); }
 </style>

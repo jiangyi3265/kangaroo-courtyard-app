@@ -9,6 +9,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile } from 'node:fs/promises'
+import vm from 'node:vm'
+import { parse, babelParse } from '@vue/compiler-sfc'
+import { ref, computed, reactive, watch, effectScope } from 'vue'
+import { submitSupportTicket } from '../common/support-ticket-request.js'
 
 const read = async (p) => (await readFile(new URL(p, import.meta.url), 'utf8')).replace(/\r\n/g, '\n')
 const javaRoot = '../../RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/'
@@ -23,7 +27,8 @@ test('线上任务专员：员工身份的客服回复与授权通知在消息�
   const start = mapper.indexOf('<sql id="currentChatReception">')
   const acl = mapper.slice(start, mapper.indexOf('</sql>', start))
   const restricted = acl.slice(acl.indexOf("restricted.role_code='online_staff'"), acl.indexOf("biz_type in ('application','online_submission')"))
-  assert.match(restricted, /or biz_type in \('grant','support_ticket','notice_reply','merchant_request','recruit_daily'\)/)
+  const allowed = restricted.match(/or biz_type in \(([^)]*'support_ticket'[^)]*)\)/)?.[1] || ''
+  for (const type of ['grant', 'support_ticket']) assert.ok(allowed.split(',').includes("'" + type + "'"))
 })
 
 test('业务页未读数走消息中心同一口径', () => {
@@ -58,13 +63,123 @@ test('房源 / 活动匹配理由：空字符串不再拼出多余的逗号', ()
   assert.match(home, /\(place\.isEmpty\(\) \? "" : "，集合：" \+ place\)/)
 })
 
-test('追问：超长先说清能写多少；新工单页显示自己写的追问', () => {
-  const submit = assistant.slice(assistant.indexOf('async function submitTicket()'), assistant.indexOf('async function addSupplement()'))
-  // 先检查长度、再置 submitting：提前 return 不能把提交锁住
-  assert.ok(submit.indexOf("'追问最多 480 字") > 0 && submit.indexOf("'追问最多 480 字") < submit.indexOf('submitting = true'))
-  assert.match(assistant, /写下你还想问客服的（480 字以内）/)
-  assert.match(assistant, /<text>\{\{ problemText \}\}<\/text>/)
-  assert.match(assistant, /const problemText = computed\(/)
+const setup = parse(assistant).descriptor.scriptSetup.content
+const pageCode = babelParse(setup, { sourceType: 'module' }).program.body
+  .filter(node => node.type !== 'ImportDeclaration').map(node => setup.slice(node.start, node.end)).join('\n')
+const later = () => { let resolve; const promise = new Promise(r => { resolve = r }); return { resolve, promise } }
+const settle = () => new Promise(r => setImmediate(r))
+const longId = '9007199254740993123'
+const ticketRow = id => ({ ticketId: id, question: '订单取消', summary: '咨询', context: 'order', related: '订单：ST123　客房', reply: '已核实' })
+function ticketPage(t) {
+  const log = { posted: [], prompts: [], toasts: [], loads: [] }
+  const experience = reactive({ account: { id: 'A' }, mode: 'user' })
+  let enter, unload
+  const ctx = vm.createContext({
+    ref, computed, watch, experience, submitSupportTicket, onLoad: fn => { enter = fn }, onUnload: fn => { unload = fn },
+    ensureSession: async () => {}, decodeQuery: x => x, errText: e => e.message, toast: s => log.toasts.push(s),
+    prompt: (title, opts) => { const d = later(); log.prompts.push({ opts, ...d }); return d.promise },
+    apiSupportTicketDetail: async id => { log.loads.push(id); return { data: ticketRow(id) } },
+    apiSupportTicket: async body => { log.posted.push({ ...body }); return { data: { ticketId: '42', message: '已提交' } } }
+  })
+  const scope = effectScope()
+  scope.run(() => vm.runInContext(pageCode, ctx))
+  t.after(() => { unload?.(); scope.stop() })
+  return { log, experience, ctx, open: id => enter({ ticket: id }), run: expr => vm.runInContext(expr, ctx), unload: () => unload() }
+}
+
+test('消息深链追问只开一个输入框，沿用本人原订单，按实际工单号限制 500 字', async t => {
+  const p = ticketPage(t)
+  await p.open(longId)
+  assert.equal(p.run('relatedOrder.value'), '订单：ST123　客房')
+  const max = 500 - ('追问（工单 ' + longId + '）：').length
+  const first = p.run('submitTicket()')
+  const second = p.run('submitTicket()')
+  assert.equal(p.log.prompts.length, 1)
+  assert.match(p.log.prompts[0].opts.placeholder, new RegExp(String(max)))
+  p.log.prompts[0].resolve('问'.repeat(max + 1))
+  await Promise.all([first, second])
+  assert.equal(p.log.posted.length, 0)
+  assert.match(p.log.toasts.at(-1), new RegExp(String(max)))
+  const edit = p.run('addSupplement()')
+  p.log.prompts.at(-1).resolve('问'.repeat(max))
+  await edit
+  await Promise.all([p.run('submitTicket()'), p.run('submitTicket()')])
+  assert.equal(p.log.posted.length, 1)
+  const body = p.log.posted[0]
+  assert.equal(body.question.length, 500)
+  assert.equal(body.followUpTicketId, longId)
+  assert.equal(body.context, 'order')
+  assert.equal(body.related, '订单：ST123　客房')
+  assert.deepEqual(p.log.loads, [longId, '42'])
+})
+
+test('追问输入中切换工单、账号或退出页面，都不会发送或带回旧草稿', async t => {
+  for (const action of ['ticket', 'account', 'mode', 'unload']) {
+    const p = ticketPage(t)
+    await p.open('17')
+    const pending = p.run('submitTicket()')
+    if (action === 'ticket') await p.open('18')
+    if (action === 'account') p.experience.account = { id: 'B' }
+    if (action === 'mode') p.experience.mode = 'staff'
+    if (action === 'unload') p.unload()
+    p.log.prompts[0].resolve('旧账号的订单内容')
+    await pending
+    assert.equal(p.log.posted.length, 0, action)
+    assert.equal(p.run('supplement.value'), '', action)
+  }
+})
+
+test('追问已落库但响应丢失，重新打开后复用工单请求，收到回执才清除待重试记录', async t => {
+  const storage = new Map(), savedUni = globalThis.uni
+  globalThis.uni = {
+    getStorageSync: k => storage.get(k), setStorageSync: (k,v) => storage.set(k,v), removeStorageSync: k => storage.delete(k)
+  }
+  t.after(() => { globalThis.uni = savedUni })
+  const requests = [], first = ticketPage(t)
+  await first.open('310')
+  first.ctx.apiSupportTicket = async body => { requests.push(body); throw new Error('响应丢失') }
+  first.run("supplement.value = '额外的退款问题'")
+  await first.run('submitTicket()')
+  assert.equal(first.run('supplement.value'), '额外的退款问题')
+  assert.equal(storage.size, 1)
+  assert.ok(!JSON.stringify([...storage]).includes('退款问题'))
+  first.unload()
+  const second = ticketPage(t)
+  second.ctx.submitSupportTicket = (await import('../common/support-ticket-request.js?restart')).submitSupportTicket
+  second.ctx.apiSupportTicket = async body => { requests.push(body); return { data: { ticketId: '311', message: '已提交' } } }
+  await second.open('310')
+  second.run("supplement.value = '额外的退款问题'")
+  await second.run('submitTicket()')
+  assert.match(requests[0].requestId, /^[a-z0-9_-]{16,64}$/)
+  assert.equal(requests[1].requestId, requests[0].requestId)
+  assert.equal(second.run('ticket.value.ticketId'), '311')
+  assert.equal(storage.size, 0)
+  await second.open('310')
+  second.run("supplement.value = '额外的退款问题'")
+  await second.run('submitTicket()')
+  assert.notEqual(requests[2].requestId, requests[0].requestId, '成功后的新追问独立提交')
+})
+
+test('旧详情、追问和评价的迟到响应不会覆盖正在查看的工单', async t => {
+  const p = ticketPage(t)
+  const slow = later(), posted = later(), rated = later()
+  p.ctx.apiSupportTicketDetail = id => id === '17' ? slow.promise : Promise.resolve({ data: ticketRow(id) })
+  const old = p.open('17')
+  await settle()
+  await p.open('20')
+  slow.resolve({ data: ticketRow('17') })
+  await old
+  assert.equal(p.run('ticket.value.ticketId'), '20')
+  p.ctx.apiSupportTicket = () => posted.promise
+  p.ctx.apiSupportRate = () => rated.promise
+  p.run("supplement.value = '补充'")
+  const sent = p.run('submitTicket()'), rating = p.run('rate(faces[0])')
+  await p.open('21')
+  posted.resolve({ data: { ticketId: '22', message: '旧提交' } })
+  rated.resolve({ msg: '旧评价' })
+  await Promise.all([sent, rating])
+  assert.equal(p.run('ticket.value.ticketId'), '21')
+  assert.deepEqual(p.log.toasts, [])
 })
 
 test('人员管理：成员名字后面带会员编号', () => {

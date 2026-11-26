@@ -34,8 +34,8 @@ function pageHarness(account=null){
  const ref=v=>({value:v}),experience={account},useScreen=(_,opts)=>{hook=opts.onLoad;return ref(1)}
  const load=src.slice(src.indexOf('const s = useScreen'),src.indexOf("const DEFAULT_IMG"))
  const detail=src.slice(src.indexOf('const detail = ref'),src.indexOf('const open ='))
- const factory=new Function('ref','useScreen','ensureSession','activityLanding','activityLoginQuery','experience','go','R','apiActivity','alert','fail','memberActivityId','memberActivityVouchers','apiMemberWallet',load+detail+';return {hook:()=>0,pendingCheckin,checkinMessage,landingError,resumeCheckin,detail};')
- const state=factory(ref,useScreen,async()=>{},activityLanding,activityLoginQuery,experience,x=>navigation.push(x),{login:'/pages/auth/login'},async(id,q)=>{calls.push({id,q});return{data:{activityId:id,host:{chips:[]},...(q.checkin?{checkin:'签到成功'}:{})}}},async()=>{},()=>{},ref(null),ref([]),async()=>({data:{rows:[]}}))
+ const factory=new Function('ref','useScreen','ensureSession','activityLanding','activityLoginQuery','experience','go','R','apiActivity','rememberDestination','fail','memberActivityId','memberActivityVouchers','apiMemberWallet',load+detail+';return {hook:()=>0,pendingCheckin,checkinMessage,landingError,resumeCheckin,detail};')
+ const state=factory(ref,useScreen,async()=>{},activityLanding,activityLoginQuery,experience,x=>navigation.push(x),{login:'/pages/auth/login'},async(id,q)=>{calls.push({id,q});return{data:{activityId:id,host:{chips:[]},...(q.checkin?{checkin:'签到成功'}:{})}}},()=>{},e=>{throw e},ref(null),ref([]),async()=>({data:{rows:[]}}))
  return {state,load:q=>hook(q),calls,navigation,experience}
 }
 test('actual page guest scan retains intent and navigates to safe login then resumes same request',async()=>{
@@ -53,10 +53,10 @@ test('group scene is read-only activity landing and never checkin or automatic m
 })
 
 test('actual login completion returns to retained activity intent; bind-phone remains profile scoped',()=>{
- const src=readFileSync(new URL('../pages/auth/login.vue',import.meta.url),'utf8');const logic=src.slice(src.indexOf('const completeEntry ='),src.indexOf('const profileNickname='))
- const destinations=[],factory=new Function('bindOnly','activityReturn','employeeEntry','hasStaffAccess','loginError','R','switchMode','relaunch',logic+';return completeEntry;')
+ const src=readFileSync(new URL('../pages/auth/login.vue',import.meta.url),'utf8');const logic=src.slice(src.indexOf('const finishBinding ='),src.indexOf('const profileNickname='))
+ const destinations=[],factory=new Function('bindOnly','activityReturn','employeeEntry','hasStaffAccess','loginError','R','switchMode','relaunch','merchantReturn','returnToPrevious',logic+';return completeEntry;')
  const bindOnly={value:false},ret={value:loginActivityReturn({activityScene:'c_1_0123456789ab'})}
- const complete=factory(bindOnly,ret,{value:false},{value:false},{value:''},{profile:'/pages/profile/index',home:'/pages/home/index'},()=>'/staff',x=>destinations.push(x))
+ const complete=factory(bindOnly,ret,{value:false},{value:false},{value:''},{profile:'/pages/profile/index',home:'/pages/home/index'},()=>'/staff',x=>destinations.push(x),{value:false},{value:false})
  complete();assert.equal(destinations[0],'/pages/community/activity?scene=c_1_0123456789ab');bindOnly.value=true;complete();assert.equal(destinations[1],'/pages/profile/index?s=4')
 })
 async function platformCode(native){

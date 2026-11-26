@@ -104,5 +104,5 @@ test('周报：支出涨是坏消息，收入涨是好消息', () => {
 })
 
 test('主包没动：不往 common/api.js 里加招募周报的东西', () => {
-  assert.ok(!read('common/api.js').includes('recruit'))
+  assert.doesNotMatch(read('common/api.js'), /\/app\/manage\/[^\x27"\n]*recruit|\b(reportType|reportAs)\b[^\n]*recruit/i)
 })

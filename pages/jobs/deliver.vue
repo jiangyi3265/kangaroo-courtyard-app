@@ -4,7 +4,7 @@
   <!-- page-meta 必须是页面第一个节点。「成果链接」面板开着时锁住后面的页面滚动（面板自己超高时要能滚，不能用 catchtouchmove 拦）；
        只在小程序里加：H5 的 page-meta 关面板时清不掉这条样式，顶栏会从此不吸顶（同找搭子筛选、岗位列表的做法），H5 见 lockPageScroll -->
   <!-- #endif -->
-  <view class="k-page deliver">
+  <view class="k-page deliver" :class="$userSurface">
     <k-topbar title="任务交付" back />
     <k-subscribe scenes="online_task" label="订阅任务进展提醒" />
 
@@ -16,7 +16,7 @@
             <view class="flow__track">
               <view v-if="stepIndex > 0" class="flow__line flow__line--l" />
               <view v-if="stepIndex < flowSteps.length - 1" class="flow__line flow__line--r" />
-              <view class="flow__dot"><k-icon v-if="stepItem.state === 'done'" name="check" :size="11" color="white" :stroke="3" /><text v-else>{{ stepItem.state === 'skipped' ? '–' : stepIndex + 1 }}</text></view>
+              <view class="flow__dot"><k-icon v-if="stepItem.state === 'done'" name="check" :size="12" color="white" /><text v-else>{{ stepItem.state === 'skipped' ? '–' : stepIndex + 1 }}</text></view>
             </view>
             <text class="flow__label">{{ stepItem.label }}</text>
             <text class="flow__time">{{ stepItem.time || '　' }}</text>
@@ -35,16 +35,16 @@
           <view><text class="k-meta">截止时间</text><text class="stats__value">{{ a.deadline || '未设置' }}</text></view>
           <view><text class="k-meta">当前状态</text><text class="stats__value">{{ a.stateLabel || '—' }}</text></view>
         </view>
-        <text class="countdown k-mt10">{{ countdown }}</text>
+        <view v-if="countdown" class="countdown k-mt8" :class="{ 'countdown--urgent': countdownUrgent }"><k-icon name="clock" :size="14" :color="countdownUrgent ? 'alert' : 'muted'" /><text>{{ countdown }}</text></view>
         <view class="k-divider k-mt12" />
         <view class="row k-mt12"><text class="row__label">交付物</text><text class="row__value">{{ a.deliverables || '—' }}</text></view>
         <view class="row k-mt8"><text class="row__label">验收标准</text><text class="row__value">{{ a.criteria || '以任务说明为准' }}</text></view>
-        <view v-if="a.announcement" class="notice k-mt12"><k-icon name="info" :size="16" color="ochre" /><text>{{ a.announcement || '' }}</text></view>
+        <text v-if="a.rewardText" class="reward-note k-mt8 block">{{ a.rewardText }}</text>
+        <view v-if="a.announcement" class="notice k-mt12"><k-icon name="info" :size="14" color="muted" /><text>{{ a.announcement || '' }}</text></view>
         <!-- 线上任务须知（后台「小程序公告」里固定标识 online-guide 那一条）：接单、交成果、验收、结算的完整说明 -->
-        <view class="guide-link k-mt10" hover-class="k-press" @click="openOnlineGuide"><k-icon name="book-open" :size="16" color="red" /><text class="guide-link__title">线上任务须知</text><text class="guide-link__sub">从接单到结算怎么走</text><k-icon name="chevron-right" :size="16" color="muted" /></view>
+        <view class="guide-link k-mt10" hover-class="k-press" @click="openOnlineGuide"><k-icon name="book-open" :size="16" color="red" /><text class="guide-link__title">线上任务须知</text><text class="guide-link__sub">从接单到结算怎么走</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
+        <view v-if="a.appId" class="contact-link"><k-button class="k-mt12" type="outline" block icon="message-circle" @click="go(R.chat + '?appId=' + a.appId)">{{ a.contactSpecialist ? '联系袋鼠工作人员' : '联系当地主理人' }}</k-button></view>
       </k-card>
-
-      <k-button v-if="a.appId" class="k-mt12" type="outline" block icon="message-circle" @click="go(R.chat + '?appId=' + a.appId)">{{ a.contactSpecialist ? '联系袋鼠工作人员' : '联系当地主理人' }}</k-button>
       <!-- 门店素材：门店接单后发给你的文字和图片（可以多次补发）。没发时提示先私信沟通；不等素材也能提交成果 -->
       <k-card v-if="showMaterials" :pad="16" class="k-mt12">
         <view class="k-between"><text class="section-title">门店素材</text><text v-if="materials.length" class="k-meta">共 {{ materials.length }} 次</text></view>
@@ -58,7 +58,7 @@
           <view v-if="materialItem.images.length" class="photos k-mt8"><image v-for="(materialImg, imgIndex) in materialItem.images" :key="materialImg" :src="abs(materialImg)" mode="aspectFill" @click="preview(materialItem.images, imgIndex)" /></view>
           <!-- 门店随素材发来的文件（V41）：文档在小程序里打开；压缩包发到微信聊天 / 保存到电脑；都能复制下载链接 -->
           <view v-for="matFile in materialItem.files || []" :key="matFile.fileId" class="mfile k-mt8">
-            <view class="mfile__head"><k-icon :name="matFile.kind === 'archive' ? 'archive' : 'file-text'" :size="18" color="ochre" /><text class="mfile__name">{{ matFile.name }}</text><text class="k-meta">{{ matFile.sizeLabel }}</text></view>
+            <view class="mfile__head"><k-icon :name="matFile.kind === 'archive' ? 'archive' : 'file-text'" :size="18" color="muted" /><text class="mfile__name">{{ matFile.name }}</text><text class="k-meta">{{ matFile.sizeLabel }}</text></view>
             <text v-if="fileBusy[matFile.fileId]" class="k-meta block k-mt8">{{ fileBusy[matFile.fileId] }}</text>
             <view class="mfile__acts k-mt8"><text v-for="actName in fileActs(matFile)" :key="actName" class="mfile__act" @click="onFileAct(matFile, actName)">{{ actName }}</text></view>
           </view>
@@ -81,7 +81,6 @@
       </k-card>
 
       <online-recipient v-if="a.recipient" :app-id="appId" :value="a.recipient" @saved="saveRecipient"/>
-      <text v-if="a.rewardText" class="k-meta k-mt12 block">{{ a.rewardText }}</text>
       <text class="section-title k-mt16 block">我的提交</text>
       <!-- 平台处理过这一轮的介入申请后（escalateAgain），要再等几天门店仍没验收才能再请，之前处理完立刻又能点 -->
       <text v-if="a.escalateFrom && !a.canEscalate && !a.escalated" class="k-meta k-mt8 block">{{ a.escalateAgain ? '平台已处理你的介入申请，结果见消息' : '成果已交给门店验收' }}；到 {{ a.escalateFrom }} 门店还没验收的话，可以{{ a.escalateAgain ? '再次' : '' }}请平台介入。</text>
@@ -110,7 +109,7 @@
       </k-card>
     </view>
 
-    <k-bottom flat>
+    <k-bottom flat pad="12px 16px">
       <!-- 申诉中也能确认已到账（canConfirm）；成果交了几天门店还没验收，可以请平台介入（canEscalate） -->
       <template v-if="a.settlement && (a.settlement.canDispute || a.settlement.canConfirm)">
         <view v-if="a.settlement.canDispute" class="k-flex1"><k-button type="secondary" block icon="scale" :disabled="busy" label="纠纷调解" @click="dispute" /></view>
@@ -157,7 +156,7 @@ import { ref, computed, watch, onUnmounted } from 'vue'
 import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app'
 import { back, go, toast } from '@/common/screen.js'
 import { apiMyOnline, apiOnlineSubmit, apiOnlineConfirm } from '@/common/api.js'
-import { ensureSession } from '@/common/experience.js'
+import { ensureSession, experience } from '@/common/experience.js'
 import { prompt, confirm, alert, copy, errText } from '@/common/ui.js'
 import OnlineRecipient from './components/online-recipient.vue'
 import R from '@/common/routes.js'
@@ -180,13 +179,18 @@ function saveRecipient(value) {
 onUnload(() => { disposed = true; ready = false; ++loadRevision })
 onLoad(async (q) => {
   appId.value = Number(q?.appId) || 0
-  await ensureSession()
   if (!appId.value) {
     toast('请从订单或消息进入')
-    return setTimeout(() => back(), 600)
+    return setTimeout(() => { if (!disposed) back() }, 600)
   }
-  await load()
-  ready = true
+  try {
+    await ensureSession()
+    if (!disposed) await load()
+  } catch (error) {
+    if (!disposed) toast(errText(error, '请重新登录后查看任务'))
+  } finally {
+    ready = !disposed
+  }
 })
 onShow(() => { if (ready) load() })
 async function load() {
@@ -213,6 +217,8 @@ const countdown = computed(() => {
   const d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000), m = Math.floor(ms % 3600000 / 60000)
   return `${a.value.resubmitUntilTs ? '重新提交还剩' : '距离截止还有'} ${d} 天 ${h} 小时 ${m} 分`
 })
+// 纯展示（返修 3）：最后 24 小时倒计时才用提醒红，其余是灰字
+const countdownUrgent = computed(() => { const until = a.value.resubmitUntilTs || a.value.deadlineTs; return !!until && until - now.value < 86400000 })
 const submitText = computed(() => {
   if (a.value.canSubmit) return (a.value.submissions || []).length ? '重新提交成果' : '提交成果'
   if (a.value.settlement) return a.value.settlement.statusLabel
@@ -351,76 +357,108 @@ onUnload(() => { lockPageScroll(false); closeLinks(null) })
 // 提交成果 / 确认收款 / 申诉：连点会弹两遍输入框、发两次请求，处理中先锁住底部按钮
 const submittedCount=ref('')
 const busy = ref(false)
+watch(() => experience.account?.id, () => {
+  ++loadRevision
+  a.value = {submissions: []}
+  closeLinks(null)
+  linkBoxes.value = ['', '', '']
+  linkInitial.value = ['', '', '']
+  submittedCount.value = ''
+  if (ready && !disposed) load()
+}, {flush: 'sync'})
 const withBusy = async (fn) => {
   if (busy.value) return
   busy.value = true
-  try { await fn() } finally { busy.value = false }
+  const id = appId.value
+  const user = experience.account?.id
+  const current = () => !disposed && appId.value === id && experience.account?.id === user
+  try { await fn(id, current) } finally { busy.value = false }
 }
 const submit = () => withBusy(doSubmit)
-async function doSubmit() {
+async function doSubmit(id, current) {
   if (!a.value.canSubmit) return
   // 粘贴什么就收什么：小红书、抖音复制出来的是「链接 + 口令」一整段，不再要求以 http(s):// 开头。
   // 2026-10-17 主人反馈：分三栏，最多 3 个（面板里每栏按 500 字拦过了），空栏去掉
   const links = await askLinks()
-  if (links === null) return
+  if (links === null || !current()) return
   if(a.value.rewardMode==='per_item' && (!/^[1-9][0-9]{0,2}$/.test(String(submittedCount.value)) || Number(submittedCount.value)>Number(a.value.itemsPerPerson)))return toast('请填写 1–'+a.value.itemsPerPerson+' 的整数条数')
   const images = []
   if (await confirm('上传图片', '要上传成果截图或作品图片吗？（最多 9 张）')) {
-    const paths = await chooseImages(9)
-    for (const p of paths) {
-      try {
-        images.push((await uploadTo('/app/upload/image', p)).data.url)
-      } catch (e) {
-        toast(errText(e, '上传失败'))
+    if (!current()) return
+    try {
+      const paths = await chooseImages(9)
+      for (const path of paths) {
+        if (!current()) return
+        const url = (await uploadTo('/app/upload/image', path)).data?.url
+        if (!url) throw new Error('未收到截图地址，请重新上传')
+        images.push(url)
       }
+    } catch (e) {
+      if (current()) toast(errText(e, '截图上传失败，请重试'))
+      return
     }
   }
+  if (!current()) return
   if (!links.length && !images.length) return toast('请至少提交链接或图片')
   const note = await prompt('补充说明（选填，300 字内）', { placeholder: '例如：侧重空间布局与收纳技巧' })
-  if (note === null) return
+  if (note === null || !current()) return
   try {
     // links 是新字段（服务端一个一个查、用换行连起来存）；link 是连好的一段，留给还没升级的服务端
-    applyAssignment((await apiOnlineSubmit(appId.value, { submittedCount:a.value.rewardMode==='per_item'?Number(submittedCount.value):undefined, link: links.join('\n'), links, images, note: note.trim().slice(0, 300) })).data)
+    const response = await apiOnlineSubmit(id, {
+      submittedCount: a.value.rewardMode === 'per_item' ? Number(submittedCount.value) : undefined,
+      link: links.join('\n'), links, images, note: note.trim().slice(0, 300)
+    })
+    if (!current()) return
+    applyAssignment(response.data)
     submittedCount.value=''
     linkBoxes.value = ['', '', '']; linkInitial.value = ['', '', '']
     toast('已提交，等待门店验收')
   } catch (e) {
-    toast(errText(e, '提交失败'))
+    if (current()) toast(errText(e, '提交失败'))
   }
 }
 const confirmPaid = () => withBusy(doConfirmPaid)
-async function doConfirmPaid() {
+async function doConfirmPaid(id, current) {
   if (!(await confirm('确认收款', `确认已收到 ${a.value.settlement.amount}？确认后结算完成。`))) return
   try {
-    applyAssignment((await apiOnlineConfirm(appId.value, true)).data)
+    if (!current() || !a.value.settlement?.canConfirm) return
+    const response = await apiOnlineConfirm(id, true)
+    if (!current()) return
+    applyAssignment(response.data)
     toast('已确认收款')
   } catch (e) {
-    toast(errText(e, '操作失败'))
+    if (current()) toast(errText(e, '操作失败'))
   }
 }
 // 请平台介入：成果提交满 3 天门店还没验收也没退回时可用（服务端 canEscalate 判断）。走平台「申报处理」，门店同时收到提醒，处理结果发到消息里
 const apiOnlineEscalate = (id, reason) => post('/app/online/assignments/' + id + '/escalate', { reason })
 const escalate = () => withBusy(doEscalate)
-async function doEscalate() {
+async function doEscalate(id, current) {
   if (!a.value.canEscalate) return
   const r = await prompt('纠纷调解 · 验收问题', { placeholder: '说说情况，比如有没有私信联系过主理人（200 字内）' })
   if (!r || !r.trim()) return
   try {
-    applyAssignment((await apiOnlineEscalate(appId.value, r.trim().slice(0, 200))).data)
+    if (!current()) return
+    const response = await apiOnlineEscalate(id, r.trim().slice(0, 200))
+    if (!current()) return
+    applyAssignment(response.data)
     toast('平台会尽快联系门店处理')
   } catch (e) {
-    toast(errText(e, '提交失败'))
+    if (current()) toast(errText(e, '提交失败'))
   }
 }
 const dispute = () => withBusy(doDispute)
-async function doDispute() {
+async function doDispute(id, current) {
   const r = await prompt('纠纷调解 · 收款问题', { placeholder: '说明未收到款的情况，平台会介入核实（200 字内）' })
   if (!r || !r.trim()) return
   try {
-    applyAssignment((await apiOnlineConfirm(appId.value, false, r.trim().slice(0, 200))).data)
+    if (!current()) return
+    const response = await apiOnlineConfirm(id, false, r.trim().slice(0, 200))
+    if (!current()) return
+    applyAssignment(response.data)
     toast('已提交申诉，平台会尽快核实')
   } catch (e) {
-    toast(errText(e, '提交失败'))
+    if (current()) toast(errText(e, '提交失败'))
   }
 }
 </script>
@@ -512,4 +550,110 @@ async function doDispute() {
 .guide-link__title { font-size: 13px; font-weight: 700; color: var(--k-ink); }
 .guide-link__sub { flex: 1; min-width: 0; font-size: 12px; color: var(--k-muted); }
 @import "flow-premium.scss";
+/* ==== r3jobsb 第三轮 start ==== */
+/* 第三轮（11-18）：页边距 16、卡内 16；数据格三格等高、数字 14/600 等宽；「联系当地主理人」收成 40 高次按钮胶囊（flow-premium）；
+   文件卡上的「下载 / 复制下载链接」是 28 高的次按钮小胶囊。 */
+.deliver .k-body { padding-left: 16px; padding-right: 16px; }
+.deliver :deep(.subscribe-entry) { padding-left: 16px; padding-right: 16px; }
+.deliver :deep(.k-card) { padding: 16px !important; }
+.deliver .flow { padding: 14px 4px 12px; }
+.deliver .stats > view { border-radius: 8px; }
+.deliver .stats__value { font-size: 14px; font-weight: 600; color: var(--k-ink); }
+.deliver .notice { border-radius: 8px; }
+.deliver .guide-link { border-radius: 8px; }
+.deliver .mfile__act { height: 28px; padding: 0 12px; box-sizing: border-box; display: inline-flex; align-items: center; border: 1px solid var(--k-red-line); border-radius: 14px; font-size: 12px; font-weight: 500; line-height: 1; }
+@media (max-width: 359px) {
+  .deliver .k-body { padding-left: 12px; padding-right: 12px; }
+  .deliver :deep(.subscribe-entry) { padding-left: 12px; padding-right: 12px; }
+  .deliver :deep(.k-card) { padding: 12px !important; }
+}
+/* 返修 1：整条报名流程页边距统一 12（报名 / 审核进度 / 面试 / 签约 / 交付翻页时左右不再跳） */
+.deliver .k-body { padding-left: 12px; padding-right: 12px; }
+.deliver :deep(.subscribe-entry) { padding-left: 12px; padding-right: 12px; }
+/* —— 返修 3 start（11-18 晚）—— */
+/* 整条报名流程页边距 16、卡内 16 */
+.deliver .k-body { padding-left: 16px; padding-right: 16px; }
+.deliver :deep(.subscribe-entry) { padding-left: 16px; padding-right: 16px; }
+/* 三格数据：报酬 + 状态一排、截止时间单独一整排；格内 12，数值 15/600 等宽不折行，格子同高 */
+.deliver .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.deliver .stats > view { min-width: 0; padding: 12px; gap: 4px; border: 0; border-radius: 8px; background: var(--k-page); }
+.deliver .stats > view:nth-child(2) { grid-column: 1 / -1; order: 3; }
+.deliver .stats .k-meta { font-size: 12px; line-height: 18px; }
+.deliver .stats__value { font-size: 15px; font-weight: 600; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+/* 倒计时：14 时钟 + 12 灰字，离上面 8；最后 24 小时才是提醒红 */
+.deliver .countdown { display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 18px; color: var(--k-muted); font-variant-numeric: tabular-nums; }
+.deliver .countdown--urgent { color: var(--k-alert); }
+.deliver .reward-note { font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.deliver .notice { padding: 8px 12px; background: var(--k-red-soft); }
+.deliver .guide-link { padding: 0 12px; border: 0; background: var(--k-page); }
+/* 门店素材：只留一层白卡——素材之间发丝线隔开；文件一行：18 图标 + 名字 + 大小 + 右边 28 高小胶囊（放不下自动换到下一行） */
+.deliver .material { padding: 0; border: 0; border-radius: 0; background: none; }
+.deliver .material + .material { padding-top: 12px; background: linear-gradient(to bottom, var(--k-line) 50%, transparent 50%) no-repeat top / 100% 1px; }
+.deliver .mfile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0 0; border: 0; border-radius: 0; background: linear-gradient(to bottom, var(--k-line) 50%, transparent 50%) no-repeat top / 100% 1px; }
+.deliver .mfile__head { flex: 1 1 160px; min-width: 0; }
+.deliver .mfile > .k-meta { flex-basis: 100%; margin-top: 0; }
+.deliver .mfile__acts { margin-top: 0; flex: 0 0 auto; }
+.deliver .material-empty { padding: 12px; border: 0; background: var(--k-page); }
+/* —— 返修 3 end —— */
+/* —— 返修 4 start（11-18 夜）—— */
+/* 三项数据去掉灰底格子：一行三列（标签 12 灰 / 数值 15/600），列之间 1px 竖发丝线；320 宽截止时间另起一行 */
+.deliver .stats { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; }
+.deliver .stats > view { position: relative; flex: 1 1 0; min-width: 0; padding: 0 12px; border-radius: 0; background: none; display: flex; flex-direction: column; gap: 2px; }
+.deliver .stats > view:first-child { padding-left: 0; }
+.deliver .stats > view:last-child { padding-right: 0; }
+.deliver .stats > view:nth-child(2) { flex: 0 0 auto; order: 0; grid-column: auto; }
+.deliver .stats > view + view::before { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px; width: 1px; background: var(--k-line); transform: scaleX(.5); }
+.deliver .countdown { margin-top: 12px; }
+/* 「线上任务须知」不再是第二个灰框：做成卡片底部一行入口，上面一条发丝线，和提示块隔 12 */
+.deliver .guide-link { min-height: 44px; margin-top: 12px; padding: 12px 0 0; box-sizing: border-box; border: 0; border-radius: 0; background: linear-gradient(to bottom, var(--k-line) 50%, transparent 50%) no-repeat top / 100% 1px; }
+/* 门店素材：「素材 · 时间」降成 12 灰字；文件名整行写全，两颗小胶囊另起一行、和文件名左边对齐 */
+.deliver .material__head { font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); }
+.deliver .mfile__head { flex: 1 1 100%; align-items: flex-start; }
+.deliver .mfile__head :deep(.k-icon) { flex: 0 0 auto; }
+.deliver .mfile__name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 18px; }
+.deliver .mfile__acts { flex: 1 1 100%; padding-left: 24px; }
+@media (max-width: 359px) {
+  .deliver .stats { flex-wrap: wrap; row-gap: 12px; }
+  .deliver .stats > view:nth-child(2) { order: 3; flex: 0 0 100%; padding: 12px 0 0; }
+  .deliver .stats > view:nth-child(2)::before { left: 0; right: 0; top: 0; bottom: auto; width: auto; height: 1px; transform: scaleY(.5); }
+}
+/* —— 返修 4 end —— */
+/* —— 返修 5 start（11-18 深夜）—— */
+/* 我的提交：「复制链接 / 复制全文」和「下载」同款 28 高描边小胶囊，看得出能点 */
+.deliver .link-acts { gap: 8px; flex-wrap: wrap; }
+.deliver .link-acts .k-link { height: 28px; padding: 0 12px; box-sizing: border-box; display: inline-flex; align-items: center; border: 1px solid var(--k-red-line); border-radius: 14px; font-size: 12px; font-weight: 500; line-height: 1; color: var(--k-red-deep); text-decoration: none; }
+/* 门店素材卡底部的帮助说明：12 号、行高 1.6，上面发丝线隔开再留 8 */
+.deliver .material__tip { position: relative; margin-top: 12px; padding-top: 8px; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+.deliver .material__tip::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+/* 任务标题两行均分，最后一个字不单独成行 */
+.deliver .task-title { text-wrap: balance; }
+@media (max-width: 359px) {
+  /* 320 宽：6 步进度条贴满卡宽、字距收一点，「已交付」「验收通过」之间看得出空隙 */
+  .deliver .flow { padding-left: 0; padding-right: 0; }
+  .deliver .flow__label { font-size: 11px; letter-spacing: -.5px; }
+}
+/* —— 返修 5 end —— */
+/* ==== r3jobsb 第四轮 start（11-18 夜，以微信实拍为准）==== */
+/* 订阅提醒不再单独占一张白卡：一行 13/500 暖棕文字 */
+.deliver :deep(.subscribe-entry) { padding: 4px 16px 0; }
+.deliver :deep(.subscribe-entry button) { min-height: 32px; height: 32px; padding: 0; border-radius: 0; background: transparent; font-size: 13px; font-weight: 500; line-height: 32px; }
+/* 任务头卡：报酬 20/700 暖棕是唯一主角，其余两格墨色 */
+.deliver .stats > view:first-child .stats__value { font-size: 20px; font-weight: 700; line-height: 28px; font-variant-numeric: tabular-nums; }
+/* 卡里的提示不再是米色框：12 号灰字 + 14 号 info 图标 */
+.deliver .notice { padding: 0; gap: 4px; align-items: flex-start; border-radius: 0; background: transparent; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+/* 「联系当地主理人」：任务卡底部一行文字按钮，上面发丝线 */
+.deliver .contact-link { position: relative; margin-top: 12px; }
+.deliver .contact-link::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+.deliver .contact-link :deep(.k-button) { height: 40px; margin-top: 4px; border-color: transparent; background: transparent; font-size: 14px; font-weight: 500; color: var(--k-red-deep); }
+/* ==== r3jobsb 第四轮 end ==== */
+/* ==== r3jobsb 第四轮返修 start（11-19，复评遗留）==== */
+/* 报酬格：退回 17/700，报酬格放宽（1.4 : 1），金额不再被省略号吃掉；真放不下时整段换行而不是截断 */
+.deliver .stats > view:first-child { flex: 1.4 1 0; }
+.deliver .stats > view:first-child .stats__value { font-size: 17px; line-height: 24px; white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; overflow-wrap: anywhere; }
+/* 11-19 核对：「当前状态」也放开换行（报酬格加宽后它变窄，「结算完成」等会被截） */
+.deliver .stats > view:last-child .stats__value { white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; overflow-wrap: anywhere; }
+/* 交付物 / 验收标准：优先在逗号后折行，不把「张图」这类两三个字甩到下一行 */
+.deliver .row__value { word-break: keep-all; overflow-wrap: anywhere; }
+/* ==== r3jobsb 第四轮返修 end ==== */
+/* ==== r3jobsb 第三轮 end ==== */
 </style>

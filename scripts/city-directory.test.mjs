@@ -3,7 +3,22 @@ import test from 'node:test'
 import { readFile } from 'node:fs/promises'
 const source=await readFile(new URL('../common/city-directory.js',import.meta.url),'utf8')
 const {filterCities,groupCities,confirmedLocation}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'))
-const rows=JSON.parse(await readFile(new URL('../../artifacts/city-coverage-20261002/catalog.json',import.meta.url),'utf8'))
+// Read the same nationwide seed shipped with the server. Quoted alias lists contain commas.
+const seed = await readFile(new URL('../../RuoYi-Vue/sql/kangaroo/V25__national_cities.sql', import.meta.url), 'utf8')
+const manifest = JSON.parse(await readFile(new URL('../../RuoYi-Vue/ruoyi-kangaroo/src/main/resources/geo/source.json', import.meta.url), 'utf8'))
+const rows = []
+const cityInsert = /^insert into kg_city \(([^)]+)\) values \((.+?)\) on duplicate key update/gm
+for (const [, columns, tuple] of seed.matchAll(cityInsert)) {
+  const fields = columns.split(',').map(name => name.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()))
+  const values = tuple.match(/'(?:''|[^'])*'|[^,]+/g)
+  assert.equal(values.length, fields.length, 'V25 city columns and values must match')
+  const row = {}
+  for (const [i, field] of fields.entries()) {
+    row[field] = values[i].replace(/^'|'$/g, '').replaceAll("''", "'")
+  }
+  rows.push(row)
+}
+assert.equal(rows.length, manifest.catalog_entries, 'all nationwide seed rows are present')
 const directory={all:rows}
 test('nationwide catalog includes Fujian cities and Pingtan without rendering thousands of counties at once',()=>{
   const list=filterCities(directory)

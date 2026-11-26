@@ -26,7 +26,7 @@ function pick(names, extra = {}) {
     if (n.type === 'VariableDeclaration' && names.includes(n.declarations[0].id.name)) found[n.declarations[0].id.name] = code.slice(n.start, n.end)
   }
   assert.deepEqual(names.filter((x) => !found[x]), [], '页面里找不到这些声明')
-  const c = { messageWording, absUrl: (x) => (/^\/profile\//.test(String(x || '')) ? 'https://h.test' + x : String(x || '')), computed: (fn) => ({ get value() { return fn() } }), ...extra }
+  const c = { privateChatEnabled: { value:true }, messageWording, absUrl: (x) => (/^\/profile\//.test(String(x || '')) ? 'https://h.test' + x : String(x || '')), computed: (fn) => ({ get value() { return fn() } }), ...extra }
   vm.createContext(c)
   vm.runInContext(names.map((x) => found[x]).join('\n') + `\nthis.out = { ${names.join(', ')} }`, c)
   return c.out
@@ -119,7 +119,8 @@ test('浅棕小标签：底色和字色对比够（≥ 4.5:1），能撑开、�
   assert.ok(ratio('#7A5230', '#FBF0DE') >= 4.5, '未读行的底色上也够')
   assert.match(scss, /\.ava \{ position:relative; overflow:hidden; \}/)
   assert.match(scss, /\.ava__img \{ position:absolute; left:0; top:0; width:100%; height:100%; border-radius:50%; background-size:cover; background-position:center; \}/)
-  assert.match(scss, /\.row \{ height:auto; min-height:70px;/, '紧凑消息行仍可随来源文字撑开')
+  // 11-18 第三轮返修（纯样式数字）：消息行和提醒中心统一成 68
+  assert.match(scss, /\.row \{ height:auto; min-height:68px;/, '紧凑消息行仍可随来源文字撑开')
 })
 
 test('接口：列表第一页仍带 bucket 分页才有新字段（后端约定），页面没有另外发请求', () => {

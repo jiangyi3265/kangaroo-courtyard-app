@@ -1,6 +1,6 @@
 <template>
   <k-community-gate>
-  <view class="k-page publish-page">
+  <view class="k-page publish-page" :class="$userSurface">
     <template v-if="s === 1">
       <!-- 2026-10-17 发布页改版（对照主人样稿 图 3）：顶栏「‹ 发布内容」+ 右上「草稿箱」；三个大胶囊选类型；白色大卡放图片 / 标题 / 正文；
            「关联帖子」「补充信息」两张可展开的卡；底部固定「存草稿 / 发布」。底部导航在这一屏不放（和底部操作条叠在一起太挤，左上角能返回） -->
@@ -8,9 +8,9 @@
       <view class="publish-body">
         <!-- 草稿箱：本机只存一份草稿，有草稿时带个 1；点开看标题 / 类型 / 保存时间，继续编辑或删除。
              2026-10-17 主人真机截图：放在顶栏右边时，小程序右上角有系统胶囊，草稿箱被挤到中间压住「发布内容」标题 —— 挪到正文第一行右边 -->
-        <view class="pub-tools"><view class="drafts" hover-class="k-press" @click="openDraft"><k-icon name="file-pen" :size="14" color="red" :stroke="1.9" /><text>草稿箱</text><text v-if="draftCount" class="drafts__num">{{draftCount}}</text></view></view>
+        <view class="pub-tools"><view class="drafts" hover-class="k-press" @click="openDraft"><k-icon name="file-pen" :size="14" color="red" /><text>草稿箱</text><text v-if="draftCount" class="drafts__num">{{draftCount}}</text></view></view>
         <!-- 恢复了草稿：表单顶部一条提示，写明是哪次存的，可以一键清空 -->
-        <view v-if="restoredAt" class="draft-bar"><k-icon name="file-pen" :size="15" color="ochre" :stroke="1.8" /><text class="draft-bar__text">{{ restoredText }}</text><view class="draft-bar__clear" hover-class="k-press" @click="clearDraft"><text>清空</text></view></view>
+        <view v-if="restoredAt" class="draft-bar"><k-icon name="file-pen" :size="16" color="red" /><text class="draft-bar__text">{{ restoredText }}</text><view class="draft-bar__clear" hover-class="k-press" @click="clearDraft"><text>清空</text></view></view>
         <!-- 类型：三个大胶囊，选中是暖棕渐变白字 -->
         <view class="type-pills">
           <view v-for="item in types" :key="item.name" class="type-pill" :class="{ active: type === item.name }" hover-class="k-press-s" @click="pickType(item.name)"><text>{{ item.name }}</text></view>
@@ -19,10 +19,10 @@
         <template v-if="type === '经验分享'">
           <!-- 经历类型（样稿里的一行胶囊）：只是预选，到「经历校验」时把这一类的经历排在前面、先选上一段；真正发的还是你选的那一段报名 -->
           <view class="exp-types"><text class="exp-types__label">选择经历类型</text><view class="exp-types__pills"><view v-for="j in EXP_TYPES" :key="j.key" class="exp-type-pill" :class="{ on: expType === j.key }" hover-class="k-press" @click="pickExpType(j.key)"><text>{{ j.label }}</text></view></view></view>
-          <view v-if="expFailed" class="exp-hint" hover-class="k-press" @click="loadExperiences"><view class="exp-hint__row"><k-icon name="refresh-cw" :size="15" color="muted" :stroke="1.8" /><text class="exp-hint__text">经历没加载出来，点这里重试</text></view></view>
-          <view v-else-if="expLoaded && experiences.length" class="exp-hint exp-hint--ok"><view class="exp-hint__row"><k-icon name="circle-check" :size="15" color="green" :stroke="1.8" /><text class="exp-hint__text">有 {{ experiences.length }} 段经历可以关联，写好后点「下一步」选择</text></view></view>
+          <view v-if="expFailed" class="exp-hint" hover-class="k-press" @click="loadExperiences"><view class="exp-hint__row"><k-icon name="refresh-cw" :size="16" color="muted" /><text class="exp-hint__text">经历没加载出来，点这里重试</text></view></view>
+          <view v-else-if="expLoaded && experiences.length" class="exp-hint exp-hint--ok"><view class="exp-hint__row"><k-icon name="circle-check" :size="16" color="green" /><text class="exp-hint__text">有 {{ experiences.length }} 段经历可以关联，写好后点「下一步」选择</text></view></view>
           <view v-else-if="expLoaded" class="exp-hint exp-hint--warn">
-            <view class="exp-hint__row"><k-icon name="info" :size="16" color="ochre" :stroke="1.8" /><text class="exp-hint__title">还没有可以用来分享的岗位经历</text></view>
+            <view class="exp-hint__row"><k-icon name="info" :size="16" color="red" /><text class="exp-hint__title">还没有可以用来分享的岗位经历</text></view>
             <text class="exp-hint__sub">{{ expHintSub }}</text>
             <text class="exp-hint__sub">简历里自己填写的经历、活动报名不能作为经验分享的依据</text>
             <view class="exp-hint__links"><view v-if="expOff.length" class="exp-hint__link" hover-class="k-press" @click="s = 3"><text>查看原因</text><k-icon name="chevron-right" :size="14" color="red" /></view><view class="exp-hint__link" hover-class="k-press" @click="goJobs"><text>去找机会</text><k-icon name="chevron-right" :size="14" color="red" /></view></view>
@@ -31,34 +31,45 @@
 
         <!-- 白色大卡：图片（第一张是封面）/ 标题 / 正文 -->
         <view class="compose">
+          <view class="field-block"><view class="field-head"><text class="field-label">标题</text><text class="counter">{{ title.length }}/60</text></view><view class="text-field"><input v-model="title" maxlength="60" :placeholder="typeInfo.titlePh" placeholder-class="publish-ph" /></view></view>
+          <view class="compose__line" />
+          <!-- 微信里 textarea 是原生层、永远盖在最上面：滚到底部操作条下面时点按钮会点进输入框；不打字时换成长得一样的 view -->
+          <view class="field-block body-field-block"><view class="field-head"><text class="field-label">正文</text><text class="counter">{{ body.length }}/500</text></view><view class="textarea-field"><textarea v-if="editingBody" v-model="body" maxlength="500" :focus="true" auto-focus :placeholder="typeInfo.bodyPh" placeholder-class="publish-ph" @blur="body = $event.detail.value; editingBody = false" /><view v-else class="publish-area-idle" @click="editingBody = true"><text :class="{ 'publish-area-ph': !body }">{{ body || typeInfo.bodyPh }}</text></view></view></view>
           <!-- 2026-10-18 按主人两张发布页样稿，图片区按类型换样子（传的还是同一份 uploads，第一张是封面）：
                经验分享 = 照片九宫格（第一格大「添加经历照片」，其余小格）；旅居日常 = 16:9 大封面；找搭子 = 原来的虚线框 -->
           <view v-if="type === '经验分享'" class="exp-grid" :class="{ 'exp-grid--filled': uploads.length > 1 }">
             <view v-if="!uploads.length" class="exp-grid__big exp-grid__add" hover-class="k-press" @click="addImages">
-              <view class="media-empty__icon"><k-icon name="image-plus" :size="26" color="red" :stroke="1.7" /></view>
+              <view class="media-empty__icon"><k-icon name="image-plus" :size="24" color="red" /></view>
               <text class="media-empty__title">添加经历照片</text><text class="media-empty__sub">最多 9 张</text>
             </view>
             <view v-else class="exp-grid__big">
               <image class="exp-grid__img" :src="uploads[0].img" mode="aspectFill" />
               <text class="cover__tag">封面</text>
-              <view class="upload-close cover__close" hover-class="k-press" @click="removeUpload(0)"><k-icon name="x" :size="13" color="white" :stroke="2.2" /></view>
-              <view class="cover__pen exp-grid__pen" hover-class="k-press-s" @click="replaceCover"><k-icon name="pencil" :size="15" color="white" :stroke="2" /></view>
+              <view class="upload-close cover__close" hover-class="k-press" @click="removeUpload(0)"><k-icon name="x" :size="14" color="white" /></view>
+              <view class="cover__pen exp-grid__pen" hover-class="k-press-s" @click="replaceCover"><k-icon name="pencil" :size="16" color="white" /></view>
             </view>
             <view v-for="(item, upIdx) in uploads.slice(1)" :key="item.url || item.img" class="exp-grid__cell">
               <image class="exp-grid__img" :src="item.img" mode="aspectFill" />
-              <view class="upload-close" hover-class="k-press" @click="removeUpload(upIdx + 1)"><k-icon name="x" :size="13" color="white" :stroke="2.2" /></view>
+              <view class="upload-close" hover-class="k-press" @click="removeUpload(upIdx + 1)"><k-icon name="x" :size="14" color="white" /></view>
             </view>
-            <view v-if="uploads.length < 9" class="exp-grid__cell exp-grid__plus" hover-class="k-press" @click="addImages"><k-icon name="plus" :size="24" color="red" :stroke="2" /></view>
+            <view v-if="uploads.length < 9" class="exp-grid__cell exp-grid__plus" hover-class="k-press" @click="addImages"><k-icon name="plus" :size="24" color="red" /></view>
             <!-- 只有 0–1 张时右边第二格空着难看：放一格「已传 n/9」，点了也是加照片 -->
-            <view v-if="uploads.length < 2" class="exp-grid__cell exp-grid__count" hover-class="k-press" @click="addImages"><k-icon name="images" :size="20" color="muted" :stroke="1.7" /><text>{{ uploads.length }}/9</text></view>
+            <view v-if="uploads.length < 2" class="exp-grid__cell exp-grid__count" hover-class="k-press" @click="addImages"><k-icon name="images" :size="20" color="muted" /><text>{{ uploads.length }}/9</text></view>
           </view>
-          <!-- 旅居日常还没有图：16:9 大封面占位，右下暖棕铅笔圆钮 -->
-          <view v-else-if="type === '旅居日常' && !uploads.length" class="cover cover--empty" hover-class="k-press" @click="addImages">
-            <view class="cover__hint"><k-icon name="image-plus" :size="30" color="red" :stroke="1.6" /><text class="cover__hint-title">添加封面</text><text class="cover__hint-sub">最多 9 张图片，第一张是封面</text></view>
-            <view class="cover__pen cover__pen--corner"><k-icon name="pencil" :size="16" color="white" :stroke="2" /></view>
+          <view v-else-if="type === '旅居日常'" class="field-block">
+            <view class="field-head"><text class="field-label">图片</text><text class="counter">{{ uploads.length }}/9</text></view>
+            <view class="uploads">
+              <view v-for="(item, index) in uploads" :key="index" class="upload-item">
+                <image class="upload-img" :src="item.img" mode="aspectFit" @click="previewUpload(index)" />
+                <view class="upload-close" hover-class="k-press" @click="removeUpload(index)"><k-icon name="x" :size="14" color="white" /></view>
+              </view>
+              <view v-if="uploads.length < 9" class="upload-add daily-add" hover-class="k-press" @click="addImages">
+                <k-icon name="plus" :size="20" color="red" /><text>添加图片</text>
+              </view>
+            </view>
           </view>
           <view v-else-if="!uploads.length" class="media-empty" hover-class="k-press" @click="addImages">
-            <view class="media-empty__icon"><k-icon name="image-plus" :size="26" color="red" :stroke="1.7" /></view>
+            <view class="media-empty__icon"><k-icon name="image-plus" :size="24" color="red" /></view>
             <text class="media-empty__title">添加照片</text><text class="media-empty__sub">最多 9 张，第一张是封面</text>
           </view>
           <template v-else>
@@ -66,31 +77,35 @@
               <image class="cover__img" :src="uploads[0].img" mode="aspectFill" />
               <view class="cover__shade" />
               <text class="cover__tag">封面</text>
-              <view class="upload-close cover__close" hover-class="k-press" @click="removeUpload(0)"><k-icon name="x" :size="13" color="white" :stroke="2.2" /></view>
+              <view class="upload-close cover__close" hover-class="k-press" @click="removeUpload(0)"><k-icon name="x" :size="14" color="white" /></view>
               <!-- 底部一条：左「更换封面 / 最多 9 张图片」，右下暖棕铅笔圆钮；整条都能点，换一张封面（只换第一张，其余不动） -->
-              <view class="cover__edit" hover-class="k-press-s" @click="replaceCover"><view class="cover__edit-copy"><text>更换封面</text><text class="cover__edit-sub">最多 9 张图片 · 已传 {{ uploads.length }} 张</text></view><view class="cover__pen"><k-icon name="pencil" :size="16" color="white" :stroke="2" /></view></view>
+              <view class="cover__edit" hover-class="k-press-s" @click="replaceCover"><view class="cover__edit-copy"><text>更换封面</text><text class="cover__edit-sub">最多 9 张图片 · 已传 {{ uploads.length }} 张</text></view><view class="cover__pen"><k-icon name="pencil" :size="16" color="white" /></view></view>
             </view>
             <!-- 之前不换行：传到第 4 张后「+」被挤出屏幕；现在其余的图每行 4 个自动换行，最后一格是「+」 -->
             <view class="uploads">
               <view v-for="(item, upIdx) in uploads.slice(1)" :key="item.url || item.img" class="upload-item">
                 <image class="upload-img" :src="item.img" mode="aspectFill" />
-                <view class="upload-close" hover-class="k-press" @click="removeUpload(upIdx + 1)"><k-icon name="x" :size="13" color="white" :stroke="2.2" /></view>
+                <view class="upload-close" hover-class="k-press" @click="removeUpload(upIdx + 1)"><k-icon name="x" :size="14" color="white" /></view>
                 <text v-if="item.duration" class="upload-duration">{{ item.duration }}</text>
               </view>
-              <view v-if="uploads.length < 9" class="upload-add" hover-class="k-press" @click="addImages"><k-icon name="plus" :size="24" color="red" :stroke="2.2" /></view>
+              <view v-if="uploads.length < 9" class="upload-add" hover-class="k-press" @click="addImages"><k-icon name="plus" :size="24" color="red" /></view>
             </view>
           </template>
-          <view class="field-block"><view class="field-head"><text class="field-label">标题</text><text class="counter">{{ title.length }}/60</text></view><view class="text-field"><input v-model="title" maxlength="60" :placeholder="typeInfo.titlePh" placeholder-class="publish-ph" /></view></view>
-          <view class="compose__line" />
-          <!-- 微信里 textarea 是原生层、永远盖在最上面：滚到底部操作条下面时点按钮会点进输入框；不打字时换成长得一样的 view -->
-          <view class="field-block body-field-block"><view class="field-head"><text class="field-label">正文</text><text class="counter">{{ body.length }}/500</text></view><view class="textarea-field"><textarea v-if="editingBody" v-model="body" maxlength="500" :focus="true" auto-focus :placeholder="typeInfo.bodyPh" placeholder-class="publish-ph" @blur="body = $event.detail.value; editingBody = false" /><view v-else class="publish-area-idle" @click="editingBody = true"><text :class="{ 'publish-area-ph': !body }">{{ body || typeInfo.bodyPh }}</text></view></view></view>
+
         </view>
 
+        <view v-if="type === '找搭子'" class="fold category-input">
+          <text class="field-label">搭子分类</text>
+          <input v-model="categoryText" maxlength="12" placeholder="选一个分类，或填写自己的分类" />
+          <view class="opt-pills">
+            <view v-for="label in BUDDY_CATS.slice(1)" :key="label" class="opt-pill" :class="{ on: categoryText === label }" hover-class="k-press" @click="categoryText = categoryText === label ? '' : label"><text>{{ label }}</text></view>
+          </view>
+        </view>
         <!-- 关联帖子（选填）：找搭子 / 旅居日常 / 经验分享都可以关联一个 小院 / 门店、岗位 或 活动，帖子里显示「关联：XXX」，点了直接打开；
              2026-10-17 r2：经验分享也能自己选了（之前固定关联「经历校验」那段报名的岗位、这里不能点）；不选时照旧自动关联那个岗位，卡上写明 -->
         <view class="fold link-card" hover-class="k-press-s" @click="pickLink">
           <view class="fold__head">
-            <view class="fold__icon"><k-icon name="link" :size="16" color="red" :stroke="1.9" /></view>
+            <view class="fold__icon"><k-icon name="link" :size="16" color="red" /></view>
             <view class="fold__copy"><text class="fold__title">关联帖子<text class="fold__opt">（选填）</text></text><text v-if="!link0" class="fold__sub">{{ linkSub }}</text></view>
             <text class="fold__action">{{ link0 ? '更换' : '选择' }}</text><k-icon name="chevron-right" :size="16" color="muted" />
           </view>
@@ -98,7 +113,7 @@
           <view v-if="link0" class="link-pick">
             <view class="link-pick__row">
               <image v-if="link0.cover" class="link-pick__img" :src="absUrl(link0.cover)" mode="aspectFill" />
-              <view v-else class="link-pick__img link-pick__img--empty"><k-icon :name="linkIcon(link0.type)" :size="20" color="red" :stroke="1.7" /></view>
+              <view v-else class="link-pick__img link-pick__img--empty"><k-icon :name="linkIcon(link0.type)" :size="20" color="red" /></view>
               <view class="link-pick__copy"><text class="link-pick__title">{{ link0.title }}</text><view class="link-pick__tags"><text class="link-tag">{{ link0.label }}</text><text v-if="link0.city" class="link-pick__city">{{ link0.city }}</text></view></view>
               <view class="link-pick__side"><text class="link-pick__on">已关联</text><view class="link-pick__x" hover-class="k-press" hover-stop-propagation @click.stop="clearLink"><text>不关联</text></view></view>
             </view>
@@ -109,12 +124,12 @@
         <!-- 补充信息（选填）：城市 / 日期 / 找搭子的同行性别 / 旅居日常的伙伴说，收起时显示已选信息 -->
         <view class="fold extra">
           <view class="fold__head" hover-class="k-press" @click="extraOpen = !extraOpen">
-            <view class="fold__icon"><k-icon name="sliders-horizontal" :size="16" color="red" :stroke="1.9" /></view>
+            <view class="fold__icon"><k-icon name="sliders-horizontal" :size="16" color="red" /></view>
             <view class="fold__copy"><text class="fold__title">补充信息<text class="fold__opt">（选填）</text></text><text class="fold__sub">{{ extraOpen ? typeInfo.extraSub : extraSummary }}</text></view>
             <k-icon :name="extraOpen ? 'chevron-up' : 'chevron-down'" :size="18" color="muted" />
           </view>
           <view v-if="extraOpen" class="fold__body">
-            <view class="publish-row" hover-class="k-press" @click="pickCity"><text>城市</text><view class="publish-row__right"><text>{{ city }}</text><k-icon name="map-pin" :size="18" color="muted" :stroke="1.6" /></view></view>
+            <view class="publish-row" hover-class="k-press" @click="pickCity"><text>城市</text><view class="publish-row__right"><text>{{ city }}</text><k-icon name="map-pin" :size="18" color="muted" /></view></view>
             <view class="publish-row" hover-class="k-press" @click="pickDate"><text>日期</text><view class="publish-row__right"><text>{{ dateLabel }}</text><k-icon name="calendar" :size="18" color="muted" /></view></view>
             <view v-if="type === '找搭子'" class="publish-opt"><view class="publish-opt__head"><text>同行性别</text></view><view class="opt-pills"><view v-for="g in GENDER_LIMITS" :key="g.key" class="opt-pill" :class="{ on: genderLimit === g.key }" hover-class="k-press-s" @click="genderLimit = g.key"><text>{{ g.label }}</text></view></view></view>
             <!-- 旅居日常的「伙伴说」：推荐 / 避雷，可不选；发出去后卡片和详情上显示一个小标签 -->
@@ -136,14 +151,14 @@
     <template v-else-if="s === 2">
       <k-topbar title="手机验证" back custom-back @back="leavePhone" />
       <view class="verify-body k-pad-tab">
-        <view class="verify-art"><view class="verify-art__phone"><k-icon name="smartphone" :size="48" color="red" :stroke="1.6" /><view class="verify-art__badge"><k-icon name="check" :size="17" color="white" :stroke="2.4" /></view></view></view>
-        <text class="verify-lead">为保障发布安全与沟通顺畅</text><text class="verify-title">发布“找搭子”内容前需验证手机号</text>
+        <view class="verify-head"><view class="verify-art"><view class="verify-art__phone"><k-icon name="smartphone" :size="28" color="red" /><view class="verify-art__badge"><k-icon name="check" :size="12" color="white" /></view></view></view>
+        <text class="verify-lead">为保障发布安全与沟通顺畅</text><text class="verify-title">发布“找搭子”内容前需验证手机号</text></view>
         <view class="verify-info">
-          <view class="verify-info__row"><k-icon name="info" :size="18" color="ochre" :stroke="1.7" /><view><text class="verify-info__title">用途说明：</text><text class="verify-info__text">用于身份验证、联系沟通与活动通知，\n不会用于其他用途。</text></view></view>
-          <view class="verify-info__row"><k-icon name="shield-check" :size="18" color="ochre" :stroke="1.7" /><view><text class="verify-info__title">隐私保护：</text><text class="verify-info__text">你的手机号仅对你和相关参与者可见，\n我们将严格保护你的隐私。</text></view></view>
+          <view class="verify-info__row"><k-icon name="info" :size="16" color="red" /><view><text class="verify-info__title">用途说明：</text><text class="verify-info__text">用于身份验证、联系沟通与活动通知，\n不会用于其他用途。</text></view></view>
+          <view class="verify-info__row"><k-icon name="shield-check" :size="16" color="red" /><view><text class="verify-info__title">隐私保护：</text><text class="verify-info__text">你的手机号仅对你和相关参与者可见，\n我们将严格保护你的隐私。</text></view></view>
         </view>
-        <view class="phone-wrap"><text class="phone-label">手机号</text><view class="phone-field"><text class="phone-number">{{ phoneText }}</text><view class="phone-authorize"><text>手机号授权</text><k-icon name="phone" :size="23" color="green" :stroke="1.7" /></view></view><text class="change-account" @click="changeAccount">更换手机号</text></view>
-        <k-button size="lg" block open-type="getPhoneNumber" @getphonenumber="onPhone" @click="onPhoneClick">授权并验证</k-button><text class="verify-foot">验证通过后将自动返回草稿</text>
+        <view class="phone-wrap"><text class="phone-label">手机号</text><view class="phone-field"><text class="phone-number">{{ phoneText }}</text><view class="phone-authorize"><text>手机号授权</text><k-icon name="phone" :size="22" color="muted" /></view></view><text class="change-account" @click="changeAccount">更换手机号</text></view>
+        <view class="verify-actions"><k-button size="lg" block open-type="getPhoneNumber" @getphonenumber="onPhone" @click="onPhoneClick">授权并验证</k-button><text class="verify-foot">验证通过后将自动返回草稿</text></view>
       </view>
       <k-tabbar active="publish" />
     </template>
@@ -153,25 +168,27 @@
       <view class="experience-body k-pad-tab">
         <!-- 2026-10-16：「换工日记」改名「经验分享」，换宿、兼职、全职的经历都能发（服务端 experiences 的口径）；
              反馈 2.0：已到岗还没做完的也算（和简历「平台记录」一致），暂时不能用的报名灰着列出来、写明原因 -->
-        <view class="experience-tip"><view><text class="experience-tip__title">发布“经验分享”需关联一段岗位经历</text><text class="experience-tip__sub">已到岗或已完成的换宿、兼职、全职都可以</text></view><k-icon name="clipboard-check" :size="34" color="ochre" :stroke="1.4" /></view>
-        <view class="experience-head"><text class="section-title">选择经历</text><view class="k-row k-gap4" hover-class="k-press" @click="goJobs"><text class="experience-link">去找机会</text><k-icon name="chevron-right" :size="15" color="muted" /></view></view>
+        <view class="experience-tip"><view><text class="experience-tip__title">发布“经验分享”需关联一段岗位经历</text><text class="experience-tip__sub">已到岗或已完成的换工、兼职、全职都可以</text></view><view class="tip-ico"><k-icon name="clipboard-check" :size="28" color="red" /></view></view>
+        <view class="experience-head"><text class="section-title">选择经历</text><view class="k-row k-gap4" hover-class="k-press" @click="goJobs"><text class="experience-link">去找机会</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
         <!-- 之前按标题选，同一个岗位做过两次会两条一起选中；现在按报名编号选 -->
         <view v-for="item in experiences" :key="item.appId" class="experience-card" hover-class="k-press-s" @click="selected = item.appId">
           <image class="experience-img" :src="item.img" mode="aspectFill" />
           <!-- 之前标题和两个小标签挤一行，320 宽标题只剩三四个字；现在标题最多两行，类型 / 已完成（进行中）另起一行，没填服务内容就不显示「服务：」 -->
           <view class="experience-copy"><text class="experience-name">{{ item.title }}</text><view class="experience-tags"><text v-if="item.jobTypeLabel" class="exp-type">{{ item.jobTypeLabel }}</text><text class="done" :class="{ 'done--ongoing': item.ongoing }">{{ item.stateText }}</text></view><text v-if="item.service" class="experience-meta">服务：{{ item.service }}</text><text class="experience-meta experience-date">{{ item.dateLabel }}：{{ item.date }}</text></view>
-          <view class="radio" :class="{ selected: selected === item.appId }"><view v-if="selected === item.appId" class="radio__dot" /></view>
+          <k-icon name="circle" :art="selected === item.appId ? 'radio-on' : 'circle'" :size="20" />
         </view>
-        <view v-if="expLoaded && !experiences.length" class="empty-experience"><text class="empty-experience__title">还没有可用的岗位经历</text><text class="empty-experience__sub">换宿、兼职、全职到岗后，就可以分享你的经历</text><k-button type="outline" size="sm" @click="goJobs">去寻找机会</k-button></view>
+        <!-- 11-18 返修：经历还没加载完时放两张骨架卡，不再下面一大片空白 -->
+        <template v-if="!expLoaded && !expFailed"><view v-for="n in 2" :key="'sk' + n" class="exp-skel" /></template>
+        <view v-if="expLoaded && !experiences.length" class="empty-experience"><view class="empty-ico"><k-icon name="briefcase" :size="32" color="red" /></view><text class="empty-experience__title">还没有可用的岗位经历</text><text class="empty-experience__sub">换工、兼职、全职到岗后，就可以分享你的经历</text><k-button type="outline" size="sm" @click="goJobs">去寻找机会</k-button></view>
         <!-- 暂时还不能用的报名：灰着显示、不能选，写明原因（服务端 unavailable；老接口没有这一项就不显示） -->
         <template v-if="expOff.length">
           <text class="experience-off-head">暂时还不能用</text>
           <view v-for="item in expOff" :key="item.key" class="experience-card experience-card--off">
-            <view class="experience-off-icon"><k-icon name="lock" :size="18" color="light" :stroke="1.7" /></view>
+            <view class="experience-off-icon"><k-icon name="lock" :size="18" color="light" /></view>
             <view class="experience-copy"><text class="experience-name">{{ item.title }}</text><view v-if="item.jobTypeLabel" class="experience-tags"><text class="exp-type">{{ item.jobTypeLabel }}</text></view><text class="experience-reason">{{ item.reason }}</text></view>
           </view>
         </template>
-        <view class="experience-rule"><k-icon name="info" :size="14" color="muted" :stroke="1.8" /><text>简历里自己填写的经历、活动报名不能作为经验分享的依据</text></view>
+        <view class="experience-rule"><k-icon name="info" :size="14" color="muted" /><text>简历里自己填写的经历、活动报名不能作为经验分享的依据</text></view>
         <k-button size="lg" block :disabled="!selected" @click="submitDiary">发布</k-button>
       </view>
       <k-tabbar active="publish" />
@@ -193,9 +210,9 @@
           </view>
           <text v-if="scheduleError" class="schedule-error">{{ scheduleError }}</text>
         </view>
-        <view class="activity-info"><view v-for="item in activityRows" :key="item.label" class="activity-row" hover-class="k-press" @click="editRow(item)"><text>{{ item.label }}</text><view class="activity-row__right"><template v-if="item.label === '参与人数'"><view class="round-op" hover-class="k-press" hover-stop-propagation @click.stop="people = Math.max(2, people - 1)"><k-icon name="minus" :size="16" color="ink" :stroke="2" /></view><text class="people">{{ people }}人</text><view class="round-op" hover-class="k-press" hover-stop-propagation @click.stop="people = Math.min(50, people + 1)"><k-icon name="plus" :size="16" color="ink" :stroke="2" /></view></template><text v-else>{{ item.value }}</text><k-icon v-if="item.label !== '参与人数'" name="chevron-right" :size="18" color="muted" /></view></view></view>
+        <view class="activity-info"><view v-for="item in activityRows" :key="item.label" class="activity-row" hover-class="k-press" @click="editRow(item)"><text>{{ item.label }}</text><view class="activity-row__right"><template v-if="item.label === '参与人数'"><view class="round-op" hover-class="k-press" hover-stop-propagation @click.stop="people = Math.max(2, people - 1)"><k-icon name="minus" :size="16" color="ink" /></view><text class="people">{{ people }}人</text><view class="round-op" hover-class="k-press" hover-stop-propagation @click.stop="people = Math.min(50, people + 1)"><k-icon name="plus" :size="16" color="ink" /></view></template><text v-else>{{ item.value }}</text><k-icon v-if="item.label !== '参与人数'" name="chevron-right" :size="18" color="muted" /></view></view></view>
         <text class="preview-label">活动预览</text>
-        <view class="preview-card"><image class="preview-img" :src="previewImg" mode="aspectFill" /><view class="preview-copy"><text class="preview-chip">找搭子 · 组队</text><text class="preview-title">{{ previewTitle }}</text><view class="preview-meta"><k-icon name="map-pin" :size="13" color="muted" /><text>{{ previewMeta }}</text></view><view class="preview-meta"><k-icon name="eye" :size="13" color="muted" /><text>{{ previewQuota }}</text></view><view class="preview-sign"><view class="avatar-stack"><image v-for="a in avatars" :key="a" class="preview-avatar" :src="a" mode="aspectFill" /></view><text>{{ syncOn ? '发布后开始接受报名' : '不同步活动，仅发布找搭子动态' }}</text></view></view></view>
+        <view class="preview-card"><image class="preview-img" :src="previewImg" mode="aspectFill" /><view class="preview-copy"><text class="preview-chip">找搭子 · 组队</text><text class="preview-title">{{ previewTitle }}</text><view class="preview-meta"><k-icon name="map-pin" :size="14" color="muted" /><text>{{ previewMeta }}</text></view><view class="preview-meta"><k-icon name="users" :size="14" color="muted" /><text>{{ previewQuota }}</text></view><view class="preview-sign"><view class="avatar-stack"><image v-for="a in avatars" :key="a" class="preview-avatar" :src="a" mode="aspectFill" /></view><text>{{ syncOn ? '发布后开始接受报名' : '不同步活动，仅发布找搭子动态' }}</text></view></view></view>
         <view class="dual-buttons sync-buttons"><view class="dual-button"><k-button type="outline" size="lg" block @click="s = 1">上一步</k-button></view><view class="dual-button"><k-button size="lg" block @click="publishBuddy">发布</k-button></view></view>
       </view>
       <k-tabbar active="publish" />
@@ -220,7 +237,7 @@ import { selectCity } from '@/common/city-picker.js'
 //       找搭子、旅居日常另写一份 ref_type / ref_id；经验分享也能选了，不选时自动关联经历的岗位）；
 //       「补充信息」卡（默认收起）：城市 / 日期，找搭子另有「同行性别」（不限 / 仅限女生 / 仅限男生），
 //       旅居日常（原「旅居日常」，后端代码还是 daily）另有「伙伴说」（推荐 / 避雷，可不选 = 不传）；
-//       同行性别 / 伙伴说使用页面内按钮组；分类由服务端识别，同步活动时按活动时长计算天数；
+//       同行性别 / 伙伴说使用页面内按钮组；分类可选填，未填时由服务端识别，同步活动时按活动时长计算天数；
 //       草稿只存本机一份、按账号分开；打开时有草稿就问「恢复 / 丢弃」，右上角「草稿箱」可继续编辑或删除；底部固定「存草稿 / 发布」
 //       发出去后进「发布成功」页（pages/community/published）：发布成功 / 已提交审核、已关联到 XXX、查看帖子 / 继续发布 / 回社区
 //   s=2 手机验证：小程序用微信「手机号快速验证」（open-type=getPhoneNumber），H5 联调环境走模拟通道；号码不向其他用户展示
@@ -229,7 +246,8 @@ import { selectCity } from '@/common/city-picker.js'
 // 发布前需要同意《社区公约》（找搭子还要同意《找搭子安全须知》，都由 gated() 弹全文、同意后自动重发）；
 // 找搭子、发起活动还需要手机号已验证；内容先经本地敏感词检查，生产环境一律先审后发。
 // ---------------------------------------------------------------------------
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { onShow, onUnload } from '@dcloudio/uni-app'
 import { useScreen, go, back, replace, toast } from '@/common/screen.js'
 import { apiPublishPost, apiExperiences, apiCommunityStatus } from '@/common/api.js'
 import { ensureSession, experience } from '@/common/experience.js'
@@ -239,13 +257,16 @@ import { uploadTo, chooseImages, absUrl } from '@/common/upload.js'
 import { TONES } from '@/common/post-share.js'
 import R from '@/common/routes.js'
 import { listDrafts, saveLocalDraft, removeLocalDraft, migrateLocalDrafts } from '@/common/local-drafts.js'
-import { PUBLISH_TYPES, PUBLISH_KIND, JOB_CHIPS, restoreType, typeOfKind } from './community-feed.js'
+import { PUBLISH_TYPES, PUBLISH_KIND, JOB_CHIPS, BUDDY_CATS, CAT_KEY, restoreType, typeOfKind } from './community-feed.js'
 import { openLinkPicker, restoreLink, linkFromQuery, linkPayload, rememberPublished, publishedUrl, DIARY_AUTO_LINK_HINT } from './post-link.js'
 
 let needPhoneOnly = false
+let formVersion = 0
+let initialized = false
 const s = useScreen(4, {
   onLoad: async (q) => {
     await ensureSession()
+    initialized = true
     // 2026-10-17：?kind=daily 预选旅居日常（会员信息「赚取积分」点「去完成」进来）；之后要恢复本机草稿的，照旧按草稿里的类型
     if (typeOfKind(q?.kind)) pickType(typeOfKind(q.kind))
     if (q?.need === 'phone') { needPhoneOnly = true; s.value = 2; return }
@@ -282,37 +303,43 @@ function pickExpType(key) {
   preselectExp()
 }
 const uploads = ref([])
+function previewUpload(index) {
+  const urls = uploads.value.map(item => item.img)
+  uni.previewImage({ urls, current: urls[index] })
+}
 const removeUpload = (index) => uploads.value.splice(index, 1)
-async function addImages() {
-  const left = 9 - uploads.value.length
-  if (left <= 0) return toast('最多 9 张图片')
-  const paths = await chooseImages(left)
-  if (!paths.length) return
-  // 带遮罩：上传中再点「+」会叠着再选一批图
-  uni.showLoading({ title: '上传中', mask: true })
+let pickingImages = false
+let imageLoading = false
+function stopImageLoading() {
+  pickingImages = false
+  if (imageLoading) { imageLoading = false; uni.hideLoading() }
+}
+const addImages = () => pickImages(false)
+const replaceCover = () => pickImages(true)
+async function pickImages(replace) {
+  if (pickingImages) return
+  const limit = replace ? 1 : 9 - uploads.value.length
+  if (limit <= 0) return toast('最多 9 张图片')
+  const version = formVersion
+  const cover = uploads.value[0]
+  pickingImages = true
   try {
-    for (const p of paths) {
-      const up = await uploadTo('/app/upload/image', p)
-      uploads.value.push({ url: up.data.url, img: absUrl(up.data.url) })
+    const paths = await chooseImages(limit)
+    if (!paths.length || version !== formVersion) return
+    imageLoading = true
+    uni.showLoading({ title: '上传中', mask: true })
+    for (const path of paths.slice(0, limit)) {
+      const up = await uploadTo('/app/upload/image', path)
+      if (version !== formVersion) return
+      const image = { url: up.data.url, img: absUrl(up.data.url) }
+      if (replace) {
+        if (uploads.value[0] === cover) uploads.value.splice(0, 1, image)
+      } else uploads.value.push(image)
     }
   } catch (e) {
-    fail(e, '图片上传失败')
+    if (version === formVersion) fail(e, '图片上传失败')
   } finally {
-    uni.hideLoading()
-  }
-}
-// 封面右下角的铅笔：换一张封面（只换第一张，其余的图不动）
-async function replaceCover() {
-  const paths = await chooseImages(1)
-  if (!paths.length) return
-  uni.showLoading({ title: '上传中', mask: true })
-  try {
-    const up = await uploadTo('/app/upload/image', paths[0])
-    uploads.value.splice(0, 1, { url: up.data.url, img: absUrl(up.data.url) })
-  } catch (e) {
-    fail(e, '图片上传失败')
-  } finally {
-    uni.hideLoading()
+    if (version === formVersion) stopImageLoading()
   }
 }
 const title = ref('')
@@ -370,6 +397,7 @@ function normalizeTime(key) {
 // 同行性别可选，默认不限
 const GENDER_LIMITS = [{ label: '不限', key: '' }, { label: '仅限女生', key: 'female' }, { label: '仅限男生', key: 'male' }]
 const keyIn = (list, v) => (list.some(x => x.key === v) ? v : '')
+const categoryText = ref('')
 const genderLimit = ref('')
 const genderLimitLabel = computed(() => (GENDER_LIMITS.find(x => x.key === genderLimit.value) || GENDER_LIMITS[0]).label)
 // 之前发旅居日常（现在叫旅居日常）没法说明是推荐还是避雷；现在可选「伙伴说」，默认不选
@@ -400,7 +428,7 @@ const draftInfo = ref(null)
 const hasContent = d => !!(d && (String(d.title || '').trim() || String(d.body || '').trim() || d.uploads?.length))
 function migrateDraft(){ migrateLocalDrafts(experience.account?.id) }
 function readDraft(){
-  if (!experience.account?.id) return null
+  if (!experience.account?.id) { draftCount.value = 0; return null }
   const rows=listDrafts(experience.account.id,'community');draftCount.value=rows.length
   const row=rows.find(x=>x.id===activeDraftId)
   return row ? {...row.data, savedAt:new Date(row.updatedAt).toLocaleString(), _id:row.id} : null
@@ -419,7 +447,7 @@ function snapshot() {
   return {
     type: type.value, title: title.value, body: body.value, city: city.value, eventDate: eventDate.value,
     uploads: uploads.value.map(u => ({ url: u.url, img: u.img })),
-    genderLimit: genderLimit.value, tone: tone.value,
+    categoryText: categoryText.value, genderLimit: genderLimit.value, tone: tone.value,
     link: link0.value ? { ...link0.value } : null, expType: expType.value,
     act: { ...act.value }, people: people.value, syncOn: syncOn.value
   }
@@ -433,7 +461,7 @@ function applyDraft(d) {
   // 日期只能选今天以后：过了期的不恢复
   eventDate.value = isYmd(d.eventDate) && d.eventDate >= todayCn() ? d.eventDate : ''
   uploads.value = (Array.isArray(d.uploads) ? d.uploads : []).filter(u => u && u.url).slice(0, 9).map(u => ({ url: u.url, img: u.img || absUrl(u.url) }))
-  // 已移除的分类、同行天数不从旧草稿恢复，避免提交用户无法修改的隐藏选项。
+  categoryText.value = String(d.categoryText || '').slice(0, 12)
   genderLimit.value = keyIn(GENDER_LIMITS, d.genderLimit)
   tone.value = keyIn(TONES, d.tone)
   // 老草稿存的是自己的报名 / 住宿订单（d.ref），新版不再用，不恢复；只认支持的公开对象
@@ -462,7 +490,11 @@ function resetForm() {
 async function offerDraft() { readDraft() }
 // 顶部提示条的「清空」：表单清空，本机草稿一起删
 async function clearDraft() {
+  const version = formVersion
   if (!(await confirm('清空草稿', '表单会清空，本机这份草稿也会删除，不能恢复。确定清空？'))) return
+  if (version !== formVersion) return
+  formVersion++
+  stopImageLoading()
   dropDraft()
   resetForm()
   toast('已清空')
@@ -471,13 +503,14 @@ const sameAsForm = (d) => JSON.stringify({ ...snapshot(), savedAt: undefined }) 
 // 「草稿」入口：看标题 / 类型 / 保存时间，继续编辑或删除
 async function openDraft() { go('/pages/profile/drafts') }
 async function saveDraft() {
+  if (!experience.account?.id) return toast('请先登录后使用草稿箱')
   const data=snapshot()
   if(!hasContent(data))return toast('还没有填写标题、正文或图片')
   try {
     const previous=readDraft()
     const row=saveLocalDraft(experience.account.id,{id:previous?.type===data.type?activeDraftId:'',kind:'community',label:data.type,data})
     activeDraftId=row.id;draftMine=true;draftInfo.value=readDraft();restoredAt.value=draftInfo.value.savedAt
-    toast('草稿已保存，可在我的草稿箱继续编辑')
+    toast('草稿已保存，可在发布页的草稿箱继续编辑')
   }catch(e){toast(e.message||'保存失败，请重试')}
 }
 const phoneVerified = ref(false)
@@ -573,7 +606,7 @@ const expOff = computed(() => expOffRaw.value.filter(x => x && typeof x === 'obj
 })))
 const expHintSub = computed(() => (expOff.value.length
   ? `你有 ${expOff.value.length} 段报名还不能用来发经验分享，点「查看原因」看每一段的原因`
-  : '换宿、兼职、全职到岗后，就能发经验分享'))
+  : '换工、兼职、全职到岗后，就能发经验分享'))
 // 经验分享换宿、兼职、全职都算：去找机会不再写死换宿（?type=volunteer），打开岗位列表的默认页签，用户自己切
 const goJobs = () => go(R.jobsList)
 const submitDiary = () => {
@@ -620,6 +653,7 @@ function publishBuddy() {
 const submitting = ref(false)
 async function submit(extra = {}) {
   if (submitting.value) return
+  const version = formVersion
   if (!title.value.trim()) { s.value = 1; return toast('请填写标题') }
   const payload = {
     kind: KIND[type.value], title: title.value.trim(), content: body.value.trim(), city: city.value,
@@ -630,15 +664,24 @@ async function submit(extra = {}) {
   }
   if (!isYmd(payload.eventDate || '2000-01-01')) delete payload.eventDate
   if (payload.kind === 'buddy') {
-    // 分类由服务端识别；eventDays 仅来自同步活动；同行性别 '' = 不限。
+    const label = categoryText.value.trim()
+    if (label === '全部') { s.value = 1; return toast('请填写具体的搭子分类') }
+    if (Object.prototype.hasOwnProperty.call(CAT_KEY, label)) payload.category = CAT_KEY[label]
+    else if (label) payload.customCategory = label
     payload.genderLimit = genderLimit.value
   }
   if (payload.kind === 'daily' && tone.value) payload.tone = tone.value
   submitting.value = true
   try {
     const required = ['community', ...(payload.kind === 'buddy' ? ['buddy'] : []), ...(payload.syncActivity ? ['activity'] : [])]
-    if (!(await publishConsent.value.open(required))) { submitting.value = false; return }
-    const res = (await gated(() => apiPublishPost(payload), { onPhone: () => { toast('请先验证手机号'); s.value = 2 } })).data
+    const accepted = await publishConsent.value.open(required)
+    if (version !== formVersion) return
+    if (!accepted) { submitting.value = false; return }
+    const res = (await gated(() => {
+      if (version !== formVersion) throw new Error('账号已切换')
+      return apiPublishPost(payload)
+    }, { onPhone: () => { if (version === formVersion) { toast('请先验证手机号'); s.value = 2 } } })).data
+    if (version !== formVersion) return
     if (!Number.isSafeInteger(Number(res?.postId)) || Number(res.postId) <= 0) throw new Error('未获取到发布结果，请先到「我的发布」确认')
     // 发出去的就是本页恢复 / 保存的那份草稿才删；没恢复的旧草稿留着
     if (draftMine) dropDraft()
@@ -647,10 +690,31 @@ async function submit(extra = {}) {
     rememberPublished(res, payload.kind)
     replace(publishedUrl(res))
   } catch (e) {
+    if (version !== formVersion) return
     fail(e, '发布失败')
     submitting.value = false
   }
 }
+onShow(() => { if (initialized) readDraft() })
+onUnload(() => { formVersion++; stopImageLoading() })
+watch(() => experience.account?.id, (id, previous) => {
+  if (!previous) return
+  formVersion++
+  stopImageLoading()
+  activeDraftId = ''
+  draftMine = false
+  draftInfo.value = null
+  submitting.value = false
+  expSeq++
+  expList.value = []
+  expOffRaw.value = []
+  expLoaded.value = false
+  expFailed.value = false
+  phoneVerified.value = false
+  s.value = needPhoneOnly ? 2 : 1
+  resetForm()
+  readDraft()
+}, { flush: 'sync' })
 </script>
 
 <style scoped lang="scss">
@@ -673,7 +737,7 @@ $k-grad: linear-gradient(135deg, #B07A47 0%, #8A5A30 100%);
 /* 右上角「草稿箱」：描边小胶囊（小程序里排在微信胶囊左边） */
 .pub-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 .drafts { min-height: 44px; padding: 0 4px 0 12px; color: var(--k-red-deep); font-size: 13px; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
-.drafts__num { min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--k-red); color: #fff; font-size: 10px; line-height: 16px; text-align: center; }
+.drafts__num { min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--k-red); color: #fff; font-size: 11px; line-height: 16px; text-align: center; }
 /* 恢复草稿后的提示条 */
 .draft-bar { margin: 4px 0 10px; padding: 9px 12px; border-radius: 12px; background: var(--k-ochre-soft); display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--k-ink2); }
 .draft-bar__text { min-width: 0; flex: 1; }
@@ -755,6 +819,9 @@ $k-grad: linear-gradient(135deg, #B07A47 0%, #8A5A30 100%);
 .exp-grid__plus { border: 1.5px dashed var(--k-red-line); background: var(--k-red-soft); box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
 .exp-grid__count { border: 1.5px dashed var(--k-line2); background: #FBF6EF; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; color: var(--k-muted); }
 /* 其余的图每行 4 个，最后一格是橙色渐变「+」 */
+.category-input { padding: 14px; }
+.category-input input { margin: 8px 0; height: 36px; font-size: 14px; }
+.daily-add { flex-direction: column; gap: 3px; font-size: 11px; color: var(--k-muted); }
 .uploads { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .upload-item, .upload-add { position: relative; width: calc((100% - 24px) / 4); height: 72px; border-radius: 12px; overflow: visible; flex: 0 0 auto; }
 .upload-img { width: 100%; height: 72px; border-radius: 12px; }
@@ -863,7 +930,7 @@ $k-grad: linear-gradient(135deg, #B07A47 0%, #8A5A30 100%);
 /* 标题最多两行；类型、已完成的小标签另起一行 */
 .experience-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-family: var(--k-serif); font-size: 14px; font-weight: 700; line-height: 1.4; word-break: break-all; }
 .experience-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.done { padding: 2px 5px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 10px; flex: 0 0 auto; }
+.done { padding: 2px 5px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; flex: 0 0 auto; }
 .done.done--ongoing { background: var(--k-ochre-soft); color: #8B622E; }
 /* 暂时还不能用的报名：奶油底、不能选，原因写在下面 */
 .experience-off-head { display: block; margin: 16px 0 8px; font-size: 14px; font-weight: 600; color: var(--k-ink2); }
@@ -873,7 +940,7 @@ $k-grad: linear-gradient(135deg, #B07A47 0%, #8A5A30 100%);
 .experience-reason { font-size: 12px; color: var(--k-ink2); line-height: 1.45; }
 .experience-rule { display: flex; align-items: flex-start; gap: 5px; margin: 14px 0 12px; color: var(--k-ink2); font-size: 12px; line-height: 1.5; }
 /* 经历类型：换宿旅行 / 线下兼职 / 全职 */
-.exp-type { padding: 2px 5px; border-radius: 4px; background: var(--k-paper2); color: var(--k-ink2); font-size: 10px; flex: 0 0 auto; }
+.exp-type { padding: 2px 5px; border-radius: 4px; background: var(--k-paper2); color: var(--k-ink2); font-size: 11px; flex: 0 0 auto; }
 .experience-meta { color: var(--k-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* 完成时间要看全：放不下就在日期中间折行，不再省略成「2026.0…」 */
 .experience-meta.experience-date { white-space: normal; overflow: visible; }
@@ -907,9 +974,9 @@ $k-grad: linear-gradient(135deg, #B07A47 0%, #8A5A30 100%);
 .preview-card { height: 133px; padding: 8px; border-radius: 12px; background: var(--k-paper); box-shadow: var(--k-sh1); display: flex; gap: 10px; box-sizing: border-box; }
 .preview-img { width: 88px; height: 115px; border-radius: 7px; flex: 0 0 auto; }
 .preview-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 5px; }
-.preview-chip { align-self: flex-start; padding: 2px 6px; border-radius: 4px; background: var(--k-ochre-soft); color: #8B622E; font-size: 10px; }
+.preview-chip { align-self: flex-start; padding: 2px 6px; border-radius: 4px; background: var(--k-ochre-soft); color: #8B622E; font-size: 11px; }
 .preview-title { font-family: var(--k-serif); font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.preview-meta { display: flex; align-items: center; gap: 4px; color: var(--k-muted); font-size: 10px; white-space: nowrap; overflow: hidden; }
+.preview-meta { display: flex; align-items: center; gap: 4px; color: var(--k-muted); font-size: 11px; white-space: nowrap; overflow: hidden; }
 .preview-meta text { overflow: hidden; text-overflow: ellipsis; }
 .preview-sign { margin-top: auto; display: flex; align-items: center; gap: 8px; color: var(--k-muted); font-size: 11px; }
 .avatar-stack { display: flex; }
@@ -928,9 +995,358 @@ $k-grad: linear-gradient(135deg, #B07A47 0%, #8A5A30 100%);
 .publish-page .verify-info { padding:18px; }
 .publish-page .experience-card { padding:10px;gap:12px; }
 .publish-page .experience-name { font-family:var(--k-sans);font-size:15px; }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板，参考小红书）：浅灰底上放白卡，不用阴影、不描边，圆角 12、图片 8；
+   类型胶囊 36 高、标题 15、正文 14、说明 11–12；底部「存草稿 / 发布」是 40 高的胶囊。功能和文字不变：草稿箱、恢复 / 清空草稿、
+   三种类型、经历类型和经历提示、九张图 / 封面 / 换封面、标题正文计数、关联帖子、补充信息（城市 / 日期 / 同行性别 / 伙伴说）、
+   我的发布、手机验证、经历校验、同步活动板都在。上面的旧规则保留不动，这里用 .k-page.publish-page 开头的规则盖过去。 */
+.k-page.publish-page {
+  --k-bg: var(--k-page); --k-paper2: var(--k-fill); /* 本组暖米填充，只在根上定义一次 */
+  background: var(--k-page);
+  :deep(.k-topbar) { background: var(--k-page); }
+  :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+  .compose, .sync-switch-row, .activity-info, .preview-card, .verify-info, .experience-tip, .experience-card, .schedule-form, .empty-experience { border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+
+  /* ---------- 写内容 ---------- */
+  .publish-body { padding: 0 12px calc(92px + var(--k-safe-bottom)); }
+  .pub-tools { margin-bottom: 0; }
+  .drafts { font-size: 12px; gap: 4px; }
+  .draft-bar { margin: 0 0 8px; padding: 8px 10px; border-radius: 8px; font-size: 12px; }
+  .draft-bar__clear { margin: -8px -10px -8px 0; padding: 8px 10px; color: var(--k-red-deep); }
+  /* 三种类型：分段控件（浅暖灰底槽 + 选中白块），不再是实心棕，底部「下一步」才是这一屏唯一的主按钮；
+     白块看上去 32 高，上下各 2 的透明边把可点高度撑回 36 */
+  .type-pills { gap: 0; margin-top: 0; padding: 2px; border-radius: 18px; background: var(--k-fill); }
+  .type-pill { position: relative; height: 32px; border-radius: 16px; background: transparent; box-shadow: none; color: var(--k-ink2); font-size: 14px; font-weight: 400; }
+  .type-pill::before { content: ''; position: absolute; left: 0; right: 0; top: -2px; bottom: -2px; }
+  .type-pill > text { position: relative; } /* 字压在撑可点范围的透明层上面 */
+  .type-pill.active { background: #fff; color: var(--k-ink); font-weight: 600; }
+  .exp-types { margin-top: 10px; gap: 8px; }
+  .exp-types__label { font-size: 13px; }
+  .exp-type-pill { position: relative; height: 30px; padding: 0 12px; border-color: transparent; border-radius: 15px; background: var(--k-paper); font-size: 12px; } .exp-type-pill::before { content: ''; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; } /* 看上去 30 高，可点高度仍是原来的 40 */
+  .exp-type-pill.on { border-color: transparent; background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; }
+  .exp-hint { margin-top: 8px; padding: 9px 10px; border-radius: 12px; background: var(--k-paper); }
+  .exp-hint--warn { background: var(--k-ochre-soft); }
+  .exp-hint__text { font-size: 12px; }
+  .exp-hint__title { font-size: 13px; }
+  .exp-hint__sub { margin-top: 3px; font-size: 11px; }
+  .exp-hint__link { color: var(--k-red-deep); font-size: 12px; }
+  .compose { margin-top: 8px; padding: 12px 12px 4px; }
+  .media-empty { height: 112px; border-radius: 8px; background: var(--k-page); }
+  .media-empty__icon { width: 40px; height: 40px; margin-bottom: 2px; }
+  .media-empty__icon :deep(.k-icon) { width: 22px !important; height: 22px !important; }
+  .media-empty__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+  .media-empty__sub { font-size: 11px; }
+  .cover { border-radius: 8px; }
+  .cover.cover--empty { background: var(--k-page); }
+  .cover__tag { left: 6px; top: 6px; height: 19px; padding: 0 7px; border-radius: 10px; background: rgba(255, 255, 255, .94); color: var(--k-ink2); font-size: 11px; line-height: 19px; }
+  .cover__shade { background: linear-gradient(transparent, rgba(20, 14, 10, .6)); }
+  .cover__edit { height: 50px; padding: 0 8px 0 12px; }
+  .cover__edit-copy { font-size: 13px; font-weight: 600; }
+  .cover__edit-sub { font-size: 11px; }
+  .cover__pen { width: 32px; height: 32px; }
+  .cover__pen :deep(.k-icon) { width: 14px !important; height: 14px !important; }
+  .cover__pen--corner { right: 8px; bottom: 8px; }
+  .cover__hint-title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; letter-spacing: 0; }
+  .cover__hint-sub { font-size: 11px; }
+  /* 九宫格的格子边长跟着新的页边距算（页面 12 + 卡片 12） */
+  .exp-grid { grid-auto-rows: calc((100vw - 64px) / 3); gap: 8px; }
+  .exp-grid--filled { grid-auto-rows: calc((100vw - 72px) / 4.8); }
+  .exp-grid__big, .exp-grid__cell { border-radius: 8px; }
+  .exp-grid__add { background: var(--k-page); }
+  .exp-grid__plus { border-width: 1px; }
+  .exp-grid__count { border-width: 1px; background: var(--k-page); font-size: 11px; }
+  .exp-grid__pen { right: 6px; bottom: 6px; } .exp-grid__pen::before { content: ''; position: absolute; left: -4px; right: -4px; top: -4px; bottom: -4px; }
+  .upload-item, .upload-add, .upload-img { border-radius: 8px; }
+  .field-block { margin-top: 12px; }
+  .field-head { margin-bottom: 2px; }
+  .field-label { font-size: 15px; }
+  .counter { font-size: 11px; }
+  .text-field { height: 40px; }
+  .text-field input { height: 40px; font-size: 15px; }
+  .body-field-block { margin-top: 10px; }
+  .textarea-field textarea, .textarea-field .publish-area-idle { font-size: 14px; line-height: 1.65; }
+  .fold { margin-top: 8px; padding: 8px 12px; border-radius: 12px; }
+  .fold.extra { background: var(--k-paper); }
+  .fold__head { gap: 8px; min-height: 40px; }
+  .fold__icon { width: 20px; }
+  .fold__title { font-size: 14px; }
+  .fold__opt { font-size: 12px; }
+  .fold__sub { font-size: 11px; line-height: 16px; }
+  .fold__action { font-size: 12px; }
+  .fold__head > :deep(.k-icon) { width: 14px !important; height: 14px !important; opacity: .7; }
+  .fold__body { margin-top: 0; }
+  .link-pick { margin-top: 0; padding: 10px 0 8px; }
+  .link-pick__row { gap: 8px; }
+  .link-pick__img { width: 44px; height: 44px; border-radius: 8px; }
+  .link-pick__copy { gap: 3px; }
+  .link-pick__title { font-family: var(--k-sans); font-size: 13px; font-weight: 600; }
+  .link-tag { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 11px; font-weight: 500; line-height: 17px; }
+  .link-pick__city { font-size: 11px; }
+  .link-pick__on { font-size: 11px; font-weight: 600; }
+  .link-pick__x { font-size: 11px; }
+  .link-pick__note { margin-top: 8px; padding-top: 8px; font-size: 11px; }
+  .publish-row { height: 48px; font-size: 14px; font-weight: 400; }
+  .publish-row__right { color: var(--k-ink2); font-size: 13px; font-weight: 400; }
+  .publish-row__right :deep(.k-icon) { width: 14px !important; height: 14px !important; }
+  .publish-opt { padding: 8px 0 10px; }
+  .publish-opt__head { min-height: 24px; font-size: 13px; }
+  .optional { font-size: 11px; }
+  .opt-pills { gap: 6px; margin-top: 4px; }
+  .opt-pill { min-height: 36px; padding: 0 14px; border-radius: 18px; background: var(--k-paper2); font-size: 13px; }
+  .opt-pill.on { border-color: transparent; background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; }
+  .publish-history { margin-top: 4px; padding: 0 2px; font-size: 11px; }
+  .publish-history button { color: var(--k-red-deep); font-size: 12px; }
+  .publish-history button :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+  /* 底部固定条：白底 + 顶上一条发丝线 + 内边距 8 12；存草稿（次按钮）/ 下一步（暖棕渐变），都是 44 高的胶囊 */
+  .pbar { border-top: 0; box-shadow: 0 -.5px 0 rgba(58, 50, 43, .1); }
+  .pbar__row { height: auto; padding: 8px 12px; gap: 10px; }
+  .pbar__draft { height: 44px; border-color: var(--k-red-line); border-radius: 22px; font-size: 15px; font-weight: 500; }
+  .pbar__go { height: 44px; border-radius: 22px; background: linear-gradient(135deg, #B5814D, #8E5E33); box-shadow: none; color: #fff; font-size: 15px; }
+
+  /* ---------- 手机验证 ---------- */
+  .verify-body { padding: 16px 12px calc(92px + var(--k-safe-bottom)); }
+  .verify-art { height: 108px; margin: 4px auto; }
+  .verify-art__phone { width: 76px; height: 76px; background: var(--k-red-soft); }
+  .verify-art__badge { right: 4px; bottom: 8px; width: 22px; height: 22px; border-width: 2px; }
+  .verify-lead { font-size: 13px; color: var(--k-muted); }
+  .verify-title { font-family: var(--k-sans); font-size: 16px; line-height: 1.5; }
+  .verify-info { margin-top: 14px; padding: 12px; }
+  .verify-info__row :deep(.k-icon) { margin-top: 2px; }
+  .verify-info__title { font-family: var(--k-sans); font-size: 13px; font-weight: 600; }
+  .verify-info__text { margin-top: 2px; font-size: 11px; line-height: 1.6; }
+  .phone-wrap { margin-top: 14px; }
+  .phone-label { margin-left: 2px; font-size: 12px; }
+  .phone-field { height: 44px; border: 0; border-radius: 12px; }
+  .phone-number { font-size: 15px; }
+  .phone-authorize { font-size: 11px; }
+  .phone-authorize :deep(.k-icon) { width: 16px !important; height: 16px !important; }
+  .change-account { margin: 8px 2px 12px; color: var(--k-red-deep); }
+  .verify-foot { font-size: 11px; letter-spacing: 0; }
+
+  /* ---------- 经历校验 ---------- */
+  .experience-body { padding: 8px 12px calc(92px + var(--k-safe-bottom)); }
+  .experience-tip { min-height: 0; padding: 12px; }
+  .experience-tip__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+  .experience-tip__sub { margin-top: 3px; font-size: 11px; }
+  .section-title, .preview-label { font-family: var(--k-sans); font-size: 16px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
+  .experience-head { margin: 14px 2px 8px; }
+  .experience-link { font-size: 12px; font-weight: 400; color: var(--k-muted); }
+  .experience-card { min-height: 0; padding: 8px; gap: 10px; }
+  .experience-img { width: 64px; height: 64px; border-radius: 8px; }
+  .experience-copy { gap: 3px; }
+  .experience-name { font-family: var(--k-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
+  .done, .exp-type { padding: 0 5px; border-radius: 4px; font-size: 11px; font-weight: 500; line-height: 17px; }
+  .exp-type { background: var(--k-paper2); }
+  .done.done--ongoing { color: var(--k-ochre-deep); }
+  .experience-off-head { margin: 14px 2px 8px; font-size: 13px; }
+  .experience-card.experience-card--off { padding: 10px; background: rgba(255, 255, 255, .6); }
+  .experience-off-icon { width: 30px; height: 30px; background: var(--k-paper2); }
+  .experience-reason { font-size: 11px; line-height: 16px; color: var(--k-muted); }
+  .experience-rule { margin: 12px 2px; color: var(--k-muted); font-size: 11px; }
+  .radio { width: 20px; height: 20px; }
+  .radio__dot { width: 10px; height: 10px; }
+  /* 空状态：白卡内居中，标题 14 / 500、说明 12 浅灰；「去寻找机会」是次按钮小胶囊：看上去 32 高（白底 + 1px 棕色细边 + 深棕字），
+     外面 2 的透明边把可点高度撑到 36（和本组其它空状态按钮同一个做法）；字号用按钮原来的 13，不变小 */
+  .empty-experience { margin: 8px 0; padding: 28px 16px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .empty-experience__title { font-family: var(--k-sans); font-size: 14px; font-weight: 500; color: var(--k-ink2); }
+  .empty-experience__sub { margin: 4px 0 10px; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+  .empty-experience > :deep(.k-button.is-outline) { height: 36px; padding: 0 16px; border: 2px solid transparent; border-radius: 18px; background: #fff padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-weight: 500; }
+
+  /* ---------- 同步活动板 ---------- */
+  .sync-body { padding: 8px 12px calc(92px + var(--k-safe-bottom)); }
+  .sync-switch-row { padding: 12px; }
+  .sync-switch-title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+  .sync-switch-sub { margin-top: 2px; }
+  .switch { position: relative; width: 40px; height: 24px; background: #D9D4CC; } .switch::before { content: ''; position: absolute; left: -8px; right: -8px; top: -10px; bottom: -10px; }
+  .switch.on { background: var(--k-green); }
+  .switch__knob { width: 20px; height: 20px; box-shadow: none; }
+  .switch.on .switch__knob { transform: translateX(16px); }
+  .activity-title-row { margin: 14px 2px 8px; gap: 6px; }
+  .schedule-form { margin-bottom: 8px; padding: 12px; }
+  .schedule-tip { margin-bottom: 12px; font-size: 12px; }
+  .schedule-label { margin-bottom: 6px; font-size: 13px; }
+  /* 日期、时间两个格子一样高、一样大的字（填写页取大不取小） */
+  .schedule-date, .schedule-clock { min-height: 46px; border-radius: 8px; font-size: 16px; }
+  .activity-info { padding: 0 12px; }
+  /* 列表行：48 高、行间发丝线（最后一行不画）、右侧 12 号浅灰箭头 */
+  .activity-row { height: 48px; min-height: 48px; border-bottom: 0; font-size: 14px; font-weight: 400; color: var(--k-ink); }
+  .activity-row + .activity-row { box-shadow: inset 0 .5px 0 var(--k-line); }
+  .activity-row__right { color: var(--k-ink2); font-weight: 400; }
+  .activity-row__right > :deep(.k-icon) { width: 12px !important; height: 12px !important; opacity: 1; }
+  .round-op { width: 26px; height: 26px; border-color: var(--k-line2); }
+  .preview-label { margin: 14px 2px 8px; }
+  .preview-card { height: auto; min-height: 100px; padding: 12px; gap: 10px; }
+  .preview-img { width: 84px; height: 84px; border-radius: 8px; }
+  .preview-copy { gap: 3px; }
+  .preview-chip { padding: 0 5px; color: var(--k-ochre-deep); font-weight: 500; line-height: 17px; }
+  .preview-title { font-family: var(--k-sans); font-weight: 600; line-height: 20px; }
+  .preview-meta { font-size: 11px; }
+  .preview-meta text { flex: 1; min-width: 0; white-space: nowrap; } /* 时间地点太长时在卡片内边距里用省略号收住，不再一直顶到右边缘 */
+  .preview-avatar { width: 18px; height: 18px; }
+  .dual-buttons { gap: 10px; margin-top: 14px; }
+  .dual-button :deep(.k-button), .experience-body > :deep(.k-button), .verify-actions > :deep(.k-button) { height: 44px; border-radius: 22px; box-shadow: none; font-size: 15px; }
+  /* 「上一步」：灰框墨字的 outline 统一成次按钮（白底 + 棕色细边 + 深棕字）；「去寻找机会」见上面空状态 */
+  .dual-button :deep(.k-button.is-outline) { background: #fff; border-color: var(--k-red-line); color: var(--k-red-deep); }
+  /* 还没选经历时的「发布」：保持原来的暖棕渐变，整体淡到 .45（全站「不可点按钮」同一个样子） */
+  .experience-body > :deep(.k-button.is-disabled) { background: linear-gradient(135deg, #B5814D, #8E5E33); color: #fff; opacity: .45; }
+
+  @media (max-width: 359px) {
+    .type-pills { gap: 0; }
+    .type-pill { font-size: 13px; }
+    .exp-type-pill { padding: 0 6px; }
+    .experience-img { width: 56px; height: 56px; }
+    .preview-img { width: 72px; height: 72px; }
+  }
+}
 </style>
 
 <style lang="scss">
 /* 标题 / 正文的提示字：小程序里 placeholder 不带 scoped 的 data-v 类，写在 scoped 里不生效，单独放这里（类名带页面前缀，H5 里也不会串到别的页面） */
 .publish-ph { color: #A39A92; font-weight: 400; }
+</style>
+
+<style scoped lang="scss">
+/* ==========================================================================
+   11-18 第三轮精修：添加照片去掉虚线框（白卡里不再框中套框）；草稿箱一行收矮；手机号行右边让开悬浮客服钮；
+   经历校验的提示图标放进 40 的浅棕方块；同步活动板的日期 / 时间框换成浅灰实底、不描边。
+   ========================================================================== */
+.k-page.publish-page {
+  .pub-tools { min-height: 28px; margin: 0 0 4px; }
+  .drafts { position: relative; min-height: 28px; padding: 0 2px 0 8px; }
+  .drafts::before { content: ''; position: absolute; left: 0; right: 0; top: -8px; bottom: -8px; }
+  .media-empty { height: 112px; border: 0; border-radius: 8px; background: var(--k-page); }
+  .media-empty__icon { background: var(--k-paper); }
+  .exp-grid__add { border: 0; background: var(--k-page); }
+  .phone-field { padding-right: 24px; }
+  .experience-tip { gap: 12px; }
+  .tip-ico { flex: 0 0 40px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--k-red-soft); }
+  .experience-tip .tip-ico :deep(.k-icon) { width: 22px !important; height: 22px !important; }
+  .empty-ico { width: 56px; height: 56px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: var(--k-red-soft); }
+  .empty-experience { padding: 32px 16px; }
+  .schedule-form { padding: 14px 12px 12px; }
+  .schedule-field + .schedule-field { margin-top: 12px; }
+  .schedule-inputs { gap: 8px; }
+  .schedule-date, .schedule-clock { min-height: 40px; height: 40px; border: 0; border-radius: 8px; background: var(--k-page); font-size: 15px; }
+  .schedule-clock { width: 80px; }
+  .activity-title-row { margin-top: 20px; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 1 轮：经历加载中的骨架卡（72 高、12 圆角、浅米底） */
+.k-page.publish-page {
+  .exp-skel { height: 72px; margin-bottom: 8px; border-radius: 12px; background: var(--k-paper2); opacity: .55; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 第四轮：经历加载骨架做成白卡 + 两条灰条（看得出是卡片在加载）；经验分享照片区小格统一实底、不用虚线 */
+.k-page.publish-page {
+  .exp-skel { position: relative; height: 72px; margin-bottom: 8px; border-radius: 12px; background: var(--k-paper); opacity: 1; }
+  .exp-skel::before, .exp-skel::after { content: ''; position: absolute; left: 16px; height: 12px; border-radius: 6px; background: var(--k-fill); }
+  .exp-skel::before { top: 20px; width: 46%; height: 14px; border-radius: 7px; }
+  .exp-skel::after { top: 42px; width: 70%; }
+  .exp-grid__add, .exp-grid__plus, .exp-grid__count { border: 0; border-radius: 8px; background: var(--k-page); }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 5 轮：经历提示和活动预览标签不用赭黄，统一成浅棕底 + 深棕字 */
+.k-page.publish-page {
+  .exp-hint--warn { background: var(--k-red-soft); }
+  .preview-chip { background: var(--k-red-soft); color: var(--k-red-deep); }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 夜 第四轮精修（以微信实拍为准）：
+   发帖——「添加照片」改成 88 方形虚线添加格（不再是卡中卡的灰底块），说明在格子右边；标题和正文之间换成发丝线；
+   「关联帖子」「补充信息」两张卡并成一张列表卡（中间发丝线）；
+   手机验证——56 浅棕方块图标靠左、标题说明在右（全组统一的方块做法，左对齐）；「更换手机号」挪到「手机号」那一行右端；
+   经历校验——顶部说明去掉卡底；提示和「发布」按钮沉到页面底部，不再浮在中间；
+   同步活动板——预览里时间地点允许两行，不再被省略号吃掉 */
+.k-page.publish-page {
+  .media-empty { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; height: 88px; min-height: 88px; padding: 0 0 0 100px; border: 0; border-radius: 0; background: transparent; box-sizing: border-box; }
+  .media-empty .media-empty__icon { position: absolute; left: 0; top: 0; width: 88px; height: 88px; margin: 0; padding-bottom: 18px; box-sizing: border-box; border: 1px dashed var(--k-line2); border-radius: 12px; background: transparent; }
+  .media-empty .media-empty__title { position: absolute; left: 0; top: 52px; width: 88px; margin: 0; text-align: center; font-size: 12px; font-weight: 500; line-height: 16px; color: var(--k-ink2); }
+  .media-empty .media-empty__sub { margin: 0; font-size: 12px; line-height: 18px; color: var(--k-muted); text-align: left; }
+  .compose__line { height: 1px; transform: scaleY(.5); background: var(--k-line); }
+  .fold.link-card { margin-top: 12px; border-radius: 12px 12px 0 0; }
+  .fold.extra { position: relative; margin-top: 0; border-radius: 0 0 12px 12px; }
+  .fold.extra::before { content: ''; position: absolute; left: 44px; right: 0; top: 0; height: 1px; transform: scaleY(.5); background: var(--k-line); }
+
+  .verify-art { float: left; width: 56px; height: 56px; margin: 4px 12px 0 0; }
+  .verify-art__phone { width: 56px; height: 56px; border-radius: 16px; }
+  .verify-art__badge { right: -4px; bottom: -4px; width: 18px; height: 18px; border-width: 2px; }
+  .verify-lead, .verify-title { text-align: left; }
+  .verify-lead { padding-top: 6px; font-size: 13px; line-height: 20px; }
+  .verify-title { font-size: 17px; font-weight: 700; line-height: 24px; }
+  .verify-info { clear: both; margin-top: 20px; }
+  .phone-wrap { position: relative; }
+  .change-account { position: absolute; right: 2px; top: 0; margin: 0; font-size: 12px; line-height: 18px; color: var(--k-red); }
+
+  .experience-body { display: flex; flex-direction: column; min-height: calc(100vh - 200px); box-sizing: border-box; }
+  .experience-tip { min-height: 0; padding: 4px 4px 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .experience-tip__title { font-size: 15px; font-weight: 600; }
+  .tip-ico { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 10px; }
+  .experience-rule { margin-top: auto; padding-top: 24px; }
+
+  .preview-meta { align-items: flex-start; white-space: normal; overflow: visible; }
+  .preview-meta :deep(.k-icon) { margin-top: 2px; }
+  .preview-meta text { white-space: normal; overflow: visible; text-overflow: clip; line-height: 18px; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-19 第四轮返修：同步活动板预览缩略图 80（全站缩略图规范，359 以下 64），两行时间地点都是 12/18，
+   窄屏 11 号，让「报名截止 日期 时间」不被拆成两行、地点末尾不掉单字；手机验证标题 359 以下 16/22 */
+.k-page.publish-page {
+  .preview-img { width: 80px; height: 80px; }
+  .preview-meta { font-size: 12px; }
+  .preview-meta text { line-height: 18px; }
+  @media (max-width: 359px) {
+    .preview-img { width: 64px; height: 64px; }
+    .preview-meta { font-size: 11px; }
+    .preview-meta text { line-height: 16px; }
+    .verify-title { font-size: 16px; line-height: 22px; }
+  }
+}
+</style>
+<style scoped lang="scss">
+/* 11-19 微信实拍返修：
+   手机验证——「更换手机号」挪到右上角后输入框和按钮贴在一起：补回 24 的间距；头部、说明卡、手机号区上下都放到 24，第一屏不再挤在上半截；
+     「更换手机号」和电话图标退成灰色，这一块暖棕只留给按钮；
+   经历校验——按钮沉底的高度只扣顶栏（底栏位置已由 92 + 安全区内边距让出），按钮落在底栏上方；说明的图标方块和手机验证一样放左边、56 方块；
+   写内容——「添加照片」去掉虚线框，改浅底；「关联帖子 / 补充信息」拼缝压住；正文框收到 120 高，「我的发布」离底部操作条 24；
+   同步活动板——日期 / 时间框白底 + 发丝描边（卡里不再是一片灰块）；预览标签改纯文字；时间地点只在空格处折行，不把「待填写」拆开 */
+.k-page.publish-page {
+  .media-empty .media-empty__icon { border: 0; background: var(--k-fill); }
+  .fold.extra { margin-top: -1px; }
+  .textarea-field textarea, .textarea-field .publish-area-idle { height: 120px; }
+  .publish-body { padding-bottom: calc(84px + var(--k-safe-bottom)); }
+
+  .verify-body { display: flex; flex-direction: column; min-height: calc(100vh - 88px); padding-top: 24px; padding-bottom: calc(68px + var(--k-safe-bottom)); box-sizing: border-box; }
+  .verify-actions { margin-top: auto; } /* 按钮和提示沉到底栏上方（和经历校验一样），上面至少留手机号区的 24 */
+  .verify-info { margin-top: 24px; }
+  .phone-wrap { margin: 24px 0; }
+  .change-account { color: var(--k-muted); }
+
+  .experience-body { min-height: calc(100vh - 88px); padding-bottom: calc(68px + var(--k-safe-bottom)); } /* 只扣顶栏 88；底下留出底栏 + 18，按钮落在底栏上方，不会多出滚动 */
+  .experience-tip { align-items: center; justify-content: flex-start; gap: 12px; padding: 4px 0 0; }
+  .experience-tip .tip-ico { order: -1; flex: 0 0 56px; width: 56px; height: 56px; border-radius: 16px; }
+  .experience-tip .tip-ico :deep(.k-icon) { width: 28px !important; height: 28px !important; }
+  .experience-tip__sub { margin-top: 4px; font-size: 12px; line-height: 18px; }
+  .experience-head { margin-top: 24px; }
+
+  .schedule-date, .schedule-clock { height: 44px; min-height: 44px; border: .5px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); box-sizing: border-box; }
+  .schedule-clock { width: 88px; }
+  .preview-chip { padding: 0; background: transparent; color: var(--k-red-deep); font-size: 12px; line-height: 18px; }
+  .preview-meta text { word-break: keep-all; }
+}
+
+.publish-page.user-surface {
+  .type-pill.active, .exp-type-pill.on, .opt-pill.on { background: var(--k-red-soft); border-color: var(--k-red-line); color: var(--k-red-deep); }
+  .compose, .fold { border-radius: 12px; }
+  .field-head { align-items: baseline; gap: 8px; }
+  .field-label { color: var(--k-ink); font-weight: 600; }
+  .counter { font-variant-numeric: tabular-nums; }
+  .media-empty, .cover--empty { background-color: var(--user-icon-field); }
+  .field-block:focus-within .field-label { color: var(--k-red-deep); }
+  .pbar__go, .pbar__draft { border-radius: 11px; min-height: 44px; }
+}
 </style>

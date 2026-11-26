@@ -30,15 +30,16 @@ const detailCss = detail.styles.map(s => s.content).join('\n')
 
 // 把 list.vue 的 <script setup> 放进沙箱跑：import 进来的接口换成记录参数的假函数，stays-ui.js 用真的
 // 2026-10-17 R2：位置面板多了区县一组（/app/stay/districts，list.vue 里直接用 request.js 的 get 调），districts 不传时这座城市没有区县
-function runList({ areas = [{ area: '大理古城', count: 3 }, { area: '双廊', count: 1 }], districts = [], all = 0 } = {}) {
+function runList({ areas = [{ area: '大理古城', count: 3 }, { area: '双廊', count: 1 }], districts = [], all = 0, stubs = {} } = {}) {
   const source = list.scriptSetup.content
   const ast = compiler.babelParse(source, { sourceType: 'module' })
   const body = ast.program.body.filter(n => n.type !== 'ImportDeclaration').map(n => source.slice(n.start, n.end)).join('\n')
   const sandbox = { console, setTimeout, clearTimeout, setInterval, clearInterval }
   for (const n of ast.program.body.filter(n => n.type === 'ImportDeclaration')) for (const s of n.specifiers) sandbox[s.local.name] = () => new Promise(() => {})
-  const calls = [], toasts = [], screen = {}
+  const calls = [], toasts = [], screen = {}, unmount = []
   Object.assign(sandbox, ui, {
-    ref: vue.ref, reactive: vue.reactive, computed: vue.computed, watch: vue.watch, onUnmounted() {}, onReachBottom() {},
+    stayBookingEnabled: vue.ref(true), refreshFeatures: async () => ({ stayBookingEnabled: true }),
+    ref: vue.ref, reactive: vue.reactive, computed: vue.computed, watch: vue.watch, onUnmounted(fn) { unmount.push(fn) }, onReachBottom() {},
     useScreen: (max, extra) => { screen.s = vue.ref(1); screen.extra = extra; return screen.s },
     stayState: vue.reactive({ city: '', checkIn: '2026-10-17', checkOut: '2026-10-18', guests: 1 }), normalizeDates() {}, saveStayState() {},
     dotText: (ymd) => { const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(ymd || ''); return m ? `${+m[1]}.${+m[2]}` : '' },
@@ -46,14 +47,95 @@ function runList({ areas = [{ area: '大理古城', count: 3 }, { area: '双廊'
     get: async (url) => (url === '/app/stay/districts' ? { data: { city: '大理', all, districts } } : { data: { all: [] } }),
     apiStayList: async (p) => { calls.push(p); return { data: { rows: [], total: 0, hasMore: false, counts: { all: 0, direct: 0, managed: 0 } } } },
     yuan: (fen) => String(Number(fen) / 100), errText: (e, d) => d,
-    experience: vue.reactive({ cities: [] }), toast: (t) => toasts.push(t), uni: { getStorageSync() {}, setStorageSync() {} }
+    experience: vue.reactive({ cities: [] }), toast: (t) => toasts.push(t), uni: { getStorageSync() {}, setStorageSync() {} }, ...stubs
   })
   vm.createContext(sandbox)
   const scope = vue.effectScope()
-  scope.run(() => vm.runInContext(body + '\n;globalThis.__x = { dd, toggleDd, draft, applyDraft, resetDraft, toggleDraftFac, PANEL_FACS, roomOpts, bathOpts, areaChoices, areaSpans, applyArea, districtOpts, districtSpans, applyDistrict, pickPlace, facilities, facGridSpans, applyPrice, applySort, filter, sort, listTitle, srcTabs, search, kw, setSrc, src, filterBar }', sandbox, { filename: 'list.vue:script-setup' }))
-  return { x: sandbox.__x, calls, toasts, screen, state: sandbox.stayState, stop: () => scope.stop() }
+  scope.run(() => vm.runInContext(body + '\n;globalThis.__x = { dd, toggleDd, draft, applyDraft, resetDraft, toggleDraftFac, PANEL_FACS, roomOpts, bathOpts, areaChoices, areaSpans, applyArea, districtOpts, districtSpans, applyDistrict, pickPlace, facilities, facGridSpans, applyPrice, applySort, filter, sort, listTitle, srcTabs, search, kw, setSrc, src, filterBar, loadPromos, promo, previewTotal, promoError, promoLoaded }', sandbox, { filename: 'list.vue:script-setup' }))
+  return { x: sandbox.__x, calls, toasts, screen, state: sandbox.stayState, stop: () => { unmount.forEach(fn => fn()); scope.stop() } }
 }
 const lastList = (calls) => calls.filter(p => p.pageSize !== 1).slice(-1)[0]
+
+function deferred() {
+  let resolve, reject
+  const promise = new Promise((ok, fail) => { resolve = ok; reject = fail })
+  return { promise, resolve, reject }
+}
+
+test('切换城市时，晚到的上一城特价不能覆盖当前城市', async () => {
+  const a = deferred(), b = deferred()
+  const h = runList({ stubs: { apiStayPromos: city => city === '大理' ? a.promise : b.promise, serverTs: () => 0, setInterval: () => 1 } })
+  h.state.city = '大理'
+  const first = h.x.loadPromos()
+  h.state.city = '平潭'
+  const next = h.x.loadPromos()
+  b.resolve({ data: { rows: [{ promoId: 2 }] } })
+  await next
+  a.resolve({ data: { rows: [{ promoId: 1 }] } })
+  await first
+  assert.equal(h.x.promo.value.rows[0].promoId, 2)
+  h.stop()
+})
+
+test('离开页面后，晚到的早鸟活动不会启动倒计时', async () => {
+  const offer = deferred()
+  let timers = 0
+  const h = runList({ stubs: { apiStayPromos: () => offer.promise, serverTs: () => 0, setInterval: () => ++timers } })
+  const pending = h.x.loadPromos()
+  h.stop()
+  offer.resolve({ data: { rows: [], nearestSaleEnd: '2026-12-31 18:00:00' } })
+  await pending
+  assert.equal(timers, 0)
+})
+
+test('筛选房源数量只使用最新条件，先查后到的结果不能覆盖', async () => {
+  const a = deferred(), b = deferred(), calls = []
+  const h = runList({ stubs: { apiStayList: q => { calls.push(q); return calls.length === 1 ? a.promise : b.promise } } })
+  h.screen.s.value = 4
+  await new Promise(resolve => setTimeout(resolve, 360))
+  h.x.filter.room = '双人间'
+  await new Promise(resolve => setTimeout(resolve, 360))
+  assert.equal(calls.length, 2)
+  b.resolve({ data: { total: 1 } })
+  await flush()
+  a.resolve({ data: { total: 27 } })
+  await flush()
+  assert.equal(h.x.previewTotal.value, 1)
+  h.stop()
+})
+
+test('点一次查找房源只取一次列表第一页', async () => {
+  const h = runList()
+  h.x.search()
+  await flush()
+  assert.equal(h.calls.filter(x => x.pageSize === 10 && x.pageNum === 1).length, 1)
+  h.stop()
+})
+
+test('早鸟直达链接等旅居开关确认后只请求一次，查询失败可在本页重试', async () => {
+  const flag = vue.ref(false), gate = deferred()
+  let requests = 0
+  const h = runList({ stubs: {
+    stayBookingEnabled: flag, watchStayGate: vue.watch, refreshFeatures: () => gate.promise, serverTs: () => 0,
+    apiStayPromos: async () => {
+      if (++requests === 1) throw new Error('网络未连接')
+      return { data: { rows: [{ promoId: 3 }] } }
+    }
+  } })
+  h.screen.extra.onLoad({ city: '平潭', view: 'promo' })
+  await flush()
+  assert.equal(requests, 0)
+  flag.value = true
+  gate.resolve({ stayBookingEnabled: true })
+  await flush()
+  assert.equal(requests, 1)
+  assert.equal(h.x.promoLoaded.value, false)
+  assert.ok(h.x.promoError.value)
+  await h.x.loadPromos()
+  assert.equal(h.x.promoError.value, '')
+  assert.equal(h.x.promo.value.rows[0].promoId, 3)
+  h.stop()
+})
 
 test('列表标题：城市 + 房源；还没定城市时「全部房源」；顶栏用它', async () => {
   assert.equal(ui.cityTitle('丽江'), '丽江房源')
@@ -237,7 +319,7 @@ test('订房入口：查找房源带上城市、区域、日期、人数和关�
   // 可租小院：当前城市第一页 4 条
   assert.ok(h.calls.some(p => p.city === '大理' && p.pageSize === 6 && p.pageNum === 1))
   h.stop()
-  assert.match(listT, /<view v-if="previews\.length" class="k-grid-2 pv-grid"/)
+  assert.match(listT, /<view v-if="previews\.length" class="k-grid-2 pv-grid pv-grid--catalog"/)
 })
 
 test('列表卡：「4.8分 127条评价」或暂无评价、「¥168起」、「可订 10.17-10.18」、底部小标签', () => {
@@ -248,7 +330,7 @@ test('列表卡：「4.8分 127条评价」或暂无评价、「¥168起」、�
   assert.equal(ui.dateRange('10.17', '10.18'), '10.17-10.18')
   const card = listT.slice(listT.indexOf('<view v-for="h in homes"'), listT.indexOf('<view v-if="listLoaded'))
   assert.match(card, /<text v-else class="home__meta">暂无评价<\/text>/)
-  assert.match(card, /<text class="home__unit">起<\/text>/)
+  assert.match(card, /<text class="home__unit">\{\{ h\.priceLabel \}\}<\/text>/)
   // 2026-10-18：底部小标签一个一个画成浅色小胶囊（之前是「a | b | c」一行字）
   assert.match(card, /<view v-if="h\.tags\.length" class="home__tagline"><text v-for="t in h\.tags" :key="t" class="home__tag">\{\{ t \}\}<\/text><\/view>/)
   assert.match(card, /class="home__fav" hover-class="k-press-s" @click\.stop="toggleFav\(h\)"/)
@@ -291,7 +373,7 @@ test('详情：选择房型立即进入预订并带 roomTypeId；返回后立即
   assert.match(detailT, /class="rt" :class="\{ on: selRoomId === r\.roomTypeId, off: !r\.bookable \}" hover-class="k-press-s" @click="pickRoom\(r\)"/)
   assert.match(detailT, /<view class="picked__text" :aria-label="pickedText"><text class="picked__seg">已选：<\/text><text v-for="\(p, i\) in pickedSegs"/)
   assert.deepEqual(ui.pickedParts('单人间', '10.17-10.18', 1), ['单人间', '10.17-10.18', '1晚'])
-  assert.match(detailT, /class="book"[^>]*:aria-disabled="!canBook"[^>]*hover-class="k-press-s" @click="bookNow"><text class="book__main">\{\{ roomsLoading \? '查询中' : \(canBook \? '立即预订' : '暂不可订'\) \}\}<\/text>/)
+  assert.match(detailT, /class="book"[^>]*:aria-disabled="!canBook"[^>]*hover-class="k-press-s" @click="bookNow"><text class="book__main">\{\{ roomsLoading \? '查询中' : \(canBook \? \(d\.onlinePaymentAvailable === false \? '查看房态' : '立即预订'\) : '暂不可订'\) \}\}<\/text>/)
   const booking = fs.readFileSync(path.join(APP, 'pages/stays/booking.vue'), 'utf8')
   assert.match(booking, /selRoomId\.value = entryRoomId\.value \|\| null/)
   assert.match(booking, /s\.value = directCalendar\.value \? 2 : 1/)

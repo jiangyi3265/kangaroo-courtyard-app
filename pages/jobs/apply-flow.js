@@ -11,9 +11,9 @@
 // 线上任务没有这套（它有自己的交付六步，见 progress.vue）。
 // 另外放报名页用到的小工具：到岗日期默认值、预计时长选项、「我的简历」卡片。只在 jobs 分包里用，不进主包；不引用 @/ 下的模块，node --test 直接测。
 
-export const FLOW_STEPS = ['提交资料', '确认信息', '约定视频时间', '签署安全协议', '订票确认', '到店准备', '到店确认']
+export const FLOW_STEPS = ['提交资料', '确认信息', '约定视频时间', '签署安全协议', '订票确认', '到店准备', '到店确认', '工作结束']
 // 进度条上每步分两行写（7 步挤在一行，一格只有 45px 左右）
-export const FLOW_LINES = [['提交', '资料'], ['确认', '信息'], ['约定', '视频时间'], ['签署', '安全协议'], ['订票', '确认'], ['到店', '准备'], ['到店', '确认']]
+export const FLOW_LINES = [['提交', '资料'], ['确认', '信息'], ['约定', '视频时间'], ['签署', '安全协议'], ['订票', '确认'], ['到店', '准备'], ['到店', '确认'], ['工作', '结束']]
 export const FLOW_DONE = FLOW_STEPS.length + 1
 
 const STEP_BY_STATUS = {
@@ -21,10 +21,14 @@ const STEP_BY_STATUS = {
   review_passed: 3, interview_booked: 3,
   interview_done: 4, user_confirmed: 4, store_confirmed: 4,
   contract_signed: 5,
-  onboarded: FLOW_DONE, completed: FLOW_DONE
+  onboarded: 8, completed: FLOW_DONE
 }
 /** 报名状态 → 7 步进度的当前步（1 起；8 = 全部完成；0 = 已结束、整条不亮） */
-export const flowStepOf = (status) => STEP_BY_STATUS[status] || 0
+export function flowStepOf(status, workEndTime, arrivalStep) {
+  if (status === 'onboarded' && workEndTime) return FLOW_DONE
+  if (status === 'contract_signed' && [6, 7].includes(Number(arrivalStep))) return Number(arrivalStep)
+  return STEP_BY_STATUS[status] || 0
+}
 
 // 进度条下面一句话：当前这一步在等什么（只说系统里真有的事）
 const HINTS = {
@@ -36,11 +40,16 @@ const HINTS = {
   user_confirmed: '你已确认愿意前往，等门店确认录用后签署安全协议',
   store_confirmed: '门店已确认录用，请签署安全协议',
   contract_signed: '安全协议已签好，填写车票和到店信息后，可在“到店准备”核对出行安排；到店后进入第 7 步核对门店确认结果',
-  onboarded: '已到店确认，祝你这段旅程顺利',
+  onboarded: '已到店确认，当前在岗。需要提前离开时可在第 8 步申请。',
+  completed: '这段工作已结束',
   withdrawn: '这次报名已撤回',
   terminated: '这次报名已结束'
 }
-export const flowHint = (status) => HINTS[status] || ''
+export function flowHint(status, arrivalStep) {
+  if (status === 'contract_signed' && Number(arrivalStep) === 6) return '到店信息已提交，请在到店准备中核对行程安排。'
+  if (status === 'contract_signed' && Number(arrivalStep) === 7) return '已到预计到店日期，请到店后联系门店确认入职。'
+  return HINTS[status] || ''
+}
 
 /** 报名草稿只属于保存时的岗位；换岗后日期、时长、接单说明都重新按新岗位填写。 */
 export function applicationDraftForJob(draft, jobId) {

@@ -76,12 +76,12 @@ test('专员能打开发布页（?s=1）并提交，「按技能找人」仍不�
 // ---------------------------------------------------------------- 工作台入口与分包
 
 test('专员工作台有「发布任务」入口，指向发布页', () => {
-  assert.match(work, /<button @click="go\(R\.staffOnline \+ '\?s=1'\)"><k-icon name="square-plus" [^>]*\/><text>发布任务<\/text><text class="k-meta">提交平台审核<\/text><\/button>/)
+  assert.match(work, /<button v-if="recruitmentEnabled" @click="go\(R\.staffOnline \+ '\?s=1'\)"><k-icon name="square-plus" [^>]*\/><text>发布任务<\/text><text class="k-meta">提交平台审核<\/text><\/button>/)
   assert.match(work, /<text class="k-meta">线上任务专员<\/text><text class="store-name">\{\{ identity\.name \}\}<\/text>/)
   assert.match(work, /<text v-if="identity\.scope" class="k-meta">\{\{ identity\.scope \}\}<\/text>/)
   assert.match(work, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/)
   assert.match(work, /import R from '@\/common\/routes\.js'/)
-  assert.match(work, /import \{ go, toast \} from '@\/common\/screen\.js'/)
+  assert.match(work, /import \{ goFromWorkbench as go \} from '@\/common\/visit-subscriptions\.js'/)
 })
 
 test('线上任务工作台挪进 staff 分包，两个页面显式引入，主包里没有它', () => {
@@ -113,12 +113,12 @@ test('线上任务工作台挪进 staff 分包，两个页面显式引入，主�
 
 // ---------------------------------------------------------------- 底栏高亮
 
-test('底栏：专员在报名列表亮「报名」、在任务页亮「工作台」，其他角色不变', () => {
+test('底栏：专员在报名列表亮「报名」、在任务页亮「工作台」，商家服务人在报名列表亮业务', () => {
   // 专员的第二格（key=business）就是报名列表
   assert.match(tabbar, /\.\.\.\(threeTabStaff\.value \? \[\] : \[\{ key: 'business', label: onlineStaff\.value \? '报名' : '业务', icon: 'briefcase-business', url: onlineStaff\.value \? '\/pages\/staff\/applications\?jobType=online' : '\/pages\/staff\/business' \}\]\),/)
   const appBars = tabbars(applications)
   assert.equal(appBars.length, 2)
-  for (const bar of appBars) assert.equal(bar, `<k-tabbar mode="staff" :active="onlineStaff ? 'business' : 'work'" />`)
+  for (const bar of appBars) assert.equal(bar, `<k-tabbar mode="staff" :active="onlineStaff || merchantService ? 'business' : 'work'" />`)
   assert.match(applications, /import \{[^}]*\bonlineStaff\b[^}]*\} from '@\/common\/experience\.js'/)
   assert.deepEqual(tabbars(onlineJobs), [`<k-tabbar v-if="s !== 1" mode="staff" :active="onlineStaff ? 'work' : 'business'" />`])
   assert.deepEqual(tabbars(work), ['<k-tabbar mode="staff" active="work" />'])

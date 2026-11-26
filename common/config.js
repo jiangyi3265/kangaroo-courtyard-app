@@ -45,7 +45,7 @@ export const API_BASE = apiBase
  * 小程序版本号：体验版、开发版读不到正式版本号时用它（见 common/request.js 的 X-App-Client）。每次发版跟着改。
  * 服务端 KgRoleSwitchService.MIN_CLIENT_VERSION 是切换门槛，版本号变了那边也要核对。
  */
-export const APP_VERSION = '2026.11.17.2'
+export const APP_VERSION = '2026.11.25.3'
 
 /** 请求超时（毫秒）。列表与详情接口都应远快于此，超时即视为网络异常。 */
 export const TIMEOUT = 15000

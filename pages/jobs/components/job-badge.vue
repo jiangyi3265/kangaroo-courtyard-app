@@ -8,7 +8,7 @@
        10-19 一比一还原参考图：底色从暖棕渐变改成浅杏色、字改深棕（参考图的角标都是浅底深字） -->
   <view class="jb" :class="['jb--' + size, { 'jb--online': variant === 'online' }]">
     <view v-if="size === 'card'" class="jb__fold" />
-    <view v-if="size !== 'detail' && size !== 'ribbon'" class="jb__seal"><image class="jb__icon" src="/static/media/brand-kangaroo.png" mode="aspectFit" /></view>
+    <view v-if="size !== 'detail' && size !== 'ribbon'" class="jb__seal"><image class="jb__icon" src="/static/user-icons/roo-mark.png" mode="aspectFit" /></view>
     <view v-if="size === 'card' && variant === 'assured'" class="jb__lines"><text class="jb__text">经袋鼠实地拍摄</text><text class="jb__text">并含保险</text></view>
     <text v-else class="jb__text">{{ text }}</text>
   </view>

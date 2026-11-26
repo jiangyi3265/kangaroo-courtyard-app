@@ -7,14 +7,15 @@
         <view v-if="jobFilter" class="date-scope"><view><text class="date-scope__title">当前任务的报名</text><text class="k-muted">{{ applicationStoreName }}</text></view><button @click="clearJobFilter">查看本店全部</button></view>
         <view v-if="submitDate" class="date-scope"><view><text class="date-scope__title">{{ dateScopeText }}</text><text class="k-muted">{{ applicationStoreName }}</text></view><button @click="clearSubmitDate">全部日期</button></view>
         <k-employment-list v-if="typeTab !== 'online'" :store-id="applicationStoreId" :auto-open="employmentEntry" />
-        <view v-if="typeTab !== 'online'" class="applications-tools"><view class="applications-tools__main"><k-button type="outline" block @click="go(staffStoreUrl(R.staffInterviews, applicationStoreId))" label="面试日程与时段" /></view><!-- 2026-11-03 主人：一键选时间、一键导出到店名单（身份证号、手机号、去哪家、起止时间）；只有「岗位管理·导出」有权限的角色看得到 --><view v-if="canExportList" class="applications-tools__export"><k-button type="secondary" block icon="file-down" label="导出名单" @click="go(APPLICANT_EXPORT_PAGE)" /></view></view><view class="sort-row"><view hover-class="k-press" @click="pickSort"><text>{{ sortText }}</text><k-icon name="chevron-down" :size="15" color="ink" /></view><k-icon name="filter" :size="22" color="ink" @click="pickFilter" /><text>共 {{ total }} 份</text></view><view v-if="listLoading" class="list-state">正在读取报名…</view><view v-else-if="listError" class="list-state"><text>{{ listError }}</text><k-button type="outline" @click="fetchApplications()" label="重新加载" /></view><view v-else-if="!applications.length" class="list-state"><text>{{ submitDate ? '该日期暂无符合条件的报名' : '暂无符合条件的报名' }}</text><text v-if="submitDate">可切换状态或查看全部日期。</text></view><view v-for="app in applications" :key="app.appId" class="app-card" hover-class="k-press-s" @click="openDetail(app)"><view class="app-avatar"><image :src="app.avatar" mode="aspectFill" /><text>{{ app.state }}</text></view><view class="app-copy"><view><text class="app-name">{{ app.name }}（昵称）</text><k-chip v-if="app.urgent" tone="red">加急</k-chip><text>{{ app.code }}</text></view><text class="app-line">{{ [app.role, app.type].filter(Boolean).join(' · ') }}</text><text class="app-line">{{ app.place }}</text></view><view class="app-side"><text v-if="app.match" class="match">{{ app.match }}%匹配</text><text v-if="app.over" class="over">△ {{ app.over }}</text><text v-if="app.wait">已等待 {{ app.wait }}</text></view></view></view><k-tabbar mode="staff" :active="onlineStaff || merchantService ? 'business' : 'work'" /></template>
+        <view v-if="typeTab !== 'online'" class="applications-tools"><view class="applications-tools__main"><k-button type="outline" block @click="go(staffStoreUrl(R.staffInterviews, applicationStoreId))" label="面试日程与时段" /></view><!-- 2026-11-03 主人：一键选时间、一键导出到店名单（身份证号、手机号、去哪家、起止时间）；只有「岗位管理·导出」有权限的角色看得到 --><view v-if="canExportList" class="applications-tools__export"><k-button type="secondary" block icon="file-down" label="导出名单" @click="go(APPLICANT_EXPORT_PAGE)" /></view></view><view class="sort-row"><view hover-class="k-press" @click="pickSort"><text>{{ sortText }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view><k-icon name="filter" :size="16" color="ink2" @click="pickFilter" /><text>共 {{ total }} 份</text></view><view v-if="listLoading" class="list-state">正在读取报名…</view><view v-else-if="listError" class="list-state"><text>{{ listError }}</text><k-button type="outline" @click="fetchApplications()" label="重新加载" /></view><view v-else-if="!applications.length" class="list-state"><text>{{ submitDate ? '该日期暂无符合条件的报名' : '暂无符合条件的报名' }}</text><text v-if="submitDate">可切换状态或查看全部日期。</text></view><view v-for="app in applications" :key="app.appId" class="app-card" hover-class="k-press-s" @click="openDetail(app)"><view class="app-avatar"><image :src="app.avatar" mode="aspectFill" /><text>{{ app.state }}</text></view><view class="app-copy"><view><text class="app-name">{{ app.name }}（昵称）</text><k-chip v-if="app.urgent" tone="red">加急</k-chip><text>{{ app.code }}</text></view><text class="app-line">{{ [app.role, app.type].filter(Boolean).join(' · ') }}</text><text class="app-line">{{ app.place }}</text></view><view class="app-side"><text v-if="app.match" class="match">{{ app.match }}%匹配</text><text v-if="app.over" class="over">△ {{ app.over }}</text><text v-if="app.wait">已等待 {{ app.wait }}</text></view></view></view><k-tabbar mode="staff" :active="onlineStaff || merchantService ? 'business' : 'work'" /></template>
 
     <template v-else-if="s === 2">
       <k-topbar title="报名详情" back custom-back @back="backToList" />
       <k-order-mediation merchant order-type="application" :order-id="detail?.appId" />
-      <view class="detail-body k-pad-bottom"><view class="candidate"><image :src="dAvatar" mode="aspectFill" /><view><text class="candidate-name">{{ dName }}</text><text>{{ dContact }}</text></view><view v-if="!isOnline" class="candidate-schedule"><text class="match large">{{ dStay }}</text><text>可停留时长</text></view></view><view class="apply-meta"><view><text>应聘岗位</text><text>{{ dType }}</text><text>{{ dJob }}</text></view><view><text>报名时间　{{ dSubmit }}</text><text>来源　　小程序报名</text></view></view><view v-if="stage" class="stage-banner" :class="'stage-banner--' + stage.tone"><text class="stage-banner__label">当前：{{ stage.label }}</text><text v-if="stage.date" class="stage-banner__date">{{ stage.date }}</text></view><view class="steps"><view v-for="(st,i) in steps" :key="st" :class="'step--' + (stepClass(i) || 'todo')"><view class="step-circle" :class="stepClass(i)"><k-icon v-if="stepClass(i) === 'done'" name="check" :size="18" color="white" /><k-icon v-else-if="stepClass(i) === 'stopped'" name="x" :size="15" color="muted" /><text v-else>{{i+1}}</text></view><text class="step-label">{{st}}</text></view></view><view class="action-status" aria-live="polite"><text v-if="detailLoading">正在读取最新报名状态…</text><template v-else-if="detailError"><text>{{ detailError }}</text><k-button type="outline" size="sm" @click="openDetail(current)" label="重新加载" /></template><template v-else><text>{{ actionHint }}</text><view v-if="pointsRule" class="points-rule" hover-class="k-press" @click="ruleOpen = !ruleOpen"><text>积分规则</text><k-icon :name="ruleOpen ? 'chevron-up' : 'chevron-down'" :size="14" color="muted" /></view><text v-if="pointsRule && ruleOpen" class="points-rule__body">{{ pointsRule }}</text></template></view><view v-if="!isOnline && extras?.resume" class="candidate-profile"><view v-for="field in profileFields" :key="field.key" class="profile-item"><text class="profile-item__label">{{ field.label }}</text><text class="profile-item__value">{{ field.value }}</text></view><image v-if="extras.resume.lifePhotoUrl" :src="absUrl(extras.resume.lifePhotoUrl)" class="candidate-portrait" mode="aspectFill" @click="previewResumeMedia(extras.resume.lifePhotoUrl)" /><view v-if="extras.resume.media?.length" class="candidate-media"><template v-for="media in extras.resume.media" :key="media.key"><video v-if="media.kind === 'video'" :src="absUrl(media.url)" controls :show-fullscreen-btn="true" /><image v-else :src="absUrl(media.url)" mode="aspectFill" @click="previewResumeMedia(media.url)" /></template></view></view><view v-if="detailReady" class="contact-actions"><k-button type="outline" @click="go(R.chat + '?appId=' + detail.appId)" label="联系报名人" /><k-button v-if="interviewInfo" type="outline" @click="openInterview" label="去面试详情" /><k-button v-if="showInsurance" type="outline" @click="openInsurance" label="办理／查看保险" /><k-button v-if="isOnline && detail.status !== 'submitted'" @click="go(R.staffOnline + '?appId=' + detail.appId)" :label="restricted ? '查看成果' : '成果与结算'" /></view><view v-if="!isOnline" class="section"><text class="section-title">技能标签</text><view class="skill-row"><text v-for="t in shownSkills" :key="t">{{t}}</text><text v-for="t in storeTags" :key="'store-' + t" class="store-tag" @click="removeStoreTag(t)">{{ t }}{{ detail && detail.canTag ? '　×' : '' }}</text><view v-if="detail && detail.canTag" hover-class="k-press" @click="addStoreTag"><k-icon name="plus" :size="18" color="ink" /></view></view><text v-if="resumeSkill" class="resume-skill">简历里的技能描述：{{ resumeSkill }}</text></view><view v-if="!isOnline" class="section"><text class="section-title">经历记录</text><view v-for="e in experiences" :key="e.key" class="experience"><view class="timeline-dot" /><view><text>{{e.date}}　 {{e.place}}　 {{e.role}}</text><text>{{e.desc}}</text></view></view><text v-if="!experiences.length && expEmpty" class="exp-empty">{{ expEmpty }}</text></view><view v-if="!isOnline && feedbackRows.length" class="section"><text class="section-title">面试后反馈（候选人填写）</text><view v-for="f in feedbackRows" :key="f.label" class="feedback-row"><text>{{ f.label }}</text><text :class="{ warn: f.warn }">{{ f.value }}</text></view></view><view v-if="isOnline" class="section online-note"><text class="section-title">接单说明</text><text>{{ detail?.note || '未填写' }}</text><text>全国远程完成，审核通过后即可提交成果。</text></view><view v-else class="section available"><text class="section-title">可到岗时间</text><view><k-icon name="calendar-check" :size="24" color="ink" /><view><text>{{ dArrival }}</text><text>{{ dStay }}</text></view></view></view>
+      <view class="detail-body k-pad-bottom"><view class="candidate"><image :src="dAvatar" mode="aspectFill" /><view><text class="candidate-name">{{ dName }}</text><text>{{ dContact }}</text></view><view v-if="!isOnline" class="candidate-schedule"><text class="match large">{{ dStay }}</text><text>可停留时长</text></view></view><view class="apply-meta"><view><text>应聘岗位</text><text>{{ dType }}</text><text>{{ dJob }}</text></view><view><text>报名时间　{{ dSubmit }}</text><text>来源　　小程序报名</text></view></view><view v-if="stage" class="stage-banner" :class="'stage-banner--' + stage.tone"><text class="stage-banner__label">当前：{{ stage.label }}</text><text v-if="stage.date" class="stage-banner__date">{{ stage.date }}</text></view><view class="steps"><view v-for="(st,i) in steps" :key="st" :class="'step--' + (stepClass(i) || 'todo')"><view class="step-circle" :class="stepClass(i)"><k-icon v-if="stepClass(i) === 'done'" name="check" :size="12" color="white" /><k-icon v-else-if="stepClass(i) === 'stopped'" name="x" :size="12" color="muted" /><text v-else>{{i+1}}</text></view><text class="step-label">{{st}}</text></view></view><view class="action-status" aria-live="polite"><text v-if="detailLoading">正在读取最新报名状态…</text><template v-else-if="detailError"><text>{{ detailError }}</text><k-button type="outline" size="sm" @click="openDetail(current)" label="重新加载" /></template><template v-else><text>{{ actionHint }}</text><view v-if="pointsRule" class="points-rule" hover-class="k-press" @click="ruleOpen = !ruleOpen"><text>积分规则</text><k-icon :name="ruleOpen ? 'chevron-up' : 'chevron-down'" :size="14" color="muted" /></view><text v-if="pointsRule && ruleOpen" class="points-rule__body">{{ pointsRule }}</text></template></view><view v-if="!isOnline && extras?.resume" class="candidate-profile"><view v-for="field in profileFields" :key="field.key" class="profile-item"><text class="profile-item__label">{{ field.label }}</text><text class="profile-item__value">{{ field.value }}</text></view><image v-if="extras.resume.lifePhotoUrl" :src="absUrl(extras.resume.lifePhotoUrl)" class="candidate-portrait" mode="aspectFill" @click="previewResumeMedia(extras.resume.lifePhotoUrl)" /><view v-if="extras.resume.media?.length" class="candidate-media"><template v-for="media in extras.resume.media" :key="media.key"><video v-if="media.kind === 'video'" :src="absUrl(media.url)" controls :show-fullscreen-btn="true" /><image v-else :src="absUrl(media.url)" mode="aspectFill" @click="previewResumeMedia(media.url)" /></template></view></view><view v-if="detailReady && detail.interviewOfferRole" id="interview-offers" class="section"><k-interview-slots :key="detail.appId + '-' + detail.interviewOfferRole" :app-id="detail.appId" :offer-role="detail.interviewOfferRole" @chosen="openDetail(current)" @stage-changed="openDetail(current)" /></view><view v-if="detailReady" class="contact-actions"><k-button type="outline" @click="go(R.chat + '?appId=' + detail.appId)" label="联系报名人" /><k-button v-if="interviewInfo" type="outline" @click="openInterview" :label="curStatus === 'interview_booked' ? '面试详情与改期' : '去面试详情'" /><k-button v-if="showInsurance" type="outline" @click="openInsurance" label="办理／查看保险" /><k-button v-if="isOnline && detail.status !== 'submitted'" @click="go(R.staffOnline + '?appId=' + detail.appId)" :label="restricted ? '查看成果' : '成果与结算'" /></view><view v-if="!isOnline" class="section"><text class="section-title">技能标签</text><view class="skill-row"><text v-for="t in shownSkills" :key="t">{{t}}</text><text v-for="t in storeTags" :key="'store-' + t" class="store-tag" @click="removeStoreTag(t)">{{ t }}{{ detail && detail.canTag ? '　×' : '' }}</text><view v-if="detail && detail.canTag" hover-class="k-press" @click="addStoreTag"><k-icon name="plus" :size="18" color="ink" /></view></view><text v-if="resumeSkill" class="resume-skill">简历里的技能描述：{{ resumeSkill }}</text></view><view v-if="!isOnline" class="section"><text class="section-title">经历记录</text><view v-for="e in experiences" :key="e.key" class="experience"><view class="timeline-dot" /><view><text>{{e.date}}　 {{e.place}}　 {{e.role}}</text><text>{{e.desc}}</text></view></view><text v-if="!experiences.length && expEmpty" class="exp-empty">{{ expEmpty }}</text></view><view v-if="!isOnline && feedbackRows.length" class="section"><text class="section-title">面试后反馈（候选人填写）</text><view v-for="f in feedbackRows" :key="f.label" class="feedback-row"><text>{{ f.label }}</text><text :class="{ warn: f.warn }">{{ f.value }}</text></view></view><view v-if="isOnline" class="section online-note"><text class="section-title">接单说明</text><text>{{ detail?.note || '未填写' }}</text><text>全国远程完成，审核通过后即可提交成果。</text></view><view v-else class="section available"><text class="section-title">可到岗时间</text><view><k-icon name="calendar-check" :size="18" color="ink2" /><view><text>{{ dArrival }}</text><text>{{ dStay }}</text></view></view></view>
         <view id="volunteer-agreement"><volunteer-contract v-if="detailReady && detail.jobType === 'volunteer' && detail.canReviewVolunteerContract === true" ref="volunteerAgreement" :key="detail.appId" :app-id="detail.appId" @changed="openDetail(current)" /></view>
-        <k-application-dates v-if="detailReady && !isOnline" :app-id="detail.appId" merchant />
+        <k-application-dates v-if="datesVisible && detailReady && !isOnline" :app-id="detail.appId" merchant />
+        <view v-if="detailReady && !isOnline && ['onboarded', 'completed'].includes(curStatus) && detail.canViewWorkEnd === true" id="work-end"><k-work-end :app-id="detail.appId" staff :focus-on-load="workEndTarget === Number(detail.appId)" @focus="focusEndRecord" @updated="openDetail(current)" /></view>
         <k-employment-status v-if="detailReady && !isOnline && ['onboarded', 'completed'].includes(curStatus)" :app-id="detail.appId" />
         <view v-if="detailReady && !isOnline && detail.canViewRecruitmentDetails === true" class="section arrival-info">
           <view class="arrival-info__head"><text class="section-title">到店信息</text><k-button type="outline" size="sm" @click="openDetail(current)" label="刷新到店信息" /></view>
@@ -28,21 +29,21 @@
           </template>
           <text v-else class="k-muted">报名人尚未填写到店信息</text>
         </view>
-      </view><k-bottom pad="10px 14px"><view class="action-wrap detail-reject"><k-button type="secondary" size="lg" block :disabled="!canReject" @click="onReject" :label="rejectLabel" /></view><view class="action-wrap detail-pass"><k-button size="lg" block :label="passLabel" :disabled="!canPass" @click="onPass" /></view><view v-if="!restricted && detail?.canViewRecruitmentDetails === true" class="action-wrap detail-forward"><k-button type="secondary" size="lg" block :disabled="!detailReady || actionBusy" @click="s=3" label="转发脱敏简历" /></view></k-bottom></template>
+      </view><k-bottom pad="10px 14px"><view class="action-wrap detail-reject"><k-button type="secondary" size="lg" block :disabled="!canReject" @click="onReject" :label="rejectLabel" /></view><view class="action-wrap detail-pass"><k-button size="lg" block :label="passLabel" :disabled="!canPass" @click="onPass" /></view><view v-if="detailReady && detail?.canNotifyRecruitManager" class="action-wrap detail-forward"><k-button type="secondary" size="lg" block :disabled="notifyingManager" @click="notifyManager" label="通知主理人" /></view><view v-else-if="canShareResume" class="action-wrap detail-forward"><k-button type="secondary" size="lg" block :disabled="!detailReady || actionBusy" @click="s=3" label="转发脱敏简历" /></view></k-bottom></template>
 
-    <template v-else-if="s === 3">
+    <template v-else-if="s === 3 && canShareResume">
       <k-topbar title="脱敏简历" back custom-back @back="s=2" />
-      <view class="masked-body k-pad-bottom"><view class="masked-tip"><k-icon name="shield-check" :size="21" color="green" /><text>已脱敏处理，隐去联系方式与具体地址</text></view><view class="resume-card"><view class="resume-head"><view class="avatar-placeholder"><k-icon name="user-round" :size="55" color="#B9A892" /></view><view><text class="candidate-name">{{ dMaskedName }}</text><text>{{ dAge }}</text></view><view v-if="!isOnline" class="candidate-schedule"><text class="match large">{{ dStay }}</text><text>可停留时长</text></view></view><view class="resume-line"><text>应聘岗位</text><text>{{ dJob }}</text></view><view v-if="!isOnline" class="resume-block"><text class="section-title">技能标签</text><view class="skill-row"><text v-for="t in maskedSkills" :key="t">{{t}}</text></view></view><view v-if="!isOnline" class="resume-block"><text class="section-title">经历记录</text><view v-for="e in experiences" :key="e.key" class="experience"><view class="timeline-dot" /><view><text>{{e.date}}　 {{e.place}}　 {{e.role}}</text><text>{{e.desc}}</text></view></view><text v-if="!experiences.length && expEmpty" class="exp-empty">{{ expEmpty }}</text></view><view v-if="!isOnline" class="resume-block available"><text class="section-title">可到岗时间</text><view><k-icon name="calendar-check" :size="24" color="ink" /><view><text>{{ dArrival }}</text><text>{{ dStay }}</text></view></view></view><view class="resume-foot"><k-icon name="lock" :size="18" color="#A98A61" /><view><text>本简历已脱敏，仅用于招聘协作</text><text>仅供本次招聘协作查看</text></view><view class="stamp"><text>袋鼠全球青年</text><text>脱敏简历</text></view></view></view></view><k-bottom pad="10px 16px"><view class="action-wrap resume-preview"><k-button type="outline" size="lg" block @click="previewOriginal" label="预览原简历（仅自己可见）" /></view><view class="action-wrap resume-send"><k-button size="lg" block @click="s=4" label="转发" /></view></k-bottom></template>
+      <view class="masked-body k-pad-bottom"><view class="masked-tip"><k-icon name="shield-check" :size="16" color="green" /><text>已脱敏处理，隐去联系方式与具体地址</text></view><view class="resume-card"><view class="resume-head"><view class="avatar-placeholder"><k-icon name="user-round" :size="28" color="light" /></view><view><text class="candidate-name">{{ dMaskedName }}</text><text>{{ dAge }}</text></view><view v-if="!isOnline" class="candidate-schedule"><text class="match large">{{ dStay }}</text><text>可停留时长</text></view></view><view class="resume-line"><text>应聘岗位</text><text>{{ dJob }}</text></view><view v-if="!isOnline" class="resume-block"><text class="section-title">技能标签</text><view class="skill-row"><text v-for="t in maskedSkills" :key="t">{{t}}</text></view></view><view v-if="!isOnline" class="resume-block"><text class="section-title">经历记录</text><view v-for="e in experiences" :key="e.key" class="experience"><view class="timeline-dot" /><view><text>{{e.date}}　 {{e.place}}　 {{e.role}}</text><text>{{e.desc}}</text></view></view><text v-if="!experiences.length && expEmpty" class="exp-empty">{{ expEmpty }}</text></view><view v-if="!isOnline" class="resume-block available"><text class="section-title">可到岗时间</text><view><k-icon name="calendar-check" :size="18" color="ink2" /><view><text>{{ dArrival }}</text><text>{{ dStay }}</text></view></view></view><view class="resume-foot"><k-icon name="lock" :size="18" color="#A98A61" /><view><text>本简历已脱敏，仅用于招聘协作</text><text>仅供本次招聘协作查看</text></view><view class="stamp"><text>袋鼠全球青年</text><text>脱敏简历</text></view></view></view></view><k-bottom pad="10px 16px"><view class="action-wrap resume-preview"><k-button type="outline" size="lg" block @click="previewOriginal" label="预览原简历（仅自己可见）" /></view><view class="action-wrap resume-send"><k-button size="lg" block @click="s=4" label="转发" /></view></k-bottom></template>
 
-    <template v-else-if="s === 4">
+    <template v-else-if="s === 4 && canShareResume">
       <k-topbar title="转发脱敏简历" back custom-back @back="s=3" />
       <view class="forward-body k-pad-tab">
         <text class="forward-title">转发给</text>
         <view class="target-row">
           <view v-for="option in forwardTargets" :key="option.value" class="target" :class="{ active: target === option.value }" hover-class="k-press-s" @click="selectForwardTarget(option.value)">
-            <k-icon :name="option.icon" :size="32" :color="target === option.value ? 'red' : 'muted'" />
+            <k-icon :name="option.icon" :size="22" :color="target === option.value ? 'red' : 'muted'" />
             <view><text>{{ option.label }}</text><text>{{ option.note }}</text></view>
-            <text v-if="target === option.value" class="target-check">✓</text>
+            <view v-if="target === option.value" class="target-check"><k-icon name="check" :size="10" color="white" :stroke="3" /></view>
           </view>
         </view>
         <view v-if="target === 'cross_store'" class="forward-store-picker">
@@ -51,7 +52,8 @@
           <text v-if="searchingStores">正在加载门店…</text>
           <text v-else-if="storeSearchError">{{ storeSearchError }}</text>
           <text v-else-if="!forwardStores.length">没有匹配的可接收门店，请换个关键词。</text>
-          <button v-for="store in forwardStores" :key="store.storeId" :disabled="forwarding" class="forward-store-option" :class="{selected: targetStoreId === store.storeId}" @click="targetStoreId = store.storeId">{{ [store.storeName, store.city].filter(Boolean).join(' · ') }}{{ targetStoreId === store.storeId ? ' ✓' : '' }}</button>
+          <button v-for="store in forwardStores" :key="store.storeId" :disabled="forwarding" class="forward-store-option" :class="{selected: targetStoreId === store.storeId}" @click="targetStoreId = store.storeId; forwardLeadOnly = false">{{ [store.storeName, store.city].filter(Boolean).join(' · ') }}{{ targetStoreId === store.storeId ? ' ✓' : '' }}</button>
+          <button v-if="targetAllowsLead" :disabled="forwarding" @click="forwardLeadOnly = !forwardLeadOnly">{{ forwardLeadOnly ? '✓ 仅发给该店城市负责人' : '仅发给该店城市负责人' }}</button>
         </view>
         <text class="forward-scope">{{ forwardScope }}</text>
         <text class="forward-label">岗位信息（将一并展示）</text>
@@ -88,11 +90,11 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
-import { onReachBottom, onShow } from '@dcloudio/uni-app'
+import { onReachBottom, onShow, onHide } from '@dcloudio/uni-app'
 import { useScreen, toast, go } from '@/common/screen.js'
 import { R } from '@/common/routes.js'
-import { apiJobList, apiStaffApplicationDetail, apiStaffAppTag, apiStaffApplications, apiStaffAudit, apiStaffConfirm, apiStaffOnboard, apiStaffTerminate, apiResumeForward, apiResumeForwards, apiResumeForwardStores, apiSharedResume, apiResumePoster, apiStaffVolunteerDone } from '@/common/api.js'
-import { experience, ensureSession, hasStaffAccess, currentStaffStore, currentStaffStoreId, staffStores, staffIdentities, staffIdentityLabel, staffStoreUrl, selectStaffStore, onlineStaff, merchantService } from '@/common/experience.js'
+import { apiJobList, apiStaffApplicationDetail, apiStaffAppTag, apiStaffApplications, apiStaffAudit, apiStaffConfirm, apiStaffOnboard, apiStaffTerminate, apiNotifyRecruitManager, apiResumeForward, apiResumeForwards, apiSharedResume, apiResumePoster, apiStaffVolunteerDone } from '@/common/api.js'
+import { experience, session, ensureSession, hasStaffAccess, currentStaffStore, currentStaffStoreId, staffStores, staffIdentities, staffIdentityLabel, staffStoreUrl, selectStaffStore, onlineStaff, merchantStaff, merchantService } from '@/common/experience.js'
 import { sheet, prompt, isYmd, pickPaged, confirm, todayCn } from '@/common/ui.js'
 import { absUrl } from '@/common/upload.js'
 import { loadArrivalImages, releaseArrivalImages } from '@/common/arrival-media.js'
@@ -106,6 +108,7 @@ import VolunteerContract from './components/volunteer-contract.vue'
 // 消息里的员工待办深链是 /pages/staff/applications?appId=xxx，
 // 记下来后在列表拉回时选中对应报名，这样从通知进来也能直接审核。
 let deepAppId = 0
+let resumeEntry = null
 let shareId = 0
 const submitDate = ref('')
 const typeTab = ref('')
@@ -116,17 +119,23 @@ const linkedType = ref('')
 const listStoreId = ref(null)
 const jobFilter = ref(null)
 function clearJobFilter() { jobFilter.value = null; fetchApplications() }
+const workEndTarget = ref(0)
 const s = useScreen(5, { onLoad: (q) => {
   jobFilter.value = Number(q?.jobId) > 0 ? Number(q.jobId) : null
   shareId = Number(q?.shareId) || 0
   deepAppId = Number(q?.appId) || 0
+  workEndTarget.value = q?.focus === 'workEnd' ? deepAppId : 0
   submitDate.value = q?.submitDate || ''
   employmentEntry.value = q?.employment === '1'
   if (q?.status === 'submitted') statusTab.value = '待审核'
   typeTab.value = ['online','volunteer','parttime','fulltime'].includes(q?.jobType) ? q.jobType : ''
   linkedType.value = q?.linked && ['volunteer','parttime','fulltime'].includes(q?.jobType) ? q.jobType : ''
   listStoreId.value = Number(q?.storeId) > 0 ? Number(q.storeId) : null
-  if (deepAppId && !q?.s) s.value = 2
+  if (s.value === 3 || s.value === 4) {
+    resumeEntry = deepAppId ? { appId: deepAppId, screen: s.value } : null
+    s.value = deepAppId ? 2 : 1
+  }
+  else if (deepAppId && !q?.s) s.value = 2
 } })
 
 const statusTab = ref('全部')
@@ -137,8 +146,13 @@ const FORWARD_TARGETS = [
   { value: 'cross_store', label: '其他门店', note: '跨店招聘协作', icon: 'house' },
   { value: 'wechat', label: '微信好友 / 群', note: '图片转发，无需注册', icon: 'send' }
 ]
+const canShareResume = computed(() => !merchantStaff.value && detail.value?.canShareResume === true)
 const canForward = computed(() => detail.value?.canForward === true)
-const forwardTargets = computed(() => FORWARD_TARGETS.filter(x => x.value === 'wechat' || canForward.value))
+const forwardTargets = computed(() => {
+  const choices = FORWARD_TARGETS.filter(x => x.value === 'wechat' || canForward.value)
+  if (canForward.value && detail.value?.canForwardToLead) choices.splice(1, 0, { value: 'city_lead', label: '城市负责人', note: '请本店城市负责人查看', icon: 'crown' })
+  return choices
+})
 const target = ref('manager')
 const selectedForwardTarget = computed(() => forwardTargets.value.find(x => x.value === target.value) || FORWARD_TARGETS[3])
 const resumeImage = ref(null)
@@ -147,6 +161,8 @@ const selectForwardTarget = (value) => { if (!forwarding.value && (value === 'we
 const storeSearch = ref('')
 const forwardStores = ref([])
 const targetStoreId = ref(null)
+const forwardLeadOnly = ref(false)
+const targetAllowsLead = computed(() => forwardStores.value.some(store => store.storeId === targetStoreId.value && store.canForwardToLead))
 const searchingStores = ref(false)
 const storeSearchError = ref('')
 let searchRequest = 0
@@ -157,23 +173,31 @@ async function searchForwardStores() {
   searchingStores.value = true
   targetStoreId.value = null
   storeSearchError.value = ''
-  try { const res = await apiResumeForwardStores(source, storeSearch.value); if (request === searchRequest && source === forwardStoreId.value) forwardStores.value = res.data || [] }
+  try { const res = await get('/app/staff/workbench/forward-stores', { storeId: source, q: storeSearch.value, appId: current.value?.appId }); if (request === searchRequest && source === forwardStoreId.value) forwardStores.value = res.data || [] }
   catch (e) { if (request === searchRequest) { forwardStores.value = []; storeSearchError.value = e?.message || '加载失败，请重新搜索' } }
   finally { if (request === searchRequest) searchingStores.value = false }
 }
 const sharedResume = ref(null)
 const sharedError = ref('')
 const sharedLoading = ref(false)
+let shareRequest = 0
 async function loadSharedResume() {
+  const request = ++shareRequest
   s.value = 5
   sharedLoading.value = true
   sharedResume.value = null
   sharedError.value = ''
-  // 不能拿 ensureSession() 的返回值判断是否登录：它是冷启动那一次恢复的结果，冷启动时未登录、
-  // 之后才登录的员工会一直被挡在"请先登录"，直到重启小程序。这里按当前账号与员工授权判断。
-  try { await ensureSession(); if (!experience.account || !hasStaffAccess.value) throw new Error('请先使用有接收门店授权的员工账号登录'); sharedResume.value = (await apiSharedResume(shareId)).data }
-  catch (e) { sharedError.value = e?.message || '简历加载失败' }
-  finally { sharedLoading.value = false }
+  try {
+    await ensureSession()
+    if (request !== shareRequest) return
+    if (!experience.account || !hasStaffAccess.value) throw new Error('请先使用有接收门店授权的员工账号登录')
+    const res = await apiSharedResume(shareId)
+    if (request === shareRequest) sharedResume.value = res.data
+  } catch (e) {
+    if (request === shareRequest) sharedError.value = e?.message || '简历加载失败'
+  } finally {
+    if (request === shareRequest) sharedLoading.value = false
+  }
 }
 const suggestion = ref('')
 // 原生 textarea 会盖在底部导航上抢走点击，平时只画一个同样大小的 view，点了才换成真输入框
@@ -193,11 +217,20 @@ const forwardNote = computed(() => {
   return '同事在小程序消息中心接收，查看简历仍需该门店的员工授权。'
 })
 const statusTabs = computed(() => typeTab.value === 'online' ? ['全部', '待审核', '已通过'] : ['全部', '待审核', '待面试', '待签约', '待入职'])
-const restricted = computed(() => staffStores.value.find(g => String(g.storeId) === String(applicationStoreId.value))?.roleCode === 'online_staff')
-const applicationGrant = computed(() => staffStores.value.find(g => String(g.storeId) === String(applicationStoreId.value)))
-const canViewOnline = computed(() => staffCan('online', 'view', applicationGrant.value))
+const applicationGrant = computed(() => {
+  const id = applicationStoreId.value, current = currentStaffStore.value
+  if (id == null) return null
+  if (current && String(current.storeId) === String(id)) return current
+  const matches = staffStores.value.filter(g => String(g.storeId) === String(id))
+  const sameRole = matches.find(g => g.roleCode === current?.roleCode)
+  if (sameRole) return sameRole
+  if (current?.scopeKind === 'service-city' || matches.length !== 1) return null
+  return matches[0]
+})
+const restricted = computed(() => applicationGrant.value?.roleCode === 'online_staff')
+const canViewOnline = computed(() => !!applicationGrant.value && !applicationGrant.value.sharedRecruitment && staffCan('online', 'view', applicationGrant.value))
 // 到店名单导出（2026-11-03）：换工主理人、城市负责人有「岗位管理·导出」；服务端按同一格再把关
-const canExportList = computed(() => staffCan('jobs', 'export', applicationGrant.value))
+const canExportList = computed(() => !!applicationGrant.value && !applicationGrant.value.sharedRecruitment && staffCan('jobs', 'export', applicationGrant.value))
 const APPLICANT_EXPORT_PAGE = '/pages/staff/applicant-export'
 // 小院主理人（10-30 店员 Luna 的备忘录）：列表只看线上任务。和专员不同，只收列表：消息里的换工报名（?appId=）照样按 id 打开详情，详情、转发那几屏不收，服务端权限也不动
 const keeperGrant = computed(() => applicationGrant.value?.roleCode === 'keeper')
@@ -303,7 +336,10 @@ const openStoreSwitch = async () => {
 }
 // 列表上一次按哪家门店取的数；回到本页时门店变了就重取，不能让门店名和列表内容对不上
 let fetchedStore = null
+const datesVisible = ref(true)
+onHide(() => { datesVisible.value = false })
 onShow(() => {
+  datesVisible.value = true
   if (previewingTicket) { previewingTicket = false; return }
   // 只有从这里去切换、并且真的换了门店，才放弃深链指定的门店，改跟随当前门店
   if (storeBeforeSwitch != null && String(storeBeforeSwitch) !== String(currentStaffStoreId())) { listStoreId.value = null; jobFilter.value = null }
@@ -349,6 +385,7 @@ const forwardStoreName = computed(() => staffStores.value.find(g => String(g.sto
 const forwardScope = computed(() => {
   if (target.value === 'wechat') return '生成脱敏图片后，由你选择微信好友或群聊发送。接收人无需小程序账号，图片不支持已读追踪。'
   if (!forwardStoreId.value) return '请先选择一份报名，确认所属门店。'
+  if (target.value === 'city_lead') return '发送给能处理本店报名的城市负责人。'
   if (target.value === 'cross_store') return '接收门店只能查看脱敏简历，不能查看联系方式或操作原报名。'
   const store = forwardStoreName.value || '报名所属门店'
   return target.value === 'manager'
@@ -462,7 +499,7 @@ const fetchApplications = async (append = false) => {
   if (request !== listRequest) return
   // 没有员工授权时 main.js 的路由守卫会把页面带去身份页，这里不重复处理
   if (!hasStaffAccess.value) return
-  await loadStaffPerms(applicationGrant.value)
+  if (applicationGrant.value && !applicationGrant.value.sharedRecruitment) await loadStaffPerms(applicationGrant.value)
   if (request !== listRequest) return
   // 只看线上的两种身份先判：权限表读取失败时 canViewOnline 是 false，两句互相改 typeTab 会一直转
   if (onlineListOnly.value && typeTab.value !== 'online') { typeTab.value = 'online'; return }
@@ -553,6 +590,7 @@ const actionBusy = ref(false)
 
 const openDetail = async (app) => {
   const seq = ++detailSeq
+  if (Number(app.appId) !== workEndTarget.value) workEndTarget.value = 0
   current.value = app
   detail.value = null
   detailLoading.value = true
@@ -567,6 +605,10 @@ const openDetail = async (app) => {
     if (seq !== detailSeq) return   // 已经有更新的请求发出去了，这份响应作废
     if (!res.data?.appId) throw new Error('报名详情不完整，请重新加载')
     detail.value = res.data
+    if (resumeEntry?.appId === app.appId) {
+      if (s.value === 2 && canShareResume.value) s.value = resumeEntry.screen
+      resumeEntry = null
+    }
     if (res.data.jobType !== 'online' && res.data.canViewRecruitmentDetails === true) loadExtras(res.data.appId, seq)
     // 详情里的最新状态和列表卡片对不上（本页刚审核通过、或在面试页确认录用后回来刷新到新状态），返回列表时要重取
     const row = applications.value.find(a => a.appId === res.data.appId)
@@ -577,6 +619,11 @@ const openDetail = async (app) => {
   } finally {
     if (seq === detailSeq) detailLoading.value = false
   }
+}
+function focusEndRecord(id) {
+  if (s.value !== 2 || !detailReady.value || Number(id) !== workEndTarget.value) return
+  workEndTarget.value = 0
+  uni.pageScrollTo({ selector: '#work-end', offsetTop: -88, duration: 220 })
 }
 
 /** 驳回必须带原因，用系统弹窗取，不在页面上新增结构。 */
@@ -593,6 +640,7 @@ const askRejectReason = () => new Promise((resolve) => {
 const audit = async (pass) => {
   if (actionBusy.value || !detailReady.value || !canAudit.value) return
   const app = current.value
+  const seq = detailSeq
   if (!app) {
     toast('请先在列表中选择一份报名')
     return
@@ -602,23 +650,57 @@ const audit = async (pass) => {
     let reason = ''
     if (!pass) {
       reason = await askRejectReason()
-      if (reason === null) return
+      if (seq !== detailSeq || !canAudit.value || reason === null) return
       if (!reason) {
         toast('请填写驳回原因')
         return
       }
     }
     const res = await apiStaffAudit(app.appId, pass, reason)
+    if (seq !== detailSeq) return
     toast((res && res.msg) || (pass ? '已通过审核' : '已驳回'))
     // 审核通过后保留详情，立即显示下一步；不再让操作者找不到面试时段入口。
     if (pass) await openDetail(app)
     else { await fetchApplications(); s.value = 1 }
   } catch (e) {
-    toast((e && e.message) || '操作失败')
+    if (seq === detailSeq) toast((e && e.message) || '操作失败')
   } finally {
     actionBusy.value = false
   }
 }
+
+function invalidateApplicationRequests() {
+  listRequest++
+  detailSeq++
+  shareRequest++
+  searchRequest++
+}
+onBeforeUnmount(invalidateApplicationRequests)
+let awaitingFirstAccount = !experience.account?.id
+watch(() => {
+  // 冷启动先取得账号，再恢复员工身份。两者就绪后才开始比较身份，以保留通知指定的报名。
+  if (!experience.account?.id || (awaitingFirstAccount && session.restoring)) return null
+  return JSON.stringify([experience.account.id, experience.mode, currentStaffStore.value?.identityKey,
+    currentStaffStore.value?.storeId, currentStaffStore.value?.roleCode, currentStaffStore.value?.sharedRecruitment])
+}, (scope, previous) => {
+  if (scope) awaitingFirstAccount = false
+  if (!previous) return
+  invalidateApplicationRequests()
+  applications.value = []
+  total.value = 0
+  current.value = null
+  detail.value = null
+  extras.value = null
+  forwardRecords.value = []
+  sharedResume.value = null
+  deepAppId = 0
+  shareId = 0
+  resumeEntry = null
+  jobFilter.value = null
+  listStoreId.value = null
+  s.value = 1
+  if (scope && hasStaffAccess.value) fetchApplications()
+}, { flush: 'sync' })
 
 // 包一层：onMounted / watch 会把自己的参数传进来（watch 的第一个参数是新值），
 // 直接把 fetchApplications 当回调会被当成 append=true。
@@ -627,7 +709,22 @@ watch(statusTab, () => fetchApplications())
 watch(typeTab, () => { if (!statusTabs.value.includes(statusTab.value)) statusTab.value = '全部'; else fetchApplications() })
 watch(sortBy, () => fetchApplications())
 // 进到转发屏时把这份报名的历史转发记录带出来（谁转给谁、读了没）
-watch(s, (v) => { if (v === 4) { if (!canForward.value) target.value = 'wechat'; loadForwards() } })
+watch([s, canShareResume], ([screen, allowed]) => {
+  if (!allowed && [3, 4].includes(screen)) s.value = current.value?.appId || deepAppId ? 2 : 1
+}, { immediate: true })
+const notifyingManager = ref(false)
+async function notifyManager() {
+  const app = detail.value
+  if (notifyingManager.value || !detailReady.value || !app?.canNotifyRecruitManager) return
+  notifyingManager.value = true
+  try {
+    const res = await apiNotifyRecruitManager(app.storeId, app.appId)
+    toast(res.data?.message || '已通知主理人')
+  } catch (e) {
+    toast(e.message || '通知失败，请重试')
+  } finally { notifyingManager.value = false }
+}
+watch(s, (v) => { if (v === 4 && canShareResume.value) { if (!canForward.value) target.value = 'wechat'; loadForwards() } })
 
 const isOnline = computed(() => (detail.value?.jobType || current.value?.jobType) === 'online')
 const steps = computed(() => isOnline.value ? ONLINE_STEPS : OFFLINE_STEPS)
@@ -657,26 +754,28 @@ const WAIT_LABEL = { review_rejected: '审核未通过', interview_booked: '已�
 const canHire = computed(() => detailReady.value && detail.value.canManage === true)
 const volunteerAgreement = ref(null)
 const canCheckAgreement = computed(() => canHire.value && detail.value.canReviewVolunteerContract === true && curStatus.value === 'store_confirmed' && detail.value.jobType === 'volunteer' && detail.value.volunteerContractStatus === 'pending')
-const showInsurance = computed(() => detailReady.value && !isOnline.value && ['store_confirmed', 'contract_signed', 'onboarded'].includes(curStatus.value))
+const showInsurance = computed(() => detailReady.value && !isOnline.value && ['store_confirmed', 'contract_signed', 'onboarded', 'completed'].includes(curStatus.value))
 const openInsurance = () => {
   if (!showInsurance.value || actionBusy.value) return
-  go(staffStoreUrl(R.staffInterviews + '?s=4&appId=' + detail.value.appId, detail.value.fulfillmentStoreId || detail.value.storeId))
+  go(staffStoreUrl('/pages/staff/insurance-account?applicationId=' + encodeURIComponent(detail.value.appId), detail.value.fulfillmentStoreId || detail.value.storeId))
 }
 // 换工换宿：已入职的换工报名，主理人 / 管家可以「确认换工完成」并填实际天数（服务端按天数发积分）；
 // 计划结束 3 天后（并且标记入职也满 3 天）还没确认的，服务端按报名天数自动完成。能不能点由服务端 canFinishVolunteer 决定
 const canFinishVolunteer = computed(() => detailReady.value && detail.value.canFinishVolunteer === true)
 const canPass = computed(() => detailReady.value && !actionBusy.value && (canAudit.value || canCheckAgreement.value || (!isOnline.value && (
-  detail.value.canScheduleInterview === true || detail.value.canConfirm === true || detail.value.canOnboard === true || detail.value.canFinishVolunteer === true
+  !!detail.value.interviewOfferRole || detail.value.canScheduleInterview === true || detail.value.canConfirm === true || detail.value.canOnboard === true || detail.value.canFinishVolunteer === true
 ))))
 const passLabel = computed(() => {
   if (actionBusy.value) return '正在处理…'
   if (!detailReady.value) return detailError.value ? '详情未加载' : '正在加载…'
   // 线上接单结算完成后状态仍是 review_passed，按详情里的结算状态说「结算完成」
   const onlineDone = detail.value.settleStatus === 'confirmed' ? '结算完成' : '已通过'
+  if (detail.value.interviewOfferRole) return detail.value.interviewOfferRole === 'merchant' ? '选择面试时间' : '设置候选时段'
   if (!canHire.value && !canAudit.value) return isOnline.value && curStatus.value === 'review_passed' ? onlineDone : '只读查看'
   if (isOnline.value) return ONLINE_STEP_BY_STATUS[curStatus.value] >= 3 ? onlineDone : WAIT_LABEL[curStatus.value] || '通过'
   if (canCheckAgreement.value) return '核对三方协议'
   if (curStatus.value === 'store_confirmed' && detail.value.volunteerContractStatus === 'rejected') return '待用户重新确认'
+  if (detail.value.workEndTime) return canFinishVolunteer.value ? '核算实际天数' : '工作已结束'
   if (curStatus.value === 'onboarded' && canFinishVolunteer.value) return '确认换工完成'
   if (curStatus.value === 'onboarded' && detail.value.volunteerDone === true) return '换工已完成'
   return PASS_ACTION[curStatus.value] || WAIT_LABEL[curStatus.value] || '暂无操作'
@@ -686,6 +785,7 @@ const rejectLabel = computed(() => (canAudit.value || !canReject.value ? '不合
 const actionHint = computed(() => {
   if (!detailReady.value) return ''
   const st = curStatus.value
+  if (detail.value.workEndTime) return canFinishVolunteer.value ? '工作已结束，可按实际服务天数核算积分。' : '这段工作已结束。'
   if (st === 'submitted' && detail.value.auditBlockReason) return detail.value.auditBlockReason
   if (isOnline.value && st !== 'submitted') return detail.value.onlineTip || (st === 'review_passed' ? '报名已审核通过，可查看成果与结算。' : (WAIT_LABEL[st] || '当前报名无需审核。'))
   // 报名人花积分加急了：提示优先处理（列表里已排在最前面并标「加急」）
@@ -693,6 +793,7 @@ const actionHint = computed(() => {
   if (st === 'onboarded' && !isOnline.value && detail.value.volunteerDone === true) return detail.value.volunteerDoneText || '这段换工已确认完成。'
   // 主人（2026-11-03）：这里原来是服务端 volunteerFinishTip 整段积分规则，太长；改成一句「下一步」，规则收进下面的「积分规则」展开（全文仍以服务端为准）
   if (st === 'onboarded' && canFinishVolunteer.value) return volunteerNextHint(detail.value)
+  if (detail.value.interviewOfferRole) return detail.value.interviewOfferRole === 'merchant' ? '从下方候选时段中选择一场面试，确认后会通知义工。' : '可为本次报名提交合适的时间和腾讯会议邀请，由商家确认。'
   if (!canHire.value && !canAudit.value && !restricted.value) return '当前报名为只读，请由本门店换工主理人或小院主理人审核、安排面试及处理录用。'
   if (st === 'submitted') return isOnline.value ? '审核通过后，接单人即可提交成果，无需面试、签约和保险。' : '审核通过后，请设置本门店的可预约时段，由候选人选择面试时间。'
   if (isOnline.value && ONLINE_STEP_BY_STATUS[st] >= 3) return detail.value.onlineTip || '申请已通过，无需重复审核。接单人可在任务交付页提交成果。'
@@ -745,6 +846,7 @@ const onPass = async () => {
     uni.pageScrollTo({ selector: '#volunteer-agreement', duration: 200 })
     return
   }
+  if (st === 'review_passed' && detail.value.interviewOfferRole) return uni.pageScrollTo({selector:'#interview-offers', duration:200})
   if (st === 'review_passed') return go(staffStoreUrl(R.staffInterviews + '?s=5', detail.value.storeId))
   if (st === 'submitted') return audit(true)
   if (st === 'user_confirmed') {
@@ -875,7 +977,7 @@ const doForward = async () => {
     toast('请先从列表里选一份报名')
     return
   }
-  if (forwarding.value || !detailReady.value || (target.value !== 'wechat' && !canForward.value)) return
+  if (!canShareResume.value || forwarding.value || !detailReady.value || (target.value !== 'wechat' && !canForward.value)) return
   forwarding.value = true
   try {
     if (target.value === 'wechat') {
@@ -887,6 +989,7 @@ const doForward = async () => {
       appId: app.appId,
       storeId: forwardStoreId.value,
       target: target.value,
+      leadOnly: target.value === 'cross_store' && targetAllowsLead.value && forwardLeadOnly.value,
       targetStoreId: target.value === 'cross_store' ? targetStoreId.value : undefined,
       suggestion: suggestion.value,
       track: track.value ? '1' : '0'
@@ -1031,4 +1134,112 @@ const sharedExps = computed(() => ((sharedResume.value && sharedResume.value.exp
 .stage-banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--k-red-soft);color:var(--k-red)}.stage-banner__label{font-size:15px;font-weight:700;line-height:1.5}.stage-banner__date{font-size:12px;line-height:1.5;opacity:.85}.stage-banner--ok{background:var(--k-green-soft);color:var(--k-green)}.stage-banner--stop{background:var(--k-paper2);color:var(--k-muted)}
 .step-circle.current{background:#fff;border:2px solid var(--k-red);color:var(--k-red);font-weight:700}.step-circle.stopped{background:var(--k-paper2);border-style:dashed}.step--done .step-label{color:var(--k-ink)}.step--current .step-label{color:var(--k-red);font-weight:700}.step--todo .step-label,.step--stopped .step-label{color:var(--k-muted)}
 .points-rule{display:flex;align-items:center;gap:4px;min-height:32px;font-size:13px;color:var(--k-ink2)}.points-rule__body{font-size:12px;line-height:1.7;color:var(--k-muted);overflow-wrap:anywhere}
-.candidate-portrait{width:80px;height:100px;border-radius:10px;margin:12px 0}.candidate-media{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.candidate-media image{width:96px;height:96px;border-radius:8px}.candidate-media video{width:100%;height:200px}</style>
+.candidate-portrait{width:80px;height:100px;border-radius:10px;margin:12px 0}.candidate-media{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.candidate-media image{width:96px;height:96px;border-radius:8px}.candidate-media video{width:100%;height:200px}
+
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边、不加阴影），标题用系统黑体；列表行标题 14、辅助 12，状态用统一的小标签，逾期用提醒红；
+   详情页各段各自成卡；底部按钮收成 44 高的胶囊。筛选、按钮、标签、文字一个不少。 */
+.staff-apps{--k-bg:#F7F5F2;--k-sh1:none;background:#F7F5F2}
+.staff-apps :deep(.k-navbar__title){font-family:var(--k-sans);font-size:16px;font-weight:600}
+.staff-apps :deep(.k-button){border-radius:999px}
+.staff-apps :deep(.k-button.is-lg){height:44px;font-size:15px}
+.staff-apps :deep(.k-chip:not(.is-pill)){height:17px;padding:0 5px;border-radius:4px;font-size:10px;font-weight:500}
+.brand{gap:6px;font-family:var(--k-sans);font-size:17px}
+.status-tabs,.type-tabs{margin:3px 12px 8px;height:34px;border:0;border-radius:10px;overflow:hidden}
+.status-tabs>view,.type-tabs>view{border-right:0;font-size:13px;color:var(--k-ink2)}
+.status-tabs>view.active{border-radius:10px;background:linear-gradient(135deg,#B5814D,#8E5E33);color:#fff;font-weight:600}
+.type-tabs .active{color:var(--k-red-deep);font-weight:600}
+.apps-body{padding:8px 12px 98px}
+.date-scope{padding:10px 12px;border:0;border-radius:12px;background:var(--k-paper);margin-bottom:8px;font-size:13px}.date-scope>view{gap:2px}
+.date-scope button{min-height:36px;border:1px solid var(--k-red-line);border-radius:999px;color:var(--k-red-deep);font-size:12px}
+.applications-tools{margin:8px 0}.applications-tools :deep(.k-button.is-lg){height:38px;font-size:13px;font-weight:500}
+.staff-apps :deep(.subscribe-entry){padding:4px 12px 0}
+.staff-apps :deep(.subscribe-entry button){min-height:36px;border:0;border-radius:12px;background:var(--k-paper);color:var(--k-ochre-deep);font-size:12px}
+.sort-row{height:36px;gap:20px;font-size:12px}
+.list-state{font-size:13px}
+.app-card{min-height:84px;padding:12px;margin-bottom:8px;border:0;border-radius:12px}
+.app-avatar>text{height:17px;padding:0;border:0;border-radius:4px;background:#F5F1EB;color:var(--k-ink2);font-size:10px;font-weight:500;line-height:17px}
+.app-copy{font-size:12px}.app-name{font-family:var(--k-sans);font-size:14px;font-weight:600}
+/* 窄屏（320 宽）时名字至少露出两三个字，报名编号可以收一点：之前带「加急」的那行名字被挤没了 */
+@media (max-width:359px){.app-name{min-width:3em}.app-copy>view>text:last-child{flex-shrink:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}}
+.app-side{font-size:11px}.match{font-size:14px}.over{color:var(--k-alert);font-size:11px;font-weight:600}
+.detail-body{padding:8px 12px calc(88px + var(--k-safe-bottom))}
+.candidate,.apply-meta,.steps,.action-status,.section{margin-top:8px;padding:12px;border:0;border-radius:12px;background:var(--k-paper)}.candidate{margin-top:0}
+.candidate>image{width:56px;height:56px}.candidate>view:nth-child(2){gap:4px;font-size:12px}.candidate-name{font-family:var(--k-sans);font-size:17px}.match.large{font-size:17px}
+.apply-meta>view{gap:4px}.apply-meta>view:first-child text:nth-child(2){font-family:var(--k-sans);font-size:14px;font-weight:600}
+.steps{padding:14px 4px 12px}.step-circle{width:24px;height:24px;font-size:11px}
+.action-status{font-size:13px}
+.section-title{margin-bottom:8px;font-family:var(--k-sans);font-size:15px}
+.skill-row>text{height:24px;padding:0 8px;border:0;border-radius:4px;background:#F5F1EB;color:var(--k-ink2);line-height:24px}
+.skill-row>text.store-tag{background:var(--k-ochre-soft);color:var(--k-ochre-deep)}
+.skill-row>view{width:24px;height:24px}
+.arrival-info__row{font-size:13px}.arrival-info__label{font-size:13px}.arrival-info__note{font-size:13px}
+.candidate-profile{margin:8px 0 0;padding:12px}
+.stage-banner{margin-top:8px;border-radius:12px;color:var(--k-red-deep)}.stage-banner__label{font-size:14px;font-weight:600}
+.step--current .step-label{font-weight:600}
+.contact-actions{gap:8px;padding:8px 0 0}.contact-actions :deep(.k-button.is-lg){height:36px;padding:0 14px;font-size:13px;font-weight:500}
+.staff-apps :deep(.k-bottom){background:var(--k-paper)}
+.masked-body{padding:8px 12px calc(88px + var(--k-safe-bottom))}.masked-tip{border-radius:8px}
+.resume-card{margin-top:8px;padding:14px 12px;border:0;border-radius:12px}.avatar-placeholder{border:0;background:#F5F1EB}
+.forward-body{padding:12px 12px 100px}.forward-title{margin:0 2px;font-family:var(--k-sans);font-size:15px}.forward-label{margin:16px 2px 8px;font-family:var(--k-sans);font-size:15px}
+.target{border:0;border-radius:12px}.target.active{border:0;background:var(--k-red-soft);box-shadow:inset 0 0 0 1px var(--k-red-line)}
+.staff-apps .forward-body .target>view text:first-child{font-family:var(--k-sans);font-size:15px;font-weight:600}
+.job-card{padding:12px;border:0;border-radius:12px;gap:4px}.forward-body :deep(.k-button.is-block){margin-top:16px}.job-card text:first-child{font-family:var(--k-sans);font-size:15px;font-weight:600}
+.suggest{border:0;border-radius:12px}
+.track-row>view:first-child{gap:4px}.track-row>view:first-child text:first-child{font-family:var(--k-sans);font-size:15px;font-weight:600}
+.switch{background:var(--k-line2)}.switch.on{background:var(--k-green)}
+.forward-store-picker input{border:0;border-radius:10px;background:var(--k-paper)}
+.forward-store-option{border:0;border-radius:10px}.forward-store-option::after{border:0}.forward-store-option.selected{color:var(--k-red-deep);box-shadow:inset 0 0 0 1px var(--k-red)}
+.shared-resume{padding:16px 12px calc(96px + var(--k-safe-bottom));gap:12px}
+/* 详情页里的「在岗与离店登记」也收成一张白卡（名单里的那份不套卡） */
+.detail-body :deep(.employment){margin-top:8px;padding:12px;border:0;border-radius:12px;background:var(--k-paper)}
+/* 名单里点开某个人后的那份登记：已经在名单的白卡里了，去掉它自己的底线（小程序里组件管不到再下一层组件，写在页面里才生效） */
+.apps-body :deep(.roster .employment){padding-bottom:4px;border-bottom:0}
+/* 详情页里的「确认时间」卡（公共组件）和上下的白卡对齐：12 圆角、不描边，标题和别的区块标题一样大 */
+.detail-body :deep(.ad-card){margin-top:8px;padding:12px;border:0;border-radius:12px}
+.detail-body :deep(.ad-heading){font-size:15px}
+/* 2026-11-18 第二轮精修（报名列表、详情、脱敏简历、转发、收到的简历），按精修词典统一：
+   报名状态是胶囊分段控件（选中白底，不再是渐变实心棕），岗位类型是下划线页签（选中 ink 600 + 16×3 暖棕短条）；排序行图标收小；
+   次按钮统一白底 + 暖棕细边 + 深棕字；卡片标题 16/700，细线换发丝线；脱敏简历的占位头像、时间线点、印章收小；转发目标的勾是 16 的暖棕圆点、开关暖棕；
+   收到的简历放进白卡；底部操作条内边距 8 12。按钮、筛选、文字一个不少 */
+.status-tabs{height:32px;padding:2px;box-sizing:border-box;border-radius:16px;background:#F0EBE4;overflow:visible}
+.status-tabs>view{position:relative;border-radius:14px;font-weight:400;color:var(--k-ink2)}
+.status-tabs>view.active{border-radius:14px;background:var(--k-paper);color:var(--k-ink);font-weight:600}
+/* 分段看着 28 高，上下各多出一圈看不见的可点范围 */
+.status-tabs>view::after{content:'';position:absolute;left:0;right:0;top:-6px;bottom:-6px}
+.type-tabs{height:40px;margin:0 12px 2px;border-radius:0;background:transparent;overflow:visible}
+.type-tabs>view{position:relative;font-size:14px;font-weight:400;color:var(--k-muted)}
+.type-tabs .active{border-bottom:0;color:var(--k-ink);font-weight:600}
+.type-tabs .active::after{content:'';position:absolute;left:50%;bottom:4px;width:16px;height:3px;margin-left:-8px;border-radius:2px;background:var(--k-red)}
+/* 排序行：筛选图标 16、下拉箭头 12；筛选图标四周加一圈透明边，看着小、点的范围仍有 36 */
+.sort-row>:deep(.k-icon){box-sizing:content-box;border:10px solid transparent;margin:-10px}
+/* 「已等待 x 天」沉到右下角，和左栏最后一行对齐 */
+.app-side>text:last-child{margin-top:auto}
+.staff-apps :deep(.k-button.is-outline),.staff-apps :deep(.k-button.is-secondary){border-color:var(--k-red-line);color:var(--k-red-deep)}
+.applications-tools :deep(.k-button),.applications-tools :deep(.k-button.is-lg){height:36px;font-size:13px;font-weight:500}
+.match.large{font-size:15px;font-weight:600;color:var(--k-ink);font-variant-numeric:tabular-nums}
+.section-title{font-size:16px;line-height:22px}.detail-body :deep(.ad-heading){font-size:16px}
+.profile-item+.profile-item{position:relative;border-top:0}.profile-item+.profile-item::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.apply-meta>view:first-child{border-right:0}.apply-meta>view:last-child{padding-left:12px}
+.candidate>image,.candidate-portrait{border-radius:8px}
+.avatar-placeholder{width:56px;height:56px;background:#F5F1EB}
+.resume-line>text:first-child{font-size:12px;color:var(--k-muted)}.resume-line>text:last-child{font-size:14px;font-weight:500}
+.experience>view:last-child text:first-child{font-size:13px;font-weight:500}
+.timeline-dot{flex-shrink:0;width:7px;height:7px;border:1.5px solid var(--k-muted)}
+/* 印章收到 64，底部这一行至少 60 高，印章不再伸出卡片 */
+.resume-foot{min-height:60px}.stamp{width:64px;height:64px;font-size:10px;line-height:1.3}
+.forward-title,.forward-label{font-size:16px;font-weight:700}
+.staff-apps .forward-body .track-row>view:first-child text:first-child{font-size:14px;font-weight:600}
+.target-check{width:16px;height:16px;top:6px;right:6px;display:flex;align-items:center;justify-content:center;line-height:normal}
+.forward-store-option.selected{background:var(--k-red-soft);box-shadow:inset 0 0 0 1px var(--k-red-line)}
+.switch.on{background:var(--k-red-deep)}
+.shared-resume{margin:8px 12px calc(24px + var(--k-safe-bottom));padding:16px 12px;border-radius:12px;background:var(--k-paper)}
+.shared-resume .k-title{font-family:var(--k-sans);font-size:16px;font-weight:700;line-height:22px}
+.staff-apps .shared-resume .forward-scope{position:relative;margin-top:4px;padding-top:12px;font-size:12px}
+.staff-apps .shared-resume .forward-scope::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.staff-apps :deep(.k-bottom__inner){padding:8px 12px!important;gap:8px}
+/* 详情底栏「转发脱敏简历」：原来 98 宽装 15 号的六个字，字贴着按钮边。常见手机上把它放宽到 116（中间主按钮仍有 150 以上）；
+   360 宽以下放不下，才退回 98 宽、13 号字、左右 6 的内边距 */
+.staff-apps .detail-forward{flex:0 0 116px}
+.staff-apps .detail-forward :deep(.k-button.is-lg){padding:0 12px}
+@media (max-width:360px){.staff-apps .detail-forward{flex:0 0 98px}.staff-apps .detail-forward :deep(.k-button.is-lg){padding:0 6px;font-size:13px}}
+</style>

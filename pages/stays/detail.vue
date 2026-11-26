@@ -1,6 +1,6 @@
 <template>
   <k-feature-gate feature="stay-booking">
-  <view class="k-page stay-detail" :class="{ 'vlog-page': s === 4, 'stay-detail--solid': barSolid || s !== 1 }" :style="{ '--stay-paper': 'url(' + STAY_ART.paper + ')' }">
+  <view class="k-page stay-detail" :class="[$userSurface, { 'vlog-page': s === 4, 'stay-detail--solid': barSolid || s !== 1 }]" :style="{ '--stay-paper': 'url(' + STAY_ART.paper + ')' }">
     <!-- 概览屏（s=1）是沉浸式头图：顶栏透明叠在图上，往下滑过头图后才铺底色、出标题 -->
     <!-- 2026-10-18 效果图：顶栏透明时返回箭头旁边一颗半透明白底的「房源详情」标题胶囊，滑过头图后换回普通标题 -->
     <k-topbar :title="s === 1 ? '' : (s === 4 ? 'Vlog 详情' : '房源详情')" back :dark="s === 4" :bg="s === 4 ? '#151311' : (s === 1 && !barSolid ? 'transparent' : '#FAF4EF')" custom-back @back="onBack">
@@ -20,23 +20,23 @@
         <image v-else class="hero" :src="absUrl(d.cover) || '/static/media/cover-empty.png'" mode="aspectFill" @click="previewHero(0)" />
         <view class="hero-fade" />
         <view class="hero-actions" :style="'top:' + (barHeight + 8) + 'px'">
-          <view class="hero-action" aria-label="收藏房源" @click="toggleFavorite"><k-icon name="heart" :size="21" color="white" :fill="!!d.favorite" /></view>
+          <view class="hero-action" aria-label="收藏房源" @click="toggleFavorite"><k-icon name="heart" :size="16" :color="d.favorite ? 'red' : 'ink'" :fill="!!d.favorite" /></view>
           <view class="hero-actions__line" />
-          <view class="hero-action" aria-label="分享房源" @click="shareTip"><image class="stay-share-icon" :src="STAY_ART.shareLight" mode="aspectFit" /></view>
+          <view class="hero-action" aria-label="分享房源" @click="shareTip"><k-icon name="share-2" :size="16" color="ink" /></view>
         </view>
         <text v-if="gallery.length > 1" class="hero-count">{{ heroIdx + 1 }}/{{ gallery.length }}</text>
       </view>
       <view class="info">
-        <view class="title-row"><view><view><text>{{ d.stayName || loadError || '正在加载小院信息…' }}</text></view></view><view class="title-actions"><view aria-label="收藏房源" @click="toggleFavorite"><k-icon name="star" :size="21" color="#A57850" :fill="!!d.favorite" /><text>{{ d.favorite ? '已收藏' : '收藏' }}</text></view><view aria-label="分享房源" @click="shareTip"><image class="stay-share-icon" :src="STAY_ART.share" mode="aspectFit" /><text>分享</text></view></view></view>
+        <view class="title-row"><view><view><text>{{ d.stayName || loadError || '正在加载小院信息…' }}</text></view></view><view class="title-actions"><view aria-label="收藏房源" @click="toggleFavorite"><k-icon name="heart" :size="20" color="muted" :fill="!!d.favorite" /><text>{{ d.favorite ? '已收藏' : '收藏' }}</text></view><view aria-label="分享房源" @click="shareTip"><k-icon name="share-2" :size="20" color="muted" /><text>分享</text></view></view></view>
         <view v-if="loadError && canRetryDetail" class="rooms-state rooms-state--error detail-retry" role="status"><text v-if="d.stayName">{{ loadError }}</text><view class="rooms-state__retry" role="button" hover-class="k-press-s" @click="retryDetail"><text>{{ detailLoading ? '正在重新加载…' : '重新加载' }}</text></view></view>
         <view class="info-meta">
-          <view class="info-meta__copy"><view v-if="infoChips.length" class="info-chips"><text v-for="c in infoChips" :key="c.text" class="ichip" :class="'ichip--' + c.tone">{{ c.text }}</text></view><view class="rating" @click="openReviews"><text>{{ ratingMain }}</text><text>{{ ratingSub }}</text><k-icon v-if="ratingMain" name="chevron-right" :size="16" color="muted" /></view></view>
-          <view v-if="priceFrom" class="info-price"><view class="info-price__row"><text class="info-price__num">¥{{ priceFrom }}</text><text class="info-price__unit">7晚参考价起</text></view><text v-if="roomCount" class="info-price__pill" @click="toRooms">{{ roomCount }}种房型可选</text></view>
+          <view class="info-meta__copy"><view v-if="infoChips.length" class="info-chips"><text v-for="c in infoChips" :key="c.text" class="ichip" :class="'ichip--' + c.tone">{{ c.text }}</text></view><view class="rating" @click="openReviews"><text>{{ ratingMain }}</text><text>{{ ratingSub }}</text><k-icon v-if="ratingMain" name="chevron-right" :size="12" color="muted" /></view></view>
+          <view v-if="priceFrom" class="info-price"><view class="info-price__row"><text class="info-price__num">¥{{ priceFrom }}</text><text class="info-price__unit">7晚参考价起</text></view><view v-if="roomCount" class="info-price__pill info-price__link" hover-class="k-press-s" @click="toRooms"><text>{{ roomCount }}种房型可选</text><k-icon name="chevron-right" :size="12" color="red" /></view></view>
         </view>
-        <text v-if="periodSummary.periodText" class="stay-period-options">{{ periodSummary.periodText }}</text><text class="week-price-note">{{ assisted ? '页面价格供参考，房型、日期及最终费用请向订房助手确认。' : '7晚起订，按所选日期逐晚计价；优惠及最终金额以预订页为准。' }}</text>
+        <text v-if="periodSummary.periodText" class="stay-period-options">{{ periodSummary.periodText }}</text><text class="week-price-note">7晚起订，按所选日期计价，最终金额可在确认订单时查看。</text>
         <view v-if="promo" class="info-promo"><k-chip tone="ochre" @click="openPromo"><text>{{ promoPrice ? '早鸟 ¥' + promoPrice + '/晚' : '早鸟价' }}</text></k-chip></view>
         <!-- 2026-10-16 主人反馈：之前只有右边小按钮能点；现在整张地址卡都能点（有地图位置打开地图选高德 / 腾讯导航，没有就复制带城市的地址） -->
-        <view v-if="locationText || mapPoint" class="location" @click="openMap"><view class="location-pin"><k-icon name="map-pin" :size="19" color="red" :stroke="1.8" /></view><view class="location-copy"><text v-if="d.areaDesc && d.address && d.areaDesc !== d.address" class="location-area">{{ d.areaDesc }}</text><text class="location-main">{{ locationText || '房源位置' }}</text></view><view v-if="locationText" class="location-action" @click.stop="copyAddress"><k-icon name="copy" :size="14" color="red" /><text>复制地址</text></view></view>
+        <view v-if="locationText || mapPoint" class="location" @click="openMap"><view class="location-pin"><k-icon name="map-pin" :size="14" color="red" /></view><view class="location-copy"><text v-if="d.areaDesc && d.address && d.areaDesc !== d.address" class="location-area">{{ d.areaDesc }}</text><text class="location-main">{{ locationText || '房源位置' }}</text></view><view v-if="locationText" class="location-action" hover-class="k-press-s" @click.stop="copyAddress"><k-icon name="copy" :size="12" color="red" /><text>复制地址</text></view></view>
       </view>
       <view class="overview-body">
         <view v-if="d.slogan || d.sloganSub" class="slogan"><view><text v-if="d.slogan">{{ d.slogan }}</text><text v-if="d.sloganSub">{{ d.sloganSub }}</text></view><image src="/static/media/stays-kangaroo-stamp.png" mode="aspectFit" /></view>
@@ -49,45 +49,45 @@
         </view>
         <!-- 3分钟看小院（2026-10-17 R3，效果图 7）：宽封面 + 圆形播放按钮 + 一句说明；点了全屏播放。员工端没传小院视频时整张卡不出现 -->
         <view v-if="introVideo" class="sec-card vcard">
-          <view class="sec-head vcard__head"><view class="vcard__title"><view class="vcard__dot"><k-icon name="play" :size="11" color="white" fill /></view><text class="sec-title">{{ INTRO_TITLE }}</text></view></view>
+          <view class="sec-head vcard__head"><view class="vcard__title"><view class="vcard__dot"><k-icon name="play" :size="12" color="white" fill /></view><text class="sec-title">{{ INTRO_TITLE }}</text></view></view>
           <view class="vcard__cover" hover-class="k-press-s" @click="playVideo(introVideo, INTRO_TITLE)">
             <image v-if="introVideo.cover" class="vcard__img" :src="absUrl(introVideo.cover)" mode="aspectFill" />
             <view class="vcard__shade" />
-            <view class="vcard__play"><k-icon name="play" :size="26" color="white" fill /></view>
+            <view class="vcard__play"><k-icon name="play" :size="18" color="white" fill /></view>
             <text class="vcard__cap">{{ INTRO_CAPTION }}</text>
           </view>
         </view>
         <view v-else-if="stayLoaded" class="sec-card vcard vcard--pending">
           <view class="vcard__head"><text class="sec-title">小院影像</text></view>
-          <view class="video-pending"><k-icon name="video" :size="27" color="#AF845A" /><text>主理人尚未上传小院视频</text></view>
+          <view class="video-pending"><k-icon name="video" :size="22" color="red" /><text>主理人尚未上传小院视频</text></view>
         </view>
         <!-- 小院主理人：头像、称呼、年龄 / 籍贯 / 擅长（R2，填了才有）、小院评分、主理人评分（R2：评价里「服务」一项的平均分，带分项的评价满 3 条才有）、
              简介、小院故事；主理人什么都没填时整块不出现 -->
         <view v-if="hasHost" class="sec-card host2">
           <view class="sec-head"><text class="sec-title">当地主理人</text><view v-if="host.storeId" class="host2__follow" :class="{ on: following }" hover-class="k-press-s" @click="followHost"><text>{{ following ? '已关注' : '关注' }}</text></view></view>
           <view class="host2__main"><image class="host2__avatar" :src="absUrl(host.avatar) || '/static/media/profile-avatar.jpg'" mode="aspectFill" /><view class="host2__copy"><text class="host2__name">{{ host.name || '主理人' }}</text><view v-if="hostMeta.length" class="host2__facts"><text v-for="f in hostMeta" :key="f.k" class="host2__fact" :class="{ 'host2__fact--wide': f.k === '擅长' }">{{ f.k }} · {{ f.v }}</text></view><view v-if="ratingMain || hostScore" class="host2__scores"><text v-if="ratingMain" class="host2__score">小院评分 {{ ratingMain }}</text><text v-if="hostScore" class="host2__score">主理人评分 {{ hostScore }}</text></view><text v-if="host.intro" class="host2__intro">{{ host.intro }}</text></view></view>
-          <view v-if="host.story" class="host2__story" hover-class="k-press" @click="showStory"><text class="host2__story-text">{{ host.story }}</text><text class="host2__more">小院故事 ›</text></view>
-          <view class="host-stats"><text>累计接待　{{ d.completedOrders || 0 }} 单</text><text>{{ goodRateText }}</text></view>
+          <view v-if="host.story" class="host2__story" hover-class="k-press" @click="showStory"><text class="host2__story-text">{{ host.story }}</text><view class="host2__more"><text>小院故事</text><k-icon name="chevron-right" :size="12" color="red" /></view></view>
+          <view class="host-stats"><view class="host-stat"><text class="host-stat__num">{{ d.completedOrders || 0 }} 单</text><text class="host-stat__label">累计接待</text></view><text class="host-stat__rate">{{ goodRateText }}</text></view>
         </view>
         <view v-else-if="stayLoaded" class="sec-card host2 host2--pending"><view class="sec-head"><text class="sec-title">当地主理人</text></view><text class="section-pending">当地主理人介绍待补充</text></view>
-        <view v-if="host.storeId" class="sec-card" role="button" hover-class="k-press" @click="go(R.stayShop + '?storeId=' + host.storeId)"><view class="sec-head"><text class="sec-title">门店增值服务</text><text>查看服务 ›</text></view><text class="section-pending">出行、餐饮与体验服务，可先浏览，入住期间预订</text></view>
+        <view v-if="host.storeId" class="sec-card" role="button" hover-class="k-press" @click="go(R.stayShop + '?storeId=' + host.storeId)"><view class="sec-head"><text class="sec-title">门店增值服务</text><view class="sec-go"><text>查看服务</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><text class="section-pending">出行、餐饮与体验服务，可先浏览，入住期间预订</text></view>
         <view class="room-section">
         <!-- 评价和生活碎片并排；房型按第二张参考图纵向排列。 -->
         <view class="entries">
           <!-- 2026-10-18 主人：「住过的家人评价」左边一个整体总结分（按真实评价算的综合分，和评价页同一个数；没有评价时是一枚小星星） -->
           <view class="entry entry--reviews" hover-class="k-press-s" @click="openReviews">
             <view class="entry__score" :class="{ 'entry__score--none': !ratingMain && !reviewAi.ready }"><text class="entry__num">{{ reviewAi.score || ratingMain || '—' }}</text><text class="entry__score-label">{{ stayLoaded ? (reviewAi.ready ? 'AI综合评分' : (ratingMain ? '住客评分' : '暂无家人评价')) : (loadError ? '未加载' : '正在加载') }}</text></view>
-            <view class="entry__copy"><text class="entry__title">住过的家人评价</text><text class="entry__sub">{{ reviewEntryText }}</text><text v-if="reviewAi.ready" class="entry__method">{{ reviewAi.summary }}</text></view>
+            <view class="entry__copy"><text class="entry__title">住过的家人评价</text><text class="entry__sub">{{ reviewEntryText }}</text><text v-if="reviewAi.ready" class="entry__method">{{ reviewAi.summary }}</text></view><view class="entry__ic"><k-icon name="messages-square" :size="18" color="red" /></view>
             <k-icon name="chevron-right" :size="18" color="muted" />
           </view>
-          <view class="entry entry--diary" hover-class="k-press-s" @click="openDiary"><view class="entry__copy"><text class="entry__title">{{ DIARY_TITLE }}</text><text class="entry__sub">{{ DIARY_SUB }}</text></view><k-icon name="chevron-right" :size="18" color="muted" /></view>
-          <view v-if="vlogs.length" class="entry" hover-class="k-press-s" @click="s = 3"><view class="entry__copy"><text class="entry__title">小院 Vlog</text><text class="entry__sub">{{ vlogs.length }} 条视频</text></view><k-icon name="chevron-right" :size="18" color="muted" /></view>
+          <view class="entry entry--diary" hover-class="k-press-s" @click="openDiary"><view class="entry__copy"><text class="entry__title">{{ DIARY_TITLE }}</text><text class="entry__sub">{{ DIARY_SUB }}</text></view><view class="entry__ic"><k-icon name="camera" :size="18" color="red" /></view><k-icon name="chevron-right" :size="18" color="muted" /></view>
+          <view v-if="vlogs.length" class="entry" hover-class="k-press-s" @click="s = 3"><view class="entry__copy"><text class="entry__title">小院 Vlog</text><text class="entry__sub">{{ vlogs.length }} 条视频</text></view><view class="entry__ic"><k-icon name="clapperboard" :size="18" color="red" /></view><k-icon name="chevron-right" :size="18" color="muted" /></view>
         </view>
         <!-- 进行中的活动留在详情页；往期活动在独立页面查看，没有进行中活动时只保留一行入口。 -->
         <view v-if="acts.current.length || acts.past.length" class="acts" :class="{ 'acts--entry': !acts.current.length }">
           <view class="acts__head">
-            <text class="sec-title">小院活动</text>
-            <view v-if="acts.past.length" class="acts__toggle" role="button" aria-label="查看往期活动" hover-class="k-press" @click="openPastActivities"><text>往期活动</text><k-icon name="chevron-right" :size="16" color="#895c35" :stroke="2" /></view>
+            <view v-if="!acts.current.length" class="acts__ic"><k-icon name="calendar-days" :size="18" color="red" /></view><view class="acts__title"><text class="sec-title">小院活动</text><text v-if="!acts.current.length" class="acts__desc">看看小院以前办过的活动</text></view>
+            <view v-if="acts.past.length" class="acts__toggle" role="button" aria-label="查看往期活动" hover-class="k-press" @click="openPastActivities"><text>往期活动</text><k-icon name="chevron-right" :size="12" color="red" /></view>
           </view>
           <scroll-view v-if="acts.current.length" class="acts__scroll" scroll-x :show-scrollbar="false" enhanced>
             <view class="acts__row">
@@ -107,10 +107,10 @@
           </scroll-view>
         </view>
         <!-- 可选空余房型：房型接口按所选日期算的起价、余量（只剩 1–3 间写「少量余房」）、能不能订；点卡片或「选择」选中，底部浮条跟着变 -->
-        <view id="stay-rooms" class="sec-head rooms-head"><text class="sec-title">可选空余房型</text><view class="rooms-head__note" hover-class="k-press" @click="dateOpen = true"><text>{{ datesText }} · {{ nights }}晚 · {{ state.guests }}人</text><text class="rooms-head__edit">改日期</text><k-icon name="chevron-right" :size="13" color="red" :stroke="2" /></view></view>
-        <view v-if="roomsLoading" class="rooms-state" role="status"><text>正在查询所选日期的价格与余量…</text></view>
+        <view id="stay-rooms" class="sec-head rooms-head"><text class="sec-title">可选空余房型</text><view class="rooms-head__note" hover-class="k-press" @click="dateOpen = true"><text>{{ datesText }} · {{ nights }}晚 · {{ state.guests }}人</text><text class="rooms-head__edit">改日期</text><k-icon name="chevron-right" :size="12" color="red" /></view></view>
+        <view v-if="!roomsLoading && !roomsError && roomsLoaded && !roomList.length" class="r3-empty-ic rooms-empty-ic"><k-icon name="bed-double" :size="28" color="red" /></view><view v-if="roomsLoading" class="rooms-state" role="status"><text>正在查询所选日期的价格与余量…</text></view>
         <view v-else-if="roomsError" class="rooms-state rooms-state--error" role="status"><text>{{ roomsError }}</text><view class="rooms-state__retry" role="button" @click="loadRooms">重新加载房型</view></view>
-        <text v-else-if="roomsLoaded && !roomList.length" class="list-empty">暂无可订房型</text>
+        <text v-else-if="roomsLoaded && !roomList.length" class="list-empty">暂无可订房型</text><text v-if="!roomsLoading && !roomsError && roomsLoaded && !roomList.length" class="rooms-empty-sub">可调整入住日期或人数，再看看有哪些房型。</text>
         <!-- 2026-10-18 效果图：每个房型一张全宽卡 —— 上面 16:9 大图（有短视频时是视频封面 + 播放钮、左上「≤1分钟」），
              下面房型名 + 该房型的真实评价入口、规格「1人｜独立卫浴｜空调」、价格、余量，右边绿色「选择」 -->
         <view v-if="roomList.length" class="room-stack">
@@ -118,19 +118,19 @@
           <view class="rt__pic">
             <image class="rt__img" :src="absUrl(r.video ? r.video.cover : r.cover) || '/static/media/cover-empty.png'" mode="aspectFill" />
             <text v-if="r.promoPrice" class="room__promo">早鸟 ¥{{ r.promoPrice }}/晚</text>
-            <view v-if="r.video" class="rt__play" @click.stop="playVideo(r.video, r.name)"><view class="rt__play-dot"><k-icon name="play" :size="20" color="white" fill /></view><text class="rt__badge">{{ ROOM_VIDEO_BADGE }}</text></view>
+            <view v-if="r.video" class="rt__play" @click.stop="playVideo(r.video, r.name)"><view class="rt__play-dot"><k-icon name="play" :size="12" color="white" fill /></view><text class="rt__badge">{{ ROOM_VIDEO_BADGE }}</text></view>
           </view>
           <view class="rt__body">
             <view class="rt__top"><text class="rt__name">{{ r.name }}</text></view>
             <text v-if="r.line" class="rt__line">{{ r.line }}</text>
             <view v-if="r.ai.ready || r.rate" class="rt__review" :data-room-id="r.roomTypeId" hover-class="k-press-s" @click.stop="openRoomReviews(r)">
-              <view v-if="r.ai.ready || r.rate" class="rt__rate"><k-icon name="star" :size="14" color="#9A6B3F" fill :stroke="1.4" /><text class="rt__score">{{ r.ai.score || r.rate.score }}分</text><text class="rt__cnt">{{ r.ai.ready ? 'AI总结 · ' : '' }}{{ r.rate ? r.rate.count : r.ai.count }}条本房型评价</text></view>
+              <view v-if="r.ai.ready || r.rate" class="rt__rate"><k-icon name="star" :size="12" color="ochre" fill /><text class="rt__score">{{ r.ai.score || r.rate.score }}分</text><text class="rt__cnt">{{ r.ai.ready ? 'AI总结 · ' : '' }}{{ r.rate ? r.rate.count : r.ai.count }}条本房型评价</text></view>
               <text v-else class="rt__none">暂无该房型评价</text>
-              <view class="rt__review-go"><text>查看评价</text><k-icon name="chevron-right" :size="13" color="#9A6B3F" /></view>
+              <view class="rt__review-go"><text>查看评价</text><k-icon name="chevron-right" :size="12" color="red" /></view>
             </view>
             <view class="rt__foot">
-              <view class="rt__left"><view class="rt__price"><text class="rt__yen">¥</text><text class="rt__num">{{ r.price }}</text><text class="rt__unit">{{ r.priceLabel }}</text></view><text v-if="r.periodText" class="stay-period-options">{{ r.periodText }}</text><text v-if="r.few" class="rt__few">少量余房</text><text v-else-if="!r.bookable" class="rt__few rt__few--off">{{ r.reason || '所选日期订不了' }}</text><text v-else class="rt__few rt__few--ok">可订</text></view>
-              <view v-if="!assisted" class="rt__btn" :class="{ on: selRoomId === r.roomTypeId, off: !r.bookable }"><text>{{ !r.bookable ? '不可订' : (selRoomId === r.roomTypeId ? '已选' : '选择') }}</text></view>
+              <view class="rt__left"><view class="rt__price"><text class="rt__yen">¥</text><text class="rt__num">{{ r.price }}</text><text class="rt__unit">{{ r.priceLabel }}</text></view><text v-if="r.periodText" class="stay-period-options">{{ r.periodText }}</text><text v-if="r.few" class="rt__few">少量余房</text><text v-else-if="!r.bookable" class="rt__few rt__few--off">{{ r.reason || '所选日期订不了' }}</text><text v-else class="rt__few rt__few--ok">{{ d.onlinePaymentAvailable === false ? '有房' : '可订' }}</text></view>
+              <view class="rt__btn" :class="{ on: selRoomId === r.roomTypeId, off: !r.bookable }"><text>{{ !r.bookable ? '不可订' : (selRoomId === r.roomTypeId ? '已选' : '选择') }}</text></view>
             </view>
           </view>
         </view>
@@ -140,19 +140,19 @@
     </view>
 
     <view v-else-if="s === 2" class="rooms-body k-pad-bottom">
-      <view class="facilities"><view v-for="item in facilities" :key="item.label"><k-icon :name="item.icon" :size="31" color="ink" /><text>{{ item.label }}</text></view></view>
-      <view class="host card"><view class="host-title"><text>{{ host.name ? '主理人 · ' + host.name : '主理人' }}</text><k-chip v-if="d.stayName" tone="ochre"><text>{{ srcLabel(d.operateMode) }}</text></k-chip></view><view class="host-main"><image :src="absUrl(host.avatar) || '/static/media/profile-avatar.jpg'" mode="aspectFill" /><view><text>{{ host.intro || '' }}</text><view @click="showStory"><text>小院故事</text><k-icon name="chevron-right" :size="18" color="ink" /></view></view></view><view class="host-stats"><text>累计接待　{{ d.completedOrders || 0 }} 单</text><text>{{ goodRateText }}</text></view></view>
-      <view class="section-head"><text>房型预览</text><view @click="toBooking()"><text>查看全部房型</text><k-icon name="chevron-right" :size="20" color="muted" /></view></view><text v-if="d.stayName && !rooms.length" class="list-empty">暂无可订房型</text><view class="room-list"><view v-for="room in rooms" :key="room.roomTypeId" class="room card" @click="toBooking(room)"><image :src="absUrl(room.image) || '/static/media/cover-empty.png'" mode="aspectFill" /><text v-if="room.promoPrice" class="room__promo">早鸟 ¥{{ room.promoPrice }}/晚</text><view><text>{{ room.name }}</text><text>{{ room.desc }}</text><view><text>¥{{ room.price }}</text><text>{{ room.priceLabel }}</text></view></view></view></view>
+      <view class="facilities"><view v-for="item in facilities" :key="item.label"><view class="fac-tile"><k-icon :name="item.icon" :art="item.art" :size="24" color="red" /></view><text>{{ item.label }}</text></view></view>
+      <view class="host card"><view class="host-title"><text>{{ host.name ? '主理人 · ' + host.name : '主理人' }}</text><k-chip v-if="d.stayName" tone="ochre"><text>{{ srcLabel(d.operateMode) }}</text></k-chip></view><view class="host-main"><image :src="absUrl(host.avatar) || '/static/media/profile-avatar.jpg'" mode="aspectFill" /><view><text>{{ host.intro || '' }}</text><view @click="showStory"><text>小院故事</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view></view><view class="host-stats"><view class="host-stat"><text class="host-stat__num">{{ d.completedOrders || 0 }} 单</text><text class="host-stat__label">累计接待</text></view><text class="host-stat__rate">{{ goodRateText }}</text></view></view>
+      <view class="section-head"><text>房型预览</text><view @click="toBooking()"><text>查看全部房型</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><view v-if="d.stayName && !rooms.length" class="list-empty r3-empty"><view class="r3-empty-ic"><k-icon name="bed-double" :size="28" color="red" /></view><text>暂无可订房型</text></view><view class="room-list"><view v-for="room in rooms" :key="room.roomTypeId" class="room card" @click="toBooking(room)"><image :src="absUrl(room.image) || '/static/media/cover-empty.png'" mode="aspectFill" /><text v-if="room.promoPrice" class="room__promo">早鸟 ¥{{ room.promoPrice }}/晚</text><view><text>{{ room.name }}</text><text :class="{ 'is-empty': !room.desc }">{{ room.desc }}</text><view><text>¥{{ room.price }}</text><text>{{ room.priceLabel }}</text></view></view></view></view>
     </view>
 
     <view v-else-if="s === 3" class="vlogs-body k-pad-bottom">
-      <view class="section-head"><text>近期Vlog</text><view @click="moreVlogs"><text>更多</text><k-icon name="chevron-right" :size="20" color="muted" /></view></view><text v-if="stayLoaded && !vlogs.length" class="list-empty">暂无Vlog</text><view class="vlog-list"><view v-for="(item,i) in vlogs" :key="item.vlogId" class="vlog" @click="openVlog(item)"><image :src="absUrl(item.image) || '/static/media/cover-empty.png'" mode="aspectFill" /><view><text class="vlog__title">{{ item.title }}</text><k-chip :tone="item.tone"><text>{{ item.tag }}</text></k-chip><view class="vlog__meta"><text>发布于 {{ item.time }}</text><view><k-icon name="heart" :size="18" color="ink" /><text>{{ item.likes }}</text><k-icon name="message-circle" :size="18" color="ink" /><text>{{ item.comments }}</text></view></view></view></view></view>
-      <view class="section-head review-head"><text>住客评价 · <text>{{ d.reviewCount || 0 }}</text></text><view @click="openReviews"><text>查看全部</text><k-icon name="chevron-right" :size="20" color="muted" /></view></view><view v-if="rv" class="guest-review"><image :src="absUrl(rv.avatar) || '/static/media/profile-avatar.jpg'" mode="aspectFill" /><view><text>{{ rv.nickname || '住客' }}</text><text>{{ rvMeta }}</text></view><text>{{ rv.rating }}</text></view><text class="guest-copy">{{ rv ? rv.content : (stayLoaded ? '暂无住客评价' : '') }}</text>
+      <view class="section-head"><text>近期Vlog</text><view @click="moreVlogs"><text>更多</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><view v-if="stayLoaded && !vlogs.length" class="r3-empty r3-empty--page"><view class="r3-empty-ic"><k-icon name="clapperboard" :size="28" color="red" /></view><text v-if="stayLoaded && !vlogs.length" class="list-empty">暂无Vlog</text><text class="r3-empty__sub">门店发布小院 Vlog 后会显示在这里</text></view><view class="vlog-list"><view v-for="(item,i) in vlogs" :key="item.vlogId" class="vlog" @click="openVlog(item)"><image :src="absUrl(item.image) || '/static/media/cover-empty.png'" mode="aspectFill" /><view><text class="vlog__title">{{ item.title }}</text><k-chip :tone="item.tone"><text>{{ item.tag }}</text></k-chip><view class="vlog__meta"><text>发布于 {{ item.time }}</text><view><k-icon name="heart" :size="14" color="ink" /><text>{{ item.likes }}</text><k-icon name="message-circle" :size="14" color="ink" /><text>{{ item.comments }}</text></view></view></view></view></view>
+      <view class="section-head review-head"><text>住客评价 · <text>{{ d.reviewCount || 0 }}</text></text><view @click="openReviews"><text>查看全部</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><view class="guest-card"><view v-if="rv" class="guest-review"><image :src="absUrl(rv.avatar) || '/static/media/profile-avatar.jpg'" mode="aspectFill" /><view><text>{{ rv.nickname || '住客' }}</text><text>{{ rvMeta }}</text></view><view class="guest-review__star"><k-icon name="star" :size="12" color="ochre" fill /></view><text>{{ rv.rating }}</text></view><view v-if="rvParts.length" class="guest-copy guest-copy--parts"><view v-for="(part, pi) in rvParts" :key="pi" class="guest-para"><text v-if="part.label" class="guest-label">{{ part.label }}</text><text>{{ part.text }}</text></view></view><text v-else class="guest-copy">{{ rv ? rv.content : (stayLoaded ? '暂无住客评价' : '') }}</text></view>
     </view>
 
     <view v-else class="vlog-detail">
-      <image class="vlog-video" :src="absUrl(cur.cover) || '/static/media/cover-empty.png'" mode="aspectFill" @click="playVlog" />
-      <view class="vlog-copy"><text class="vlog-detail__title" @click="likeVlog">{{ cur.title || '' }}</text><view class="author"><image :src="absUrl(cur.authorAvatar) || '/static/media/profile-avatar.jpg'" mode="aspectFill" /><view><view><text>{{ cur.authorName || '' }}</text><k-chip v-if="cur.roleLabel" tone="green"><text>{{ cur.roleLabel }}</text></k-chip></view><text v-if="cur.timeText">发布于 {{ cur.timeText }}</text></view><k-button size="sm" type="outline" @click="followHost">{{ following ? '已关注' : '关注' }}</k-button></view><text v-if="cur.description" class="vlog-desc" @click="commentVlog">{{ cur.description }}</text><view class="vlog-comment" @click="commentVlog"><k-icon name="message-circle" :size="18" color="ink" /><text>评论 {{ cur.comments || 0 }}</text><text class="vlog-comment__go">写评论 / 看评论</text><k-icon name="chevron-right" :size="18" color="muted" /></view><text class="vlog-source">{{ cur.platformLabel ? '来源：' + cur.platformLabel + ' · ' : '' }}门店已审核</text></view><view class="vlog-review-link" @click="openReviews"><text>住客评价 · {{ d.reviewCount || 0 }}</text><k-icon name="chevron-down" :size="21" color="ink" /><view><text>查看全部</text><k-icon name="chevron-right" :size="20" color="muted" /></view></view><view class="swipe-next" @click="nextVlog"><k-icon name="chevron-down" :size="18" color="muted" /><text>{{ nextText }}</text></view>
+      <image class="vlog-video" :class="{ 'vlog-video--empty': !cur.cover }" :src="absUrl(cur.cover) || '/static/media/cover-empty.png'" mode="aspectFill" @click="playVlog" /><view v-if="!cur.cover" class="vlog-video-ph"><k-icon name="video" :size="40" color="light" /></view>
+      <view class="vlog-copy"><text class="vlog-detail__title" @click="likeVlog">{{ cur.title || '' }}</text><view class="author" :class="{ 'author--noname': !cur.authorName }"><image :src="absUrl(cur.authorAvatar) || '/static/media/profile-avatar.jpg'" mode="aspectFill" /><view><view><text :class="{ 'is-empty': !cur.authorName }">{{ cur.authorName || '' }}</text><k-chip v-if="cur.roleLabel" tone="green"><text>{{ cur.roleLabel }}</text></k-chip></view><text v-if="cur.timeText">发布于 {{ cur.timeText }}</text><text class="vlog-source">{{ cur.platformLabel ? '来源：' + cur.platformLabel + ' · ' : '' }}门店已审核</text></view><view class="author-follow" :class="{ on: following }"><k-button size="sm" type="outline" @click="followHost">{{ following ? '已关注' : '关注' }}</k-button></view></view><text v-if="cur.description" class="vlog-desc" @click="commentVlog">{{ cur.description }}</text><view class="vlog-comment" @click="commentVlog"><k-icon name="message-circle" :size="18" color="ink" /><text>评论 {{ cur.comments || 0 }}</text><text class="vlog-comment__go">写评论 / 看评论</text><k-icon name="chevron-right" :size="18" color="muted" /></view><view class="vlog-review-link" hover-class="k-press" @click="openReviews"><k-icon name="messages-square" :size="18" color="ink" /><text>住客评价 · {{ d.reviewCount || 0 }}</text><k-icon name="chevron-down" :size="12" color="light" /><view><text>查看全部</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view></view><view class="swipe-next" :class="{ 'swipe-next--end': vlogIdx >= vlogRows.length - 1 }" @click="nextVlog"><k-icon name="chevron-down" :size="18" color="muted" /><text>{{ nextText }}</text></view>
     </view>
 
     <!-- 房源已下架 / 链接失效时不再显示「立即预订」，免得点了才提示 -->
@@ -161,16 +161,13 @@
     <stay-range-picker v-if="dateOpen" :start="state.checkIn" :end="state.checkOut" :today="todayCn()" :min-date="todayCn()" :max-start="shiftDate(todayCn(), 180)" @cancel="dateOpen = false" @confirm="confirmDates" />
     <stay-video-player :src="playing.url" :poster="playing.cover" :title="playing.title" @close="closeVideo" />
     <!-- 2026-10-18 效果图：底部一条暖棕栏 —— 选了房型「已选：单人间 | 10.17-10.18 | 1晚」+ 价格，没选时「¥6/晚起 · 选择房型与日期」；右边白底「立即预订」 -->
-    <view v-if="s < 4 && d.stayName && !loadError && assisted" class="assistant-dock"><view><text class="assistant-title">自营小院 · 专人协助订房</text><text class="assistant-note">房型、日期与价格，请向订房助手确认</text></view><BookingAssistant :stay="d" /></view>
-    <view v-if="s < 4 && d.stayName && !loadError && !assisted" class="stay-booking-dock"><view class="pickbar"><view class="picked" :class="{ 'picked--pending': !roomsReady }"><template v-if="!roomsReady"><text class="picked__from">{{ roomsLoading ? '正在查询房型' : '房型信息待确认' }}</text><text class="picked__hint">{{ roomsError ? '请重新加载价格与余量' : '请稍候' }}</text></template><template v-else-if="pickedRoom"><view class="picked__text" :aria-label="pickedText"><text class="picked__seg">已选：</text><text v-for="(p, i) in pickedSegs" :key="i" class="picked__seg">{{ p + (i < pickedSegs.length - 1 ? ' | ' : '') }}</text></view><text class="picked__price">{{ pickedPrice }}</text><text class="picked__hint">{{ pickedRoom.selectedPriceLabel }}</text></template><template v-else><text class="picked__from">{{ pickedPrice || '选好房型再预订' }}</text><text class="picked__hint">{{ priceFrom ? '7晚参考价起 · 选择房型与日期' : '选择房型与日期' }}</text></template></view><view class="book" :class="{ 'book--disabled': !canBook }" role="button" :aria-disabled="!canBook" hover-class="k-press-s" @click="bookNow"><text class="book__main">{{ roomsLoading ? '查询中' : (canBook ? '立即预订' : '暂不可订') }}</text></view></view></view>
+    <view v-if="s < 4 && d.stayName && !loadError" class="stay-booking-dock"><view v-if="d.onlinePaymentAvailable === false" class="collection-note">本店暂未开通在线收款，可查看房价和房态。</view><view class="pickbar"><view class="picked" :class="{ 'picked--pending': !roomsReady }"><template v-if="!roomsReady"><text class="picked__from">{{ roomsLoading ? '正在查询房型' : '房型信息待确认' }}</text><text class="picked__hint">{{ roomsError ? '请重新加载价格与余量' : '请稍候' }}</text></template><template v-else-if="pickedRoom"><view class="picked__text" :aria-label="pickedText"><text class="picked__seg">已选：</text><text v-for="(p, i) in pickedSegs" :key="i" class="picked__seg">{{ p + (i < pickedSegs.length - 1 ? ' | ' : '') }}</text></view><text class="picked__price">{{ pickedPrice }}</text><text class="picked__hint">{{ pickedRoom.selectedPriceLabel }}</text></template><template v-else><text class="picked__from">{{ pickedPrice || '选好房型再预订' }}</text><text class="picked__hint">{{ priceFrom ? '7晚参考价起 · 选择房型与日期' : '选择房型与日期' }}</text></template></view><view class="book" :class="{ 'book--disabled': !canBook }" role="button" :aria-disabled="!canBook" hover-class="k-press-s" @click="bookNow"><text class="book__main">{{ roomsLoading ? '查询中' : (canBook ? (d.onlinePaymentAvailable === false ? '查看房态' : '立即预订') : '暂不可订') }}</text></view></view></view>
   </view>
 </k-feature-gate>
 </template>
 
 <script setup>
 import { experience } from '@/common/experience.js'
-import BookingAssistant from './components/booking-assistant.vue'
-import { isAssistedStay } from './booking-channel.js'
 import { rememberDestination } from '@/common/camp-history.js'
 import { periodDisplay, lowestPeriods } from './period-price.js'
 import { stayBookingEnabled, refreshFeatures } from '@/common/features.js'
@@ -200,7 +197,7 @@ import { storeActivities, stayPastActivitiesUrl } from './stays-activities.js'
 import { errText, alert, prompt, copy, yuan, sheet, pickPaged, confirm, todayCn, shiftDate } from '@/common/ui.js'
 import { stayState, normalizeDates, saveStayState, nightsBetween, dotText } from './stays-state.js'
 import { srcLabel, fewLeft, roomSpec, roomRate, dateRange, pickedLine, pickedParts, bookingQuery, hostFacts, travelRows, scoreText } from './stays-ui.js'
-import { stayReviewsUrl } from './stays-reviews.js'
+import { stayReviewsUrl, contentParts } from './stays-reviews.js'
 import { INTRO_TITLE, INTRO_CAPTION, DIARY_TITLE, DIARY_SUB, ROOM_VIDEO_BADGE, introCard, diaryEntry, entryCount, roomVideo, stayDiaryUrl } from './stays-media.js'
 import StayVideoPlayer from './stay-video-player.vue'
 import StayRangePicker from './components/stay-range-picker.vue'
@@ -238,7 +235,6 @@ onShow(() => { if (s.value === 4) barColor(true) })
 onHide(() => { if (s.value === 4) barColor(false) })
 // #endif
 const d = ref({})
-const assisted = computed(() => isAssistedStay(d.value))
 const loadError = ref('')
 // 详情读到过才算「加载完」：在这之前「暂无家人评价」「主理人介绍待补充」这类结论性文字都不显示（只是还没读到，不是真的没有）
 const stayLoaded = ref(false)
@@ -392,7 +388,7 @@ const openMap = () => {
 // 设施代码 → [图标, 名称]。2026-10-17 R2：字典补了 study 学习室、gym 健身房；图标用 common/icons.js 里已有的（book-open / activity），不往主包加图标
 // 2026-11-03（V70）：字典补了 floorheat 地暖，图标用已有的 thermometer
 const FAC = { bath: ['bath', '独立卫浴'], ac: ['wind', '空调'], hotwater: ['droplet', '热水'], wifi: ['wifi', 'Wi-Fi'], washer: ['shirt', '洗衣'], parking: ['car', '停车'], balcony: ['square-plus', '阳台'], study: ['book-open', '学习室'], gym: ['activity', '健身房'], floorheat: ['thermometer', '地暖'] }
-const facilities = computed(() => (d.value.facilities || []).filter(c => FAC[c]).slice(0, 5).map(c => ({ icon: FAC[c][0], label: FAC[c][1] })))
+const facilities = computed(() => (d.value.facilities || []).filter(c => FAC[c]).slice(0, 5).map(c => ({ icon: FAC[c][0], art: 'amenity-' + c, label: FAC[c][1] })))
 // 首屏亮点，只用详情里已有的数据：门店写的特色（最多 3 个）→ 长住优惠 → 带厨房 / 可做饭 → 设施；去重后最多 5 个
 const zhe = (rate) => (rate % 10 ? (rate / 10).toFixed(1) : String(rate / 10))
 const highlights = computed(() => {
@@ -421,7 +417,6 @@ const rooms = computed(() => (roomsLoaded.value ? roomRows.value : (d.value.room
   promoPrice: promoRoomId.value && Number(r.roomTypeId) === promoRoomId.value ? promoPrice.value : '' })))
 const showStory = () => alert('小院故事', host.value.story || '主理人还没有写小院故事')
 const toBooking = (room) => {
-  if (assisted.value) return toast('请点击底部「联系订房助手」确认预订')
   if (!stayId || loadError.value || !d.value.stayName) return toast('房源不存在或已下架')
   if (!roomsReady.value) return toast(roomsLoading.value ? '正在查询房型，请稍候' : '请先重新加载房型价格与余量')
   if (!canBook.value) return toast('所选日期暂无可订房型，请修改日期')
@@ -659,6 +654,7 @@ const openPastActivities = () => {
   if (url) go(url)
 }
 const rv = computed(() => d.value.reviewLatest || null)
+const rvParts = computed(() => (rv.value ? contentParts(rv.value.content) : [])) // 纯展示：把正文里的【卫生】拆成小标签 + 正文（和评价页同一种），字不改
 const rvMeta = computed(() => (rv.value && rv.value.createTime ? `${+rv.value.createTime.slice(5, 7)}月${+rv.value.createTime.slice(8, 10)}日` : ''))
 
 const pageShareMessage = () => ({ title: d.value.stayName || '袋鼠全球青年', path: '/pages/stays/detail?stayId=' + stayId })
@@ -671,8 +667,6 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 </script>
 
 <style scoped lang="scss">
-.assistant-dock { position:fixed; bottom:0; left:0; right:0; z-index:50; padding:14px 16px calc(14px + var(--k-safe-bottom)); background:var(--k-bg); border-top:1px solid var(--k-line); display:flex; flex-direction:column; gap:10px; }
-.assistant-title,.assistant-note { display:block; }.assistant-title { font-size:15px; font-weight:600; color:var(--k-ink); }.assistant-note { font-size:12px; color:var(--k-muted); margin-top:4px; }
 
 .week-price-note{display:block;font-size:12px;line-height:1.6;color:var(--k-muted);margin:8px 0}.rt__price,.info-price__row{flex-wrap:wrap}
 @import '../../styles/look.scss';
@@ -682,9 +676,9 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .vlog-detail { padding-bottom: calc(18px + var(--k-safe-bottom)); }.vlog-video { width: 100%; height: 450px; }.vlog-copy { padding: 13px 16px; }.vlog-detail__title { display: block; font-size: 20px; font-weight: 700; }.author { margin-top: 13px; display: flex; align-items: center; }.author>image { width: 46px; height: 46px; border-radius: 50%; }.author>view { flex: 1; margin-left: 9px; }.author>view>view { display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 700; }.author>view>text { color: var(--k-muted); font-size: 11px; }.vlog-desc,.vlog-source { display: block; margin-top: 12px; font-size: 13px; }.vlog-source { color: var(--k-muted); }.vlog-review-link { height: 58px; padding: 0 16px; border-top: 1px solid var(--k-line); border-bottom: 1px solid var(--k-line); display: flex; align-items: center; gap: 15px; }.vlog-review-link>text { font-size: 18px; font-weight: 700; }.vlog-review-link>view { margin-left: auto; display: flex; align-items: center; color: var(--k-muted); }.swipe-next { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 7px; color: var(--k-muted); font-size: 12px; }
 /* 底部暖棕栏（2026-10-18）：整条暖棕渐变、白字，右边白底棕字「立即预订」 */
 .pickbar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-radius: 18px; background: linear-gradient(90deg, var(--k-red-deep), #A8743F); box-shadow: 0 6px 16px rgba(138, 94, 54, .25); }
-.picked { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }.picked__text { display: flex; flex-wrap: wrap; font-size: 12px; font-weight: 600; color: #fff; line-height: 1.45; }.picked__seg { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: pre; }.picked__price { font-size: 12px; color: rgba(255,255,255,.88); font-family: var(--k-sans); font-weight: 700; }
-.picked__from { font: 700 18px var(--k-display-font); color: #fff; line-height: 1.2; }.picked__hint { font-size: 12px; color: rgba(255,255,255,.85); }
-.book { flex: 0 0 auto; height: 42px; padding: 0 20px; border-radius: 999px; background: #fff; display: flex; align-items: center; justify-content: center; }.book__main { color: var(--k-red-deep); font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+.picked { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }.picked__text { display: flex; flex-wrap: wrap; font-size: 12px; font-weight: 600; color: var(--k-paper); line-height: 1.45; }.picked__seg { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: pre; }.picked__price { font-size: 12px; color: rgba(255,255,255,.88); font-family: var(--k-sans); font-weight: 700; }
+.picked__from { font: 700 18px var(--k-display-font); color: var(--k-paper); line-height: 1.2; }.picked__hint { font-size: 12px; color: rgba(255,255,255,.85); }
+.book { flex: 0 0 auto; height: 42px; padding: 0 20px; border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; }.book__main { color: var(--k-red-deep); font-size: 16px; font-weight: 700; letter-spacing: 1px; }
 .book--disabled { opacity: .55; }
 .picked--pending .picked__from { font-size: 16px; line-height: 1.4; }
 .picked--pending .picked__hint { font-size: 11px; line-height: 1.5; }
@@ -694,7 +688,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 /* 2026-10-17 改版（效果图 7）：头图下的白色信息卡往上叠 26px、大圆角 + 柔阴影；标签一行小胶囊；评分在左、起价 +「N种房型可选」在右 */
 .hero-box { position: relative; background: #DDD5C8; }
 .hero-fade { position: absolute; left: 0; right: 0; top: 0; height: 110px; background: linear-gradient(180deg, rgba(252,249,243,.82) 0%, rgba(252,249,243,0) 100%); pointer-events: none; }
-.hero-count { position: absolute; right: 14px; bottom: 38px; height: 22px; padding: 0 9px; border-radius: 11px; background: rgba(36,27,23,.5); color: #fff; font-size: 12px; line-height: 22px; font-family: var(--k-sans); }
+.hero-count { position: absolute; right: 14px; bottom: 38px; height: 22px; padding: 0 9px; border-radius: 11px; background: rgba(36,27,23,.5); color: var(--k-paper); font-size: 12px; line-height: 22px; font-family: var(--k-sans); }
 .info { position: relative; z-index: 1; margin: -26px 12px 0; padding: 16px 14px 14px; border-radius: 20px; background: var(--k-paper); box-shadow: var(--k-sh1); }
 .info-chips { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
 .ichip { height: 22px; padding: 0 9px; border-radius: 999px; display: flex; align-items: center; font-size: 12px; background: var(--k-paper2); color: var(--k-ink2); }
@@ -764,7 +758,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .rt__few { font-size: 12px; color: var(--k-alert); font-weight: 600; white-space: nowrap; }
 .rt__few--off { color: var(--k-muted); font-weight: 400; }
 .rt__few--ok { color: var(--k-green); }
-.rt__btn { flex: 0 0 auto; height: 34px; padding: 0 20px; white-space: nowrap; border-radius: 999px; background: var(--k-green); color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; box-shadow: 0 4px 10px rgba(74, 110, 58, .22); }
+.rt__btn { flex: 0 0 auto; height: 34px; padding: 0 20px; white-space: nowrap; border-radius: 999px; background: var(--k-green); color: var(--k-paper); font-size: 14px; font-weight: 700; display: flex; align-items: center; box-shadow: 0 4px 10px rgba(74, 110, 58, .22); }
 .rt__btn.on { background: var(--k-green-soft); color: var(--k-green); box-shadow: none; }
 .rt__btn.off { background: var(--k-paper2); color: var(--k-muted); box-shadow: none; }
 .location { margin-top: 12px; padding: 12px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; gap: 10px; }.location-pin { width: 36px; height: 36px; border-radius: 50%; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }.location-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }.location-copy>text { display: block; }.location-main { font-size: 15px; font-weight: 700; }.location-note { font-size: 12px; color: var(--k-muted); margin-top: 2px; }.stay-intro { margin-top: 20px; line-height: 1.7; font-size: 14px; white-space: pre-line; overflow-wrap: anywhere; }.stay-intro>text { display: block; }.intro-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }.slogan { margin-top: 14px; height: auto; min-height: 91px; }.title-row>view:first-child { min-width: 0; }.title-row>view:first-child>view:first-child { flex-wrap: wrap; }
@@ -784,13 +778,13 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .vcard__img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 .vcard__shade { position: absolute; left: 0; right: 0; bottom: 0; height: 60%; background: linear-gradient(180deg, rgba(36,27,23,0) 0%, rgba(36,27,23,.55) 100%); }
 .vcard__play { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(36,27,23,.45); border: 2px solid rgba(255,255,255,.85); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-.vcard__cap { position: absolute; left: 14px; right: 14px; bottom: 12px; color: #fff; font-size: 14px; font-weight: 600; letter-spacing: .3px; }
+.vcard__cap { position: absolute; left: 14px; right: 14px; bottom: 12px; color: var(--k-paper); font-size: 14px; font-weight: 600; letter-spacing: .3px; }
 .entry__thumbs { margin-top: 6px; display: flex; gap: 4px; }
 .entry__thumb { width: 30px; height: 30px; border-radius: 6px; background: var(--k-paper2); }
 .rt__play { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; }
 .rt__play-dot { width: 50px; height: 50px; border-radius: 50%; background: rgba(36,27,23,.45); border: 2px solid rgba(255,255,255,.85); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
 /* 「≤1分钟」时长胶囊放在大图左上角（2026-10-18 效果图）；早鸟价挪到右上角 */
-.rt__badge { position: absolute; left: 10px; top: 10px; height: 22px; padding: 0 9px; border-radius: 11px; background: rgba(36,27,23,.6); color: #fff; font-size: 12px; line-height: 22px; font-family: var(--k-sans); }
+.rt__badge { position: absolute; left: 10px; top: 10px; height: 22px; padding: 0 9px; border-radius: 11px; background: rgba(36,27,23,.6); color: var(--k-paper); font-size: 12px; line-height: 22px; font-family: var(--k-sans); }
 .rt .room__promo { left: auto; right: 10px; top: 10px; }
 /* 顶栏透明时的「房源详情」标题胶囊；「住过的家人评价」入口左边的总结分 */
 .bar-pill { margin-left: 4px; height: 30px; padding: 0 14px; border-radius: 999px; background: rgba(255,255,255,.82); box-shadow: 0 2px 8px rgba(58,50,43,.12); display: flex; align-items: center; font-size: 14px; font-weight: 700; color: var(--k-ink); }
@@ -801,7 +795,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
    2026-10-19 一比一还原（参考图 9）：暖米渐变底、白卡大圆角 + 柔阴影 + 细边、标题加粗加大；房型卡视频封面中央暖棕实心播放钮、
    「少量余房」绿字、「选择」深绿实心胶囊；底部暖棕整条 + 橙色渐变「立即预订」。只改样式，结构和点按行为不变。
    --------------------------------------------------------------------------------------------------------------- */
-.stay-detail { --k-bg: #FCF9F3; background: var(--k-bg); }
+.stay-detail { background: var(--k-bg); }
 .stay-detail.vlog-page { background: var(--k-bg); }
 .info { border-radius: 16px; padding: 18px 16px 16px; border: $look-hairline; box-shadow: 0 4px 18px rgba(58,50,43,.06); }
 .title-row>view:first-child>view:first-child>text { font-size: 22px; font-weight: 700; color: $look-ink; }
@@ -812,7 +806,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .info-price__num { color: $look-brown; font: 900 28px var(--k-display-font); letter-spacing: -.3px; }
 .info-price__pill { height: 24px; padding: 0 10px; border-color: $look-chip-on-line; background: $look-chip-on-bg; color: $look-chip-on-ink; font-weight: 700; }
 .location { border: 0; border-radius: 16px; background: #FBF5EC; }
-.location-pin { background: #fff; box-shadow: 0 2px 6px rgba(138, 90, 48, .14); }
+.location-pin { background: var(--k-paper); box-shadow: 0 2px 6px rgba(138, 90, 48, .14); }
 .sec-card { margin-top: 14px; padding: 16px; border-radius: 16px; border: $look-hairline; box-shadow: 0 3px 14px rgba(58,50,43,.04); }
 .sec-title { font-size: 18px; font-weight: 700; color: $look-ink; }
 .rooms-head .sec-title { font-size: 20px; font-weight: 900; }
@@ -824,7 +818,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .vcard__play, .rt__play-dot { width: 56px; height: 56px; margin: 0; border: 2px solid rgba(255, 255, 255, .92); background: $look-grad-brown; box-shadow: 0 6px 16px rgba(58, 36, 18, .32); }
 .vcard__play { margin: -28px 0 0 -28px; }
 /* 主理人卡（参考图 9）：大圆头像、名字粗大、年龄 / 籍贯 / 擅长一行行小字、两颗浅橙评分胶囊 */
-.host2__avatar { width: 68px; height: 68px; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(120, 84, 48, .16); }
+.host2__avatar { width: 68px; height: 68px; border: 3px solid var(--k-paper); box-shadow: 0 4px 12px rgba(120, 84, 48, .16); }
 .host2__copy { gap: 5px; }
 .host2__name { font-size: 18px; font-weight: 700; color: $look-ink; }
 .host2__fact { font-size: 13px; color: var(--k-ink2); }
@@ -838,15 +832,15 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .entry:nth-child(2):last-child { grid-column: 1 / -1; }
 .entry__copy { gap: 4px; }
 .entry__title { font-size: 14px; font-weight: 700; color: $look-ink; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.entry:first-child .entry__title::before { content: '💬'; margin-right: 3px; font-size: 13px; }
-.entry + .entry .entry__title::before { content: '📷'; margin-right: 3px; font-size: 13px; }
-.entry + .entry + .entry .entry__title::before { content: '🎬'; margin-right: 3px; font-size: 13px; }
+.entry:first-child .entry__title::before { content: none; margin-right: 3px; font-size: 13px; }
+.entry + .entry .entry__title::before { content: none; margin-right: 3px; font-size: 13px; }
+.entry + .entry + .entry .entry__title::before { content: none; margin-right: 3px; font-size: 13px; }
 .entry__score { order: 2; grid-column: 1 / -1; width: auto; height: auto; padding: 0; background: none; justify-content: flex-start; }
 .entry__score--none { width: 36px; height: 36px; border-radius: 12px; background: var(--k-ochre-soft); justify-content: center; }
 .entry__num { font: 900 30px var(--k-display-font); color: $look-brown; line-height: 1; letter-spacing: -.5px; }
 /* 评价分始终在左侧，生活碎片和 Vlog 不挤压综合评分。 */
 .entry.entry--reviews { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 14px; padding: 16px; }
-.entry--reviews .entry__score { order: 0; grid-column: auto; flex-direction: column; justify-content: center; gap: 5px; width: 68px; min-height: 68px; padding: 0; background: #F6EDE2; border-radius: 12px; }
+.entry--reviews .entry__score { order: 0; grid-column: auto; flex-direction: column; justify-content: center; gap: 5px; width: 68px; min-height: 68px; padding: 0; background: var(--k-red-soft); border-radius: 12px; }
 .entry--reviews .entry__num { font-size: 29px; font-weight: 700; }
 .entry--reviews .entry__score-label { font-size: 11px; color: var(--k-red-deep); }
 .entry--reviews .entry__title { font-size: 16px; }
@@ -878,14 +872,14 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .picked__text { font-size: 13px; font-weight: 700; }
 .picked__from { font: 700 19px var(--k-display-font); }
 .book { height: 46px; padding: 0 22px; background: #F3BD78; box-shadow: none; }
-.book__main { color: #3A322B; font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+.book__main { color: var(--k-ink); font-size: 16px; font-weight: 700; letter-spacing: 1px; }
 .bar-pill { font-weight: 700; }
 /* 10-19 标题字体（--k-display-font，只有 700 / 900 两档）：整页正文用系统黑体，下面这些标题、价格大数字单独用标题字体
    （之前整页 font-family 是 --k-serif，那时它等于系统黑体；现在 --k-serif 指向标题字体，整页挂着会把正文也变成粗体） */
 .title-row>view:first-child>view:first-child>text, .slogan>view text:first-child, .host-title, .section-head>text, .room>view>text:first-child, .vlog__title, .guest-review>view text:first-child, .vlog-detail__title, .vlog-review-link>text, .intro-title, .sec-title, .host2__name, .entry__title, .rt__name, .bar-pill, .book__main { font-family: var(--k-display-font); }
 /* 320 宽：大标题、小节标题收一档，「可选空余房型」不折行；两张入口卡标题小一号 */
 @media (max-width: 359px) { .title-row>view:first-child>view:first-child>text { font-size: 20px; } .rooms-head .sec-title { font-size: 17px; white-space: nowrap; } .rooms-head__note { white-space: normal; flex-wrap: wrap; justify-content: flex-end; } .entry__title { font-size: 13px; } .entry:first-child .entry__title::before, .entry + .entry .entry__title::before { margin-right: 2px; font-size: 12px; } }
-/* 10-19 复查：320 宽两张入口卡并排时一张只有一百四十来像素，「💬住过的家人评价」放不下被省略成「住过的家人…」—— 窄屏去掉标题前的小图标，标题完整显示 */
+/* 10-19 复查：320 宽两张入口卡并排时一张只有一百四十来像素，「图标 + 住过的家人评价」放不下被省略成「住过的家人…」—— 窄屏去掉标题前的小图标，标题完整显示 */
 @media (max-width: 359px) { .entries:not(.entries--one) .entry .entry__title::before { display: none; } }
 /* 2026-10-23：上半部按小院原稿，下半部按纵向房型原稿；真实房型评价单独成行。 */
 @import './stays-premium.scss';
@@ -897,12 +891,12 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .hero-actions { position: absolute; right: 14px; display: flex; align-items: center; padding: 0 3px; height: 34px; border-radius: 20px; background: rgba(44,30,22,.62); }
 .hero-action { width: 37px; height: 34px; display: flex; align-items: center; justify-content: center; }
 .hero-actions__line { width: 1px; height: 17px; background: rgba(255,255,255,.4); }
-.bar-pill { position: absolute; left: 50%; margin: 0; transform: translateX(-50%); height: 32px; padding: 0 20px; font-size: 15px; letter-spacing: 1px; color: #442c23; background: #fff; }
+.bar-pill { position: absolute; left: 50%; margin: 0; transform: translateX(-50%); height: 32px; padding: 0 20px; font-size: 15px; letter-spacing: 1px; color: #442c23; background: var(--k-paper); }
 .bar-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: 700; color: #563c31; }
 .stay-detail--solid :deep(.k-topbar) { background: #faf4ef !important; }
 .stay-detail.vlog-page :deep(.k-topbar) { background: #151311 !important; }
 .overview-body { padding: 0 13px 14px; }
-.info { margin: -34px 13px 0; padding: 12px; border: 1px solid #eee3db; border-radius: 13px; background: #fff; box-shadow: 0 3px 6px rgba(72,44,27,.14); }
+.info { margin: -34px 13px 0; padding: 12px; border: 1px solid #eee3db; border-radius: 13px; background: var(--k-paper); box-shadow: 0 3px 6px rgba(72,44,27,.14); }
 .title-row { align-items: center; gap: 8px; }
 .title-row>view:first-child>view:first-child>text { font-size: 21px; line-height: 1.3; color: #56392d; letter-spacing: .2px; }
 .title-actions { gap: 8px; padding: 0; }
@@ -926,7 +920,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .location-pin { width: 19px; height: 26px; background: transparent; box-shadow: none; }
 .location-area,.location-main { font-size: 11px; font-weight: 600; line-height: 1.5; color: #563c31; }
 .location-action { flex: 0 0 auto; height: 25px; padding: 0 7px; border: 1px solid #b79170; border-radius: 999px; display: flex; align-items: center; gap: 4px; font-size: 10px; color: #885e3f; }
-.sec-card { margin-top: 7px; padding: 9px 14px; border: 1px solid #eee4dd; border-radius: 13px; background: #fff; box-shadow: 0 2px 5px rgba(72,44,27,.12); }
+.sec-card { margin-top: 7px; padding: 9px 14px; border: 1px solid #eee4dd; border-radius: 13px; background: var(--k-paper); box-shadow: 0 2px 5px rgba(72,44,27,.12); }
 .sec-title { font-size: 16px; line-height: 1.4; color: #77482d; letter-spacing: 0; }
 .trip .sec-head { margin-bottom: 5px; }
 .trip__row { gap: 2px; margin-top: 2px; }
@@ -961,12 +955,12 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .host2__story { margin-top: 10px; padding: 10px 12px; }
 .host2__story-text { font-size: 14px; line-height: 1.7; -webkit-line-clamp: 2; }
 .host2__more { margin-top: 6px; font-size: 13px; }
-.room-section { margin-top: 7px; padding: 0 9px 10px; background: #fff; border: 1px solid #eee4dd; border-radius: 13px; box-shadow: 0 2px 5px rgba(72,44,27,.07); }
+.room-section { margin-top: 7px; padding: 0 9px 10px; background: var(--k-paper); border: 1px solid #eee4dd; border-radius: 13px; box-shadow: 0 2px 5px rgba(72,44,27,.07); }
 .entries { margin-top: 0; gap: 7px; grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
 .entries--one { grid-template-columns: minmax(0,1fr); }
-.entry,.entry.entry--reviews { padding: 8px 7px; border-radius: 9px; border: 1px solid #eae3df; box-shadow: 0 2px 4px rgba(72,44,27,.07); background: #fff; grid-column: auto; display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
+.entry,.entry.entry--reviews { padding: 8px 7px; border-radius: 9px; border: 1px solid #eae3df; box-shadow: 0 2px 4px rgba(72,44,27,.07); background: var(--k-paper); grid-column: auto; display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
 .entry:nth-child(2):last-child { grid-column: auto; }
-.entry + .entry { background: linear-gradient(130deg,#fff,#f2f0f4); }
+.entry + .entry { background: linear-gradient(130deg,var(--k-paper),#f2f0f4); }
 .entry > .k-icon { display: none; }
 .entry__copy { flex: none; order: 0; gap: 6px; }
 .entry__title,.entry.entry--reviews .entry__title { font-size: 14px; line-height: 1.5; white-space: nowrap; overflow: visible; letter-spacing: -.2px; color: #5b3a2b; }
@@ -1063,7 +1057,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .acts { margin-top: 14px; }
 .acts__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 2px 8px; }
 .acts__head .sec-title { font-size: 17px; color: #583a2c; }
-.acts__head .sec-title::before { content: '🎟'; margin-right: 4px; }
+.acts__head .sec-title::before { content: none; margin-right: 4px; }
 .acts__toggle { display: flex; align-items: center; gap: 4px; min-height: 44px; font-size: 14px; font-weight: 600; color: #895c35; white-space: nowrap; }
 .acts--entry .acts__head { margin-bottom: 0; }
 .acts__scroll { width: 100%; white-space: nowrap; }
@@ -1071,7 +1065,7 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 .act { flex: 0 0 auto; width: 148px; border: 1px solid #EADBCA; border-radius: 12px; background: #FFFDFB; overflow: hidden; white-space: normal; }
 .act__pic { position: relative; height: 84px; background: #ECE2D6; }
 .act__img { display: block; width: 100%; height: 100%; }
-.act__limit,.act__state { position: absolute; left: 6px; top: 6px; height: 20px; padding: 0 7px; border-radius: 999px; color: #fff; font-size: 11px; line-height: 20px; }
+.act__limit,.act__state { position: absolute; left: 6px; top: 6px; height: 20px; padding: 0 7px; border-radius: 999px; color: var(--k-paper); font-size: 11px; line-height: 20px; }
 .act__limit { background: linear-gradient(100deg, #F08A32, #D2581C); font-weight: 700; }
 .act__state { background: rgba(60,40,28,.66); }
 .act__body { padding: 7px 9px 9px; display: flex; flex-direction: column; gap: 3px; }
@@ -1084,4 +1078,690 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) load() })
 @media(max-width:359px) { .act { width: 136px; } .rt__btn { min-width: 60px; padding: 0 12px; } .rt__body { padding: 10px 12px; } }
 
 .stay-period-options, .type-main > .stay-period-options { display: block; margin: 4px 0 0; color: var(--k-muted); font-size: 12px; line-height: 1.55; white-space: pre-line; text-align: left; overflow-wrap: anywhere; }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：顶部大图完整露出（不再盖白雾、信息卡只往上叠 14px），下面接一张白色内容面板；
+   其余每块是浅灰底上的纯白卡（12 圆角，不描边不加阴影）。房型卡收成左图右文的小卡；评价 / 生活碎片 / Vlog 入口做成带小图标方块的内容卡；
+   底部预订条改成白底 + 42 高的暖棕胶囊钮。标题都换回系统黑体，去掉标题前的表情符号、纸纹底和棕色描边。
+   功能和文字一样不少；上面几轮的规则保留不动，这里统一用 .stay-detail 开头的规则盖过去。 */
+.stay-detail { @include stays-fine; }
+.stay-detail--solid :deep(.k-topbar) { background: var(--k-paper) !important; box-shadow: 0 .5px 0 rgba(20,14,10,.08); }
+.stay-detail .bar-title { color: var(--k-ink); font-family: var(--k-serif); font-size: 17px; font-weight: 700; }
+.stay-detail .bar-pill { padding: 0 14px; background: var(--sd-veil); box-shadow: none; color: var(--k-ink); font-family: var(--k-sans); font-size: 14px; font-weight: 600; letter-spacing: 0; }
+/* 大图上的返回箭头垫一个白色小圆（看上去 32，可点范围 40），深色照片上也看得清 */
+.stay-detail:not(.stay-detail--solid) :deep(.k-navbar__back) { width: 40px; height: 40px; margin-left: 0; border: 4px solid transparent; border-radius: 50%; background: var(--sd-veil) padding-box; }
+.stay-detail:not(.stay-detail--solid) :deep(.k-navbar__back .k-icon) { width: 20px !important; height: 20px !important; }
+/* —— 头图 —— */
+.stay-detail .overview { padding-bottom: calc(96px + var(--k-safe-bottom)); } /* 底部预订条选了房型后有三行字，留足高度不压住最后一张房型卡 */
+.stay-detail .hero-box { background: var(--k-paper2); }
+.stay-detail .hero { height: 264px; }
+.stay-detail .hero-fade { height: 0; background: transparent; }
+.stay-detail .hero-count { right: 12px; bottom: 26px; height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(20,14,10,.5); font-size: 11px; line-height: 20px; }
+.stay-detail .hero-actions { right: 12px; height: 32px; padding: 0 2px; border-radius: 16px; background: var(--sd-shade); }
+.stay-detail .hero-action { width: 36px; height: 32px; }
+.stay-detail .hero-action .stay-share-icon { width: 18px !important; height: 18px !important; }
+.stay-detail .hero-actions__line { height: 14px; background: rgba(255,255,255,.3); }
+/* —— 白色内容面板：名字、标签、评分、价格、地址 —— */
+.stay-detail .info { margin: -14px 0 0; padding: 14px 12px 12px; border: 0; border-radius: 16px 16px 0 0; background: var(--k-paper); box-shadow: none; }
+.stay-detail .title-row { align-items: flex-start; gap: 8px; min-height: 0; }
+.stay-detail .title-row>view:first-child>view:first-child>text { color: var(--k-ink); font-family: var(--k-sans); font-size: 18px; font-weight: 700; line-height: 26px; letter-spacing: 0; }
+.stay-detail .title-actions { gap: 0; margin: -5px -8px 0 0; padding: 0; }
+.stay-detail .title-actions>view { min-width: 36px; min-height: 36px; justify-content: center; color: var(--k-ink2); }
+.stay-detail .title-actions .stay-share-icon { width: 20px !important; height: 20px !important; }
+.stay-detail .info-meta { display: block; margin-top: 6px; }
+.stay-detail .info-meta__copy { padding-right: 0; }
+.stay-detail .info-chips, .stay-detail .info-meta__copy .info-chips { gap: 4px; margin: 0; }
+.stay-detail .ichip { height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-fill); color: var(--k-ink2); font-size: 10px; font-weight: 500; }
+.stay-detail .ichip--src { background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; }
+.stay-detail .ichip--safe { background: var(--k-green-soft); color: var(--k-green); font-weight: 500; }
+.stay-detail .info-meta__copy .rating { min-height: 28px; margin-top: 4px; align-items: center; }
+.stay-detail .info-meta__copy .rating text:first-child { color: var(--k-red-deep); font-family: var(--k-sans); font-size: 14px; font-weight: 700; line-height: 20px; }
+.stay-detail .info-meta__copy .rating text:nth-child(2) { margin-left: 0; color: var(--k-muted); font-size: 12px; }
+
+.stay-detail .info-price { position: static; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; }
+.stay-detail .info-price__row { align-items: baseline; }
+.stay-detail .info-price__num { color: var(--k-red-deep); font-family: var(--k-sans); font-size: 22px; font-weight: 700; line-height: 28px; letter-spacing: 0; }
+.stay-detail .info-price__unit { margin-left: 4px; color: var(--k-muted); font-size: 11px; }
+.stay-detail .info-price__pill { height: 26px; padding: 0 10px; border: 1px solid var(--k-red-line); border-radius: 13px; background: var(--k-paper); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+.stay-detail .stay-period-options { margin-top: 2px; font-size: 11px; line-height: 16px; }
+.stay-detail .week-price-note { margin: 6px 0 0; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.stay-detail .info-promo { margin-top: 8px; }
+.stay-detail .location { align-items: center; gap: 6px; margin-top: 10px; padding: 10px 0 0; border: 0; border-top: 1px solid var(--k-line); border-radius: 0; background: transparent; }
+.stay-detail .location-pin { width: 16px; height: 20px; background: transparent; box-shadow: none; }
+
+.stay-detail .location-area { color: var(--k-muted); font-size: 11px; font-weight: 400; line-height: 16px; }
+.stay-detail .location-main { color: var(--k-ink); font-size: 13px; font-weight: 500; line-height: 19px; }
+.stay-detail .location-action { height: 26px; min-height: 26px; padding: 0 10px; gap: 3px; border: 1px solid var(--k-red-line); border-radius: 13px; color: var(--k-red-deep); font-size: 11px; }
+
+.stay-detail .rooms-state { font-size: 12px; }
+.stay-detail .rooms-state__retry { min-height: 28px; padding: 0 14px; border-radius: 14px; font-size: 12px; }
+/* —— 下面各块：浅灰底上的白卡 —— */
+.stay-detail .overview-body { padding: 0 12px 12px; }
+.stay-detail .slogan { height: auto; min-height: 0; margin-top: 8px; padding: 12px; gap: 10px; border: 0; border-radius: 12px; background: var(--k-paper); }
+.stay-detail .slogan>view text:first-child { font-family: var(--k-sans); font-size: 15px; font-weight: 600; line-height: 21px; }
+.stay-detail .slogan>view text:last-child { margin-top: 3px; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.stay-detail .slogan image { width: 66px; height: 48px; border-radius: 8px; }
+.stay-detail .sec-card { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+.stay-detail .sec-head { gap: 8px; }
+.stay-detail .sec-head>text + text { flex: 0 0 auto; color: var(--k-muted); font-size: 12px; }
+.stay-detail .sec-title { color: var(--k-ink); font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 21px; letter-spacing: 0; }
+.stay-detail .sec-title::before { content: none; }
+.stay-detail .section-pending { margin: 6px 0 0; color: var(--k-muted); font-size: 12px; line-height: 18px; }
+/* 出行参考：小标签 + 一行行说明 */
+.stay-detail .trip .sec-head { margin-bottom: 6px; }
+.stay-detail .trip__row { align-items: flex-start; gap: 8px; margin-top: 6px; }
+.stay-detail .trip__k { flex: 0 0 auto; height: 17px; margin-top: 2px; padding: 0 5px; border-radius: 4px; background: var(--k-fill); color: var(--k-ink2); font-size: 10px; font-weight: 500; line-height: 17px; }
+.stay-detail .trip__k::after { content: none; }
+.stay-detail .trip__k--good { background: var(--k-green-soft); color: var(--k-green); }
+.stay-detail .trip__k--warn { background: var(--k-ochre-soft); color: var(--k-ochre-deep); }
+.stay-detail .trip__v { padding: 0; color: var(--k-ink2); font-size: 13px; font-weight: 400; line-height: 20px; }
+/* 3 分钟看小院：白卡 + 2:1 封面，说明字压在封面底部的黑色渐变上 */
+.stay-detail .vcard { padding: 12px; background: var(--k-paper); }
+.stay-detail .vcard__head { margin: 0 0 8px; padding: 0; }
+.stay-detail .vcard__title { gap: 6px; }
+.stay-detail .vcard__title .sec-title { color: var(--k-ink); font-size: 15px; letter-spacing: 0; }
+.stay-detail .vcard__dot { width: 18px; height: 18px; background: linear-gradient(135deg,#B5814D,#8E5E33); }
+
+.stay-detail .vcard__cover { padding-bottom: 50%; border: 0; border-radius: 8px; background: var(--k-paper2); }
+.stay-detail .vcard__shade { height: 50%; background: linear-gradient(transparent, rgba(20,14,10,.6)); }
+.stay-detail .vcard__play { width: 40px; height: 40px; margin: -20px 0 0 -20px; border: 0; background: rgba(20,14,10,.5); box-shadow: none; }
+
+.stay-detail .vcard__cap { left: 10px; right: 10px; bottom: 8px; font-size: 12px; font-weight: 500; letter-spacing: 0; }
+.stay-detail .vcard--pending { background: var(--k-paper); }
+.stay-detail .video-pending { min-height: 72px; gap: 6px; border-radius: 8px; background: var(--k-page); color: var(--k-muted); font-size: 12px; }
+
+/* 当地主理人 */
+.stay-detail .host2 { padding: 12px; }
+.stay-detail .host2__follow { height: 26px; padding: 0 12px; border: 1px solid var(--k-red-line); border-radius: 13px; color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+.stay-detail .host2__follow.on { border-color: var(--k-line2); color: var(--k-muted); }
+.stay-detail .host2__main { gap: 10px; margin-top: 10px; }
+.stay-detail .host2__avatar { width: 44px; height: 44px; margin-top: 0; border: 0; box-shadow: none; }
+.stay-detail .host2__copy { gap: 3px; padding-top: 0; }
+.stay-detail .host2__name { color: var(--k-ink); font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; }
+.stay-detail .host2__name::before { color: var(--k-muted); font-weight: 400; }
+.stay-detail .host2__facts { gap: 0 10px; }
+.stay-detail .host2__fact { color: var(--k-muted); font-size: 12px; font-weight: 400; line-height: 18px; }
+.stay-detail .host2__scores { justify-content: flex-start; gap: 4px; margin: 2px 0 0; }
+.stay-detail .host2__score { height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 10px; font-weight: 500; line-height: 17px; }
+.stay-detail .host2__intro { color: var(--k-ink2); font-size: 13px; font-weight: 400; line-height: 20px; }
+.stay-detail .host2__story { margin-top: 10px; padding: 10px; border-radius: 8px; background: var(--k-page); }
+.stay-detail .host2__story-text { color: var(--k-ink2); font-size: 13px; line-height: 20px; }
+.stay-detail .host2__more { margin-top: 4px; color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+/* 评价 / 生活碎片 / Vlog 入口：两列内容卡，左上角一个 32 的小图标方块（很浅的同色渐变底），下面是评分或一句说明 */
+.stay-detail .room-section { margin-top: 8px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.stay-detail .entries { gap: 8px; margin: 0; }
+.stay-detail .entry, .stay-detail .entry.entry--reviews { position: relative; min-height: 0; padding: 10px; gap: 0; justify-content: flex-start; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+.stay-detail .entry + .entry { background: var(--k-paper); }
+/* 有第三张入口卡（Vlog）时让它占满一行，不在左边孤零零留半行 */
+.stay-detail .entry + .entry + .entry { grid-column: 1 / -1; }
+.stay-detail .entry__copy { gap: 0; }
+.stay-detail .entry__title, .stay-detail .entry.entry--reviews .entry__title { display: block; padding-left: 40px; color: var(--k-ink); font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 32px; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stay-detail .entry .entry__title::before, .stay-detail .entry.entry--reviews .entry__title::before, .stay-detail .entry--diary .entry__title::before { content: none !important; }
+.stay-detail .entry__sub { margin-top: 6px; color: var(--k-muted); font-size: 11px; line-height: 18px; }
+.stay-detail .entry--reviews .entry__score { order: 1; min-height: 18px; margin-top: 6px; padding: 0; gap: 4px; align-items: baseline; border-radius: 0; background: transparent; }
+.stay-detail .entry--reviews .entry__num { color: var(--k-red-deep); font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 18px; letter-spacing: 0; }
+.stay-detail .entry--reviews .entry__score-label { color: var(--k-muted); font-size: 11px; line-height: 18px; }
+/* 小院活动：白卡里横滑的小卡片 */
+.stay-detail .acts { margin-top: 8px; padding: 12px 0 12px 12px; border-radius: 12px; background: var(--k-paper); }
+.stay-detail .acts__head { margin: 0 4px 8px 0; }
+.stay-detail .acts--entry .acts__head { margin-bottom: 0; }
+.stay-detail .acts__head .sec-title { color: var(--k-ink); font-size: 15px; }
+.stay-detail .acts__toggle { min-height: 36px; margin: -8px 0; padding: 0 4px; gap: 1px; color: var(--k-muted); font-size: 12px; font-weight: 400; }
+
+.stay-detail .acts__row { gap: 8px; padding: 0 12px 0 0; }
+.stay-detail .act { width: 140px; border: 0; border-radius: 8px; background: var(--k-page); }
+.stay-detail .act__pic { background: var(--k-paper2); }
+.stay-detail .act__limit, .stay-detail .act__state { left: 4px; top: 4px; height: 17px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 500; line-height: 17px; }
+.stay-detail .act__limit { background: var(--k-alert); color: var(--k-paper); }
+.stay-detail .act__state { background: rgba(255,255,255,.94); color: var(--k-ink2); }
+.stay-detail .act__body { padding: 6px 8px 8px; gap: 2px; }
+.stay-detail .act__title { min-height: 36px; color: var(--k-ink); font-family: var(--k-sans); font-size: 13px; font-weight: 600; line-height: 18px; }
+.stay-detail .act__when { color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.stay-detail .act__price { color: var(--k-red-deep); font-family: var(--k-sans); font-size: 13px; font-weight: 700; }
+.stay-detail .act__price--free { color: var(--k-green); font-size: 13px; }
+.stay-detail .act__deadline { color: var(--k-alert); font-size: 10px; }
+/* 可选空余房型：标题和「日期 · 晚数 · 人数 改日期」排一行（放不下自动换行） */
+.stay-detail .rooms-head { flex-wrap: wrap; gap: 6px 8px; margin: 14px 0 8px; }
+.stay-detail .rooms-head .sec-title { font-size: 16px; line-height: 22px; white-space: nowrap; }
+.stay-detail .rooms-head__note { width: auto; min-height: 28px; margin-left: auto; padding: 0 8px 0 10px; gap: 3px; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); font-size: 11px; white-space: nowrap; }
+.stay-detail .rooms-head__note>text:first-child { max-width: none; margin-right: 2px; white-space: nowrap; }
+.stay-detail .rooms-head__edit { margin-left: 2px; color: var(--k-red-deep); font-weight: 500; }
+
+.stay-detail .room-section .rooms-state, .stay-detail .room-section .list-empty { border-radius: 12px; background: var(--k-paper); }
+/* 房型卡：左边 96 的方图，右边名字 / 规格 / 评价 / 价格，右下角 28 高的「选择」；选中的那张描一圈暖棕细边 */
+.stay-detail .room-stack { gap: 8px; padding: 0; }
+.stay-detail .rt { flex-direction: row; align-items: flex-start; gap: 10px; margin: 0; padding: 10px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; overflow: visible; }
+.stay-detail .rt.on { box-shadow: inset 0 0 0 1.5px var(--k-red); }
+.stay-detail .rt__pic { flex: 0 0 96px; width: 96px; height: 96px; padding-bottom: 0; border-radius: 8px; background: var(--k-paper2); }
+.stay-detail .rt__body { flex: 1; min-width: 0; padding: 0; }
+.stay-detail .rt__name { color: var(--k-ink); font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; }
+.stay-detail .rt__line { margin: 2px 0 0; color: var(--k-muted); font-size: 11px; font-weight: 400; line-height: 16px; }
+.stay-detail .rt__review { min-height: 28px; margin: 2px 0 0; gap: 6px; }
+
+.stay-detail .rt__score { color: var(--k-red-deep); font-size: 12px; font-weight: 600; }
+.stay-detail .rt__review .rt__cnt, .stay-detail .rt__none { margin-left: 2px; color: var(--k-muted); font-size: 11px; }
+.stay-detail .rt__review-go { gap: 0; color: var(--k-red-deep); font-size: 11px; }
+
+.stay-detail .rt__foot { flex-wrap: nowrap; align-items: flex-end; gap: 8px; margin-top: 4px; padding-top: 0; border: 0; }
+.stay-detail .rt__left { flex: 1; min-width: 0; align-items: center; gap: 2px 6px; }
+.stay-detail .rt__price { align-items: baseline; }
+.stay-detail .rt__yen { color: var(--k-red-deep); font-size: 11px; font-weight: 600; }
+.stay-detail .rt__num { color: var(--k-red-deep); font-family: var(--k-sans); font-size: 18px; font-weight: 700; line-height: 24px; letter-spacing: 0; }
+.stay-detail .rt__unit { margin-left: 3px; color: var(--k-muted); font-size: 11px; }
+.stay-detail .rt__left .stay-period-options { flex: 0 0 100%; order: 3; margin: 0; }
+.stay-detail .rt__few { height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-alert-soft); color: var(--k-alert); font-size: 10px; font-weight: 500; line-height: 17px; }
+.stay-detail .rt__few--ok { display: block; background: var(--k-green-soft); color: var(--k-green); }
+.stay-detail .rt__few--off { height: auto; min-height: 17px; background: var(--k-fill); color: var(--k-muted); font-weight: 400; white-space: normal; }
+.stay-detail .rt__btn { min-width: 56px; height: 28px; padding: 0 12px; border: 1px solid var(--k-red-line); border-radius: 14px; background: var(--k-paper); color: var(--k-red-deep); font-size: 12px; font-weight: 600; letter-spacing: 0; box-shadow: none; }
+.stay-detail .rt__btn.on { border-color: transparent; background: linear-gradient(135deg,#B5814D,#8E5E33); color: var(--k-paper); }
+.stay-detail .rt__btn.off { border-color: transparent; background: var(--k-fill); color: var(--k-light); }
+.stay-detail .rt__play-dot { width: 28px; height: 28px; border: 0; background: rgba(20,14,10,.5); box-shadow: none; }
+
+.stay-detail .rt__badge { left: 4px; top: auto; bottom: 4px; height: 16px; padding: 0 5px; border-radius: 8px; background: rgba(20,14,10,.5); font-size: 10px; font-weight: 500; line-height: 16px; }
+.stay-detail .room__promo { left: 12px; top: 12px; height: 17px; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,.94); color: var(--k-ochre-deep); font-size: 10px; font-weight: 500; line-height: 17px; }
+.stay-detail .rt .room__promo { left: 4px; right: auto; top: 4px; bottom: auto; height: 17px; font-size: 10px; line-height: 17px; }
+/* —— 底部预订条：白底细线，右边 42 高的暖棕胶囊钮 —— */
+.stay-detail .stay-booking-dock { left: 0; right: 0; bottom: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom) * .5); background: var(--k-paper); box-shadow: 0 -.5px 0 rgba(20,14,10,.08); }
+.stay-detail .pickbar { min-height: 44px; padding: 0; gap: 10px; border-radius: 0; background: transparent; box-shadow: none; }
+.stay-detail .picked { gap: 0; }
+.stay-detail .picked__from { color: var(--k-red-deep); font-family: var(--k-sans); font-size: 17px; font-weight: 700; line-height: 24px; }
+.stay-detail .picked--pending .picked__from { color: var(--k-ink); font-size: 14px; font-weight: 600; line-height: 20px; }
+.stay-detail .picked__hint, .stay-detail .picked--pending .picked__hint { margin-top: 0; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.stay-detail .picked__text { color: var(--k-ink); font-size: 12px; font-weight: 500; line-height: 17px; }
+.stay-detail .picked__price { color: var(--k-red-deep); font-size: 12px; font-weight: 700; line-height: 17px; }
+.stay-detail .book { min-width: 112px; height: 44px; padding: 0 22px; border-radius: 22px; background: linear-gradient(135deg,#B5814D,#8E5E33); box-shadow: none; }
+.stay-detail .book__main { color: var(--k-paper); font-family: var(--k-sans); font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.stay-detail .book--disabled { opacity: .6; }
+/* —— 第 2–4 屏（房型预览 / Vlog 列表 / Vlog 详情）同一套底色和白卡；设施图标放进 40 的小方块 —— */
+.stay-detail .rooms-body, .stay-detail .vlogs-body { padding: 8px 12px calc(86px + var(--k-safe-bottom)); }
+.stay-detail .facilities { height: auto; padding: 12px 4px; border-radius: 12px; background: var(--k-paper); justify-content: space-around; }
+.stay-detail .facilities>view { width: 20%; gap: 6px; color: var(--k-ink2); font-size: 11px; line-height: 16px; }
+.stay-detail .fac-tile { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: linear-gradient(145deg,#FCF4E8,#F4E4CC); }
+.stay-detail .card { border: 0; border-radius: 12px; background: var(--k-paper); }
+.stay-detail .host { margin-top: 8px; padding: 12px; }
+.stay-detail .host-title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; }
+.stay-detail .host-main { margin-top: 10px; }
+.stay-detail .host-main>image { width: 44px; height: 44px; }
+.stay-detail .host-main>view { margin-left: 10px; }
+.stay-detail .host-main>view>text { color: var(--k-ink2); font-size: 13px; line-height: 20px; }
+.stay-detail .host-main>view>view { margin-top: 6px; color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+.stay-detail .host-stats { height: auto; margin-top: 10px; padding-top: 10px; align-items: center; color: var(--k-ink2); font-size: 12px; font-weight: 500; }
+.stay-detail .section-head { height: 44px; }
+.stay-detail .section-head>text { font-family: var(--k-sans); font-size: 16px; font-weight: 700; }
+.stay-detail .section-head>view { font-size: 12px; }
+.stay-detail .room-list { gap: 8px; }
+.stay-detail .room { height: auto; min-height: 112px; padding: 8px; }
+.stay-detail .room>image { width: 96px; height: 96px; border-radius: 8px; }
+.stay-detail .room>view { padding: 2px 0 0 10px; }
+.stay-detail .room>view>text:first-child { font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; }
+.stay-detail .room>view>text:nth-child(2) { margin-top: 4px; font-size: 11px; line-height: 16px; }
+.stay-detail .room>view>view { margin-top: 12px; }
+.stay-detail .room>view>view text:first-child { color: var(--k-red-deep); font: 700 18px var(--k-sans); }
+.stay-detail .room>view>view text:last-child { margin-left: 3px; }
+.stay-detail .vlog-list { gap: 8px; }
+.stay-detail .vlog { height: auto; min-height: 112px; padding: 8px; border-radius: 12px; background: var(--k-paper); }
+.stay-detail .vlog>image { width: 128px; height: 96px; border-radius: 8px; }
+.stay-detail .vlog>view { padding: 2px 0 2px 10px; }
+.stay-detail .vlog__title { margin-bottom: 4px; font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; }
+
+.stay-detail .review-head { margin-top: 8px; border-top: 0; }
+.stay-detail .review-head>text>text { font-size: 12px; }
+.stay-detail .guest-review>image { width: 36px; height: 36px; }
+.stay-detail .guest-review>view text:first-child { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.stay-detail .guest-review>text { color: var(--k-red-deep); font: 700 16px var(--k-sans); }
+.stay-detail .guest-copy { margin-top: 8px; color: var(--k-ink2); font-size: 13px; line-height: 20px; }
+.stay-detail .vlog-copy { padding: 12px; background: var(--k-paper); }
+.stay-detail .vlog-detail__title { font-family: var(--k-sans); font-size: 17px; font-weight: 700; line-height: 24px; }
+.stay-detail .author { margin-top: 10px; }
+.stay-detail .author>image { width: 36px; height: 36px; }
+.stay-detail .author>view>view { font-size: 14px; font-weight: 600; }
+.stay-detail .vlog-desc, .stay-detail .vlog-source { margin-top: 10px; font-size: 13px; line-height: 20px; }
+.stay-detail .vlog-source { font-size: 11px; }
+.stay-detail .vlog-comment { min-height: 44px; margin-top: 10px; padding: 0 8px 0 12px; border: 0; border-radius: 8px; background: var(--k-page); font-size: 13px; }
+.stay-detail .vlog-review-link { height: 48px; margin-top: 8px; padding: 0 12px; gap: 8px; border: 0; background: var(--k-paper); }
+.stay-detail .vlog-review-link>text { font-family: var(--k-sans); font-size: 15px; font-weight: 700; }
+.stay-detail .vlog-review-link>view { font-size: 12px; }
+/* 2026-11-18 看图复查：
+   · 右边贴着屏幕的「客服」小钮宽 28，会压住地址行的「复制地址」和主理人卡的「关注」—— 这两处往左让开；
+   · 收藏 / 分享在照片上已经有一对（主入口），标题行这一对收小成 18 的灰色小图标，图标也统一用心形；
+   · 第 3 屏的住客评价放进白卡，评分前面带一颗小星；「暂无Vlog」「暂无可订房型」也垫一张白卡；
+   · 第 2 屏房型卡右边留到 12，和左、上对齐；「查看服务」后面的箭头换成小图标。 */
+.stay-detail .location { padding-right: 24px; }
+.stay-detail .host2__follow { margin-right: 8px; }
+.stay-detail .title-actions .stay-share-icon { width: 18px !important; height: 18px !important; }
+.stay-detail .title-actions .stay-share-icon { filter: grayscale(1); opacity: .7; }
+.stay-detail .sec-go { flex: 0 0 auto; display: flex; align-items: center; gap: 1px; color: var(--k-muted); font-size: 12px; line-height: 18px; }
+.stay-detail .rooms-body .list-empty, .stay-detail .vlogs-body .list-empty { padding: 20px 12px; border-radius: 12px; background: var(--k-paper); font-size: 12px; line-height: 18px; }
+.stay-detail .guest-card { padding: 12px; border-radius: 12px; background: var(--k-paper); }
+.stay-detail .guest-review>view text:last-child { line-height: 16px; }
+.stay-detail .guest-review>text { display: flex; align-items: center; gap: 3px; font: 600 13px var(--k-sans); line-height: 18px; }
+.stay-detail .guest-card .guest-copy { margin-top: 0; overflow-wrap: anywhere; }
+.stay-detail .guest-card .guest-review + .guest-copy { margin-top: 8px; }
+.stay-detail .room>view { padding: 2px 4px 0 10px; }
+/* 2026-11-18 第二轮精修：
+   · 卡片标题统一 16 / 700（原来多数 15、房型区 16）；
+   · 「7晚参考价起」旁的房型数、地址卡「复制地址」、「关注」主理人三种小钮统一 28 高、圆角 14、12 / 500，四周多 4px 透明可点范围；
+   · 评价 / 旅居日记 / Vlog 三个入口方块统一成同一块浅暖底 + 深棕线稿；房型卡和第 3 屏住客评价的星星统一赭黄 var(--k-ochre)；
+   · 箭头统一 12 号（去掉原来的强制缩放）；第 2 屏主理人卡的来源标签改浅棕底深棕字；
+   · 底部「订房」44 高、圆角 22，不可点时整体变淡 .6（和公共按钮的实心钮一致，按钮上的字还读得清）；房型价格 ¥ 12、数字等宽，「选择」钮字重 500；地址卡上的分隔改发丝线；第 4 屏「已关注」收成 28 高小钮。 */
+.stay-detail .sec-title, .stay-detail .vcard__title .sec-title, .stay-detail .acts__head .sec-title { font-size: 16px; line-height: 22px; }
+.stay-detail .info-price__pill, .stay-detail .location-action, .stay-detail .host2__follow { position: relative; height: 28px; min-height: 28px; padding: 0 12px; border-radius: 14px; font-size: 12px; font-weight: 500; }
+.stay-detail .info-price__pill::after, .stay-detail .location-action::after, .stay-detail .host2__follow::after { content: ''; position: absolute; left: -4px; right: -4px; top: -4px; bottom: -4px; }
+.stay-detail .host-title :deep(.k-chip) { height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 10px; font-weight: 500; }
+.stay-detail .rt__yen { font-size: 12px; }
+.stay-detail .rt__num { font-variant-numeric: tabular-nums; }
+.stay-detail .rt__btn { font-weight: 500; }
+.stay-detail .location { position: relative; border-top: 0; }
+.stay-detail .location::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+/* 复查：Vlog 详情的「关注」看上去 28 高，四周 4px 透明边把可点范围撑到 36（负边距抵掉，位置不变）；细棕边改由内阴影画 */
+.stay-detail .author :deep(.k-button) { height: 36px; margin: -4px -4px -4px 0; padding: 0 12px; border: 4px solid transparent; border-radius: 18px; background-clip: padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+@media (max-width: 359px) {
+  .stay-detail .title-row>view:first-child>view:first-child>text { font-size: 17px; line-height: 24px; }
+  .stay-detail .info-price__num { font-size: 20px; }
+  .stay-detail .location-main { font-size: 12px; }
+  /* 两张入口卡并排只有一百四十来像素宽：小图标方块收到 24（复查：之前窄屏直接不显示），标题 13 号字，七个字正好完整显示 */
+  .stay-detail .entry__title, .stay-detail .entry.entry--reviews .entry__title { padding-left: 30px; font-size: 13px; line-height: 24px; }
+  .stay-detail .rooms-head__note { margin-left: 0; white-space: normal; flex-wrap: wrap; }
+  .stay-detail .rt { gap: 8px; }
+  .stay-detail .rt__pic { flex-basis: 80px; width: 80px; height: 80px; }
+  .stay-detail .rt__body { padding: 0; }
+  .stay-detail .rt__num { font-size: 17px; }
+  .stay-detail .rt__btn { min-width: 48px; padding: 0 10px; }
+  .stay-detail .book { min-width: 96px; padding: 0 16px; }
+}
+/* 2026-11-18 第三轮逐页精修（比例 / 间距 / 图标）：
+   · 头图上的收藏 / 分享拆成两颗和返回钮同款的 32 白色圆钮，图标 16 墨色，去掉中间竖线；
+   · 价格区：¥ 数字下面先空 8 再放「入住日 / 半月 / 一个月」浅暖底小方块，说明另起一段 11 号浅灰；
+   · 区块之间 12、区块标题 16 / 700 一个样；入口卡左上的小图标从 CSS 背景图换成 k-icon（40 方块、浅棕底、18 号线稿）；
+   · 主理人：年龄 / 籍贯 / 擅长 拆成「12 暖灰标签 + 13 正文」两列；累计接待 / 评价两格居中、中间一条发丝竖线；
+   · 空状态（暂无可订房型 / 暂无 Vlog）：56 浅棕方块 + 32 号图标；「小院故事」箭头换图标。 */
+.stay-detail .hero-actions { right: 12px; height: 32px; gap: 8px; padding: 0; border-radius: 0; background: transparent; }
+.stay-detail .hero-action { width: 32px; height: 32px; border-radius: 16px; background: var(--sd-veil); display: flex; align-items: center; justify-content: center; }
+.stay-detail .hero-action .stay-share-icon { width: 16px !important; height: 16px !important; }
+.stay-detail .hero-action .stay-share-icon { filter: brightness(0); opacity: .72; }
+.stay-detail .hero-actions__line { display: none; }
+.stay-detail .hero-count { right: 12px; bottom: 26px; height: 20px; padding: 0 8px; border-radius: 10px; background: var(--sd-shade); color: var(--k-paper); font-size: 11px; line-height: 20px; font-variant-numeric: tabular-nums; }
+.stay-detail .info { padding: 16px 16px 12px; }
+.stay-detail .title-row>view:first-child>view:first-child>text { font-size: 20px; line-height: 28px; }
+.stay-detail .info-meta { margin-top: 8px; }
+.stay-detail .info-meta__copy .rating { margin-top: 6px; }
+.stay-detail .info-price { margin-top: 4px; }
+.stay-detail .info-price__num { font-size: 24px; line-height: 30px; color: var(--k-red); font-variant-numeric: tabular-nums; }
+.stay-detail .info-price__unit { margin-left: 6px; font-size: 12px; }
+.stay-detail .info .stay-period-options { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--k-hair); color: var(--k-ink2); font-size: 12px; line-height: 18px; font-variant-numeric: tabular-nums; }
+.stay-detail .week-price-note { margin: 8px 0 0; color: var(--k-light); font-size: 11px; line-height: 16px; }
+.stay-detail .info-promo { margin-top: 8px; }
+.stay-detail .location { margin-top: 12px; padding-top: 12px; }
+.stay-detail .overview-body { padding: 0 12px 16px; }
+.stay-detail .slogan, .stay-detail .sec-card, .stay-detail .acts, .stay-detail .room-section { margin-top: 12px; }
+.stay-detail .sec-card, .stay-detail .host2 { padding: 14px 12px; }
+.stay-detail .trip .sec-head { margin-bottom: 4px; }
+.stay-detail .trip__row { margin-top: 8px; }
+/* 主理人 */
+.stay-detail .host2__main { gap: 12px; margin-top: 12px; }
+.stay-detail .host2__avatar { width: 48px; height: 48px; border-radius: 24px; }
+.stay-detail .host2__copy { gap: 4px; }
+.stay-detail .host2__name { font-size: 15px; line-height: 21px; }
+.stay-detail .host2__facts { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+.stay-detail .host2__fact, .stay-detail .host2__fact--wide { display: block; color: var(--k-ink2); font-size: 13px; line-height: 20px; }
+.stay-detail .host2__scores { margin-top: 4px; }
+.stay-detail .host2__intro { margin-top: 4px; }
+.stay-detail .host2__story { margin-top: 12px; padding: 10px 12px; }
+.stay-detail .host2__more { display: flex; align-items: center; gap: 2px; margin-top: 6px; color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+.stay-detail .host-stats { position: relative; display: flex; justify-content: space-around; align-items: center; height: 40px; margin-top: 12px; padding-top: 12px; border-top: 0; color: var(--k-ink2); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.stay-detail .host-stats::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.stay-detail .host-stats::after { content: ''; position: absolute; left: 50%; top: 22px; width: 1px; height: 20px; background: var(--k-line2); transform: scaleX(.5); }
+.stay-detail .host-stats>text { flex: 1 1 0; text-align: center; }
+/* 评价 / 日记 / Vlog 入口：左上 40 小方块（k-icon），标题在方块右边垂直居中 */
+.stay-detail .entry::before, .stay-detail .entry--reviews::before, .stay-detail .entry--diary::before { content: none; display: none; }
+.stay-detail .entry, .stay-detail .entry.entry--reviews { padding: 12px; }
+.stay-detail .entry__ic { position: absolute; left: 12px; top: 12px; width: 36px; height: 36px; border-radius: 10px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+.stay-detail .entry__title, .stay-detail .entry.entry--reviews .entry__title { padding-left: 44px; line-height: 36px; }
+.stay-detail .entry__sub { margin-top: 8px; font-size: 12px; line-height: 18px; }
+.stay-detail .entry--reviews .entry__score { margin-top: 8px; }
+/* 房型区 */
+.stay-detail .rooms-head { margin: 24px 0 10px; }
+.stay-detail .rt { padding: 12px; gap: 12px; }
+.stay-detail .rt__left .stay-period-options { margin-top: 4px; padding: 5px 8px; border-radius: 8px; background: var(--k-hair); color: var(--k-ink2); font-size: 11px; line-height: 16px; }
+/* 空状态 */
+.stay-detail .r3-empty { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; padding: 28px 16px; border-radius: 12px; background: var(--k-paper); color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 1.5; text-align: center; }
+.stay-detail .r3-empty-ic { width: 56px; height: 56px; margin-bottom: 6px; border-radius: 16px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+/* 第 2 屏房型卡：没描述时价格跟在标题下面，不再空一大块 */
+.stay-detail .room { min-height: 0; padding: 12px; }
+.stay-detail .room>view { display: flex; flex-direction: column; justify-content: flex-start; }
+.stay-detail .room>view>view { margin-top: 8px; }
+.stay-detail .room>view>text:nth-child(2):empty { display: none; }
+.stay-detail .facilities>view { gap: 8px; }
+@media (max-width: 359px) {
+  .stay-detail .info { padding: 14px 12px 12px; }
+  .stay-detail .title-row>view:first-child>view:first-child>text { font-size: 18px; line-height: 26px; }
+  .stay-detail .info-price__num { font-size: 22px; }
+  .stay-detail .entry__ic { width: 28px; height: 28px; border-radius: 8px; }
+  .stay-detail .entry__title, .stay-detail .entry.entry--reviews .entry__title { padding-left: 34px; line-height: 28px; }
+}
+/* 第三轮复查：房型卡里的半月 / 一个月价不再垫底色（一屏六张卡都垫一块显得重），11 号暖灰跟在价格下面；第 2 屏房型预览的价格靠左跟在标题下 */
+.stay-detail .rt__left .stay-period-options { margin-top: 2px; padding: 0; border-radius: 0; background: transparent; color: var(--k-muted); }
+.stay-detail .room>view>view { text-align: left; }
+@media (max-width: 359px) {
+  /* 320 宽两张入口卡并排只有一百四十来像素：小图标方块 24、卡内 10，「住过的家人评价」七个字完整显示 */
+  .stay-detail .entry, .stay-detail .entry.entry--reviews { padding: 10px; }
+  .stay-detail .entry__ic { left: 10px; top: 10px; width: 24px; height: 24px; border-radius: 8px; }
+
+  .stay-detail .entry__title, .stay-detail .entry.entry--reviews .entry__title { padding-left: 30px; font-size: 13px; line-height: 24px; }
+}
+/* 2026-11-18 第三轮返修（独立评审第 1 轮）：
+   · 信息区左右 24，和下面白卡里的内容同一条线；「N种房型可选」「复制地址」两颗胶囊右边对齐；
+   · 周期价不垫浅暖底，12 号暖灰；标签 11 号高 20；分享两处都换成 k-icon（share-2）；
+   · 小图标统一到档位 12（3分钟看小院圆点、房型评分星、查看评价、改日期）；
+   · 「小院活动」只有往期时做成一行入口：36 浅棕方块 + 日历图标 + 一句说明 + 右箭头；
+   · 设施方块纯浅棕底、图标 22；房型预览卡价格贴底；主理人标签 11 号；
+   · 空状态（暂无 Vlog / 暂无可订房型）放在页面底上：56 方块 + 32 号图标 + 说明；
+   · 住客评价分数前的星换成 k-icon；Vlog 没封面时 16:9 浅棕占位 + 40 号视频图标；最后一条不再带向下箭头。 */
+.stay-detail .info { padding-left: 24px; padding-right: 24px; }
+.stay-detail .location { padding-right: 0; }
+.stay-detail .info-price__pill, .stay-detail .location-action { margin-right: 0; }
+.stay-detail .info .stay-period-options { align-self: flex-start; margin: 6px 0 0; padding: 0; border-radius: 0; background: transparent; color: var(--k-muted); font-size: 12px; line-height: 18px; }
+.stay-detail .ichip { height: 20px; padding: 0 6px; font-size: 11px; line-height: 20px; }
+
+
+
+/* 小院活动入口行 */
+.stay-detail .acts__title { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.stay-detail .acts--entry { padding: 12px; }
+.stay-detail .acts--entry .acts__head { justify-content: flex-start; gap: 12px; margin: 0; }
+.stay-detail .acts__ic { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+.stay-detail .acts__desc { color: var(--k-muted); font-size: 12px; font-weight: 400; line-height: 17px; }
+.stay-detail .acts--entry .acts__toggle { flex: 0 0 auto; color: var(--k-muted); font-size: 12px; }
+/* 房型区空状态（不垫白卡） */
+.stay-detail .rooms-empty-ic { margin: 16px auto 8px; }
+.stay-detail .rooms-head ~ .list-empty { display: block; margin: 0; padding: 0; background: transparent; color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 20px; text-align: center; }
+.stay-detail .rooms-empty-sub { display: block; margin: 4px 0 16px; color: var(--k-muted); font-size: 12px; line-height: 18px; text-align: center; }
+/* 设施方块：纯色 */
+.stay-detail .fac-tile { background: var(--k-red-soft); }
+
+.stay-detail .room>view>view { margin-top: auto; padding-top: 8px; }
+.stay-detail .host-title :deep(.k-chip), .stay-detail .host-title :deep(.k-chip text) { font-size: 11px; }
+/* 第 3 屏：近期 Vlog 空 + 住客评价 */
+.stay-detail .r3-empty--page { margin: 8px 0 12px; padding: 24px 16px; background: transparent; }
+.stay-detail .r3-empty--page .list-empty { margin: 0; padding: 0; background: transparent; color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 20px; }
+.stay-detail .r3-empty__sub { color: var(--k-muted); font-size: 12px; font-weight: 400; line-height: 18px; }
+.stay-detail .guest-review>text::before { content: none; display: none; }
+.stay-detail .guest-review__star { margin-left: auto; display: flex; align-items: center; }
+.stay-detail .guest-review>text { margin-left: 4px; }
+/* 第 4 屏：Vlog 详情 */
+.stay-detail .vlog-detail { position: relative; }
+.stay-detail .vlog-video--empty { height: 220px; opacity: 0; }
+.stay-detail .vlog-video-ph { position: absolute; left: 0; right: 0; top: 0; height: 220px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.stay-detail .vlog-review-link > :deep(.k-icon), .stay-detail .vlog-review-link > k-icon { display: none; }
+.stay-detail .swipe-next--end :deep(.k-icon) { display: none; }
+.stay-detail .swipe-next--end { color: var(--k-muted); font-size: 12px; justify-content: center; }
+@media (max-width: 359px) {
+  .stay-detail .picked__hint { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; }
+  .stay-detail .book { flex: 0 0 128px; width: 128px; min-width: 0; padding: 0; }
+  .stay-detail .week-price-note { font-size: 11px; }
+  .stay-detail .rt__review { flex-wrap: wrap; row-gap: 2px; }
+  .stay-detail .rt__review .rt__rate { flex: 1 1 100%; flex-wrap: nowrap; }
+  .stay-detail .rt__review-go { margin-left: auto; }
+}
+/* 11-18 第三轮返修（独立评审第 2 轮）：
+   · 评价 / 生活碎片 / Vlog / 小院活动几个入口同一个样子：整行白卡，左 36 浅棕方块 + 18 号图标，标题 15 / 600、说明 12 灰，右边箭头（评价分数放在箭头前）；
+   · 不同内容区之间 20，同一组（入口之间）8；名字右边的收藏 / 分享和头图一样做成 32 圆钮（文字仍在，只是不占位）；
+   · 主理人：累计接待数字 18 / 700 等宽在上、「累计接待」12 灰在下，没有评价那格 13 灰；评分小标签 11 号高 20；房型名 15 / 600；
+   · 房型预览卡价格紧跟标题；Vlog 详情作者区、评价入口改成左右 12 的圆角白卡；小屏底部条说明、价格说明不剩一两个字单独一行。 */
+.stay-detail .slogan, .stay-detail .sec-card, .stay-detail .room-section { margin-top: 20px; }
+.stay-detail .room-section .acts { margin-top: 8px; }
+.stay-detail .entries { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.stay-detail .entries .entry, .stay-detail .entries .entry.entry--reviews { position: relative; display: flex; flex-direction: row; align-items: center; gap: 12px; min-height: 64px; height: auto; padding: 12px; border-radius: 12px; background: var(--k-paper); }
+.stay-detail .entries .entry__ic { position: static; order: -1; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px; }
+
+.stay-detail .entries .entry__copy { order: 0; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.stay-detail .entries .entry__title, .stay-detail .entries .entry.entry--reviews .entry__title { padding-left: 0; color: var(--k-ink); font-size: 15px; font-weight: 600; line-height: 21px; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stay-detail .entries .entry__sub { margin-top: 0; color: var(--k-muted); font-size: 12px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stay-detail .entries .entry--reviews .entry__score { order: 1; flex: 0 0 auto; margin: 0; min-height: 0; padding: 0; display: flex; flex-direction: row; align-items: baseline; gap: 4px; background: transparent; }
+.stay-detail .entries .entry--reviews .entry__num { color: var(--k-red-deep); font-size: 15px; font-weight: 600; line-height: 21px; font-variant-numeric: tabular-nums; }
+.stay-detail .entries .entry > .k-icon { display: flex; order: 2; flex: 0 0 auto; width: 16px !important; height: 16px !important; }
+.stay-detail .acts--entry { min-height: 64px; padding: 12px; }
+.stay-detail .acts--entry .sec-title { font-size: 15px; font-weight: 600; line-height: 21px; }
+.stay-detail .acts--entry .acts__desc { font-size: 12px; line-height: 18px; }
+.stay-detail .title-actions { gap: 8px; }
+.stay-detail .title-actions>view { position: relative; width: 32px; height: 32px; padding: 0; border-radius: 16px; background: var(--k-paper2); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.stay-detail .title-actions>view>text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.stay-detail .host-stats { height: auto; padding: 12px 0 0; align-items: center; }
+.stay-detail .host-stats::after { top: 50%; margin-top: 6px; transform: translateY(-50%) scaleX(.5); }
+.stay-detail .host-stat { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.stay-detail .host-stat__num { color: var(--k-ink); font-size: 18px; font-weight: 700; line-height: 24px; font-variant-numeric: tabular-nums; }
+.stay-detail .host-stat__label { color: var(--k-muted); font-size: 12px; font-weight: 400; line-height: 18px; }
+.stay-detail .host-stats>text.host-stat__rate { flex: 1 1 0; color: var(--k-muted); font-size: 13px; font-weight: 400; line-height: 20px; text-align: center; }
+.stay-detail .host2__score { height: 20px; padding: 0 6px; font-size: 11px; line-height: 20px; }
+.stay-detail .rt__name { font-size: 15px; font-weight: 600; line-height: 21px; }
+.stay-detail .room>view { justify-content: flex-start; }
+.stay-detail .room>view>view { margin-top: 4px; padding-top: 0; }
+.stay-detail .vlog-copy { margin: 12px 12px 0; padding: 12px; border-radius: 12px; background: var(--k-paper); }
+.stay-detail .vlog-review-link { margin: 12px 12px 0; padding: 0 12px; border-radius: 12px; background: var(--k-paper); }
+.stay-detail .swipe-next { margin-top: 20px; }
+@media (max-width: 359px) {
+  .stay-detail .entries .entry, .stay-detail .entries .entry.entry--reviews { padding: 12px; }
+  .stay-detail .entries .entry__ic { width: 36px; height: 36px; border-radius: 10px; }
+
+  .stay-detail .entries .entry__title, .stay-detail .entries .entry.entry--reviews .entry__title { padding-left: 0; font-size: 15px; line-height: 21px; }
+  .stay-detail .week-price-note { display: block; max-width: 230px; }
+  .stay-detail .host2__facts { word-break: keep-all; }
+}
+/* 11-18 第三轮返修（独立评审第 3 轮）：
+   · 第一屏只留一套收藏 / 分享（名称右边那两颗），头图上的白圆钮不再出现；
+   · 价格区：¥ 大字 → 两档周期价「·」并成一行 12 墨灰 → 价格说明 11 浅灰；入住日不再重复；
+   · 评价 / 生活碎片 / Vlog 入口合成一张列表卡（行高 64、发丝线分隔）；区块标题前的实心播放点去掉；
+   · 房型卡：周期价不重复入住日，图 96×96 和文字块垂直居中；房型预览卡价格贴底；
+   · 主理人卡「年龄 · …」悬挂缩进，折行和内容对齐；小标签 11/500 高 20，亮点标签不折行（可横滑）；
+   · Vlog 详情无封面：和深色顶栏连成一块的暖深渐变 + 32 白色线性图标；评论行去掉灰底改发丝线；评价入口做成入口行。 */
+.stay-detail {
+  --sd-veil: rgba(255, 255, 255, .92);
+  --sd-night: #151311;
+  --sd-shade: rgba(20,14,10,.42);
+}
+.stay-detail .hero-actions { display: none; }
+.stay-detail .info-price__num { font-size: 28px; line-height: 34px; }
+.stay-detail .stay-period-options { margin-top: 4px; color: var(--k-ink2); font-size: 12px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stay-detail .week-price-note { margin-top: 4px; color: var(--k-light); font-size: 11px; line-height: 16px; }
+.stay-detail .vcard__dot { display: none; }
+.stay-detail .entries { gap: 0; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.stay-detail .entries .entry, .stay-detail .entries .entry.entry--reviews { border-radius: 0; background: transparent; }
+.stay-detail .entries .entry + .entry::after { content: ''; display: block; position: absolute; left: 60px; right: 12px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.stay-detail .rt { align-items: center; }
+.stay-detail .rt__pic, .stay-detail .rt__img { width: 96px; height: 96px; }
+.stay-detail .rt .stay-period-options { white-space: pre-line; overflow: visible; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.stay-detail .room>view { display: flex; flex-direction: column; justify-content: space-between; }
+.stay-detail .ichip, .stay-detail .trip__k { height: 20px; padding: 0 6px; font-size: 11px; font-weight: 500; line-height: 20px; }
+.stay-detail .info-chips { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.stay-detail .info-chips::-webkit-scrollbar { display: none; }
+.stay-detail .info-chips .ichip { flex: 0 0 auto; white-space: nowrap; }
+.stay-detail .host2__fact, .stay-detail .host2__facts .host2__fact { display: block; padding-left: 44px; text-indent: -44px; word-break: break-all; }
+.stay-detail .vlog-video-ph { background: linear-gradient(180deg, var(--sd-night) 0%, var(--k-red-deep) 100%); }
+.stay-detail .vlog-comment { margin-top: 12px; padding: 0; border-radius: 0; background: transparent; position: relative; }
+.stay-detail .vlog-comment::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.stay-detail .vlog-review-link { height: 56px; }
+.stay-detail .vlog-review-link>text { font-size: 15px; font-weight: 600; }
+.stay-detail .r3-empty--page { margin: 12px 12px 0; padding: 24px; border-radius: 12px; background: var(--k-paper); }
+/* 11-18 第四轮返修：Vlog 空状态白卡和下面的评价卡同宽（父层已有 12 边距）；名称行分享钮右边线和卡里「复制地址」对齐。 */
+.stay-detail .r3-empty--page { margin: 12px 0 0; }
+.stay-detail .info .title-actions { margin-right: 0; }
+/* 11-18 第五轮返修（功能补回 + 评审第 5 轮）：
+   · 周期价恢复原文（含入住日那一行），按行显示；Vlog 作者名为空时不再写「当地主理人」，名字那格收起；
+   · 标语卡：右侧印章缩到 52，375 宽标语一行放下（不剩「家」字单独一行）；
+   · 320 宽：底栏说明允许两行不截断；亮点标签折行（最多两行），不藏在屏外；
+   · 房型预览卡：名称 / 描述 / 价格整体垂直居中、间距 8，没有描述时不再中间空一块；
+   · 主理人统计：右格文字和左格数字同一行高，左右成对；
+   · Vlog 无封面占位：浅暖底 + 40 号灰色线性图标，不再是深棕渐变。 */
+.stay-detail .stay-period-options { white-space: pre-line; overflow: visible; }
+.stay-detail .author text.is-empty { display: none; }
+.stay-detail .slogan image { width: 52px; height: 40px; box-shadow: none; }
+.stay-detail .room>view { justify-content: center; gap: 8px; }
+.stay-detail .room>view>text:nth-child(2), .stay-detail .room>view>view { margin-top: 0; padding-top: 0; }
+.stay-detail .host-stats { align-items: flex-start; }
+.stay-detail .host-stats>text.host-stat__rate { line-height: 24px; }
+.stay-detail .vlog-video-ph { background: var(--k-red-soft); }
+@media (max-width: 389px) {
+  .stay-detail .slogan>view text:first-child { font-size: 14px; line-height: 20px; }
+}
+@media (max-width: 359px) {
+  .stay-detail .info-chips { flex-wrap: wrap; row-gap: 6px; max-height: 46px; overflow: hidden; }
+}
+/* <<R6-BEGIN>> */
+/* 11-18 第四轮（按微信实拍评审）：
+   · 头图上的收藏 / 分享白圆钮恢复显示；名称右边两颗改 36 圆形 --k-fill 图标钮；
+   · 标签行：「袋鼠直营」描边、「安心住」绿底，设施改纯文字 + 发丝竖线，可以换行（不再横滑藏在屏外）；
+   · 「N种房型可选」改文字链 + 箭头；周期价 12/18 muted，说明 11 和周期价隔 8；地址行右边让开客服竖条；
+   · 首屏以下改通栏白底：区块之间发丝线 + 上下 20，不再灰底上摆白卡；标语卡浅棕底；
+   · 主理人标题和其它区块同级 16/700，「已关注」灰底灰字；统计右格上下居中；出行参考小标签和正文首行居中；
+   · 房型预览：一张列表，80 方图，没有描述时名称和价格紧挨；Vlog 空态压成小号；
+   · Vlog 详情：深色 16:9 封面占位和深色顶栏连成一块，下面接圆角白 sheet（作者行 + 审核状态 → 评论 → 住客评价入口）。 */
+.stay-detail .hero-actions { display: flex; right: 12px; height: 32px; gap: 0; padding: 0 2px; border-radius: 16px; background: var(--sd-veil); }
+.stay-detail .hero-action { width: 36px; height: 32px; border-radius: 16px; background: transparent; }
+.stay-detail .hero-actions__line { display: block; width: 1px; height: 14px; background: var(--k-line2); transform: scaleX(.5); }
+.stay-detail .title-actions { gap: 8px; }
+.stay-detail .title-actions>view { width: 36px; height: 36px; border-radius: 18px; background: var(--k-fill); }
+.stay-detail .info-chips { flex-wrap: wrap; overflow: visible; max-height: none; row-gap: 6px; column-gap: 0; align-items: center; }
+.stay-detail .info-chips .ichip { margin-right: 6px; }
+.stay-detail .info-chips .ichip--src { background: transparent; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); }
+.stay-detail .info-chips .ichip--plain { position: relative; height: 20px; margin: 0 12px 0 0; padding: 0; border-radius: 0; background: transparent; color: var(--k-ink2); font-size: 13px; font-weight: 400; line-height: 20px; }
+.stay-detail .info-chips .ichip--src + .ichip--plain, .stay-detail .info-chips .ichip--safe + .ichip--plain { margin-left: 6px; }
+.stay-detail .info-chips .ichip--plain + .ichip--plain::before { content: ''; position: absolute; left: -6px; top: 5px; bottom: 5px; width: 1px; background: var(--k-line2); transform: scaleX(.5); }
+.stay-detail .info-price__pill.info-price__link { display: flex; align-items: center; gap: 2px; height: 28px; min-height: 28px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--k-red-deep); font-size: 13px; font-weight: 500; }
+.stay-detail .info .stay-period-options { margin-top: 4px; color: var(--k-muted); font-size: 12px; line-height: 18px; }
+.stay-detail .info .week-price-note { margin-top: 8px; color: var(--k-light); font-size: 11px; line-height: 16px; }
+.stay-detail .location { padding-right: 20px; }
+.stay-detail .location-action { height: 28px; min-height: 28px; padding: 0 12px; border-radius: 14px; font-size: 12px; font-weight: 500; }
+/* 通栏白底正文 */
+.stay-detail .overview, .stay-detail .overview-body { background: var(--k-paper); }
+.stay-detail .overview-body { padding: 0 24px 24px; }
+.stay-detail .overview-body > .slogan { margin: 4px 0 20px; padding: 12px 16px; border-radius: 12px; background: var(--k-red-soft); }
+.stay-detail .overview-body > .sec-card, .stay-detail .overview-body > .room-section { position: relative; margin: 0; padding: 20px 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.stay-detail .overview-body > .sec-card::before, .stay-detail .overview-body > .room-section::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.stay-detail .sec-title, .stay-detail .host2 .sec-title, .stay-detail .acts__head .sec-title { color: var(--k-ink); font-size: 16px; font-weight: 700; line-height: 22px; }
+.stay-detail .sec-head { margin-bottom: 12px; }
+.stay-detail .vcard__dot { display: flex; width: 20px; height: 20px; margin-right: 6px; border-radius: 10px; background: var(--k-red); }
+.stay-detail .trip__k { height: 20px; margin-top: 1px; line-height: 20px; }
+.stay-detail .host2__follow.on { border-color: transparent; background: var(--k-fill); color: var(--k-muted); }
+.stay-detail .host-stats { align-items: center; }
+.stay-detail .host-stats>text.host-stat__rate { align-self: center; line-height: 20px; }
+.stay-detail .room-section .entries { border-radius: 0; background: transparent; }
+.stay-detail .room-section .entries .entry, .stay-detail .room-section .entries .entry.entry--reviews { padding: 12px 0; }
+.stay-detail .entries .entry + .entry::after { left: 48px; right: 0; }
+.stay-detail .room-section .acts { position: relative; margin: 8px 0 0; padding: 12px 0; border-radius: 0; background: transparent; box-shadow: none; }
+.stay-detail .room-section .rt { position: relative; padding: 16px 0; border-radius: 0; background: transparent; }
+.stay-detail .room-section .rt + .rt::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+/* 二级屏（设施 / 房型预览 / Vlog 与评价）也用通栏白底 */
+.stay-detail.stay-detail--solid:not(.vlog-page) { background: var(--k-paper); }
+.stay-detail.stay-detail--solid:not(.vlog-page) :deep(.k-topbar) { background: var(--k-paper) !important; }
+.stay-detail .rooms-body, .stay-detail .vlogs-body { padding: 0 16px calc(86px + var(--k-safe-bottom)); background: var(--k-paper); }
+.stay-detail .rooms-body .facilities { padding: 16px 0 20px; border-radius: 0; background: transparent; }
+.stay-detail .rooms-body .host, .stay-detail .rooms-body .section-head, .stay-detail .vlogs-body .review-head { position: relative; margin-top: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.stay-detail .rooms-body .host { padding: 20px 0; }
+.stay-detail .rooms-body .host::before, .stay-detail .rooms-body .section-head::before, .stay-detail .vlogs-body .review-head::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.stay-detail .section-head { height: auto; min-height: 22px; margin: 0; padding: 20px 0 12px; }
+.stay-detail .vlogs-body > .section-head:first-child { padding-top: 16px; }
+.stay-detail .room-list { gap: 0; }
+.stay-detail .room-list .room, .stay-detail .room-list .room.card { position: relative; min-height: 0; margin: 0; padding: 12px 0; border-radius: 0; background: transparent; box-shadow: none; align-items: flex-start; }
+.stay-detail .room-list .room + .room::before { content: ''; position: absolute; left: 92px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.stay-detail .room-list .room > image { width: 80px; height: 80px; flex: 0 0 80px; border-radius: 8px; }
+.stay-detail .room-list .room > view { justify-content: flex-start; gap: 4px; min-height: 80px; }
+.stay-detail .room-list .room > view > text:first-child { font-size: 15px; font-weight: 600; line-height: 21px; }
+.stay-detail .room-list .room > view > text:nth-child(2) { color: var(--k-muted); font-size: 12px; line-height: 18px; }
+.stay-detail .room-list .room > view > view { margin-top: auto; padding-top: 4px; }
+.stay-detail .vlogs-body .r3-empty--page { min-height: 0; margin: 0; padding: 16px; border-radius: 12px; background: var(--k-page); }
+.stay-detail .vlogs-body .r3-empty--page .r3-empty-ic { width: 40px; height: 40px; margin-bottom: 8px; border-radius: 10px; }
+.stay-detail .vlogs-body .r3-empty--page .list-empty { margin: 0; padding: 0; color: var(--k-ink); font-size: 14px; font-weight: 500; }
+.stay-detail .vlogs-body .r3-empty--page .r3-empty__sub { margin-top: 4px; color: var(--k-muted); font-size: 12px; }
+.stay-detail .vlogs-body .guest-card { padding: 0 0 16px; border-radius: 0; background: transparent; }
+.stay-detail .vlogs-body .guest-copy { line-height: 22px; }
+/* Vlog 详情 */
+.stay-detail .vlog-video, .stay-detail .vlog-video--empty { height: 56.25vw; opacity: 1; background: var(--sd-night); }
+.stay-detail .vlog-video-ph { height: 56.25vw; background: var(--sd-night); }
+.stay-detail .vlog-copy { position: relative; z-index: 1; margin: -16px 0 0; padding: 16px 16px 0; border-radius: 16px 16px 0 0; background: var(--k-paper); }
+.stay-detail .author { min-height: 52px; margin-top: 0; }
+.stay-detail .author>view>text.vlog-source { display: block; margin-top: 2px; color: var(--k-muted); font-size: 12px; line-height: 18px; }
+.stay-detail .author-follow { flex: 0 0 auto; }
+.stay-detail .author-follow :deep(.k-button) { height: 28px; margin: 0; padding: 0 12px; border: 0; border-radius: 14px; background: var(--k-red-soft); box-shadow: none; color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+.stay-detail .author-follow.on :deep(.k-button) { background: var(--k-fill); color: var(--k-muted); }
+.stay-detail .vlog-comment { min-height: 52px; margin-top: 8px; }
+.stay-detail .vlog-copy > .vlog-review-link { position: relative; display: flex; align-items: center; gap: 8px; height: 52px; margin: 0; padding: 0; border-radius: 0; background: transparent; }
+.stay-detail .vlog-copy > .vlog-review-link::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.stay-detail .vlog-copy > .vlog-review-link > text { color: var(--k-ink); font-family: var(--k-sans); font-size: 14px; font-weight: 500; }
+.stay-detail .vlog-review-link > :deep(.k-icon), .stay-detail .vlog-review-link > k-icon { display: inline-block; }
+.stay-detail .vlog-copy > .vlog-review-link > view { display: flex; align-items: center; gap: 2px; margin-left: auto; color: var(--k-muted); font-size: 12px; }
+.stay-detail .swipe-next { margin-top: 16px; }
+.stay-detail .swipe-next--end :deep(.k-icon) { display: inline-block; }
+@media (max-width: 359px) {
+  .stay-detail .info-chips { max-height: none; overflow: visible; }
+  .stay-detail .overview-body { padding-left: 16px; padding-right: 16px; }
+}
+/* 第四轮自查返修：设施纯文字之间只用 12 留白（折行时行首不再挂一条竖线）；信息卡和正文左边同一条 16 线；标语 15 号一行放下；
+   没有描述的房型名称和价格紧挨（顶对齐）；Vlog 详情白卡四角圆角。 */
+.stay-detail .info-chips .ichip--plain + .ichip--plain::before { display: none; }
+.stay-detail .info { padding-left: 16px; padding-right: 16px; }
+.stay-detail .overview-body { padding-left: 16px; padding-right: 16px; }
+.stay-detail .overview-body > .slogan>view text:first-child { font-size: 15px; line-height: 21px; }
+.stay-detail .room-list .room > view { min-height: 0; }
+.stay-detail .room-list .room > view > view { margin-top: 4px; }
+.stay-detail .vlog-copy { border-radius: 16px; }
+@media (max-width: 374px) {
+  .stay-detail .overview-body > .slogan>view text:first-child { font-size: 14px; line-height: 20px; }
+}
+/* 11-19 独立复评返修：
+   · 标语 ≤389 宽限宽 9.5em，稳定折成两行（不再剩一个「家」）；设施文字 ≤389 宽 12 号、间距 10；320 底栏说明 11 号限宽，在「，」后折行；
+   · 「近期生活碎片 / 小院活动」入口同一种行：去掉多出来的 8，加同样的缩进发丝线；
+   · 房型预览：没有描述时不占那一行，价格紧跟名称；Vlog 空状态和下面的「住客评价」隔 20；
+   · 评价正文的【卫生】拆成小标签 + 正文（和评价页同一种）；
+   · 名称旁的收藏 / 分享降成无底色 20 号图标（头图上那套照旧）；Vlog 详情白卡左右留 12 做成浮卡，「住客评价」后的向下箭头 12 号浅灰紧跟数字。 */
+.stay-detail .title-actions>view { background: transparent; }
+.stay-detail .room-section .acts { margin-top: 0; }
+.stay-detail .room-section .acts::before { content: ''; position: absolute; left: 48px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.stay-detail .room-list .room > view > text.is-empty { display: none; }
+.stay-detail .room-list .room > view > view { margin-top: 0; padding-top: 4px; }
+.stay-detail .vlogs-body .r3-empty--page { margin-bottom: 20px; }
+.stay-detail .guest-copy--parts { display: flex; flex-direction: column; gap: 4px; }
+.stay-detail .guest-para { color: var(--k-ink); font-size: 13px; line-height: 20px; overflow-wrap: anywhere; }
+.stay-detail .guest-label { margin-right: 6px; color: var(--k-red-deep); font-size: 12px; font-weight: 600; }
+.stay-detail .vlog-copy { margin-left: 12px; margin-right: 12px; }
+.stay-detail .vlog-copy > .vlog-review-link > text + .k-icon, .stay-detail .vlog-copy > .vlog-review-link > text + k-icon { margin-left: -4px; }
+@media (max-width: 389px) {
+  .stay-detail .overview-body > .slogan>view text:first-child { max-width: 9.5em; font-size: 15px; line-height: 21px; }
+  .stay-detail .info-chips .ichip--plain { margin-right: 10px; font-size: 12px; }
+}
+@media (max-width: 359px) {
+}
+/* 11-19 微信实拍返修：
+   · 第一屏只留一套收藏 / 分享（名称右边那两颗），头图上的同一组按钮恢复第三轮的收起；设施文字 12 灰，和前两个标签隔 12；
+   · 标语卡的袋鼠印章用 darken 叠在浅棕底上（印章图底色和卡片底色几乎一样，不再露出一块方框），圆角 8；
+   · 「3分钟看小院」标题前不再挂实心棕点（和别的区块标题一致）；房型预览没有描述时价格贴住图片底边；设施图标去掉方块底，24 号线稿；
+   · Vlog 空状态不套灰底；Vlog 详情：「住客评价」后的向下箭头去掉（右边已有「查看全部」），最后一条时不再挂向下箭头；
+     无封面占位深色渐变到深棕、40 号浅灰图标；作者名为空时「门店已审核」升为 14/500、头像 40。 */
+.stay-detail .hero-actions { display: none; }
+.stay-detail .info-chips .ichip--plain { color: var(--k-muted); font-size: 12px; }
+.stay-detail .slogan image { border-radius: 8px; mix-blend-mode: darken; }
+.stay-detail .vcard__dot { display: none; }
+.stay-detail .room-list .room > view { min-height: 80px; }
+.stay-detail .room-list .room > view > view { margin-top: auto; }
+.stay-detail .fac-tile { width: 24px; height: 24px; border-radius: 0; background: transparent; }
+.stay-detail .facilities>view { font-size: 12px; }
+.stay-detail .vlogs-body .r3-empty--page { padding: 24px 0; border-radius: 0; background: transparent; }
+.stay-detail .vlog-copy > .vlog-review-link > text + .k-icon, .stay-detail .vlog-copy > .vlog-review-link > text + k-icon { display: none; }
+.stay-detail .swipe-next.swipe-next--end .k-icon, .stay-detail .swipe-next.swipe-next--end k-icon { display: none; }
+.stay-detail .swipe-next.swipe-next--end :deep(.k-icon) { display: none; }
+.stay-detail .vlog-video-ph { background: linear-gradient(180deg, var(--sd-night), var(--k-red-deep)); }
+.stay-detail .author.author--noname > image { width: 40px; height: 40px; }
+.stay-detail .author.author--noname > view > text.vlog-source { margin-top: 0; color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 20px; }
+/* <<R6-END>> */
+
+.stay-detail.user-surface {
+  .info { border-radius: 14px; }
+  .info-price__num { font-variant-numeric: tabular-nums; color: var(--k-red-deep); }
+  .sec-card { border-radius: 12px; }
+  .location { padding: 8px 12px; border-radius: 10px; background-color: var(--user-inset); }
+  .location::before { display: none; }
+  .location-copy { min-width: 0; }
+  .location-action { color: var(--k-red-deep); }
+  .sec-head { align-items: baseline; gap: 8px; }
+}
+.collection-note { padding: 8px 16px; background: var(--k-paper); font-size: 13px; color: var(--k-ink2); }
 </style>

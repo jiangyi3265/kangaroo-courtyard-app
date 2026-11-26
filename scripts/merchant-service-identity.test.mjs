@@ -6,6 +6,7 @@ import { groupStaffIdentities, findStaffIdentity, staffIdentityLabel, staffIdent
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, hmr: false } })
 const session = await vite.ssrLoadModule('/common/experience.js')
 const request = await vite.ssrLoadModule('/common/request.js')
+const api = await vite.ssrLoadModule('/common/api.js')
 await vite.close()
 const service = (storeId, city = '平潭', extra = {}) => ({ storeId, city, active: true, storeName: '门店' + storeId, roleCode: 'merchant_service', ...extra })
 const grants = () => [service(11), service('9007199254740993'), service(21, '丽江'),
@@ -65,6 +66,19 @@ test('切城与切到合作商家清空旧消息，消息请求使用各自scope
   assert.equal(session.threeTabStaff.value, true)
   await session.refreshUnread()
   assert.equal(calls.at(-1).header['X-Message-Scope'], 'store:31:merchant')
+})
+
+test('员工读写续期均带选中的门店与角色；报名人确认不带员工身份', async () => {
+  session.acceptAuthenticatedAccount({ id: 'worker', staffGrants: [service(52, '平潭', {roleCode:'manager'}), service(31, '平潭', {roleCode:'merchant'})] })
+  session.setStaffStore(52)
+  await api.apiApplicationDates(81, true)
+  assert.equal(calls.at(-1).header['X-Message-Scope'], 'store:52:manager')
+  session.setStaffStore(31)
+  await api.apiProposeApplicationDates(81, {kind:'renewal', revision:3, endDate:'2027-01-01'})
+  assert.equal(calls.at(-1).header['X-Message-Scope'], 'store:31:merchant')
+  await api.apiConfirmApplicationDates(81, 4, 'renewal')
+  assert.equal(calls.at(-1).header['X-Message-Scope'], undefined)
+  assert.deepEqual(calls.at(-1).data, {revision:4,kind:'renewal'})
 })
 
 test('锚点撤权仍保留同城服务身份，撤掉全城授权后拒绝旧身份', async () => {

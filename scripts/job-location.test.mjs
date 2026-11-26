@@ -69,6 +69,8 @@ function jobsHarness(platform = 'MP-WEIXIN', { storeLatitude = null, rows = [] }
     ensureSession: async () => {},
     hasStaffAccess: { value: true },
     currentStaffStoreId: () => 102,
+    currentStaffStore: vue.ref({ storeId: 102, roleCode: 'manager', identityKey: 'manager:102' }),
+    experience: { account: { id: 21 } }, merchantStaff: vue.ref(false),
     staffCan: () => true,
     absUrl: x => x,
     todayCn: () => '2026-10-15', shiftDate: () => '2026-10-22', isYmd: () => true,
@@ -117,6 +119,8 @@ test('发布页（小程序）：地图搜索选点 → 名字 + 地址拼成工
   const h = jobsHarness()
   t.after(h.stop)
   await h.load()
+  h.run("startPublish(); choosePublish('volunteer')")
+  assert.equal(h.run('formOpen.value'), true)
   h.ctl.sheetPick = (opts) => opts.indexOf('地图搜索选点')
   h.ctl.chooseResult = { latitude: 25.6, longitude: 119.3, name: '南舍庄园', address: '福建省福州市闽侯县' }
   await h.run('pickPlace()')

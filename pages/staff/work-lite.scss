@@ -1,0 +1,43 @@
+// 2026-11-17 改版「小而精」· 员工端工作台和各类列表共用的几条写法。
+// 只有 mixin，本身不产出 CSS：页面 <style lang="scss"> 里 @import 它，用到哪条才编进哪个页面（都在 staff 分包，不占主包）。
+// 和用户端是一家：浅灰底 #F7F5F2 上放白卡（12 圆角、不描边、不加阴影），标题用系统黑体，小标签高 17 / 圆角 4 / 字 10。
+
+// 页面根节点：底色换成浅灰（顶栏、底栏读的是 --k-bg，跟着变），公共卡片去阴影、收成 12 圆角，按钮收成胶囊，页边距 12
+@mixin lite-page {
+  --k-bg: #F7F5F2; --k-sh1: none; background: #F7F5F2;
+  .k-body { padding-left: 12px; padding-right: 12px; }
+  :deep(.k-card) { border-radius: 12px !important; box-shadow: none; }
+  :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+  :deep(.k-button) { border-radius: 999px; }
+  :deep(.k-button.is-lg) { height: 44px; font-size: 15px; }
+  // 公共小标签（k-chip，筛选胶囊除外）收成规范里的样子：高 17、圆角 4、字 10
+  :deep(.k-chip:not(.is-pill)) { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+  // 底部操作条（公共组件 k-bottom）用白底，和浅灰页面分开
+  :deep(.k-bottom) { background: var(--k-paper); }
+  // 订阅提醒条（公共组件）：和白卡对齐，不描边（写法同用户端的活动、报名流程页）
+  :deep(.subscribe-entry) { padding: 4px 12px 8px; }
+  :deep(.subscribe-entry button) { min-height: 36px; border: 0; border-radius: 12px; background: var(--k-paper); color: var(--k-ochre-deep); font-size: 12px; }
+}
+// 各身份的工作台（筹备中 / 线上任务专员 / 合作商家 / 商家服务人 / 城市负责人）是分包里的组件，在「工作台」「业务」两个页面里整页顶替页面自己的内容。
+// 小程序里组件自己的样式管不到再下一层的公共组件（顶栏标题、按钮），所以这几条要在页面的 <style> 里 @include 才生效；网页版里组件自己那份也生效，结果一样。
+@mixin lite-role-hosts {
+  :deep(.pending-work), :deep(.online-work), :deep(.merchant-work), :deep(.service-work), :deep(.city-work) {
+    .k-navbar__title { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+    .k-button { border-radius: 999px; }
+    .k-button.is-lg { height: 44px; font-size: 15px; }
+  }
+  // 11-18 返修：线上任务专员工作台三个入口，图标四周留 8，正好落在按钮 ::before 画的 36 浅暖方块正中（窄屏方块跟着按钮内边距左移，边距不变）。组件自己那条只在网页版生效，小程序要靠这里
+  :deep(.online-work) { .actions .k-icon { margin: 8px; } }
+  // 11-18 返修：城市负责人工作台出错时的「重新加载」，和其他页面一样是 32 高的暖棕细边小胶囊（request-pages.scss 那条写在组件里，小程序管不到公共按钮）
+  :deep(.city-work) { .req-state .k-button.is-md { height: 32px; padding: 0 14px; font-size: 13px; border-color: var(--k-red-line); color: var(--k-red-deep); } }
+}
+// 白卡
+@mixin lite-card($pad: 12px) { padding: $pad; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+// 区块标题 16 / 700（11-18 第二轮精修：全站区块标题统一 16）
+@mixin lite-title { font-family: var(--k-sans); font-size: 16px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
+// 状态小标签（默认中性色；绿 / 琥珀 / 红 / 品牌在各页按语义换底色和字色）
+@mixin lite-tag { height: 17px; padding: 0 5px; border: 0; border-radius: 4px; background: #F5F1EB; color: var(--k-ink2); font-size: 10px; font-weight: 500; line-height: 17px; white-space: nowrap; }
+// 次按钮：白底细边的小胶囊
+@mixin lite-pill { height: 28px; padding: 0 12px; border: 1px solid var(--k-red-line); border-radius: 999px; background: var(--k-paper); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+// 主按钮：暖棕渐变胶囊
+@mixin lite-main { border: 0; border-radius: 999px; background: linear-gradient(135deg, #B5814D, #8E5E33); color: #fff; font-family: var(--k-sans); font-weight: 600; }

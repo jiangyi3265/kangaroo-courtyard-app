@@ -4,7 +4,7 @@
       <view class="rules-head"><text>发布须知</text><button :disabled="busy" @click="close(false)">取消</button></view>
       <view class="rules-body">
         <k-agreement-reader v-if="docs.length === keys.length && docs.length" :content-key="fullText" :text="fullText" height="42vh" @read="markRead" />
-        <text v-if="busy && !docs.length">正在加载全文…</text><text v-if="error" class="rule-error">{{ error }}</text>
+        <text v-if="busy && !docs.length" class="rules-loading">正在加载全文…</text><text v-if="error" class="rule-error">{{ error }}</text>
         <button v-if="!docs.length && error" @click="load">重新加载须知</button>
       </view>
       <view class="rules-foot">
@@ -66,4 +66,16 @@ defineExpose({open})
 .rules-confirm{min-height:44px;line-height:44px}
 </style>
 
-<style scoped>.rules-body{padding:0 16px;box-sizing:border-box;max-height:none;height:auto;flex:1 1 auto;overflow-y:auto}.rules-panel{max-height:94vh}.rules-mask{padding:12px}.rules-foot{padding:12px 16px;flex-shrink:0}</style>
+<style scoped>.rules-body{padding:0 16px;box-sizing:border-box;max-height:none;height:auto;flex:1 1 auto;overflow-y:auto}.rules-panel{max-height:94vh}.rules-mask{padding:12px}.rules-foot{padding:12px 16px;flex-shrink:0}
+/* 2026-11-17 改版「小而精」：弹框白底圆角 12、标题 16；「同意并发布」是 44 高的暖棕渐变胶囊。须知全文字号不动 */
+.rules-panel{background:#fff;border-radius:12px}.rules-head{padding:14px 16px 10px;font-size:16px}.rules-head button{color:var(--k-muted);font-size:13px}.rules-agree{font-size:12px}.rules-confirm{margin-top:10px;border-radius:22px;background:linear-gradient(135deg,#B5814D,#8E5E33);font-size:15px}
+/* 第二轮精修：不可点的「同意并发布」保持暖棕渐变、整体淡到 .45（全站「不可点按钮」同一个样子） */
+.rules-confirm[disabled]{background:linear-gradient(135deg,#B5814D,#8E5E33);color:#fff;opacity:.45}
+/* 加载中：居中的 12 号浅灰字，上下留白 28 */
+.rules-loading{display:block;padding:28px 0;text-align:center;color:var(--k-muted);font-size:12px;line-height:1.6}
+/* 「重新加载须知」：次按钮小胶囊，看上去 32 高（白底 + 棕色细边 + 深棕字），外面 2 的透明边把可点高度留在 36 */
+.rules-body>button{display:flex;align-items:center;justify-content:center;width:fit-content;min-height:36px;margin:0 auto 12px;padding:0 16px;border:2px solid transparent;border-radius:18px;background:#fff padding-box;box-shadow:inset 0 0 0 1px var(--k-red-line);color:var(--k-red-deep);font-size:12px;font-weight:500;line-height:32px}
+/* 勾选框：圆角 4，勾上是暖棕底白勾（和全站选中色一致） */
+.rules-agree :deep(.wx-checkbox-input),.rules-agree :deep(.uni-checkbox-input){border-radius:4px;border-color:var(--k-line2)}
+.rules-agree :deep(.wx-checkbox-input.wx-checkbox-input-checked),.rules-agree :deep(.uni-checkbox-input.uni-checkbox-input-checked){background:var(--k-red);border-color:var(--k-red)}
+.rules-agree :deep(.wx-checkbox-input.wx-checkbox-input-checked::before),.rules-agree :deep(.uni-checkbox-input.uni-checkbox-input-checked::before){color:#fff}</style>

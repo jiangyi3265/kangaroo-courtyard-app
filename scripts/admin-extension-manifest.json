@@ -307,7 +307,7 @@
     },
     {
       "component": "kangaroo/ext/insapply/index",
-      "kind": "ext-crud",
+      "kind": "insurance-finance",
       "entity": "insapply",
       "registry": "RuoYi-Vue/ruoyi-kangaroo/src/main/java/com/ruoyi/kangaroo/ext/staff/KgStaffOpsModule.java",
       "table": "kg_insurance_apply",

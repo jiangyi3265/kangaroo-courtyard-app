@@ -1,11 +1,10 @@
 <template>
-  <view class="k-page progress">
+  <view class="k-page progress" :class="[$userSurface, { 'progress--nobar': s === 3 }]">
     <k-topbar title="审核进度" back custom-back @back="onBack" />
-    <k-subscribe scenes="apply_progress" label="订阅报名与面试提醒" />
       <departure-notice v-if="detail?.jobType === 'volunteer'" ref="departureNotice" :app-id="appId" />
-    <k-order-mediation order-type="application" :order-id="appId" />
+    <k-order-mediation order-type="application" :order-id="appId" :volunteer-dispute="detail?.jobType === 'volunteer'" />
     <!-- 到店岗位：和报名页同一条 7 步进度（2026-10-18，见 ./apply-flow.js），按报名真实状态点亮，下面一句话说现在在等什么；线上任务照旧是交付六步 -->
-    <view v-if="(detail || designMode) && !isOnline" class="steps steps--flow"><job-flow-steps :current="current" :arrival-enabled="canOpenArrival" @arrival="openArrival" /><text v-if="flowTip" class="steps__tip">{{ flowTip }}</text></view>
+    <view v-if="(detail || designMode) && !isOnline" class="steps steps--flow"><job-flow-steps :current="current" :arrival-enabled="canOpenArrival" @arrival="openArrival" :end-enabled="detail?.status === 'onboarded' || detail?.status === 'completed'" @end="go(R.jobInterview + '?appId=' + appId)" /><text v-if="flowTip" class="steps__tip">{{ flowTip }}</text></view>
     <view v-else-if="detail || designMode" class="steps"><k-steps :steps="stepNames" :current="current" /></view>
 
     <!-- 2026-11-03 主人圈掉到店岗位顶上这颗「联系主理人」：下面安全卡已有「联系 TA」，只给线上任务留着 -->
@@ -16,39 +15,40 @@
     <view v-if="s === 1" class="k-body k-pad-bottom">
       <k-card :pad="16">
         <view class="hero">
-          <image class="hero__img hero__img--1" src="/static/media/progress-submitted.jpg" mode="aspectFit" />
+          <view class="hero__art"><k-icon name="clipboard-list" :size="32" color="red" /></view>
           <text class="hero__title">{{ heroTitle }}</text>
           <text class="hero__desc k-pre">{{ heroDesc }}</text>
+          <k-button v-if="loadState === 'failed'" type="secondary" size="sm" @click="loadDetail()">重新读取进度</k-button>
         </view>
         <view class="k-divider k-mt16" />
-        <view class="row"><view class="row__label"><k-icon name="file-clock" :size="18" color="ink" :stroke="1.5" /><text>提交时间</text></view><text class="row__value">{{ submitTimeText }}</text></view>
-        <view v-if="reviewEtaText" class="row"><view class="row__label"><k-icon name="clock" :size="18" color="ink" :stroke="1.5" /><text>预计审核时长</text></view><text class="row__value">{{ reviewEtaText }}</text></view>
-        <view class="row"><view class="row__label"><k-icon name="file-text" :size="18" color="ink" :stroke="1.5" /><text>当前状态</text></view><view class="status"><text>{{ statusText }}</text></view></view>
-        <view v-if="urgentInfo && (urgentInfo.urgent || urgentInfo.canUrgent)" class="row"><view class="row__label"><k-icon name="zap" :size="18" color="ink" :stroke="1.5" /><text>加急投递</text></view><k-chip v-if="urgentInfo.urgent" tone="red" icon="zap">已加急</k-chip><k-button v-else type="secondary" size="xs" :label="urgentBusy ? '正在加急…' : urgentInfo.label" :disabled="urgentBusy" @click="onUrgent" /></view>
+        <view class="row"><view class="row__label"><k-icon name="file-clock" :size="16" color="muted" /><text>提交时间</text></view><text class="row__value">{{ submitTimeText }}</text></view>
+        <view v-if="reviewEtaText" class="row"><view class="row__label"><k-icon name="clock" :size="16" color="muted" /><text>预计审核时长</text></view><text class="row__value">{{ reviewEtaText }}</text></view>
+        <view class="row"><view class="row__label"><k-icon name="file-text" :size="16" color="muted" /><text>当前状态</text></view><view class="status"><text>{{ statusText }}</text></view></view>
+        <view v-if="urgentInfo && (urgentInfo.urgent || urgentInfo.canUrgent)" class="row"><view class="row__label"><k-icon name="zap" :size="16" color="muted" /><text>加急投递</text></view><k-chip v-if="urgentInfo.urgent" tone="red" icon="zap">已加急</k-chip><k-button v-else type="secondary" size="xs" :label="urgentBusy ? '正在加急…' : urgentInfo.label" :disabled="urgentBusy" @click="onUrgent" /></view>
         <view class="tip k-mt8"><text class="tip__title">温馨提示</text><text class="tip__text k-pre">{{ tipText }}</text></view>
       </k-card>
       <!-- 撤回报名是危险操作：提醒红描边，不用实心主色（主人定：删除 / 危险操作保持红色）；主色实心给左边的「查看岗位 / 重新报名 / 签约到店」 -->
-      <k-bottom flat><view class="k-flex1"><k-button block :disabled="blank" @click="onLeftAction">{{ leftActionText }}</k-button></view><view class="k-flex1 danger"><k-button type="outline" block :disabled="blank || !canWithdraw" @click="withdraw">撤回报名</k-button></view></k-bottom>
+      <k-bottom flat pad="12px 16px"><view class="k-flex1"><k-button block :disabled="blank" @click="onLeftAction">{{ leftActionText }}</k-button></view><view class="k-flex1 danger"><k-button type="outline" block :disabled="blank || !canWithdraw" @click="withdraw">撤回报名</k-button></view></k-bottom>
     </view>
 
     <!-- 2 审核通过 -->
     <view v-else-if="s === 2" class="k-body k-pad-bottom">
-      <view class="hero hero--plain">
-        <image class="hero__img hero__img--2" src="/static/media/progress-stamp.jpg" mode="aspectFit" />
+      <view class="hero hero--plain hero--joined">
+        <view class="hero__art hero__art--ok"><k-icon name="clipboard-check" :size="32" color="green" /></view>
         <text class="hero__title">{{ passTitle }}</text>
         <text class="hero__desc">{{ passDesc }}</text>
       </view>
       <view class="tips k-mt16">
-        <view v-for="t in passTips" :key="t.text" class="tips__row"><view class="k-circle k-circle--outline tips__icon"><k-icon :name="t.icon" :size="17" color="ink" :stroke="1.5" /></view><text class="tips__text k-pre">{{ t.text }}</text></view>
+        <view v-for="t in passTips" :key="t.text" class="tips__row"><view class="k-circle k-circle--outline tips__icon"><k-icon :name="t.icon" :size="16" color="muted" /></view><text class="tips__text k-pre">{{ t.text }}</text></view>
       </view>
       <!-- 审核通过、还没约面试时也能撤回（后端允许 review_passed 撤回）：之前这一屏只有约面试一个按钮，不想去了只能找门店终止 -->
-      <k-bottom flat><view v-if="!isOnline" class="withdraw danger"><k-button type="outline" block :disabled="blank || !canWithdraw" @click="withdraw">撤回报名</k-button></view><view class="k-flex1"><k-button block :disabled="blank" @click="onPassAction">{{ passActionText }}</k-button></view></k-bottom>
+      <k-bottom flat pad="12px 16px"><view v-if="!isOnline" class="withdraw danger"><k-button type="outline" block :disabled="blank || !canWithdraw" @click="withdraw">撤回报名</k-button></view><view class="k-flex1"><k-button block :disabled="blank" @click="onPassAction">{{ passActionText }}</k-button></view></k-bottom>
     </view>
 
     <!-- 3 审核未通过 -->
     <view v-else-if="s === 3" class="k-body k-pad-safe">
       <view class="hero hero--plain">
-        <image class="hero__img hero__img--3" src="/static/media/progress-rejected.jpg" mode="aspectFit" />
+        <view class="hero__art"><k-icon name="file-x" :size="32" color="red" /></view>
         <text class="hero__title">审核未通过</text>
         <text class="hero__desc">很抱歉，本次报名未通过主理人审核。</text>
       </view>
@@ -59,7 +59,7 @@
       </k-card>
       <text class="k-title k-mt16 block">你可以</text>
       <view class="k-col k-gap8 k-mt8">
-        <view v-for="a in actions" :key="a.text" class="action" @click="a.fn"><k-icon :name="a.icon" :size="20" color="ink" :stroke="1.5" /><text>{{ a.text }}</text></view>
+        <view v-for="a in actions" :key="a.text" class="action" hover-class="k-press" @click="a.fn"><k-icon :name="a.icon" :size="18" color="ink2" /><text>{{ a.text }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
       </view>
       <text class="cheer">别灰心，合适的相遇需要一点时间，期待你下次的加入～</text>
       <view class="k-home-indicator" />
@@ -67,24 +67,29 @@
 
     <!-- 4 选择面试时间 -->
     <view v-else-if="!isOnline && (detail || designMode)" class="k-body k-pad-bottom">
-      <text class="pick__title">请选择视频面试时间</text>
+      <k-interview-slots v-if="detail?.jobType === 'volunteer' && appId" :key="appId" :app-id="appId" offer-role="candidate" :refresh-key="offerRefresh" @count="offerCount = $event" @stage-changed="loadDetail()" />
+      <template v-if="detail?.jobType !== 'volunteer' || offerCount === 0">
+      <text class="pick__title">{{ detail?.jobType === 'volunteer' ? '门店已开放的时段' : '请选择视频面试时间' }}</text>
       <text class="pick__sub">{{ slotsHint }}</text>
       <k-button v-if="slotsState !== 'loading'" type="outline" size="sm" @click="loadSlots">刷新时段</k-button>
-      <view class="k-col k-gap12 k-mt12">
+      <view class="k-col k-gap12 k-mt12 opt-list">
         <view v-for="(o, i) in options" :key="o.slotId || i" class="opt" :class="{ on: picked === i }" @click="picked = i">
-          <view class="k-radio" :class="{ checked: picked === i }" />
+          <k-icon name="circle" :art="picked === i ? 'radio-on' : 'circle'" :size="18" />
           <view class="k-flex1">
             <view class="k-row-start k-gap12">
-              <k-icon name="calendar-days" :size="22" color="ink" :stroke="1.5" />
-              <view class="k-col k-gap2"><text class="opt__date">{{ o.date }}</text><text class="opt__date">{{ o.time }}（北京时间）</text></view>
+              <k-icon name="calendar-days" :size="18" color="muted" />
+              <view class="k-col k-gap2"><text class="opt__date">{{ o.date }}</text><text class="opt__date">{{ o.time }}<text class="opt__tz">（北京时间）</text></text></view>
             </view>
-            <view class="k-row k-gap24 opt__meta"><view class="k-row k-gap4"><k-icon name="clock" :size="14" color="muted" /><text>{{ o.dur ? '时长约 ' + o.dur : '时长以门店安排为准' }}</text></view><view class="k-row k-gap4"><k-icon name="video" :size="14" color="muted" /><text>腾讯会议</text></view></view>
+            <view class="k-row k-gap24 opt__meta"><view class="k-row k-gap4"><k-icon name="clock" :size="12" color="muted" /><text>{{ o.dur ? '时长约 ' + o.dur : '时长以门店安排为准' }}</text></view><view class="k-row k-gap4"><k-icon name="video" :size="12" color="muted" /><text>腾讯会议{{ o.capacity > 1 ? ' · 最多 ' + o.capacity + ' 人' : '' }}</text></view></view>
           </view>
         </view>
       </view>
       <view class="tip tip--card k-mt16"><text class="tip__title">温馨提示</text><text class="tip__text">有可选时段时请选择并确认；暂无时段请联系当地主理人安排，稍后刷新。</text></view>
-      <k-bottom flat><view class="contact"><k-button block type="outline" icon="message-circle" label="联系当地主理人" @click="contactOwner" /></view><view class="k-flex1"><k-button block :disabled="!canBook || booking" :label="booking ? '提交中…' : '确认面试时间'" @click="confirmTime" /></view></k-bottom>
+      <k-bottom flat pad="12px 16px"><view class="contact"><k-button block type="outline" icon="message-circle" label="联系当地主理人" @click="contactOwner" /></view><view class="k-flex1"><k-button block :disabled="!canBook || booking" :label="booking ? '提交中…' : '确认面试时间'" @click="confirmTime" /></view></k-bottom>
+      </template>
+      <view v-if="detail?.jobType === 'volunteer' && offerCount > 0" class="tip tip--card"><text class="tip__title">等商家确认时间</text><text class="tip__text">确认后你会收到面试通知，可从消息进入腾讯会议。</text></view>
     </view>
+    <k-subscribe scenes="apply_progress" label="订阅报名与面试提醒" />
   </view>
 </template>
 
@@ -92,7 +97,8 @@
 import DepartureNotice from './components/departure-notice.vue'
 const departureNotice = ref(null)
 import { ref, computed } from 'vue'
-import { onShareAppMessage } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShow, onHide, onUnload } from '@dcloudio/uni-app'
+import { getMessageScopeKey } from '@/common/experience.js'
 import { useScreen, go, replace, back, toast } from '@/common/screen.js'
 import { apiApplicationDetail, apiBookInterview, apiInterviewSlots, apiWithdrawApplication, apiUrgentInfo, apiUrgentApply } from '@/common/api.js'
 import { modal } from '@/common/ui.js'
@@ -167,6 +173,7 @@ const detail = ref(null)
 const trip = ref(null)
 const onTrip = (value) => { trip.value = value }
 onShareAppMessage(() => tripShareMessage(trip.value, jobShareFallback(detail.value?.jobId, detail.value?.jobTitle)))
+const offerCount = ref(null)
 const slots = ref(null) // null 表示还没拉到真实时段
 const picked = ref(-1)
 const explicitScreen = ref(false)
@@ -176,6 +183,11 @@ const loadError = ref('')
 const loadErrorCode = ref(0)
 const slotsState = ref('idle')
 const slotsError = ref('')
+let visible = false, pageEpoch = 0, detailRequest = 0, slotsRequest = 0
+let loadedScope = null
+const pageContext = () => ({ epoch: pageEpoch, id: appId.value, scope: getMessageScopeKey() })
+const isCurrent = ctx => visible && ctx.epoch === pageEpoch && ctx.id === appId.value && ctx.scope === getMessageScopeKey()
+const readyForAction = () => visible && loadState.value === 'ready' && loadedScope === getMessageScopeKey()
 
 // 设计走查路径：只有它能用 DESIGN
 const designMode = computed(() => explicitScreen.value && !appId.value)
@@ -201,7 +213,9 @@ const formatSlotTime = (start, end) => {
   const a = parseTime(start)
   const b = parseTime(end)
   if (!a) return ''
-  return b ? `${a.hh}:${a.mm} - ${b.hh}:${b.mm}` : `${a.hh}:${a.mm}`
+  if (!b) return `${a.hh}:${a.mm}`
+  const endDate = a.y === b.y && a.mo === b.mo && a.d === b.d ? '' : `${b.mo}月${b.d}日 `
+  return `${a.hh}:${a.mm} - ${endDate}${b.hh}:${b.mm}`
 }
 // 时段时长按起止时间算（门店自己设，最长 4 小时）：30 分钟 / 1 小时 / 1 小时 30 分钟；算不出就不写
 const formatSlotDuration = (start, end) => {
@@ -215,13 +229,19 @@ const formatSlotDuration = (start, end) => {
 }
 
 const loadSlots = async () => {
-  if (!appId.value || !detail.value || isOnline.value || detail.value.status !== 'review_passed') return
+  if (!readyForAction() || !appId.value || !detail.value || isOnline.value || detail.value.status !== 'review_passed') return
+  const ctx = pageContext(), request = ++slotsRequest
+  const current = () => isCurrent(ctx) && request === slotsRequest && s.value === 4
+  slots.value = []
+  picked.value = -1
   slotsState.value = 'loading'
   slotsError.value = ''
   try {
     const res = await apiInterviewSlots(appId.value)
+    if (!current()) return
     slots.value = (res?.data || []).map(o => ({
       slotId: o.slotId,
+      capacity: o.capacity || 1,
       date: formatSlotDate(o.startTime),
       time: formatSlotTime(o.startTime, o.endTime),
       dur: formatSlotDuration(o.startTime, o.endTime)
@@ -229,6 +249,7 @@ const loadSlots = async () => {
     picked.value = -1
     slotsState.value = 'ready'
   } catch (e) {
+    if (!current()) return
     // 拉不到就是空列表，不能退回 DESIGN 的示例时段让用户对着假时段点确认
     slots.value = []
     picked.value = -1
@@ -238,11 +259,16 @@ const loadSlots = async () => {
   }
 }
 const loadDetail = async () => {
-  if (!appId.value) return
+  if (!visible || !appId.value) return
+  const ctx = pageContext(), request = ++detailRequest
+  const current = () => isCurrent(ctx) && request === detailRequest
+  slotsRequest++
   loadState.value = 'loading'
   try {
     const res = await apiApplicationDetail(appId.value)
+    if (!current()) return
     detail.value = res?.data || null
+    loadedScope = detail.value ? ctx.scope : null
     loadState.value = detail.value ? 'ready' : 'failed'
     loadError.value = detail.value ? '' : '没有找到这条报名记录'
     loadErrorCode.value = 0
@@ -257,17 +283,27 @@ const loadDetail = async () => {
     // 有真实报名时屏号只认真实 status：?s= 在这条路径上是设计走查残留，
     // 拿它盖掉真实状态会让 submitted 的报名显示成"审核通过"。
     // 第 4 屏（选面试时段）不由状态直达，只能从第 2 屏的按钮进入，线上任务那里换成了交付入口
-    s.value = screenOf(detail.value)
+    const resumeSlots = s.value === 4 && !isOnline.value && detail.value.status === 'review_passed'
+    landing = screenOf(detail.value)
+    s.value = resumeSlots ? 4 : landing
+    if (resumeSlots) {
+      offerRefresh.value++
+      loadSlots()
+    }
     loadUrgent()
-    landing = s.value
   } catch (e) {
+    if (!current()) return
+    detail.value = null
+    trip.value = null
+    urgentInfo.value = null
+    loadedScope = null
     loadState.value = 'failed'
     loadError.value = e?.message || '报名进度加载失败'
     loadErrorCode.value = e?.code || -1
     toast(loadError.value)
     // 退回第 1 屏：只有它的文案改造成了能如实陈述加载状态，
     // 另外三屏（审核通过/未通过/选时段）对着空数据只会说与事实不符的话
-    if (!detail.value) s.value = 1
+    s.value = 1
   }
 }
 
@@ -280,8 +316,29 @@ const s = useScreen(4, {
     if (!appId.value && !explicitScreen.value) return replace(R.orders)
     if (appId.value) s.value = 1
     landing = s.value
-    loadDetail()
   }
+})
+const offerRefresh = ref(0)
+onShow(() => {
+  visible = true
+  loadDetail()
+})
+const leaveProgress = () => {
+  visible = false
+  pageEpoch++
+  picked.value = -1
+  booking.value = urgentBusy.value = withdrawing.value = false
+}
+onHide(leaveProgress)
+onUnload(leaveProgress)
+watch(getMessageScopeKey, () => {
+  pageEpoch++
+  loadedScope = null
+  detail.value = trip.value = urgentInfo.value = slots.value = null
+  picked.value = -1
+  booking.value = urgentBusy.value = withdrawing.value = false
+  if (appId.value) s.value = 1
+  if (visible) loadDetail()
 })
 // 第 4 屏（选面试时段）是从第 2 屏点进来的：之前左上角返回直接离开本页，现在先回到进页时的那一屏
 let landing = 0
@@ -297,11 +354,11 @@ const current = computed(() => {
   }
   // 到店岗位按报名状态换算成 7 步里的第几步（apply-flow.flowStepOf）：已撤回 / 已终止 / 不认识的状态是 0（整条不亮），
   // 不再用服务端给的 step（那是老的六步口径，老版本小程序还在用，接口照旧给）
-  if (detail.value) return flowStepOf(detail.value.status)
+  if (detail.value) return flowStepOf(detail.value.status, detail.value.workEndTime, detail.value?.arrivalStep)
   return blank.value ? 0 : ({ 1: 2, 2: 3, 3: 2, 4: 3 })[s.value] || 1
 })
 // 进度条下面一句话：现在在等什么（只说系统里真有记录的事；订票、进群是和主理人线下确认的）
-const flowTip = computed(() => (detail.value && !isOnline.value ? flowHint(detail.value.status) : ''))
+const flowTip = computed(() => (detail.value && !isOnline.value ? flowHint(detail.value.workEndTime ? 'completed' : detail.value.status, detail.value.arrivalStep) : ''))
 const canOpenArrival = computed(() => !!detail.value && !isOnline.value && ['contract_signed', 'onboarded', 'completed'].includes(detail.value.status))
 const openArrival = () => { if (canOpenArrival.value) go(R.jobContract + '?appId=' + appId.value + '&s=5') }
 
@@ -310,7 +367,7 @@ const openArrival = () => { if (canOpenArrival.value) go(R.jobContract + '?appId
 // 那是让用户去试一个注定失败的操作。这里只改按钮的可用状态，不动页面结构。
 const WITHDRAWABLE = ['submitted', 'review_passed', 'interview_booked']
 const canWithdraw = computed(() => designMode.value
-  || (!!detail.value && WITHDRAWABLE.indexOf(detail.value.status) >= 0))
+  || (loadState.value === 'ready' && !withdrawing.value && !!detail.value && WITHDRAWABLE.indexOf(detail.value.status) >= 0))
 // 设计稿第 1 屏整屏文案（等待审核、约 4 小时、保持电话畅通）只对 submitted 成立。
 // 其余真实状态（已撤回、已预约面试、已终止…）设计稿没有对应屏，
 // 这里改为直接摆出服务端的 statusLabel，而不是继续说"报名已提交、正在安排审核"
@@ -372,7 +429,7 @@ const slotsHint = computed(() => {
 })
 // 设计走查的示例时段没有 slotId，点确认只会得到"无法预约"的提示，但按钮保持可见可点，
 // 以免走查时看到一个灰掉的按钮；真实场景下没有时段就直接禁用
-const canBook = computed(() => options.value.length > 0)
+const canBook = computed(() => options.value.length > 0 && (designMode.value || (loadState.value === 'ready' && slotsState.value === 'ready' && picked.value >= 0)))
 
 // 线上任务专员发布的任务（详情里 contactSpecialist = true，2026-10-16 主人拍板）：「联系当地主理人」改叫「联系袋鼠工作人员」（2026-11-03 主人：统一叫法，用户只见「袋鼠工作人员」「当地主理人」两个词），
 // 点进去还是这份报名的门店会话，发布的专员一定在里面（服务端 KgChatReception.publishers），顶栏写「专员 · 昵称」
@@ -420,39 +477,46 @@ const onlineFlow = ref(null)
 watch(detail, async (d) => {
   onlineFlow.value = null
   if (!d || d.jobType !== 'online' || !appId.value) return
+  const ctx = pageContext()
   try {
-    onlineFlow.value = (await apiMyOnline(appId.value))?.data?.flow || null
+    const res = await apiMyOnline(appId.value)
+    if (isCurrent(ctx) && detail.value === d) onlineFlow.value = res?.data?.flow || null
   } catch (e) {
     // 取不到就按报名状态粗略显示（见 current），不打断进度页
-    onlineFlow.value = null
+    if (isCurrent(ctx) && detail.value === d) onlineFlow.value = null
   }
 })
 const passTitle = computed(() => (isOnline.value ? '接单申请已通过' : '审核通过'))
 const passDesc = computed(() => (isOnline.value ? '发布方已通过你的接单申请。无需到店，请远程完成任务，并在下方提交成果。' : '恭喜你！主理人已通过你的报名申请。'))
 const passTips = computed(() => (isOnline.value ? ONLINE_TIPS.map((t) => ({ ...t, text: t.text.replace('联系当地主理人', contactLabel.value) })) : INTERVIEW_TIPS))
-const passActionText = computed(() => (isOnline.value ? '提交成果 / 结算' : '请选择视频面试时间'))
+const passActionText = computed(() => (isOnline.value ? '提交成果 / 结算' : detail.value?.jobType === 'volunteer' ? '安排视频面试时间' : '请选择视频面试时间'))
 const openDeliver = () => go(R.jobDeliver + '?appId=' + (appId.value || detail.value?.appId))
 const openSlots = () => {
   // 线上任务的选时段屏不存在：后端 bookInterview 会直接拒绝，这里不给它进去的机会
   if (isOnline.value) return openDeliver()
+  offerCount.value = null
   s.value = 4
   loadSlots()
 }
 const onPassAction = () => (isOnline.value ? openDeliver() : openSlots())
-const doWithdraw = async () => {
+const withdrawing = ref(false)
+const doWithdraw = async (ctx) => {
   // 没有 appId（设计走查 / 取数失败）时不存在可撤回的对象。
   // 这里报"已撤回报名"会让用户以为报名真的被撤了，而实际上一个请求都没发出去
   if (!appId.value) return toast('没有可撤回的报名')
+  if (!isCurrent(ctx) || !readyForAction() || !canWithdraw.value) return
+  withdrawing.value = true
   try {
     const res = await apiWithdrawApplication(appId.value)
+    if (!isCurrent(ctx)) return
     toast(res?.msg || '已撤回报名')
     // 撤回后按服务端的真实状态重新渲染，不再武断切到"审核未通过"那一屏
     await loadDetail()
   } catch (e) {
-    toast(e?.message || '撤回失败，请重试')
-  }
+    if (isCurrent(ctx)) toast(e?.message || '撤回失败，请重试')
+  } finally { if (isCurrent(ctx)) withdrawing.value = false }
 }
-const withdraw = () => { uni.showModal({ title: '撤回报名', content: '撤回后需重新提交报名，确定撤回吗？', confirmColor: '#C04437', success: (r) => { if (r.confirm) doWithdraw() } }) }
+const withdraw = () => { const ctx = pageContext(); uni.showModal({ title: '撤回报名', content: '撤回后需重新提交报名，确定撤回吗？', confirmColor: '#C04437', success: (r) => { if (r.confirm) doWithdraw(ctx) } }) }
 
 // ---------------------------------------------------------------------------
 // 加急投递：还在等门店审核的报名，可以花积分标成「加急」，门店的报名列表会把它排在最前面并标红色「加急」。
@@ -462,39 +526,46 @@ const urgentInfo = ref(null)
 const urgentBusy = ref(false)
 const loadUrgent = async () => {
   if (!appId.value || detail.value?.status !== 'submitted') { urgentInfo.value = null; return }
+  const ctx = pageContext(), request = detailRequest
+  const current = () => isCurrent(ctx) && request === detailRequest && detail.value?.status === 'submitted'
   try {
     const res = await apiUrgentInfo(appId.value)
-    urgentInfo.value = res?.data || null
+    if (current()) urgentInfo.value = res?.data || null
   } catch (e) {
     // 读不到就不显示这一行，不影响看进度
-    urgentInfo.value = null
+    if (current()) urgentInfo.value = null
   }
 }
 const onUrgent = async () => {
   const u = urgentInfo.value
-  if (!u || !u.canUrgent || urgentBusy.value) return
+  if (!readyForAction() || !u || !u.canUrgent || urgentBusy.value) return
+  const ctx = pageContext()
   if (Number(u.balance) < Number(u.cost)) {
-    const r = await modal('积分不够', `加急一次要 ${u.cost} 积分，你现在有 ${u.balance} 分，还差 ${u.shortBy} 分。\n完成换工换宿、门店任务，或者邀请朋友，都能攒积分。`, { confirmText: '看看积分', cancelText: '知道了' })
-    if (r.confirm) go(R.profile + '?s=3')
+    const r = await modal('积分不够', `加急一次要 ${u.cost} 积分，你现在有 ${u.balance} 分，还差 ${u.shortBy} 分。\n完成换工、门店任务，或者邀请朋友，都能攒积分。`, { confirmText: '看看积分', cancelText: '知道了' })
+    if (r.confirm && isCurrent(ctx)) go(R.profile + '?s=3')
     return
   }
   const ok = await modal('加急投递', `花 ${u.cost} 积分把这条报名设为「加急」：门店那边会排在前面并标「加急」，更快看到你。\n你现在有 ${u.balance} 分，加急后剩 ${u.balance - u.cost} 分。\n每条报名只能加急一次，积分用掉后不退（门店没录用、自己撤回也不退）。`, { confirmText: '确定加急', confirmColor: '#9A6B3F' })
-  if (!ok.confirm) return
+  if (!ok.confirm || !isCurrent(ctx) || !readyForAction() || urgentBusy.value || urgentInfo.value !== u) return
   urgentBusy.value = true
   try {
     const res = await apiUrgentApply(appId.value)
+    if (!isCurrent(ctx)) return
     toast(res?.msg || '已加急')
     await loadUrgent()
   } catch (e) {
+    if (!isCurrent(ctx)) return
     toast(e?.message || '加急失败，请重试')
     loadUrgent()
   } finally {
-    urgentBusy.value = false
+    if (isCurrent(ctx)) urgentBusy.value = false
   }
 }
 // 预约要等服务端返回：连点会发两次预约，第二次必定撞「已约过」报错
 const booking = ref(false)
 const confirmTime = async () => {
+  if (!designMode.value && (!readyForAction() || slotsState.value !== 'ready')) return
+  const ctx = pageContext()
   if (isOnline.value) return openDeliver()
   const opt = options.value[picked.value]
   if (picked.value < 0 || !opt) return toast('请选择一个面试时段')
@@ -504,6 +575,7 @@ const confirmTime = async () => {
   booking.value = true
   try {
     const res = await apiBookInterview(appId.value, opt.slotId)
+    if (!isCurrent(ctx)) return
     toast(res?.msg || '面试时间已确认')
     // 预约成功后回到设计稿里的落点：面试候场页。
     //
@@ -516,11 +588,12 @@ const confirmTime = async () => {
     // 带上 appId：没有它的话那页会落到"设计稿走查"分支。
     replace(`${R.jobInterview}?appId=${appId.value}`)
   } catch (e) {
+    if (!isCurrent(ctx)) return
     toast(e?.message || '预约失败，请重试')
     // 失败通常是时段刚被别人占用，本地列表已经过期，重新拉一次让用户在真实可选时段里再挑
     loadSlots()
   } finally {
-    booking.value = false
+    if (isCurrent(ctx)) booking.value = false
   }
 }
 </script>
@@ -575,8 +648,188 @@ const confirmTime = async () => {
 /* 审核通过屏底栏的「撤回报名」：收窄边距，320 宽的手机上旁边「请选择视频面试时间」也放得下 */
 .withdraw { width: 88px; flex: 0 0 auto; }
 .withdraw :deep(.k-button) { padding: 0 8px; }
-/* 「撤回报名」：提醒红字 + 浅红描边；不能撤回时仍是灰色禁用样式 */
+/* 「撤回报名」：提醒红字 + 浅红描边；不能撤回时还是这套颜色、整体变淡（第二轮：不再盖灰，公共按钮的禁用色带 !important，这里要更具体才盖得住） */
 .danger :deep(.k-button) { color: var(--k-alert); border-color: rgba(192, 68, 55, .45); }
-.danger :deep(.k-button.is-disabled) { color: var(--k-light); border-color: transparent; }
+.progress .danger :deep(.k-button.is-disabled) { color: var(--k-alert) !important; border-color: rgba(192, 68, 55, .45) !important; }
 @import "flow-premium.scss";
+/* ==== r3jobsb 第三轮 start ==== */
+/* 第三轮（11-18）：
+   ① 插画原来自带一块奶油色方底，在白卡上像贴纸——放进 104 的浅棕圆里，用「取较暗的颜色」叠上去，方底和圆融成一体，只留线条；
+   ② 右对齐的提交时间钻到「客服」小钮底下——信息行右边让出 12；
+   ③「等待商家审核」原来是豆绿（全站绿 = 成功），等待类改成赭黄浅底；
+   ④ 白卡内边距 16，标题 18/700、说明 13/muted；「你可以」三行加行尾箭头。 */
+.progress :deep(.k-card) { padding: 16px !important; }
+.progress .hero { padding-top: 0; }
+.progress .hero--plain { padding: 20px 16px; }
+.progress .hero__art { width: 104px; height: 104px; border-radius: 50%; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.progress .hero__art .hero__img { display: block; border-radius: 0; mix-blend-mode: darken; }
+.progress .hero__img--1 { width: 80px; height: 63px; }
+.progress .hero__img--2 { width: 76px; height: 77px; }
+.progress .hero__img--3 { width: 80px; height: 66px; }
+.progress .hero__title { margin-top: 12px; font-size: 18px; font-weight: 700; line-height: 26px; }
+.progress .hero__desc { margin-top: 4px; font-size: 13px; line-height: 1.6; color: var(--k-muted); }
+.progress .k-divider { margin-top: 16px; }
+.progress .row { height: 44px; padding-right: 12px; font-size: 13px; }
+.progress .row__label { gap: 6px; color: var(--k-ink2); }
+
+.progress .row__value { color: var(--k-ink); font-variant-numeric: tabular-nums; }
+.progress .status { height: 20px; padding: 0 6px; border-radius: 4px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 11px; font-weight: 500; }
+.progress .tip { margin-top: 8px; padding: 12px; border-radius: 8px; background: var(--k-page); }
+.progress .tip--card { margin-top: 8px; border-radius: 12px; background: var(--k-paper); }
+.progress .tip__title { font-size: 13px; font-weight: 600; line-height: 20px; }
+.progress .tip__text { margin-top: 2px; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+.progress .tips { margin-top: 8px; padding: 16px; gap: 14px; }
+.progress .tips__row { gap: 12px; align-items: center; }
+.progress .tips__icon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; background: var(--k-red-soft); }
+.progress .tips__text { padding-top: 0; font-size: 13px; line-height: 1.6; color: var(--k-ink2); }
+.progress .reason__label { font-size: 12px; color: var(--k-muted); }
+.progress .reason__title { margin-top: 4px; font-size: 16px; font-weight: 600; line-height: 22px; }
+.progress .reason__text { font-size: 13px; line-height: 1.6; }
+.progress .k-title.block { margin: 20px 4px 10px; }
+.progress .k-col.k-gap8.k-mt8 { margin-top: 0; }
+.progress .action { padding: 0 16px; gap: 10px; }
+.progress .action > text { flex: 1; min-width: 0; color: var(--k-ink); }
+.progress .action + .action::before { left: 44px; }
+
+.progress .cheer { margin-top: 20px; font-size: 12px; line-height: 1.6; }
+/* 选面试时间：标题 16/700，刷新时段是 28 高的次按钮小胶囊；时段卡 16 内边距、选中浅棕底 + 细棕边 */
+.progress .pick__title { margin-top: 12px; padding-left: 4px; font-size: 16px; font-weight: 700; }
+.progress .pick__sub { margin-top: 2px; padding-left: 4px; font-size: 12px; color: var(--k-muted); }
+.progress .opt { padding: 14px 16px; gap: 12px; }
+.progress .opt.on { background: var(--k-red-soft); border-color: var(--k-red-line); }
+.progress .opt .k-gap12 { gap: 8px; }
+
+.progress .opt .k-col > .opt__date { font-variant-numeric: tabular-nums; }
+.progress .opt .k-col > .opt__date:last-child { font-size: 15px; font-weight: 600; color: var(--k-ink); }
+.progress .opt__meta { margin-top: 8px; padding-left: 26px; gap: 16px; font-size: 12px; }
+
+.progress .k-col.k-gap12.k-mt12 { gap: 8px; }
+
+/* —— 返修 1 —— */
+/* 信息行数值仍右缩 12 躲开「客服」小钮；分隔线和温馨提示块跟着一起右缩 12，卡内右边只剩一条线 */
+/* 返修 3：分隔线、提示块不再右让 12（左右内边距对称，躲客服钮交给公共层） */
+/* 底部两个按钮间距 8 */
+.progress :deep(.k-bottom__inner) { gap: 8px; }
+/* 审核通过：印章放大到 92，外缘贴近圆边 */
+.progress .hero__img--2 { width: 92px; height: 93px; }
+/* 「你可以」「请选择视频面试时间」标题和下面的白卡左边对齐 */
+.progress .k-title.block { margin-left: 0; margin-right: 0; }
+.progress .pick__title, .progress .pick__sub { padding-left: 0; }
+/* 未通过原因：收成 15/600 墨色字，左边一根 3×14 的提醒色短竖条做点缀，不和主标题抢 */
+.progress .reason__title { position: relative; padding-left: 11px; font-size: 15px; font-weight: 600; line-height: 22px; color: var(--k-ink); }
+.progress .reason__title::before { content: ''; position: absolute; left: 0; top: 4px; width: 3px; height: 14px; border-radius: 2px; background: var(--k-alert); }
+/* 选面试时间底栏：主按钮占满，次按钮宽度随字 */
+.progress .contact { flex: 0 0 auto; width: auto; }
+.progress .contact :deep(.k-button) { padding: 0 14px; }
+@media (max-width: 359px) {
+  .progress .contact :deep(.k-button) { padding: 0 12px; font-size: 13px; }
+}
+/* —— 返修 2 start —— */
+/* 底栏按钮和白卡同一条边（k-bottom 的 pad 12） */
+/* 选面试时间：单选圈挪到卡片右侧、垂直居中；左边只留一个日历图标打头 */
+.progress .opt { align-items: center; }
+.progress .opt > .k-radio { order: 2; flex: 0 0 auto; }
+.progress .opt__meta { padding-left: 26px; }
+.progress .opt__tz { font-size: 12px; font-weight: 400; color: var(--k-muted); }
+/* —— 返修 2 end —— */
+/* —— 返修 3 start（11-18 晚）—— */
+/* 整条报名流程页边距 16、卡内 16；主卡左右对称（信息行右边不再多让 12） */
+.progress .k-body { padding-left: 16px; padding-right: 16px; }
+.progress .safety-entry { padding: 0 16px; }
+.progress :deep(.order-mediation) { margin: 12px 16px 0; }
+.progress .k-body > :deep(.k-button.is-sm.is-outline) { right: 16px; }
+.progress .row { padding-right: 0; }
+/* 三种状态同一种插画：96 圆 + 40 线性图标（审核通过换浅绿圆） */
+.progress .hero__art { width: 96px; height: 96px; }
+.progress .hero__art--ok { background: var(--k-green-soft); }
+/* 「撤回报名」做轻：不要描边，14/500 提醒红文字按钮 */
+.progress .danger :deep(.k-button.is-outline), .progress .danger :deep(.k-button.is-outline.is-disabled) { border-color: transparent !important; background: transparent !important; font-size: 14px; font-weight: 500; }
+/* 选面试时间：单选圈 20、1.5 边，没选时也看得出能点 */
+.progress .opt > .k-radio { width: 20px; height: 20px; box-sizing: border-box; border: 1.5px solid var(--k-light); }
+.progress .opt > .k-radio.checked { border-color: var(--k-red); }
+/* —— 返修 3 end —— */
+/* —— 返修 4 start（11-18 夜）—— */
+/* 订阅条、步骤条、联系入口和下面的白卡同一条左右线（页边距 16，底栏 pad 12 16） */
+.progress :deep(.subscribe-entry) { padding: 8px 16px 0; }
+.progress .steps--flow { margin: 8px 16px 0; }
+.progress .contact-entry { padding: 8px 16px 0; }
+/* 三种状态插画收成 80 圆 + 32 图标；审核通过 / 未通过的主卡上下 24，不再头重脚轻 */
+.progress .hero__art { width: 80px; height: 80px; }
+.progress .hero--plain { padding: 24px 16px; }
+/* 未通过：状态卡到原因卡 12，原因卡到「你可以」24（卡与卡 12、区块与区块 24） */
+.progress :deep(.k-card.reason) { margin-top: 12px !important; }
+.progress .k-title.block { margin-top: 24px; }
+/* 选面试时间：时段卡之间 12；温馨提示卡内边距 16，和时段卡同一条左线 */
+.progress .k-col.k-gap12.k-mt12 { gap: 12px; }
+.progress .tip--card { padding: 16px; }
+/* —— 返修 4 end —— */
+/* —— 返修 5 start（11-18 深夜）—— */
+/* 温馨提示：不再白卡套灰块，上面一条发丝线隔开；标题 13/600，正文 12 灰 */
+.progress .tip:not(.tip--card) { position: relative; margin-top: 12px; padding: 12px 0 0; border: 0; border-radius: 0; background: none; }
+.progress .tip:not(.tip--card)::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+.progress .tip__title { font-size: 13px; font-weight: 600; }
+.progress .tip__text { font-size: 12px; color: var(--k-muted); }
+/* 未通过页尾：两行均分，「～」不单独掉行 */
+.progress .cheer { text-wrap: balance; }
+/* 选面试时间：「刷新时段」和标题那一行上下居中（标题行高 28，按钮高 28，顶边取同一个值） */
+.progress .pick__title { margin-top: 12px; line-height: 28px; }
+/* —— 返修 5 end —— */
+/* ==== r3jobsb 第四轮 start（11-18 夜，以微信实拍为准）==== */
+/* 步骤条不再套白卡，直接放在页首，主卡成为首屏唯一的白卡 */
+.progress .steps--flow { margin: 4px 16px 0; padding-left: 0; padding-right: 0; background: transparent; box-shadow: none; }
+/* 订阅提醒：放到主卡下面，一行 13/500 暖棕文字链接，不加底卡；底栏留白挪到它下面 */
+.progress .k-body.k-pad-bottom { padding-bottom: 0; }
+.progress :deep(.subscribe-entry) { padding: 12px 16px calc(88px + var(--k-safe-bottom)); }
+.progress :deep(.subscribe-entry button) { min-height: 32px; height: 32px; padding: 0; border-radius: 0; background: transparent; font-size: 13px; font-weight: 500; line-height: 32px; }
+/* 主卡里只有一种线：hero 下面的分隔线也改成发丝线 */
+.progress .k-divider { height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+/* 结果页大图标统一 64 圆；卡内上下 24 */
+.progress .hero__art { width: 64px; height: 64px; }
+.progress .hero--plain { padding: 24px 16px 20px; }
+/* 审核通过：hero 和三条说明合成一张卡，中间发丝线；说明前是 16 号灰色图标，不加底 */
+.progress .hero--plain + .tips { position: relative; margin-top: 0; padding: 16px; gap: 12px; border-radius: 0 0 12px 12px; }
+.progress .hero--plain + .tips::before { content: ''; position: absolute; left: 16px; right: 16px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+.progress .tips__row { align-items: flex-start; gap: 8px; }
+.progress .tips__icon { flex: 0 0 16px; width: 16px; height: 22px; border: 0; border-radius: 0; background: none; }
+.progress .tips__text { font-size: 14px; line-height: 22px; color: var(--k-ink2); word-break: keep-all; overflow-wrap: anywhere; }
+/* 未通过：原因说明只在标点处折行；「你可以」列表发丝线左起文字、右止卡内边距 16 */
+.progress .reason__text { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; }
+.progress .action + .action::before { left: 44px; right: 16px; }
+/* 选面试时段：三个时段合成一张列表卡，行间发丝线；选中整行浅棕底；时间 18/700 等宽 */
+.progress .opt-list { gap: 0; margin-top: 12px; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.progress .opt { position: relative; padding: 16px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.progress .opt + .opt::before { content: ''; position: absolute; left: 46px; right: 16px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+.progress .opt.on { border-color: transparent; background: var(--k-red-soft); }
+.progress .opt .k-col > .opt__date:last-child { font-size: 18px; font-weight: 700; line-height: 26px; }
+.progress .tip--card { margin-top: 12px; padding: 0 4px; border-radius: 0; background: transparent; }
+.progress .tip--card .tip__title { font-size: 12px; font-weight: 600; color: var(--k-ink2); }
+.progress .tip--card .tip__text { font-size: 12px; line-height: 1.6; color: var(--k-muted); word-break: keep-all; overflow-wrap: anywhere; }
+/* 底栏：撤回报名（危险动作）放左边 96 宽的文字按钮，主按钮占其余；高都是 44 */
+.progress .k-flex1.danger, .progress .withdraw.danger { flex: 0 0 96px; width: 96px; order: -1; }
+.progress .danger :deep(.k-button) { height: 44px; padding: 0; font-size: 15px; font-weight: 500; color: var(--k-alert); }
+.progress :deep(.k-bottom__inner) { gap: 12px; }
+/* ==== r3jobsb 第四轮 end ==== */
+/* ==== r3jobsb 第四轮返修 start（11-19，复评遗留）==== */
+/* s=1 当前状态：去掉小底色标签，13/600 赭色纯文字，和同卡其它值一个样子 */
+.progress .status { height: auto; padding: 0; border: 0; border-radius: 0; background: transparent; font-size: 13px; font-weight: 600; line-height: 20px; color: var(--k-ochre-deep); }
+/* s=2 hero 和三条说明真正合成一张卡：hero 只留上圆角、下边贴住说明块 */
+.progress .hero--joined { margin-bottom: 0; border-radius: 12px 12px 0 0; }
+.progress .hero--joined + .tips { margin-top: 0; border-top: 0; border-radius: 0 0 12px 12px; }
+/* s=3 没有底栏：订阅链接紧跟在「别灰心…」下面，下边只留安全区 */
+.progress.progress--nobar .k-body.k-pad-safe { padding-bottom: 16px; }
+.progress.progress--nobar :deep(.subscribe-entry) { padding: 0 16px calc(24px + var(--k-safe-bottom)); }
+/* 原因说明：微信不认 text-wrap，折行靠 keep-all 落在逗号后 */
+.progress .reason__text, .progress .cheer { text-wrap: wrap; word-break: keep-all; overflow-wrap: anywhere; }
+/* s=4「刷新时段」：顶边和标题行（行高 28）同一条线，上下居中 */
+.progress .k-body > :deep(.k-button.is-sm.is-outline) { top: 24px; }
+/* 页尾鼓励语：最宽 240，在第二个逗号后分两行，「～」不会单独掉到下一行（微信不认 text-wrap） */
+.progress .cheer { max-width: 240px; margin-left: auto; margin-right: auto; }
+/* ==== r3jobsb 第四轮返修 end ==== */
+/* ==== r3jobsb 第五轮 start（11-19，按微信实拍复评）==== */
+/* s=3 未通过：原因并进状态卡——状态块只留上圆角，原因块贴住它、只留下圆角，中间一条左右各缩 16 的发丝线（和审核通过那屏同一种做法）；到「你可以」仍是 24 */
+.progress .hero--plain { border-radius: 12px 12px 0 0; }
+.progress :deep(.k-card.reason) { position: relative; margin-top: 0 !important; padding: 16px !important; border-radius: 0 0 12px 12px !important; }
+.progress :deep(.k-card.reason)::before { content: ''; position: absolute; left: 16px; right: 16px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+/* ==== r3jobsb 第五轮 end ==== */
+/* ==== r3jobsb 第三轮 end ==== */
 </style>

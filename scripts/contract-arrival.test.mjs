@@ -13,6 +13,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { flowStepOf } from '../pages/jobs/apply-flow.js'
+import { readingClock, AGREEMENT_READ_SECONDS } from '../common/agreement-progress.js'
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(APP, 'package.json'))
@@ -48,6 +49,7 @@ function load(stubs = () => ({}), platform = 'MP-WEIXIN') {
   for (const n of ast.program.body.filter(n => n.type === 'ImportDeclaration')) for (const s of n.specifiers) sandbox[s.local.name] = () => new Promise(() => {})
   const calls = { toast: [], alert: [], contract: 0, sign: [], save: [] }
   Object.assign(sandbox, {
+    readingClock, AGREEMENT_READ_SECONDS, experience: vue.reactive({account:{id:7}}),
     ref: vue.ref, computed: vue.computed, watch: vue.watch, onBeforeUnmount() {}, useScreen: () => vue.ref(1), R: {}, flowStepOf,
     errText: (e, dft) => (e && e.message) || dft, todayCn: () => '2026-10-15', shiftDate: (d) => d, releaseArrivalImages() {},
     toast: (m) => { calls.toast.push(m) },
@@ -72,6 +74,45 @@ test('当地活动使用岗位地区，正确编码；没有地区时不跳到�
   assert.equal(destinations.length, 0)
   assert.match(h.calls.toast.pop(), /岗位地区暂未填写/)
   h.stop()
+})
+
+test('选图、上传、合同回包分别延迟时，不会将旧报名票据或签名带入当前报名与账号', async (t) => {
+  const experience = vue.reactive({account: {id: 7}})
+  const picks = [], uploads = [], loads = [], routes = [], released = [], shows = []
+  const h = load(() => ({
+    experience, onShow: fn => shows.push(fn), chooseImage: () => new Promise(resolve => picks.push(resolve)),
+    uploadTo: (url, file) => new Promise(resolve => uploads.push({url, file, resolve})),
+    apiContract: () => new Promise(resolve => loads.push(resolve)),
+    R: {opportunities: '/pages/profile/opportunities'}, replace: url => routes.push(url),
+    releaseArrivalImages: list => released.push(...list)
+  }))
+  t.after(h.stop)
+  h.run('appId.value=81')
+  const chosen = h.run('addTicket()')
+  h.run('appId.value=82')
+  picks[0]('first.jpg')
+  await chosen
+  assert.equal(uploads.length, 0)
+  const uploading = h.run('addTicket()')
+  picks[1]('second.jpg')
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(uploads[0].url, '/app/application/82/arrival/ticket')
+  const pending = h.run('load()')
+  h.run("tickets.value=['blob:old']; name.value='甲'; idLast4.value='8888'; arr.value.note='旧票据'")
+  experience.account = {id: 8}
+  assert.deepEqual(routes, [], '后台页面不抢新账号正在使用的页面')
+  shows.forEach(show => show())
+  assert.deepEqual(routes, ['/pages/profile/opportunities'])
+  assert.ok(released.includes('blob:old'))
+  assert.equal(h.run('appId.value'), 0)
+  assert.equal(h.run('idLast4.value'), '')
+  assert.equal(h.run('arr.value.note'), '')
+  uploads[0].resolve({data:{url:'/old-ticket.jpg'}})
+  loads[0]({data:{terms:[], signerDefault:'旧姓名', arrival:{tickets:'/old-ticket.jpg'}}})
+  await Promise.all([uploading, pending])
+  assert.equal(h.run('name.value'), '')
+  assert.deepEqual(plain(h.run('arr.value.tickets')), [])
+  assert.deepEqual(plain(h.run('tickets.value')), [])
 })
 
 test('已签署用户点查看责任书先看条款，继续后才到订票；返回不落到重复签署屏', async () => {
@@ -137,7 +178,7 @@ test('未签署用户仍须阅读并签署，服务端签署成功后才进入�
   }))
   h.run("appId.value=81; s.value=2; c.value={hash:'original',terms:[{title:'条款',desc:'正文'}],sign:null}; name.value='小林'; agreed.value=true")
   await h.run('doSign()'); assert.equal(h.calls.sign.length,0);assert.equal(h.run('s.value'),1)
-  h.run('readMax.value=100; s.value=2; agreed.value=false')
+  h.run('readMax.value=100; remaining.value=0; s.value=2; agreed.value=false')
   await h.run('doSign()'); assert.equal(h.calls.sign.length,0);assert.equal(h.run('s.value'),2)
   h.run('agreed.value=true'); await h.run('doSign()'); assert.equal(h.calls.sign.length,1);assert.equal(h.run('s.value'),3); h.stop()
 })
@@ -150,7 +191,7 @@ test('签署时责任书已改字（409）：重新拉条款、阅读进度清�
   }))
   t.after(h.stop)
   h.run(`c.value = { terms: [{ title: '保险说明', desc: '旧条款' }], hash: 'old-hash', canSign: true, sign: null, arrival: {} }
-    readMax.value = 100; s.value = 2; name.value = '张三丰'; agreed.value = true`)
+    readMax.value = 100; remaining.value = 0; s.value = 2; name.value = '张三丰'; agreed.value = true`)
   await h.run('doSign()')
   assert.equal(h.calls.sign.length, 1)
   assert.equal(h.calls.sign[0].hash, 'old-hash', '第一次签署带的是页面上的旧摘要')
@@ -172,7 +213,7 @@ test('其他签署失败照旧只提示，不重新加载、不跳屏', async (t
       apiContractSign: async () => { throw apiError(msg, code) }
     }))
     t.after(h.stop)
-    h.run(`c.value = { terms: [{title:'条款',desc:'正文'}], hash: 'h', canSign: true, sign: null, arrival: {} }; readMax.value = 100; s.value = 2; name.value = '张三'; agreed.value = true`)
+    h.run(`c.value = { terms: [{title:'条款',desc:'正文'}], hash: 'h', canSign: true, sign: null, arrival: {} }; readMax.value = 100; remaining.value = 0; s.value = 2; name.value = '张三'; agreed.value = true`)
     await h.run('doSign()')
     assert.equal(h.calls.contract, 0)
     assert.equal(h.run('s.value'), 2)
@@ -195,8 +236,9 @@ test('到店信息没有接站这一行，保存时不提交 needPickup', async 
   assert.deepEqual(plain(h.run('arrival.value')).map(r => r.label), ['到达日期', '到达时间', '交通方式', '车次 / 航班'])
   await h.run(`editArrival({ key: 'pickup' })`)
   assert.equal(h.run(`'needPickup' in arr.value`), false, '没有切换开关的分支了')
+  h.run("arr.value.tickets = ['proof']")
   await h.run('saveArrival()')
-  assert.deepEqual(h.calls.save, [{ arriveDate: '2026-10-20', arriveTime: '15:30', transport: '火车', transportNo: 'D8888', tickets: [], note: '行李多' }])
+  assert.deepEqual(h.calls.save, [{ arriveDate: '2026-10-20', arriveTime: '15:30', transport: '火车', transportNo: 'D8888', tickets: ['proof'], note: '行李多' }])
   assert.equal(h.run('s.value'), 4)
 })
 
@@ -208,7 +250,7 @@ test('到店信息：没签责任书不能存；到达日期早于今天不能�
   assert.deepEqual(h.calls.save, [])
   assert.deepEqual(h.calls.toast, ['请先签署责任书，再填写到店信息'])
   // 今天按桩是 2026-10-15
-  h.run(`c.value = { terms: [], status: 'contract_signed', sign: { signedTime: '2026-10-11 10:00:00' }, arrival: { arriveDate: '2026-10-12' } }; arr.value.arriveDate = '2026-10-13'`)
+  h.run(`c.value = { terms: [], status: 'contract_signed', sign: { signedTime: '2026-10-11 10:00:00' }, arrival: { arriveDate: '2026-10-12' } }; arr.value.arriveDate = '2026-10-13'; arr.value.tickets = ['proof']`)
   await h.run('saveArrival()')
   assert.deepEqual(h.calls.save, [])
   assert.equal(h.calls.toast[1], '到达日期不能早于今天，请重新选择')
@@ -217,6 +259,19 @@ test('到店信息：没签责任书不能存；到达日期早于今天不能�
   assert.equal(h.calls.save.length, 1, '已保存过的旧日期原样再存可以')
 })
 
+test('所有交通方式都需凭证，旧行程无图时须补一张才能再保存', async (t) => {
+  const h = load(calls => ({ apiSaveArrival: async (id, b) => { calls.save.push(plain(b)); return { data: {}, msg: '已保存' } } }))
+  t.after(h.stop)
+  for (const mode of ['火车','飞机','大巴','自驾','其他']) {
+    h.run(`c.value = {status:'contract_signed', arrival:{}}; arr.value.transport='${mode}'; arr.value.tickets=[]`)
+    await h.run('saveArrival()')
+    assert.equal(h.calls.toast.at(-1), '请至少上传一张交通凭证图片')
+  }
+  assert.equal(h.calls.save.length,0)
+  h.run("arr.value.tickets=['proof']")
+  await h.run('saveArrival()')
+  assert.deepEqual(h.calls.save[0].tickets,['proof'])
+})
 test('没有投保记录时，保障详情如实说明，不再劝人自行购买', async (t) => {
   const h = load()
   t.after(h.stop)

@@ -1,0 +1,92 @@
+/* 用户端的纸面、浅杏色控件和导航；根节点决定样式的作用域。 */
+.user-surface {
+  --k-page: #F8F6F2;
+  --k-bg: var(--k-page);
+  --k-fill: #F1ECE6;
+  --k-paper2: #F6F1EA;
+  --k-line: #ECE5DC;
+  --k-line2: #D8CCBF;
+  --k-red: #905F39;
+  --k-red-deep: #794924;
+  --k-red-soft: #FAF0E3;
+  --k-red-line: #C9A98C;
+  --k-grad-brown: linear-gradient(105deg, #94623B, #835330);
+  --k-sh1: 0 1px 4px rgba(83, 58, 37, .05);
+  --k-sh2: 0 2px 8px rgba(83, 58, 37, .07);
+  --k-sh3: 0 8px 24px rgba(66, 45, 29, .12);
+  --k-sh-soft: 0 3px 12px rgba(83, 58, 37, .05);
+  --k-radius: 12px;
+  --user-icon-field: #FAF5ED;
+  --user-inset: #F7F4EF;
+  --user-focus: #956339;
+}
+
+.user-surface {
+  .k-section__copy, .k-kv__value { min-width: 0; }
+  .k-section__title, .k-title, .k-h2 { text-wrap: balance; }
+  .k-section__subtitle { line-height: 1.5; }
+  .k-price, .k-num, .k-kv__value { font-variant-numeric: tabular-nums; }
+  .k-kv { gap: 8px; }
+  .k-kv__label { max-width: 40%; }
+  .k-kv__value { overflow-wrap: anywhere; }
+
+  .k-button.is-primary.is-lg:not(.is-round) { border-radius: 12px; }
+  .k-button.is-secondary { color: var(--k-red-deep); background: var(--k-red-soft); border-color: transparent; }
+  .k-button.is-outline { border-color: var(--k-line2); }
+  .k-chip.is-pill.is-selected { background: var(--k-red-soft); color: var(--k-red-deep); border-color: var(--k-red-line); font-weight: 600; }
+  .k-input:not(.k-input--error):focus-within { border-color: var(--user-focus); box-shadow: 0 0 0 2px var(--k-red-soft); }
+  .k-tabs__item.active { color: var(--k-red-deep); font-weight: 600; }
+  .k-bottom:not(.is-dark) { border-top-color: var(--k-line); }
+  .k-bottom.is-flat { border-top-color: transparent; }
+
+  .k-topbar:not(.is-dark) .k-navbar__back {
+    position: relative;
+    width: 44px;
+    border-radius: 50%;
+  }
+  .k-topbar:not(.is-dark) .k-navbar__back::before {
+    content: '';
+    position: absolute;
+    width: 29px;
+    height: 29px;
+    border-radius: 50%;
+    background: var(--user-inset);
+    pointer-events: none;
+  }
+  .k-navbar__back .k-icon { position: relative; }
+  .k-navbar__title { letter-spacing: 0; }
+  .k-fab { box-shadow: 0 1px 5px rgba(83, 58, 37, .09); color: var(--k-red-deep); }
+  .k-tabbar--user { box-shadow: 0 -1px 0 var(--k-line); }
+  .k-tabbar--user .k-tabbar__item.active { color: var(--k-red-deep); }
+  .k-tabbar--user .active .k-tabbar__icon::before {
+    content: '';
+    position: absolute;
+    width: 34px;
+    height: 23px;
+    border-radius: 9px;
+    background: var(--k-red-soft);
+    pointer-events: none;
+  }
+  .k-tabbar--user .k-tabbar__brand-icon { position: relative; }
+  .k-tabbar--user .k-tabbar__badge { z-index: 1; }
+  .k-tabbar--user .k-tabbar__publish { background: #FBF0E1; box-shadow: inset 0 0 0 1px #E3CDB5, 0 2px 5px rgba(83, 58, 37, .12); }
+
+  .feature-closed__body, .community-closed__body {
+    margin: 28px 16px 0;
+    padding: 28px 20px;
+    gap: 12px;
+    border-radius: 12px;
+    background: var(--k-paper);
+  }
+  .feature-closed__note, .community-closed__note { max-width: 28em; line-height: 1.65; }
+}
+
+/* #ifdef H5 */
+.user-surface button:focus-visible, .user-surface [role="button"]:focus-visible {
+  outline: 2px solid var(--user-focus);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .user-surface .k-button, .user-surface .k-navbar__back { transition: none; }
+}
+/* #endif */

@@ -1,12 +1,13 @@
 <template>
-  <view class="k-page ck-page">
+  <view class="k-page ck-page" :class="$userSurface">
     <k-topbar title="签到二维码" back />
     <view class="ck-body">
       <text v-if="title" class="ck-title">{{ title }}</text>
       <view v-if="loading" class="ck-card ck-card--center"><text class="ck-muted">正在生成签到码…</text></view>
-      <view v-else-if="loadError" class="ck-card ck-card--center">
+      <view v-else-if="loadError" class="ck-card ck-card--center ck-card--err">
+        <view class="ck-err-icon"><k-icon name="alert-circle" :size="28" color="red" /></view>
         <text class="ck-warn">{{ loadError }}</text>
-        <k-button class="ck-mt" type="secondary" size="md" label="重新生成" @click="load" />
+        <k-button class="ck-mt" type="secondary" size="sm" label="重新生成" @click="load" />
       </view>
       <template v-else>
         <!-- 微信小程序码生成成功：参与者用微信「扫一扫」直接打开活动页完成签到 -->
@@ -19,7 +20,7 @@
         <view v-else class="ck-card ck-card--center">
           <view class="ck-note"><text>{{ wxFailText }}</text></view>
           <image v-if="info.plainQr" class="ck-qr" :src="info.plainQr" mode="aspectFit" @click="zoom(info.plainQr)" />
-          <text class="ck-lead">请参与者打开袋鼠全球青年小程序：\n我的活动 → 报名凭证 →「现场签到」→ 扫码签到</text>
+          <text v-if="info.plainQr" class="ck-lead">请参与者打开袋鼠全球青年小程序：\n我的活动 → 报名凭证 →「现场签到」→ 扫码签到</text>
           <k-button class="ck-mt" type="outline" size="md" label="再试一次微信小程序码" @click="load" />
         </view>
         <!-- 6 位活动签到码：扫不了码的（手机摄像头坏了、在后排看不清）直接输入 -->
@@ -67,8 +68,7 @@ useScreen(1, {
     id.value = String(q?.id || '')
     mode.value = q?.mode === 'user' ? 'user' : 'staff'
     title.value = q?.title || ''
-    await ensureSession()
-    load()
+    await load()
   }
 })
 
@@ -85,6 +85,9 @@ const envTip = computed(() => ({
 })[info.value.code?.envVersion] || '点二维码可以放大，也可以长按保存发到群里。')
 const wxFailText = computed(() => {
   const c = info.value.code || {}
+  if (!info.value.plainQr) return info.value.pin
+    ? '二维码暂时无法显示，请在报名凭证的「现场签到」中输入下方活动签到码。'
+    : '签到码暂时无法显示，请重新生成。'
   if (c.state === 'mock') return '本地联调环境不生成微信小程序码，先用下面的普通二维码和签到码。'
   return `${c.message || '微信小程序码暂时没生成出来'}。先用下面这张二维码签到：`
 })
@@ -95,6 +98,7 @@ async function load() {
   loading.value = true
   loadError.value = ''
   try {
+    await ensureSession()
     const api = mode.value === 'user' ? apiActivityCheckinCode : apiStaffActivityCheckinCode
     info.value = (await api(id.value, envVersion() || undefined)).data || {}
   } catch (e) {
@@ -124,4 +128,61 @@ async function zoom(image) {
 .ck-pin { display: flex; justify-content: center; gap: 8px; padding: 4px 0; }
 .ck-pin__d { width: 42px; height: 54px; line-height: 54px; text-align: center; border-radius: 8px; border: 1px solid var(--k-line2); background: var(--k-bg); font-family: var(--k-serif); font-weight: 700; font-size: 30px; color: var(--k-ink); }
 .ck-tips { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 10px; background: var(--k-paper2); font-size: 14px; color: var(--k-muted); line-height: 1.6; }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底、白卡圆角 12、不描边。这一页是举给别人扫的，二维码和 6 位签到码的大小不动，
+   说明文字收小一档。功能和文字不变：放大二维码、重新生成、再试一次微信小程序码、活动签到码、三条说明都在。 */
+.k-page.ck-page {
+  --k-bg: var(--k-page); --k-paper2: var(--k-fill); /* 本组暖米填充，只在根上定义一次 */
+  background: var(--k-page);
+  :deep(.k-topbar) { background: var(--k-page); }
+  :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+  .ck-body { padding: 8px 12px calc(32px + var(--k-safe-bottom)); gap: 8px; }
+  .ck-title { padding: 0 2px; font-family: var(--k-sans); font-size: 17px; }
+  .ck-card { padding: 16px 12px; border: 0; border-radius: 12px; } .ck-card :deep(.k-button) { border-radius: 22px; box-shadow: none; }
+  .ck-lead { font-size: 15px; }
+  .ck-muted { font-size: 12px; }
+  .ck-warn { font-size: 14px; }
+  .ck-note { background: var(--k-ochre-soft); font-size: 13px; }
+  .ck-sub-title { font-family: var(--k-sans); font-size: 15px; }
+  .ck-pin__d { border: 0; background: var(--k-paper2); font-family: var(--k-sans); }
+  .ck-tips { padding: 12px; border-radius: 12px; background: rgba(58, 50, 43, .04); font-size: 12px; }
+}
+</style>
+
+<style scoped lang="scss">
+/* 11-18 第三轮精修：出错和全组空状态一个样子（56 浅红方块 + 32 线性图标、14 / 500 一句话、32 高次按钮）；页边距 12、标题 17 / 700 */
+.k-page.ck-page {
+  .ck-card--center { gap: 8px; }
+  .ck-err-icon { width: 56px; height: 56px; margin-top: 16px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: var(--k-alert-soft); }
+  .ck-warn { font-size: 14px; font-weight: 500; color: var(--k-ink); }
+  .ck-err-icon + .ck-warn + .ck-mt { margin-bottom: 16px; }
+  .ck-card :deep(.k-button.is-secondary), .ck-card :deep(.k-button.is-outline) { height: 32px; min-height: 32px; padding: 0 16px; border-radius: 16px; font-size: 12px; font-weight: 500; }
+  .ck-pin__d { font-variant-numeric: tabular-nums; }
+}
+</style>
+
+<style scoped lang="scss">
+/* 11-18 返修第 5 轮：出错卡离顶栏 12，和参与须知、发布结果页一致 */
+.k-page.ck-page {
+  .ck-body { padding-top: 12px; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 6 轮：出错卡上下留白一样（32） */
+.k-page.ck-page {
+  .ck-card--center { padding-top: 32px; padding-bottom: 32px; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 夜 第四轮精修：整页只剩出错时不套白卡，直接放在页面底色上、下移到约屏高 1/4；浅棕方块 + 暖棕图标、14/500 一句话、32 高次按钮 */
+.k-page.ck-page {
+  .ck-card--err { margin-top: 84px; padding: 0 16px; background: transparent; box-shadow: none; }
+  .ck-card--err .ck-err-icon { margin-top: 0; background: var(--k-red-soft); }
+  .ck-card--err .ck-warn { margin-top: 12px; font-size: 14px; font-weight: 500; line-height: 22px; color: var(--k-ink); text-align: center; }
+  .ck-card--err .ck-err-icon + .ck-warn + .ck-mt { margin: 16px 0 0; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-19 第四轮返修：出错块去掉卡片自带的 8 间距（和 margin 叠成 20 / 24），图标到字 12、字到按钮 16，和须知、个人主页一样 */
+.k-page.ck-page { .ck-card--err { gap: 0; } }
 </style>

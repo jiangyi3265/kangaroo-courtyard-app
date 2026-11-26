@@ -23,7 +23,7 @@ function fixture(t) {
   write('dist/project.config.json', JSON.stringify({ packOptions: { ignore: [{ type: 'file', value: 'static/media/kangaroo-atlas.png' }] } }))
   write('dist/static/media/photo.jpg', 'unchanged-image-bytes')
   write('dist/static/media/kangaroo-atlas.png', 'unused-atlas')
-  for (const ext of ['js', 'json', 'wxml', 'wxss']) write(`dist/pages/home.${ext}`, '')
+  for (const ext of ['js', 'json', 'wxml', 'wxss']) write(`dist/pages/home.${ext}`, ext === 'json' ? '{}' : '')
   t.after(() => {
     // Only remove this test's uniquely created, explicitly bounded fixture.
     assert.equal(dirname(root), resolve(tmpdir()))
@@ -46,6 +46,17 @@ test('fails if the compiler omits a static asset', (t) => {
   const f = fixture(t)
   unlinkSync(join(f.output, 'static/media/photo.jpg'))
   assert.match(checkMpPackage(f.output, f.root).problems.join('\n'), /Missing asset/)
+})
+
+test('requires a placeholder when a page loads a component from another subpackage', t => {
+  const f = fixture(t)
+  f.write('dist/app.json', JSON.stringify({ pages: ['pages/home'], subPackages: [{ root: 'stays', pages: [] }] }))
+  const definition = { usingComponents: { refund: '../stays/refund' } }
+  f.write('dist/pages/home.json', JSON.stringify(definition))
+  assert.match(checkMpPackage(f.output, f.root).problems.join('\n'), /Missing componentPlaceholder.*refund/)
+  definition.componentPlaceholder = { refund: 'view' }
+  f.write('dist/pages/home.json', JSON.stringify(definition))
+  assert.equal(checkMpPackage(f.output, f.root).ok, true)
 })
 
 test('fails if image bytes change', (t) => {
@@ -94,11 +105,16 @@ test('accounts for a subpackage separately', (t) => {
   const f = fixture(t)
   f.write('pages.json', JSON.stringify({ pages: [{ path: 'pages/home' }], subPackages: [{ root: 'pages/jobs', pages: [{ path: 'list' }] }] }))
   f.write('dist/app.json', JSON.stringify({ pages: ['pages/home'], subPackages: [{ root: 'pages/jobs', pages: ['list'] }] }))
-  for (const ext of ['js', 'json', 'wxml', 'wxss']) f.write(`dist/pages/jobs/list.${ext}`, 'subpackage-content')
+  for (const ext of ['js', 'json', 'wxml', 'wxss']) f.write(`dist/pages/jobs/list.${ext}`, ext === 'json' ? '{}'.padEnd('subpackage-content'.length) : 'subpackage-content')
+  f.write('pages/jobs/static/cover.jpg', 'cover')
+  f.write('dist/pages/jobs/static/cover.jpg', 'cover')
   const report = checkMpPackage(f.output, f.root)
   assert.equal(report.ok, true)
-  assert.equal(report.packages[1].files, 4)
-  assert.equal(report.packages[1].bytes, 4 * Buffer.byteLength('subpackage-content'))
+  assert.equal(report.packages[1].files, 5)
+  assert.equal(report.packages[1].bytes, 4 * Buffer.byteLength('subpackage-content') + Buffer.byteLength('cover'))
+  assert.equal(report.checkedAssets, 2)
+  unlinkSync(join(f.output, 'pages/jobs/static/cover.jpg'))
+  assert.ok(checkMpPackage(f.output, f.root).problems.includes('Missing asset: pages/jobs/static/cover.jpg'))
 })
 
 // 微信口径的主包估算：拿两次真实上传对一下（微信回报的主包大小），误差不超过拟合时的最大误差 428 字节
@@ -118,7 +134,7 @@ test('reports the WeChat-size estimate from main-package code only', (t) => {
   f.write('dist/pages/home.wxml', Buffer.alloc(1000))
   f.write('pages.json', JSON.stringify({ pages: [{ path: 'pages/home' }], subPackages: [{ root: 'pages/jobs', pages: [{ path: 'list' }] }] }))
   f.write('dist/app.json', JSON.stringify({ pages: ['pages/home'], subPackages: [{ root: 'pages/jobs', pages: ['list'] }] }))
-  for (const ext of ['json', 'wxml', 'wxss']) f.write(`dist/pages/jobs/list.${ext}`, Buffer.alloc(50000))
+  for (const ext of ['json', 'wxml', 'wxss']) f.write(`dist/pages/jobs/list.${ext}`, ext === 'json' ? '{}'.padEnd(50000) : Buffer.alloc(50000))
   f.write('dist/pages/jobs/list.js', Buffer.alloc(50000, ' '))
   const report = checkMpPackage(f.output, f.root)
   const main = report.packages[0]
@@ -147,7 +163,7 @@ test('subpackage code does not count toward the WeChat main estimate', (t) => {
   const f = fixture(t)
   f.write('pages.json', JSON.stringify({ pages: [{ path: 'pages/home' }], subPackages: [{ root: 'pages/jobs', pages: [{ path: 'list' }] }] }))
   f.write('dist/app.json', JSON.stringify({ pages: ['pages/home'], subPackages: [{ root: 'pages/jobs', pages: ['list'] }] }))
-  for (const ext of ['json', 'wxml', 'wxss']) f.write(`dist/pages/jobs/list.${ext}`, '')
+  for (const ext of ['json', 'wxml', 'wxss']) f.write(`dist/pages/jobs/list.${ext}`, ext === 'json' ? '{}' : '')
   f.write('dist/pages/jobs/list.js', Buffer.alloc(1800000, ' '))
   const report = checkMpPackage(f.output, f.root)
   assert.equal(report.wechatMain.js, 0)

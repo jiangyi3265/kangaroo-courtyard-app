@@ -1,6 +1,6 @@
 <template>
   <view class="job-city-subscribe" :class="{ 'is-on': subscribed, 'is-disabled': busy || !ready || !cityName }" role="button" :aria-label="error ? '重新加载订阅状态' : subscribed ? '取消订阅当地岗位' : '订阅当地岗位'" :aria-pressed="subscribed" :aria-disabled="busy || !ready || !cityName" hover-class="k-press-s" @click="toggle">
-    <k-icon :name="subscribed ? 'check' : 'bell'" :size="15" :color="subscribed ? 'ink2' : 'red'" />
+    <k-icon :name="subscribed ? 'check' : 'bell'" :size="16" :color="subscribed ? 'ink2' : 'red'" />
     <text>{{ busy ? '处理中' : !ready ? '加载中' : error ? '重试' : subscribed ? '已订阅' : '订阅' }}</text>
   </view>
 </template>
@@ -86,7 +86,8 @@ async function toggle() {
 </script>
 
 <style scoped>
-.job-city-subscribe { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 80px; min-height: 44px; padding: 0 10px; box-sizing: border-box; border: 1px solid var(--k-red-line); border-radius: 999px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 13px; font-weight: 600; white-space: nowrap; }
-.job-city-subscribe.is-on { border-color: var(--k-line2); background: var(--k-paper2); color: var(--k-ink2); }
+/* 2026-11-17 改版「小而精」：看上去是 28 高的浅棕小胶囊，外面一圈透明边把可点范围留在 44 高 */
+.job-city-subscribe { display: flex; align-items: center; justify-content: center; gap: 3px; min-width: 80px; min-height: 44px; padding: 0 8px; box-sizing: border-box; border: 8px solid transparent; border-radius: 22px; background: var(--k-red-soft) padding-box; color: var(--k-red-deep); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.job-city-subscribe.is-on { border-color: transparent; background: #F5F1EB padding-box; color: var(--k-ink2); }
 .job-city-subscribe.is-disabled { opacity: .6; }
 </style>

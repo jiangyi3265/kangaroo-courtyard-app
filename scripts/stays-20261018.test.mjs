@@ -76,7 +76,7 @@ test('房源详情：全宽房型卡带自己的评分、规格一行；评价�
   assert.match(t, /reviewAi\.ready \? 'AI综合评分' : \(ratingMain \? '住客评分' : '暂无家人评价'\)/)
   assert.match(js, /const ratingMain = computed\(\(\) => roomRate\(d\.value\)\?\.score \|\| ''\)/)
   assert.match(t, /<view class="pickbar"><view class="picked"[^>]*>[\s\S]*?<template v-else-if="pickedRoom">/)
-  assert.match(t, /<text class="picked__hint">选择房型与日期<\/text>/)
+  assert.match(t, /<text class="picked__hint">\{\{ priceFrom \? '7晚参考价起 · 选择房型与日期' : '选择房型与日期' \}\}<\/text>/)
   assert.match(t, /<view v-if="s === 1 && !barSolid" class="bar-pill" :style="pillStyle"><text>房源详情<\/text><\/view>/)
   compiles(d, 'detail.vue')
 })
@@ -89,7 +89,7 @@ test('订房流程：日历之后直接确认订单，不再有低价日推荐�
   // 房态日历直接进入确认订单，低价日推荐和活动加购均已移除。
   assert.match(js, /const s = useScreen\(2, \{/)
   assert.match(js, /const titles = \['房型选择', '房态日历'\]/)
-  assert.match(t, /:label="quoteLoading \? '正在查询报价' : '下一步：确认订单'" @click="next2"/)
+  assert.match(t, /:label="quoteLoading \? '正在查询报价' : \(collectionUnavailable \? '暂不能预订' : \(q\?\.onlinePaymentAvailable === false \? '核对免费间夜' : '下一步：确认订单'\)\)" @click="next2"/)
   assert.doesNotMatch(t, /低价日|rec-tip|省钱提示|recommend-body|keep-dates/)
   assert.match(js, /if \(!q\.value\.bookable\) return toast\(q\.value\.reason \|\| '所选日期不可订'\)\n  toPay\(\)\n\}/)
   assert.ok(!js.includes("'acts='"), '不再带加购活动')
@@ -103,25 +103,24 @@ test('确认订单：身份证提醒醒目、预订须知按换行摊在页面�
   const step2 = t.slice(t.indexOf('<view v-else-if="s === 2"'), t.indexOf('<!-- 3 微信支付 -->'))
   assert.ok(step2.indexOf('class="idcard"') > 0 && step2.indexOf('class="idcard"') < step2.indexOf('房费明细'), '身份证提醒放在确认页最上面')
   assert.match(step2, /<text class="idcard__title">请带好身份证，小院现场登记<\/text>/)
-  // 2026-11-03 简化：须知默认只露前几行，「展开全文」在页面里展开
-  assert.match(step2, /<text class="notice__text" :class="\{ 'notice__text--clamp': !noticeOpen \}">\{\{ q\.agreement\.summary \}\}<\/text>/)
-  assert.match(step2, /@click="noticeOpen = !noticeOpen"><text>\{\{ noticeOpen \? '收起' : '展开全文' \}\}<\/text>/)
-  assert.match(css(d), /\.notice__text \{[^}]*white-space: pre-line;/)
+  assert.match(step2, /<k-agreement-reader :content-key="q\.agreement\.version" :text="q\.agreement\.summary"[^>]*@read="onNoticeRead"/)
   assert.match(css(d), /\.policy__copy \{[^}]*white-space: pre-line;/)
-  // 须知已经在页面上：点勾选框直接勾上；2026-11-03 简化：老接口没给须知正文时也不弹窗（之前要弹「同意 / 关闭」）
   const js = d.scriptSetup.content
-  const block = js.slice(js.indexOf('async function onAgreeTap() {'), js.indexOf('\n}\n', js.indexOf('async function onAgreeTap() {')) + 2)
-  const run = async (agreement) => {
-    const agreed = { value: false }
-    const modals = []
-    const fn = new Function('agreed', 'q', 'modal', block + '\nreturn onAgreeTap')(agreed, { value: { agreement } }, async (...a) => { modals.push(a); return { confirm: true } })
-    await fn()
-    return { agreed: agreed.value, modals: modals.length }
-  }
-  return Promise.all([run({ summary: '1. 一\n2. 二' }), run({})]).then(([a, b]) => {
-    assert.deepEqual(a, { agreed: true, modals: 0 })
-    assert.deepEqual(b, { agreed: true, modals: 0 })
-  })
+  const start = js.indexOf('async function onAgreeTap() {')
+  const block = js.slice(start, js.indexOf('\n}\n', start) + 2)
+  const fn = new Function('agreed', 'noticeRead', 'toast', block + '\nreturn onAgreeTap')
+  const agreed = { value: false }, noticeRead = { value: false }, messages = []
+  const tap = fn(agreed, noticeRead, message => messages.push(message))
+  return (async () => {
+    await tap()
+    assert.equal(agreed.value, false)
+    assert.match(messages[0], /读完预订须知/)
+    noticeRead.value = true
+    await tap()
+    assert.equal(agreed.value, true)
+    await tap()
+    assert.equal(agreed.value, false)
+  })()
 })
 
 test('后端：房型评分来自绑定了房型的评价；预订须知一条一行、写明带身份证', () => {

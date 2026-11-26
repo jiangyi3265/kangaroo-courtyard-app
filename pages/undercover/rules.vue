@@ -1,11 +1,11 @@
 <template>
-  <view class="uc-page">
+  <view class="uc-page" :class="$userSurface">
     <k-topbar back title="谁是卧底 · 玩法" :fab="false" />
     <view class="uc-body uc-rules">
       <text class="uc-title">听出那一点不同</text>
       <view v-for="rule in rules" :key="rule.title" class="uc-rule">
         <text class="uc-section-title">{{ rule.title }}</text>
-        <text class="uc-copy">{{ rule.copy }}</text>
+        <text v-for="(part, i) in paras(rule.copy)" :key="i" class="uc-copy"><text class="uc-rule__lead">{{ part.slice(0, cut(part, i)) }}</text>{{ part.slice(cut(part, i), -tail(part)) }}<text class="uc-rule__tail">{{ part.slice(-tail(part)) }}</text></text>
       </view>
       <k-button block @click="back">我知道了</k-button>
     </view>
@@ -24,6 +24,17 @@ const rules = [
   { title: '怎样获胜', copy: '全部卧底出局，平民获胜。存活卧底人数达到或超过平民人数，卧底获胜。达到12轮仍未分出胜负则平局。结算时揭晓双方词语和所有身份，房主可发起再来一局。' },
   { title: '暂时离开与回到房间', copy: '返回大厅或切到后台后，可从大厅继续房间，倒计时仍由服务端推进。等待开局时，房主可以移出离线超过一分钟的玩家。退出房间会转交房主，房间闲置24小时后过期。同一时间只能待在一个房间：要开新房间或加入别的房间，先退出正在等人的房间，或把正在进行的一局打完；已经打完的房间会自动退出。' }
 ]
+
+// 纯展示（规则文字本身一个字不动）：超过 100 字的长段把最后一句另起一段；每节第一句做段首（400 墨色，只用颜色区分）；
+// 每段最后 4 个字连在一起不折开，末行不会只剩「备。」这样的一两个字
+const paras = (copy) => {
+  const at = copy.length > 100 ? copy.lastIndexOf('。', copy.length - 2) + 1 : 0
+  return at > 0 ? [copy.slice(0, at), copy.slice(at)] : [copy]
+}
+const cut = (part, i) => (i ? 0 : Math.min(part.indexOf('。') + 1, part.length - tail(part)))
+// 纯展示：每段末尾不折开的整词（不在表里的按 4 个字）
+const TAILS = ['重新准备。', '房主也一样。', '下一位。', '继续观看。', '无人出局。', '再来一局。', '后过期。', '动退出。']
+const tail = (part) => (TAILS.find((t) => part.endsWith(t)) || '····').length
 
 const pageShareMessage = () => publicShare('/pages/undercover/rules', {}, '谁是卧底 · 玩法说明')
 

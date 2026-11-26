@@ -2,34 +2,34 @@
 <k-feature-gate feature="private-chat" :bypass="!blockedPrivate && conv.type !== 'private' && s !== 4">
 <k-feature-gate feature="group-chat" :bypass="!blockedGroup && s !== 2 && s !== 3">
 <k-community-gate :bypass="s !== 4">
-  <view class="k-page chat-page" :class="{ 'is-conversation': s === 1 || s === 2 }" :style="s === 1 || s === 2 ? { paddingBottom: keyboardHeight + 'px', '--chat-cap': capsuleGap + 'px' } : {}">
+  <view class="k-page chat-page" :class="[$userSurface, { 'is-conversation': s === 1 || s === 2, 'is-group-chat': s === 2 }]" :style="s === 1 || s === 2 ? { paddingBottom: keyboardHeight + 'px', '--chat-cap': capsuleGap + 'px' } : {}">
     <!-- 1 私信聊天 -->
     <template v-if="s === 1">
       <!-- 「···」（举报 / 安全提醒 / 私信拉黑）放在顶栏右边（2026-10-16 内测反馈：放输入栏左下角太占地方）；小程序里 k-topbar 会让它躲到微信胶囊左边 -->
-      <k-topbar :title="topTitle" back><template #right><view v-if="conv.convId" class="chat-more" hover-class="k-press" aria-label="会话操作：举报、安全提醒" @click="conversationActions"><k-icon name="ellipsis" :size="24" color="ink" /></view></template></k-topbar>
+      <k-topbar :title="topTitle" back><template #right><view v-if="conv.convId" class="chat-more" hover-class="k-press" aria-label="会话操作：举报、安全提醒" @click="conversationActions"><k-icon name="ellipsis" :size="20" color="ink" /></view></template></k-topbar>
       <view v-if="conv.type === 'store' && (conv.otherMeta || conv.receptionNotice)" class="conversation-meta"><text v-if="conv.otherMeta">{{ conv.otherMeta }}</text><text v-if="conv.receptionNotice" class="conversation-meta__notice">{{ conv.receptionNotice }}</text></view>
       <scroll-view class="conversation-scroll" scroll-y :scroll-into-view="scrollTarget" :scroll-with-animation="false">
       <view class="private-body">
         <text v-if="conv.archived" class="composer-error">此历史会话只供查阅，请从对应报名或线上任务重新进入沟通。</text><button v-if="conv.archived && conv.recontactApps?.length" class="recontact" @click="recontact">选择任务，重新联系</button>
         <text v-if="sourceText && conv.type === 'private'" class="source">{{ sourceText }}</text>
-        <view v-if="conv.type === 'private'" class="person-card"><view class="person-top" @click="openOther"><image class="person-avatar" :src="otherAvatar" mode="aspectFill" /><view class="person-copy"><view class="k-row k-gap8"><text class="person-name">{{ otherName }}</text><text v-if="other.phoneVerified" class="verified">手机已验证</text></view><text class="person-meta">{{ conv.otherMeta || '' }}</text></view><text class="person-link">主页 ›</text></view><view class="person-line" /><view class="overlap"><view><k-icon name="map-pin" :size="24" color="ink" /><view><text>共同城市</text><text>{{ conv.overlapCity || '—' }}</text></view></view><view><k-icon name="calendar-check" :size="24" color="ink" /><view><text>重叠天数</text><text>{{ conv.overlapText || '暂无公开行程重叠' }}</text></view></view></view></view>
-        <template v-if="conv.type === 'private'"><text class="quick-title">快捷开场问题</text><view class="quick-list"><view v-for="q in questions" :key="q" @click="send(q)"><text>{{ q }}</text></view></view></template>
+        <view v-if="conv.type === 'private'" class="person-card"><view class="person-top" hover-class="k-press" @click="openOther"><image class="person-avatar" :src="otherAvatar" mode="aspectFill" /><view class="person-copy"><view class="k-row k-gap8"><text class="person-name">{{ otherName }}</text><text v-if="other.phoneVerified" class="verified">手机已验证</text></view><text class="person-meta">{{ conv.otherMeta || '' }}</text></view><view class="person-link"><text>主页</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><view class="person-line" /><view class="overlap"><view><k-icon name="map-pin" :size="16" color="muted" /><view><text>共同城市</text><text>{{ conv.overlapCity || '—' }}</text></view></view><view><k-icon name="calendar-check" :size="16" color="muted" /><view><text>重叠天数</text><text>{{ conv.overlapText || '暂无公开行程重叠' }}</text></view></view></view></view>
+        <template v-if="conv.type === 'private'"><text class="quick-title">快捷开场问题</text><view class="quick-list"><view v-for="q in questions" :key="q" hover-class="k-press" @click="send(q)"><text>{{ q }}</text></view></view></template>
         <text v-if="messagesReady && !messages.length && !messageError" class="conversation-empty">还没有消息，直接在下方输入，开始沟通吧。</text>
         <text v-if="firstTime" class="time">{{ firstTime }}</text>
-        <view v-for="x in messages" :key="x.msgId" :id="'chat-message-' + x.msgId" class="message-row" :class="{ 'is-mine': x.mine }"><image class="msg-avatar" :src="x.avatar" mode="aspectFill" /><view class="message-copy"><text v-if="senderLabel(x)" class="message-sender">{{ senderLabel(x) }}</text><button v-if="x.type === 'image'" class="message-image" :style="imageFrameStyle(x)" :aria-label="'查看图片消息'" @click="previewImageMessage(x)"><image v-if="mediaUrls[x.msgId]" :src="mediaUrls[x.msgId]" mode="aspectFit"/><text v-else>{{ mediaErrors[x.msgId] || '点击加载图片' }}</text></button><view v-else-if="x.type === 'file' && x.file" class="file-card" :aria-label="'文件 ' + x.file.name" @click="openFileMessage(x)"><view class="file-card__icon"><k-icon :name="x.file.kind === 'archive' ? 'archive' : 'file-text'" :size="26" color="ochre" /></view><view class="file-card__copy"><text class="file-card__name">{{ x.file.name }}</text><text class="file-card__meta">{{ fileBusy[x.msgId] || fileMeta(x.file) }}</text></view></view><view v-else-if="sharedOf(x.content)" class="shared-post" @click="openShared(x.content)"><text class="shared-post__tag">分享了一条动态</text><text class="shared-post__title">{{ displayWording(sharedOf(x.content).title) }}</text><text class="shared-post__go">点开查看 ›</text></view><k-display-text v-else class="message-bubble" :value="x.content || ''" :preserve="[x.name, conv.peerName, experience.account?.nickname]" /><text v-if="x.hiddenForOther" class="message-hint">对方同意交换后才能看到你的联系方式</text></view></view>
+        <view v-for="x in messages" :key="x.msgId" :id="'chat-message-' + x.msgId" class="message-row" :class="{ 'is-mine': x.mine }"><image class="msg-avatar" :src="x.avatar" mode="aspectFill" /><view class="message-copy"><text v-if="senderLabel(x)" class="message-sender">{{ senderLabel(x) }}</text><button v-if="x.type === 'image'" class="message-image" :style="imageFrameStyle(x)" :aria-label="'查看图片消息'" @click="previewImageMessage(x)"><image v-if="mediaUrls[x.msgId]" :src="mediaUrls[x.msgId]" mode="aspectFit"/><text v-else>{{ mediaErrors[x.msgId] || '点击加载图片' }}</text></button><view v-else-if="x.type === 'file' && x.file" class="file-card" hover-class="k-press-s" :aria-label="'文件 ' + x.file.name" @click="openFileMessage(x)"><view class="file-card__icon"><k-icon :name="x.file.kind === 'archive' ? 'archive' : 'file-text'" :size="22" color="red" /></view><view class="file-card__copy"><text class="file-card__name">{{ x.file.name }}</text><text class="file-card__meta">{{ fileBusy[x.msgId] || fileMeta(x.file) }}</text></view></view><view v-else-if="sharedOf(x.content)" class="shared-post" hover-class="k-press-s" @click="openShared(x.content)"><text class="shared-post__tag">分享了一条动态</text><text class="shared-post__title">{{ displayWording(sharedOf(x.content).title) }}</text><view class="shared-post__go"><text>点开查看</text><k-icon name="chevron-right" :size="12" color="red" /></view></view><k-display-text v-else class="message-bubble" :value="x.content || ''" :preserve="[x.name, conv.peerName, experience.account?.nickname]" /><text v-if="x.hiddenForOther" class="message-hint">对方同意交换后才能看到你的联系方式</text></view></view>
         <view id="conversation-end" class="conversation-end" />
       </view>
       </scroll-view>
       <view v-if="messageError" class="conversation-error"><text>{{ messageError }}</text><button @click="loadMessages(false)">重新加载</button></view>
       <view class="message-composer" :class="{ 'keyboard-open': keyboardHeight > 0 }">
         <view v-if="showContactBar" class="contact-bar"><k-icon name="shield-check" :size="16" color="green" /><text class="contact-bar__text">{{ contactText }}</text><button class="contact-bar__btn" :class="{ 'is-primary': contactPrimary }" :disabled="contactBusy" @click="toggleContact">{{ contactBtn }}</button></view>
-        <text v-if="sendError || unavailableReason" class="composer-error">{{ sendError || unavailableReason }}</text>
+        <text v-if="sendError || unavailableReason" class="composer-error" :class="{ 'composer-error--soft': !sendError && !conv.convId }">{{ sendError || unavailableReason }}</text>
         <view class="composer-row">
           <!-- 私信和门店沟通统一使用加号入口；门店可选发图片或文件，私信可选图片。 -->
-          <button class="composer-photo" :aria-label="conv.type === 'store' ? '发送图片或文件' : '选择聊天图片'" :disabled="!!unavailableReason || sending || imageSending || fileSending" @click="chooseAttachment"><k-icon name="plus" :size="26" :stroke="2.2" color="muted" /></button>
+          <button class="composer-photo" :aria-label="conv.type === 'store' ? '发送图片或文件' : '选择聊天图片'" :disabled="!!unavailableReason || sending || imageSending || fileSending" @click="chooseAttachment"><k-icon name="plus" :size="22" color="muted" /></button>
           <!-- 小程序的 textarea 画在页面最上层，会盖住看图浮层、待发图片条上的按钮；所以只在打字时放真输入框，平时用同样大小的 view 显示 -->
           <view class="composer-field"><textarea v-if="editingDraft" :value="draft" @input="syncDraft" class="composer-input" aria-label="消息内容" :style="{ height: inputHeight + 'px' }" :maxlength="CHAT_TEXT_MAX" :disabled="!!unavailableReason" :adjust-position="false" :hold-keyboard="true" :confirm-hold="true" :show-confirm-bar="false" :disable-default-padding="true" confirm-type="send" placeholder="输入消息…" placeholder-class="placeholder" :focus="true" auto-focus @blur="draftBlurred" @confirm="sendDraft" @keyboardheightchange="keyboardChanged" @linechange="inputLinesChanged" /><view v-else class="composer-input chat-area-idle" aria-label="消息内容" :style="{ height: inputHeight + 'px' }" @click="startDraftEditing"><text :class="{ 'k-placeholder': !draft }">{{ draft || '输入消息…' }}</text></view></view>
-          <button class="composer-tool" :aria-label="emojiOpen ? '收起表情' : '选择表情'" :aria-expanded="emojiOpen" :disabled="!!unavailableReason || sending || imageSending || fileSending" @click="toggleEmoji"><k-icon :name="emojiOpen ? 'x' : 'smile'" :size="27" color="ink" /></button>
+          <button class="composer-tool" :aria-label="emojiOpen ? '收起表情' : '选择表情'" :aria-expanded="emojiOpen" :disabled="!!unavailableReason || sending || imageSending || fileSending" @click="toggleEmoji"><k-icon :name="emojiOpen ? 'x' : 'smile'" :size="22" color="muted" /></button>
           <button class="composer-send" :disabled="!canSend" :loading="sending" @click="sendDraft">{{ sending ? '发送中' : '发送' }}</button>
         </view>
         <view v-if="emojiOpen" class="emoji-grid" aria-label="聊天表情"><button v-for="emoji in emojis" :key="emoji" :aria-label="'添加表情 ' + emoji" @click="addEmoji(emoji)">{{ emoji }}</button></view>
@@ -40,31 +40,34 @@
     <template v-else-if="s === 2">
       <k-topbar :title="groupTitle" back />
       <scroll-view class="conversation-scroll" scroll-y :scroll-into-view="scrollTarget" :scroll-with-animation="false" @scroll="groupScrolled" @touchstart="groupTouchStarted" @touchend="groupTouchEnded" @touchcancel="groupTouchEnded" @wheel="groupWheeled"><view class="group-body">
-        <view v-if="showAnn" class="announcement"><text class="announcement-title">置顶公告</text><text>{{ annFirst }}</text><view class="announcement-last"><text @click="openAnn">{{ annRest }}</text><k-icon name="x" :size="20" color="muted" @click="showAnn = false" /></view></view>
-        <view class="group-tools"><view v-for="tool in groupTools" :key="tool.label" @click="tool.click()"><k-icon :name="tool.icon" :size="28" color="ink" /><text>{{ tool.label }}</text></view></view>
-        <text class="group-section">群内活动</text>
-        <view class="group-activity" @click="openActivity"><view class="group-activity-copy"><text class="activity-kind">{{ act.kind }}</text><text class="group-activity-title">{{ act.title }}</text><view class="group-meta"><k-icon name="map-pin" :size="15" color="muted" /><text>{{ act.time }}</text></view><view class="group-meta"><k-icon name="map-pin" :size="15" color="muted" /><text>{{ act.place }}</text><text class="signed">◉ {{ act.signed || 0 }}人已报名</text></view></view><image :src="groupCover" mode="aspectFill" /></view>
-        <view v-for="x in messages" :key="x.msgId" class="group-message"><view class="msg-head"><image :src="x.avatar" mode="aspectFill" @click="openSender(x)" /><text>{{ x.mine ? '我' : x.name }}</text><text>{{ x.time }}</text></view><button v-if="x.type === 'image'" class="message-image group-image" :style="imageFrameStyle(x)" aria-label="查看图片消息" @click="previewImageMessage(x)"><image v-if="mediaUrls[x.msgId]" :src="mediaUrls[x.msgId]" mode="aspectFit"/><text v-else>{{ mediaErrors[x.msgId] || '点击加载图片' }}</text></button><view v-else-if="sharedOf(x.content)" class="shared-post" @click="openShared(x.content)"><text class="shared-post__tag">分享了一条动态</text><text class="shared-post__title">{{ displayWording(sharedOf(x.content).title) }}</text><text class="shared-post__go">点开查看 ›</text></view><k-display-text v-else class="group-bubble" :value="x.content || ''" :preserve="[x.name, experience.account?.nickname]" /><view v-if="false" class="like"><text>👍</text></view></view>
-        <view v-if="locationMsg" class="group-message"><view class="msg-head"><image src="/static/media/community-avatar-shanye.jpg" mode="aspectFill" /><text>山野来信</text><text>11:35</text></view><view class="location-card"><view><text class="location-share">◉ 分享位置</text><text class="location-title">陶溪川文创街区</text><text class="location-address">景德镇市昌江区陶溪川</text></view><image src="/static/media/chat-map.jpg" mode="aspectFill" /></view></view>
+        <!-- 11-18 返修：置顶公告收成一条 40 高横条（喇叭图标 + 单行 + 「…展开」+ 右边 ×），不再压住聊天 -->
+        <view v-if="showAnn" class="announcement"><k-icon name="volume-2" :size="16" color="red" /><text class="announcement-title">置顶公告</text><text class="announcement-first">{{ annFirst }}</text><view class="announcement-last"><text @click="openAnn">{{ annRest }}</text><k-icon name="x" :size="16" color="muted" @click="showAnn = false" /></view></view>
+        <view class="group-tools"><view v-for="tool in groupTools" :key="tool.label" hover-class="k-press" @click="tool.click()"><k-icon :name="tool.icon" :size="16" color="ink2" /><text>{{ tool.label }}</text></view></view>
+        <view class="group-activity" hover-class="k-press-s" @click="openActivity"><view class="group-activity-copy"><text class="group-section">群内活动</text><text class="activity-kind">{{ act.kind }}</text><text class="group-activity-title">{{ act.title }}</text><view class="group-meta"><k-icon name="clock" :size="12" color="muted" /><text>{{ act.time }}</text></view><view class="group-meta"><k-icon name="map-pin" :size="12" color="muted" /><text>{{ act.place }}</text><view class="signed"><k-icon name="users" :size="12" color="green" /><text>{{ act.signed || 0 }}人已报名</text></view></view></view><image :src="groupCover" mode="aspectFill" /></view>
+        <view v-for="x in messages" :key="x.msgId" class="group-message" :class="{ 'is-mine': x.mine }"><view class="msg-head"><image :src="x.avatar" mode="aspectFill" @click="openSender(x)" /><text>{{ x.mine ? '我' : x.name }}</text><text>{{ x.time }}</text></view><button v-if="x.type === 'image'" class="message-image group-image" :style="imageFrameStyle(x)" aria-label="查看图片消息" @click="previewImageMessage(x)"><image v-if="mediaUrls[x.msgId]" :src="mediaUrls[x.msgId]" mode="aspectFit"/><text v-else>{{ mediaErrors[x.msgId] || '点击加载图片' }}</text></button><view v-else-if="sharedOf(x.content)" class="shared-post" hover-class="k-press-s" @click="openShared(x.content)"><text class="shared-post__tag">分享了一条动态</text><text class="shared-post__title">{{ displayWording(sharedOf(x.content).title) }}</text><view class="shared-post__go"><text>点开查看</text><k-icon name="chevron-right" :size="12" color="red" /></view></view><k-display-text v-else class="group-bubble" :value="x.content || ''" :preserve="[x.name, experience.account?.nickname]" /><view v-if="false" class="like"><text>👍</text></view></view>
+        <view v-if="locationMsg" class="group-message"><view class="msg-head"><image src="/static/media/community-avatar-shanye.jpg" mode="aspectFill" /><text>山野来信</text><text>11:35</text></view><view class="location-card"><view><view class="location-share"><k-icon name="map-pin" :size="12" color="red" /><text>分享位置</text></view><text class="location-title">陶溪川文创街区</text><text class="location-address">景德镇市昌江区陶溪川</text></view><image src="/static/media/chat-map.jpg" mode="aspectFill" /></view></view>
         <view class="safety group-safety"><text>安全提醒：请勿发布或索要私人联系方式、住宿地址等敏感信息\n谨防诈骗，如遇不适，请举报管理员。</text></view>
       </view>
       <view id="group-end" class="conversation-end" /></scroll-view>
       <view v-if="messageError" class="conversation-error"><text>{{ messageError }}</text><button @click="loadMessages(false)">重新加载</button></view>
       <button v-if="groupHasNew" class="group-new" @click="scrollToLatest({ force: true })">有新消息 · 回到底部</button>
-      <view class="message-composer"><view class="composer-row"><button class="composer-photo" aria-label="添加聊天内容" :disabled="!!unavailableReason || sending || imageSending" @click="groupAttachments"><k-icon name="plus" :size="26" :stroke="2.2" color="muted" /></button><!-- 之前这里有个画成按钮的「语音」图标，点了没有任何反应（本期没有语音消息），已去掉 --><view class="chat-input"><input :value="draft" @input="syncDraft" :maxlength="CHAT_TEXT_MAX" confirm-type="send" placeholder="发消息…" placeholder-class="placeholder" @blur="draftBlurred" @focus="focusGroupDraft" @keyboardheightchange="keyboardChanged" :adjust-position="false" @confirm="sendGroup" /></view><button class="composer-tool" :aria-label="emojiOpen ? '收起表情' : '选择表情'" :aria-expanded="emojiOpen" :disabled="!!unavailableReason || sending || imageSending || fileSending" @click="toggleEmoji"><k-icon :name="emojiOpen ? 'x' : 'smile'" :size="27" color="ink" /></button><button v-if="draft.trim()" class="composer-send" :disabled="!canSend" @click="sendGroup">发送</button></view><view v-if="emojiOpen" class="emoji-grid" aria-label="聊天表情"><button v-for="emoji in emojis" :key="emoji" :aria-label="'添加表情 ' + emoji" @click="addEmoji(emoji)">{{ emoji }}</button></view></view>
+      <view class="message-composer"><view class="composer-row"><button class="composer-photo" aria-label="添加聊天内容" :disabled="!!unavailableReason || sending || imageSending" @click="groupAttachments"><k-icon name="plus" :size="22" color="muted" /></button><!-- 之前这里有个画成按钮的「语音」图标，点了没有任何反应（本期没有语音消息），已去掉 --><view class="chat-input"><input :value="draft" @input="syncDraft" :maxlength="CHAT_TEXT_MAX" confirm-type="send" placeholder="发消息…" placeholder-class="placeholder" @blur="draftBlurred" @focus="focusGroupDraft" @keyboardheightchange="keyboardChanged" :adjust-position="false" @confirm="sendGroup" /></view><button class="composer-tool" :aria-label="emojiOpen ? '收起表情' : '选择表情'" :aria-expanded="emojiOpen" :disabled="!!unavailableReason || sending || imageSending || fileSending" @click="toggleEmoji"><k-icon :name="emojiOpen ? 'x' : 'smile'" :size="22" color="muted" /></button><button v-if="draft.trim()" class="composer-send" :disabled="!canSend" @click="sendGroup">发送</button></view><view v-if="emojiOpen" class="emoji-grid" aria-label="聊天表情"><button v-for="emoji in emojis" :key="emoji" :aria-label="'添加表情 ' + emoji" @click="addEmoji(emoji)">{{ emoji }}</button></view></view>
     </template>
 
     <!-- 3 群详情 -->
     <template v-else-if="s === 3">
       <k-topbar title="群详情" back custom-back @back="s = 2" />
       <view class="detail-body">
-        <view class="group-info" @click="openActivity"><image :src="groupCover" mode="aspectFill" /><view class="group-info-copy"><view class="k-row k-gap8"><text class="group-name">{{ conv.title }}</text><text class="verified">活动群</text></view><text>群号：{{ detail.groupNo }}</text><text>{{ detail.memberCount || 0 }}位成员 · 创建于 {{ detail.createdText }}</text></view><k-icon name="chevron-right" :size="22" color="ink" /></view>
-        <view class="qr-card" @click="previewQr"><view><text class="card-title">活动小程序码</text><text>{{ codeMessage(detail.qrInfo) }}</text><text>{{ detail.qrInfo?.state === 'ready' ? '扫码查看活动，报名确认后加入群聊' : '点击重试' }}</text></view><image v-if="detail.qrInfo?.state === 'ready'" :src="detail.qrInfo.image" mode="aspectFit" /><k-icon name="chevron-right" :size="20" color="ink" /></view>
-        <view class="members-head"><text>成员（{{ detail.memberCount || 0 }}）</text><view @click="allMembers"><text>全部成员</text><k-icon name="chevron-right" :size="18" color="ink" /></view></view><view class="members"><view v-for="m in members" :key="m.userId"><view class="member-avatar"><image :src="m.avatar" mode="aspectFill" /><text v-if="m.admin">✓</text></view><text>{{ m.name }}</text></view></view>
-        <view class="setting-section"><view class="setting-head"><text>群公告</text><view @click="editAnn"><text>{{ detail.myRole === 'owner' ? '查看 / 修改' : '查看全部' }}</text><k-icon name="chevron-right" :size="18" color="ink" /></view></view><text class="announcement-copy">{{ conv.announcement }}</text></view>
-        <k-subscribe scenes="community" label="订阅未读群消息提醒" />
-        <view class="setting-section toggles"><view><text>消息免打扰</text><view class="switch" :class="{ on: mute }" @click="toggleFlag('muted')"><view /></view></view><view><text>置顶聊天</text><view class="switch" :class="{ on: pinned }" @click="toggleFlag('pinned')"><view /></view></view></view>
-        <view class="common-row" @click="go(R.activityMine)"><text>查看共同活动</text><view><text>{{ detail.commonCount || 0 }}个</text><k-icon name="chevron-right" :size="19" color="ink" /></view></view>
+        <view class="group-info" hover-class="k-press-s" @click="openActivity"><image :src="groupCover" mode="aspectFill" /><view class="group-info-copy"><view class="k-row k-gap8"><text class="group-name">{{ conv.title }}</text><text class="verified">活动群</text></view><text>群号：{{ detail.groupNo }}</text><text>{{ detail.memberCount || 0 }}位成员 · 创建于 {{ detail.createdText }}</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view>
+        <view class="members-head"><text>成员（{{ detail.memberCount || 0 }}）</text><view hover-class="k-press" @click="allMembers"><text>全部成员</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><view class="members"><view v-for="m in members" :key="m.userId"><view class="member-avatar"><image :src="m.avatar" mode="aspectFill" /><view v-if="m.admin" class="member-admin"><k-icon name="check" :size="12" color="white" /></view></view><text>{{ m.name }}</text></view></view>
+        <!-- 11-18 第三轮：群公告 / 活动小程序码 / 共同活动 / 订阅提醒 收进一张列表卡，免打扰和置顶一张卡（每一项的文字和点了去哪都没变） -->
+        <view class="set-card">
+          <view class="setting-section"><view class="setting-head"><view class="set-ico-row"><k-icon name="volume-2" :size="16" color="muted" /><text>群公告</text></view><view hover-class="k-press" @click="editAnn"><text>{{ detail.myRole === 'owner' ? '查看 / 修改' : '查看全部' }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><text class="announcement-copy">{{ conv.announcement }}</text></view>
+          <view class="qr-card" hover-class="k-press-s" @click="previewQr"><k-icon class="qr-card__ico" name="qr-code" :size="16" color="muted" /><view><text class="card-title">活动小程序码</text><text>{{ codeMessage(detail.qrInfo) }}</text><text>{{ detail.qrInfo?.state === 'ready' ? '扫码查看活动，报名确认后加入群聊' : '点击重试' }}</text></view><image v-if="detail.qrInfo?.state === 'ready'" :src="detail.qrInfo.image" mode="aspectFit" /><k-icon name="chevron-right" :size="12" color="muted" /></view>
+          <view class="common-row" hover-class="k-press" @click="go(R.activityMine)"><view class="set-ico-row"><k-icon name="calendar" :size="16" color="muted" /><text>查看共同活动</text></view><view><text>{{ detail.commonCount || 0 }}个</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
+          <k-subscribe scenes="community" label="订阅未读群消息提醒" />
+        </view>
+        <view class="setting-section toggles"><view><view class="set-ico-row"><k-icon name="bell-off" :size="16" color="muted" /><text>消息免打扰</text></view><view class="switch" :class="{ on: mute }" @click="toggleFlag('muted')"><view /></view></view><view><view class="set-ico-row"><k-icon name="arrow-up" :size="16" color="muted" /><text>置顶聊天</text></view><view class="switch" :class="{ on: pinned }" @click="toggleFlag('pinned')"><view /></view></view></view>
         <k-button type="outline" size="lg" block class="danger" @click="leaveGroup">退出群聊</k-button><text class="report-group" @click="reportConv">举报该群</text>
         <view class="k-home-indicator" />
       </view>
@@ -74,11 +77,11 @@
     <template v-else>
       <k-topbar title="发布行程找搭子" back />
       <view class="publish-trip">
-        <view class="trip-banner"><view><text>公开发布行程，寻找同行伙伴</text><text>仅展示必要信息，保护你的隐私</text></view><image src="/static/media/chat-kangaroo.jpg" mode="aspectFit" /></view>
-        <view class="step-title"><text>1</text><text>选择日期区间</text></view><view class="date-card"><view @click="pickStart"><text>开始日期</text><text>{{ startLabel }}</text></view><text class="arrow">→</text><view @click="pickEnd"><text>结束日期</text><text>{{ endLabel }}</text></view><text>共{{ days }}天</text></view>
-        <view class="step-title"><text>2</text><text>选择主要活动</text><text class="step-note">（可多选）</text></view><view class="activity-grid"><view v-for="a in tripActivities" :key="a" :class="{ active: selectedActivities.includes(a) }" @click="toggleActivity(a)"><text>{{ a }}</text><view v-if="selectedActivities.includes(a)" class="picked"><text>✓</text></view></view></view>
+        <view class="trip-banner"><view><text>公开发布行程，寻找同行伙伴</text><text>仅展示必要信息，保护你的隐私</text></view><view class="trip-banner__ico"><k-icon name="route" :size="24" color="red" /></view></view>
+        <view class="step-title"><text>1</text><text>选择日期区间</text></view><view class="date-card"><view hover-class="k-press" @click="pickStart"><text>开始日期</text><text>{{ startLabel }}</text></view><view class="arrow"><k-icon name="arrow-right" :size="16" color="muted" /></view><view hover-class="k-press" @click="pickEnd"><text>结束日期</text><text>{{ endLabel }}</text></view><text>共{{ days }}天</text></view>
+        <view class="step-title"><text>2</text><text>选择主要活动</text><text class="step-note">（可多选）</text></view><view class="activity-grid"><view v-for="a in tripActivities" :key="a" :class="{ active: selectedActivities.includes(a) }" hover-class="k-press" @click="toggleActivity(a)"><text>{{ a }}</text><view v-if="selectedActivities.includes(a)" class="picked"><k-icon name="check" :size="12" color="white" /></view></view></view>
         <view class="step-title"><text>3</text><text>隐私设置</text></view><view class="privacy-card"><view><view><text>隐藏精确住宿信息</text><text>仅展示所在区域，不显示具体地址</text></view><view class="switch on" @click="privacyTip"><view /></view></view><view><view><text>隐藏交通出行信息</text><text>不展示交通方式与具体班次/车次</text></view><view class="switch on" @click="privacyTip"><view /></view></view></view>
-        <view class="step-title"><text>4</text><text>预览社区卡片</text></view><view class="trip-preview"><image src="/static/media/cover-empty.png" mode="aspectFill" /><view class="trip-preview-copy"><view class="k-between"><text class="trip-preview-title">{{ previewTitle }}</text><text class="public">公开</text></view><view class="preview-tags"><text v-for="t in selectedActivities.slice(0, 3)" :key="t">{{ t }}</text></view><text>{{ previewDays }}</text><view class="k-between"><text @click="pickCity">◉ {{ plan.city }}（点此换城市）</text><text>查看详情 ＞</text></view></view></view>
+        <view class="step-title"><text>4</text><text>预览社区卡片</text></view><view class="trip-preview"><image src="/static/media/cover-empty.png" mode="aspectFill" /><view class="trip-preview-copy"><view class="k-between"><text class="trip-preview-title">{{ previewTitle }}</text><text class="public">公开</text></view><view class="preview-tags"><text v-for="t in selectedActivities.slice(0, 3)" :key="t">{{ t }}</text></view><view class="preview-line"><k-icon name="calendar" :size="12" color="muted" /><text>{{ previewDays }}</text></view><view class="k-between"><view class="preview-line preview-line--city"><k-icon name="map-pin" :size="12" color="muted" /><text @click="pickCity">{{ plan.city }}（点此换城市）</text></view><view class="preview-more"><text>查看详情</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view></view></view>
         <k-button size="lg" block @click="publishPlan">发布到找搭子</k-button><text class="agreement" @click="showRules">发布即代表同意《社区公约》与《隐私政策》</text><view class="k-home-indicator" />
       </view>
       <k-date-picker v-if="dateOpen" :title="dateOpen === 'start' ? '选择开始日期' : '选择结束日期'" :value="dateOpen === 'start' ? plan.start : plan.end" :min-date="dateOpen === 'start' ? todayCn() : plan.start" :max-date="shiftDate(dateOpen === 'start' ? todayCn() : plan.start, 59)" @cancel="dateOpen = ''" @confirm="confirmPlanDate" />
@@ -91,7 +94,7 @@
       <button v-if="!imageSending" :disabled="!!unavailableReason" @click="sendImageDraft">{{ imageSendError ? '重试' : '发送' }}</button>
     </view>
     <view v-if="fileDraft && s === 1" class="image-draft file-draft">
-      <view class="file-card__icon"><k-icon :name="fileDraft.kind === 'archive' ? 'archive' : 'file-text'" :size="28" color="ochre" /></view>
+      <view class="file-card__icon"><k-icon :name="fileDraft.kind === 'archive' ? 'archive' : 'file-text'" :size="22" color="red" /></view>
       <view><text class="file-draft__name">{{ fileDraft.name }}</text><text :class="fileSendError && !fileSending ? 'file-draft__error' : 'k-meta'">{{ fileSending ? '正在发送 ' + fileProgress + '%' + STAY_HINT : fileSendError || fileDraft.sizeLabel + ' · 待发送' }}</text></view>
       <button :disabled="fileSending" @click="discardFile">取消</button>
       <button v-if="!fileRefused && !fileSending" :disabled="!!unavailableReason" @click="sendFileDraft">{{ fileSendError ? '重试' : '发送' }}</button>
@@ -265,7 +268,7 @@ async function openConversation(q) {
     try {
       let res = null
       if (Number(q?.convId)) res = await apiChat(Number(q.convId))
-      else if (Number(q?.appId)) res = await apiChatOpen({ type: 'store', appId: Number(q.appId) })
+      else if (Number(q?.appId)) res = await apiChatOpen({ type: q.contact === 'lead' ? 'volunteer_lead' : 'store', appId: Number(q.appId) })
       else if (Number(q?.activityId)) res = await apiChatOpen({ type: 'activity', activityId: Number(q.activityId) })
       else if (Number(q?.postId)) res = await gated(() => apiChatOpen({ type: 'private', postId: Number(q.postId) }))
       else if (Number(q?.planId)) res = await gated(() => apiChatOpen({ type: 'private', planId: Number(q.planId) }))
@@ -895,7 +898,7 @@ const selectedActivities = ref(['手作体验'])
 const toggleActivity = (a) => { const i = selectedActivities.value.indexOf(a); if (i >= 0) selectedActivities.value.splice(i, 1); else selectedActivities.value.push(a) }
 const privacyTip = () => toast('为保护隐私，精确住址与交通信息始终不公开')
 const previewTitle = computed(() => `${plan.value.city} · ${startLabel.value.slice(0, 6).replace(/^0/, '').replace('月0', '月')}—${endLabel.value.slice(0, 6).replace(/^0/, '').replace('月0', '月')}`)
-const previewDays = computed(() => `◉ ${days.value}天行程 · 寻找同行伙伴`)
+const previewDays = computed(() => `${days.value}天行程 · 寻找同行伙伴`)
 async function showRules() {
   try {
     const r = (await apiCommunityRules('community')).data
@@ -977,9 +980,9 @@ async function publishPlan() {
 .conversation-error{flex-shrink:0;padding:8px 16px;display:flex;align-items:center;gap:12px;color:var(--k-alert);background:var(--k-paper2);font-size:12px}
 .conversation-error>text{flex:1;min-width:0}
 .conversation-error button{margin:0;padding:0 8px;flex-shrink:0;background:var(--k-paper);color:var(--k-alert);font-size:12px;line-height:32px}
-.group-body{padding:8px 14px 100px}.announcement{padding:10px 12px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper)}.announcement-title{display:block;font-family:var(--k-serif);font-size:15px;font-weight:700;margin-bottom:6px}.announcement>text{font-size:13px}.announcement-last{margin-top:5px;display:flex;align-items:center;justify-content:space-between;color:var(--k-muted);font-size:12px}.group-tools{height:74px;display:flex;border-bottom:1px solid var(--k-line)}.group-tools view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;font-size:11px}.group-section{display:block;margin:12px 0 7px;font-family:var(--k-serif);font-size:16px;font-weight:700}.group-activity{padding:8px 9px;border:1px solid #9CB9A7;border-radius:12px;background:var(--k-paper);display:flex;gap:9px}.group-activity-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:7px}.activity-kind{align-self:flex-start;padding:2px 7px;border-radius:4px;background:var(--k-ochre);color:#fff;font-size:10px}.group-activity-title{font-family:var(--k-serif);font-size:15px;font-weight:700}.group-meta{display:flex;align-items:center;gap:5px;color:var(--k-muted);font-size:11px}.signed{margin-left:auto;color:var(--k-green)}.group-activity>image{width:83px;height:83px;border-radius:7px}.group-message{margin-top:14px}.msg-head{display:flex;align-items:center;gap:8px;color:var(--k-muted);font-size:11px}.msg-head image{width:34px;height:34px;border-radius:50%}.msg-head text:nth-child(2){color:var(--k-ink);font-size:12px}.msg-head text:last-child{margin-left:auto}.group-bubble{display:block;margin:-3px 0 0 42px;padding:8px 11px;border-radius:9px;background:var(--k-paper2);font-size:13px;line-height:1.55;white-space:pre-line;width:210px;max-width:calc(100% - 42px);overflow-wrap:anywhere;word-break:break-word}.like{margin:5px 0 0 52px}.like text{padding:3px 10px;border:1px solid var(--k-line2);border-radius:6px;font-size:12px}.location-card{width:220px;height:86px;margin:-2px 0 0 42px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;overflow:hidden}.location-card>view{min-width:0;flex:1;padding:8px 10px;display:flex;flex-direction:column;gap:7px}.location-share{color:var(--k-green);font-size:12px}.location-title{font-size:13px;font-weight:700}.location-address{color:var(--k-muted);font-size:10px}.location-card image{width:72px;height:86px}.group-safety{margin-top:16px}.voice,.plus-round{width:38px;height:38px;border:1px solid var(--k-line2);border-radius:50%;display:flex;align-items:center;justify-content:center}.chat-input{height:38px;min-width:0;flex:1;padding:0 12px;border:1px solid var(--k-line2);border-radius:8px;background:var(--k-paper)}.chat-input input{width:100%;height:38px;font-size:13px}.placeholder{color:var(--k-light)}
+.group-body{padding:8px 14px 100px}.announcement{padding:10px 12px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper)}.announcement-title{display:block;font-family:var(--k-serif);font-size:15px;font-weight:700;margin-bottom:6px}.announcement>text{font-size:13px}.announcement-last{margin-top:5px;display:flex;align-items:center;justify-content:space-between;color:var(--k-muted);font-size:12px}.group-tools{height:74px;display:flex;border-bottom:1px solid var(--k-line)}.group-tools view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;font-size:11px}.group-section{display:block;margin:12px 0 7px;font-family:var(--k-serif);font-size:16px;font-weight:700}.group-activity{padding:8px 9px;border:1px solid #9CB9A7;border-radius:12px;background:var(--k-paper);display:flex;gap:9px}.group-activity-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:7px}.activity-kind{align-self:flex-start;padding:2px 7px;border-radius:4px;background:var(--k-ochre);color:#fff;font-size:11px}.group-activity-title{font-family:var(--k-serif);font-size:15px;font-weight:700}.group-meta{display:flex;align-items:center;gap:5px;color:var(--k-muted);font-size:11px}.signed{margin-left:auto;color:var(--k-green)}.group-activity>image{width:83px;height:83px;border-radius:7px}.group-message{margin-top:14px}.msg-head{display:flex;align-items:center;gap:8px;color:var(--k-muted);font-size:11px}.msg-head image{width:34px;height:34px;border-radius:50%}.msg-head text:nth-child(2){color:var(--k-ink);font-size:12px}.msg-head text:last-child{margin-left:auto}.group-bubble{display:block;margin:-3px 0 0 42px;padding:8px 11px;border-radius:9px;background:var(--k-paper2);font-size:13px;line-height:1.55;white-space:pre-line;width:210px;max-width:calc(100% - 42px);overflow-wrap:anywhere;word-break:break-word}.like{margin:5px 0 0 52px}.like text{padding:3px 10px;border:1px solid var(--k-line2);border-radius:6px;font-size:12px}.location-card{width:220px;height:86px;margin:-2px 0 0 42px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;overflow:hidden}.location-card>view{min-width:0;flex:1;padding:8px 10px;display:flex;flex-direction:column;gap:7px}.location-share{color:var(--k-green);font-size:12px}.location-title{font-size:13px;font-weight:700}.location-address{color:var(--k-muted);font-size:11px}.location-card image{width:72px;height:86px}.group-safety{margin-top:16px}.voice,.plus-round{width:38px;height:38px;border:1px solid var(--k-line2);border-radius:50%;display:flex;align-items:center;justify-content:center}.chat-input{height:38px;min-width:0;flex:1;padding:0 12px;border:1px solid var(--k-line2);border-radius:8px;background:var(--k-paper)}.chat-input input{width:100%;height:38px;font-size:13px}.placeholder{color:var(--k-light)}
 .detail-body{padding:8px 16px calc(28px + var(--k-safe-bottom))}.group-info{padding:14px;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper);display:flex;align-items:center;gap:12px}.group-info>image{width:72px;height:72px;border-radius:50%}.group-info-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:7px;color:var(--k-muted);font-size:12px}.group-name{font-family:var(--k-serif);font-size:18px;font-weight:700;color:var(--k-ink)}.qr-card{min-height:70px;margin-top:10px;padding:12px 14px;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper);display:flex;align-items:center}.qr-card>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:8px;color:var(--k-muted);font-size:12px}.card-title{font-family:var(--k-serif);font-size:16px;font-weight:700;color:var(--k-ink)}.qr-card image{width:58px;height:58px;margin-right:12px}.members-head,.setting-head,.common-row{display:flex;align-items:center;justify-content:space-between}.members-head{margin:14px 4px 8px;font-family:var(--k-serif);font-size:16px;font-weight:700}.members-head>view,.setting-head>view,.common-row>view{display:flex;align-items:center;gap:4px;color:var(--k-muted);font-size:12px}.members{display:flex;flex-wrap:wrap;row-gap:12px}.members>view{width:20%;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;text-align:center}.members>view>text{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.member-avatar{position:relative}.member-avatar image{width:48px;height:48px;border-radius:50%}.member-avatar>text{position:absolute;right:0;bottom:0;width:14px;height:14px;border-radius:50%;background:var(--k-green);color:#fff;font-size:9px}.setting-section{margin:14px -16px 0;padding:13px 20px;border-top:1px solid var(--k-line);border-bottom:1px solid var(--k-line)}.setting-head>text{font-family:var(--k-serif);font-size:16px;font-weight:700}.announcement-copy{display:block;margin-top:9px;font-size:12px;line-height:1.7;white-space:pre-line}.toggles{margin-top:0}.toggles>view{height:40px;display:flex;align-items:center;justify-content:space-between;font-family:var(--k-serif);font-size:15px;font-weight:700}.switch{width:42px;height:24px;padding:2px;border-radius:14px;background:#C7C1B8;box-sizing:border-box}.switch.on{background:var(--k-green)}.switch view{width:20px;height:20px;border-radius:50%;background:#fff}.switch.on view{transform:translateX(18px)}.common-row{height:48px;margin:0 -16px;padding:0 20px;border-bottom:1px solid var(--k-line);font-family:var(--k-serif);font-size:15px;font-weight:700}.detail-body>.k-button{margin-top:12px}.detail-body>.k-button.danger{color:var(--k-alert);border-color:rgba(192,68,55,.45)}.report-group{display:block;text-align:center;margin-top:14px;color:var(--k-alert);font-family:var(--k-serif);font-size:15px;font-weight:700}
-.publish-trip{padding:8px 16px calc(24px + var(--k-safe-bottom))}.trip-banner{height:74px;padding:9px 13px;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper);display:flex;align-items:center}.trip-banner>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:9px;font-size:14px;font-weight:700}.trip-banner>view text:last-child{color:var(--k-muted);font-size:12px;font-weight:400}.trip-banner image{width:94px;height:70px}.step-title{display:flex;align-items:center;gap:9px;margin:12px 0 7px;font-family:var(--k-serif);font-size:16px;font-weight:700}.step-title>text:first-child{width:22px;height:22px;border-radius:50%;background:var(--k-red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}.step-note{color:var(--k-muted);font-size:11px;font-weight:400}.date-card{height:56px;padding:0 12px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;align-items:center;gap:14px}.date-card>view{display:flex;flex-direction:column;gap:5px}.date-card>view text:first-child{color:var(--k-muted);font-size:11px}.date-card>view text:last-child{font-size:14px;font-weight:700}.date-card>text:last-child{margin-left:auto;color:var(--k-muted);font-size:11px}.arrow{font-size:20px;color:var(--k-muted)}.activity-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.activity-grid>view{position:relative;height:31px;border:1px solid var(--k-line2);border-radius:7px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;font-size:12px}.activity-grid>view.active{border-color:var(--k-red);color:var(--k-red)}.privacy-card{padding:0 12px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper)}.privacy-card>view{height:54px;border-bottom:1px solid var(--k-line);display:flex;align-items:center;justify-content:space-between}.privacy-card>view:last-child{border:0}.privacy-card>view>view:first-child{display:flex;flex-direction:column;gap:5px}.privacy-card>view>view:first-child text:first-child{font-size:13px;font-weight:700}.privacy-card>view>view:first-child text:last-child{color:var(--k-muted);font-size:10px}.trip-preview{padding:8px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;gap:10px}.trip-preview>image{width:82px;height:96px;border-radius:7px}.trip-preview-copy{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:space-between;color:var(--k-muted);font-size:11px}.trip-preview-title{font-family:var(--k-serif);font-size:14px;font-weight:700;color:var(--k-ink)}.public{padding:2px 5px;border-radius:4px;background:var(--k-ochre-soft);color:#916326;font-size:9px}.preview-tags{display:flex;gap:5px}.preview-tags text{padding:2px 5px;border-radius:4px;background:var(--k-paper2);font-size:9px}.publish-trip>.k-button{margin-top:11px}.agreement{display:block;text-align:center;margin-top:10px;color:var(--k-muted);font-size:11px}
+.publish-trip{padding:8px 16px calc(24px + var(--k-safe-bottom))}.trip-banner{height:74px;padding:9px 13px;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper);display:flex;align-items:center}.trip-banner>view{min-width:0;flex:1;display:flex;flex-direction:column;gap:9px;font-size:14px;font-weight:700}.trip-banner>view text:last-child{color:var(--k-muted);font-size:12px;font-weight:400}.trip-banner image{width:94px;height:70px}.step-title{display:flex;align-items:center;gap:9px;margin:12px 0 7px;font-family:var(--k-serif);font-size:16px;font-weight:700}.step-title>text:first-child{width:22px;height:22px;border-radius:50%;background:var(--k-red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}.step-note{color:var(--k-muted);font-size:11px;font-weight:400}.date-card{height:56px;padding:0 12px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;align-items:center;gap:14px}.date-card>view{display:flex;flex-direction:column;gap:5px}.date-card>view text:first-child{color:var(--k-muted);font-size:11px}.date-card>view text:last-child{font-size:14px;font-weight:700}.date-card>text:last-child{margin-left:auto;color:var(--k-muted);font-size:11px}.arrow{font-size:20px;color:var(--k-muted)}.activity-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.activity-grid>view{position:relative;height:31px;border:1px solid var(--k-line2);border-radius:7px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;font-size:12px}.activity-grid>view.active{border-color:var(--k-red);color:var(--k-red)}.privacy-card{padding:0 12px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper)}.privacy-card>view{height:54px;border-bottom:1px solid var(--k-line);display:flex;align-items:center;justify-content:space-between}.privacy-card>view:last-child{border:0}.privacy-card>view>view:first-child{display:flex;flex-direction:column;gap:5px}.privacy-card>view>view:first-child text:first-child{font-size:13px;font-weight:700}.privacy-card>view>view:first-child text:last-child{color:var(--k-muted);font-size:11px}.trip-preview{padding:8px;border:1px solid var(--k-line2);border-radius:9px;background:var(--k-paper);display:flex;gap:10px}.trip-preview>image{width:82px;height:96px;border-radius:7px}.trip-preview-copy{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:space-between;color:var(--k-muted);font-size:11px}.trip-preview-title{font-family:var(--k-serif);font-size:14px;font-weight:700;color:var(--k-ink)}.public{padding:2px 5px;border-radius:4px;background:var(--k-ochre-soft);color:#916326;font-size:11px}.preview-tags{display:flex;gap:5px}.preview-tags text{padding:2px 5px;border-radius:4px;background:var(--k-paper2);font-size:11px}.publish-trip>.k-button{margin-top:11px}.agreement{display:block;text-align:center;margin-top:10px;color:var(--k-muted);font-size:11px}
 /* 发布行程找搭子 · 选中的活动标签：✓ 小圆点跟在文字右边（设计稿 24）。之前圆点绝对定位贴在格子右侧，四个字的标签在窄屏上最后一个字被压住
    （320 宽时「手作体验」的「验」几乎整个被盖住）。最窄 320 宽一格约 64px，四个字 48px + 间距 + 圆点放得下 */
 .activity-grid>view{gap:2px}.activity-grid>view>text{white-space:nowrap}.picked{flex:0 0 auto;width:12px;height:12px;border-radius:50%;background:var(--k-red);color:#fff;font-size:8px;line-height:1;display:flex;align-items:center;justify-content:center}
@@ -1000,4 +1003,387 @@ async function publishPlan() {
 .file-draft__name{font-size:13px;color:var(--k-ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .file-draft__error{color:var(--k-alert)}
 .is-conversation .group-body{padding:12px 16px 8px}.composer-tool{flex:0 0 40px;margin:0;padding:0;height:48px;display:flex;align-items:center;justify-content:center;background:transparent}.composer-tool::after{border:0}.emoji-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));padding-top:12px;gap:4px}.emoji-grid button{margin:0;padding:0;font-size:26px;line-height:48px;background:transparent}.emoji-grid button::after{border:0}.group-new{font-size:12px;line-height:36px;margin:0;background:var(--k-green-soft);color:var(--k-green)}
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板，参考小红书）：浅灰底、白色气泡和白卡，不描边、不加阴影；输入栏收成 38 高的浅灰胶囊，
+   发送是暖棕渐变小胶囊；群详情、发布行程里的方框都换成圆角 12 的白卡。功能和文字不变：举报 / 安全提醒、对方卡片、快捷开场、
+   图片 / 文件 / 分享卡片、交换联系方式、表情、群公告 / 群工具 / 群内活动、成员、免打扰 / 置顶、退群、发布行程四步都在。
+   上面的旧规则保留不动（输入框的字号和行高脚本里要用，没有改），这里用 .k-page.chat-page 开头的规则盖过去。 */
+.k-page.chat-page {
+  --k-bg: var(--k-page); --k-paper2: var(--k-fill); /* 本组暖米填充，只在根上定义一次 */
+  background: var(--k-page);
+  :deep(.k-topbar) { background: var(--k-page); }
+  :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+
+  /* ---------- 私信 ---------- */
+  .conversation-meta { padding: 6px 12px; border-bottom: 0; background: #FFF8EE; font-size: 11px; line-height: 17px; }
+  .private-body { padding: 8px 12px; }
+  .source { margin: 0 2px 6px; font-size: 11px; }
+  .person-card { padding: 10px 12px; border: 0; border-radius: 12px; background: var(--k-paper); }
+  .person-top { gap: 10px; }
+  .person-avatar { width: 44px; height: 44px; }
+  .person-copy { gap: 3px; }
+  .person-name { font-family: var(--k-sans); font-size: 15px; font-weight: 600; }
+  .verified { padding: 0 5px; border: 0; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; font-weight: 500; line-height: 17px; }
+  .person-meta, .person-link { font-size: 11px; }
+  .person-link { display: flex; align-items: center; gap: 1px; color: var(--k-muted); }
+  .overlap > view { gap: 8px; }
+  .overlap > view > view { gap: 1px; color: var(--k-muted); font-size: 11px; }
+  .overlap > view > view text:last-child { color: var(--k-ink); font-size: 12px; font-weight: 600; }
+  .quick-title { margin: 14px 2px 8px; color: var(--k-ink2); font-family: var(--k-sans); font-size: 13px; font-weight: 600; }
+  .quick-list { gap: 6px; }
+  .quick-list view { height: 28px; padding: 0 11px; border: 0; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); font-size: 12px; }
+  .conversation-empty { padding: 24px 12px; font-size: 12px; }
+  .time { margin: 12px 0 4px; font-size: 11px; }
+  .message-row { margin-top: 10px; gap: 8px; }
+  .msg-avatar { width: 36px; height: 36px; border-radius: 50%; }
+  .message-sender { margin-bottom: 3px; font-size: 11px; }
+  .message-bubble { padding: 8px 11px; border: 0; border-radius: 4px 12px 12px 12px; background: var(--k-paper); font-size: 14px; line-height: 1.6; }
+  .is-mine .message-bubble { border-radius: 12px 4px 12px 12px; background: var(--k-green-soft); }
+  .message-hint { font-size: 11px; }
+  .message-image { border: 0; border-radius: 8px; background: var(--k-paper2); font-size: 12px; }
+  .shared-post, .file-card { padding: 9px 11px; border: 0; border-radius: 12px; background: var(--k-paper); }
+  .is-mine .shared-post, .is-mine .file-card { background: var(--k-green-soft); }
+  .shared-post__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+  .shared-post__go { display: flex; align-items: center; gap: 1px; color: var(--k-red-deep); font-size: 11px; }
+  .file-card__name { font-size: 13px; }
+  .file-card__meta { font-size: 11px; }
+  .conversation-error { padding: 6px 12px; background: var(--k-alert-soft); }
+  .contact-bar { margin: 0 0 6px; padding: 5px 6px 5px 10px; border: 0; border-radius: 8px; background: var(--k-paper2); }
+  .contact-bar__text { font-size: 11px; }
+  .contact-bar__btn { position: relative; overflow: visible; height: 26px; padding: 0 10px; border: 0; border-radius: 13px; background: var(--k-paper); color: var(--k-ink2); font-size: 11px; line-height: 26px; } .contact-bar__btn::before { content: ''; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
+  .contact-bar__btn.is-primary { background: var(--k-green); color: #fff; }
+  /* 输入栏：白底，输入框是浅灰胶囊；「发送」看上去 30 高，外面一圈透明边把可点高度撑到 38 */
+  .message-composer { padding: 6px 8px calc(6px + var(--k-safe-bottom)); border-top: 0; background: var(--k-paper); box-shadow: 0 -.5px 0 rgba(58, 50, 43, .1); }
+  .message-composer.keyboard-open { padding-bottom: 6px; }
+  .composer-error--soft { color: var(--k-muted); } /* 「正在连接会话…」只是在等，用灰色说明字；真的发不出去才是红字 */
+  .composer-row { gap: 4px; }
+  .composer-row button { line-height: 38px; }
+  .composer-photo { width: 36px; height: 38px; }
+  .composer-tool { flex: 0 0 36px; height: 38px; }
+  .composer-row .composer-photo[disabled], .composer-row .composer-tool[disabled] { background: transparent; opacity: .45; }
+  .composer-field { padding: 6px 13px; border: 0; border-radius: 19px; background: var(--k-paper2); }
+  .composer-row .composer-send { min-width: 56px; height: 38px; border: 4px solid transparent; border-radius: 19px; background: linear-gradient(135deg, #B5814D, #8E5E33) padding-box; color: #fff; font-size: 13px; line-height: 30px; }
+  /* 还不能发时：原来的暖棕渐变整体淡到 .45（全站「不可点按钮」同一个样子） */
+  .composer-row .composer-send[disabled] { background: linear-gradient(135deg, #B5814D, #8E5E33) padding-box; color: #fff; opacity: .45; }
+  .chat-input { height: 38px; padding: 0 13px; border: 0; border-radius: 19px; background: var(--k-paper2); }
+  .chat-input input { height: 38px; font-size: 14px; }
+  .emoji-grid { padding-top: 8px; }
+  .emoji-grid button { font-size: 24px; line-height: 44px; }
+  .image-draft { left: 12px; right: 12px; bottom: calc(58px + var(--k-safe-bottom)); padding: 8px; border: 0; border-radius: 12px; box-shadow: var(--k-sh3); }
+  .image-draft > image { border-radius: 8px; }
+  .image-draft button { padding: 0 12px; border-radius: 18px; line-height: 36px; }
+  .image-preview-actions { gap: 10px; padding: 10px 12px calc(12px + var(--k-safe-bottom, 0px)); border-top: 0; }
+  .image-preview-actions button { min-height: 42px; border-radius: 21px; background: var(--k-paper2); font-size: 14px; line-height: 42px; }
+  .image-preview-actions .image-preview-save { background: linear-gradient(135deg, #B5814D, #8E5E33); color: #fff; }
+
+  /* ---------- 群聊 ---------- */
+  .group-body { padding: 8px 12px; }
+  .announcement { padding: 10px 12px; border: 0; border-radius: 12px; background: #FFF8EE; }
+  .announcement-title { margin-bottom: 3px; color: var(--k-ochre-deep); font-family: var(--k-sans); font-size: 13px; font-weight: 600; }
+  .announcement > text { font-size: 12px; line-height: 18px; }
+  .announcement-last { margin-top: 3px; font-size: 11px; }
+  .group-tools { height: 64px; margin-top: 8px; border-bottom: 0; border-radius: 12px; background: var(--k-paper); }
+  .group-tools view { gap: 4px; color: var(--k-ink2); font-size: 11px; }
+  .group-section { margin: 16px 2px 8px; font-family: var(--k-sans); font-size: 16px; line-height: 22px; font-weight: 700; color: var(--k-ink); }
+  .group-activity { padding: 8px; gap: 10px; border: 0; border-radius: 12px; }
+  .group-activity-copy { gap: 3px; }
+  .activity-kind { padding: 0 5px; border-radius: 4px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 11px; font-weight: 500; line-height: 17px; }
+  .group-activity-title { font-family: var(--k-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
+  .group-meta { gap: 4px; font-size: 11px; line-height: 16px; }
+  .group-activity > image { width: 72px; height: 72px; border-radius: 8px; }
+  .group-message { margin-top: 12px; }
+  .msg-head image { width: 32px; height: 32px; }
+  .group-bubble { margin: -2px 0 0 40px; padding: 8px 11px; border-radius: 4px 12px 12px 12px; background: var(--k-paper); font-size: 14px; line-height: 1.6; }
+  .group-image { margin-left: 40px; }
+  .location-card { margin-left: 40px; border: 0; border-radius: 12px; }
+  .safety { padding: 9px 11px; border: 0; border-radius: 8px; background: var(--k-paper2); } /* 暖米色（原来的冷灰在暖色页面上发灰） */
+
+  /* ---------- 群详情 ---------- */
+  .detail-body { padding: 8px 12px calc(28px + var(--k-safe-bottom)); }
+  .group-info { padding: 12px; gap: 10px; border: 0; border-radius: 12px; }
+  .group-info > image { width: 52px; height: 52px; }
+  .group-info-copy { gap: 3px; font-size: 11px; }
+  .group-name { font-family: var(--k-sans); font-size: 15px; font-weight: 600; }
+  .qr-card { min-height: 0; margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; }
+  .qr-card > view { gap: 3px; font-size: 11px; }
+  .qr-card > image { width: 48px; height: 48px; margin-right: 8px; }
+  .card-title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+  /* 区块标题 16 / 700；右侧「全部成员 / 查看全部」12 浅灰 + 12 号浅灰箭头 */
+  .members-head { margin: 16px 2px 8px; font-family: var(--k-sans); font-size: 16px; line-height: 22px; font-weight: 700; color: var(--k-ink); }
+  .members-head > view, .setting-head > view, .common-row > view { gap: 2px; color: var(--k-muted); font-size: 12px; font-weight: 400; }
+  .members { row-gap: 10px; padding: 12px 4px; border-radius: 12px; background: var(--k-paper); }
+  .members:empty { display: none; } /* 还没有成员时不露出一条空的白卡 */
+  .members > view { gap: 4px; color: var(--k-ink2); }
+  .member-avatar image { width: 40px; height: 40px; }
+  /* 管理员角标：白边的暖棕小圆 + 白色对勾图标（原来是文字「✓」） */
+  .member-admin { position: absolute; right: -1px; bottom: -1px; width: 14px; height: 14px; box-sizing: border-box; border: 1.5px solid #fff; border-radius: 50%; background: var(--k-red); display: flex; align-items: center; justify-content: center; }
+  :deep(.subscribe-entry) { padding: 8px 0 0; }
+  :deep(.subscribe-entry button) { min-height: 36px; border: 0; border-radius: 12px; background: var(--k-paper); color: var(--k-ochre-deep); font-size: 12px; }
+  .setting-section { margin: 8px 0 0; padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); }
+  .setting-head > text { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+  .announcement-copy { margin-top: 6px; color: var(--k-ink2); }
+  .toggles { margin-top: 8px; padding: 2px 12px; }
+  /* 列表行：48 高、14 / 400 深墨；行间是 1px 线压成半像素的发丝线（不用内阴影：部分屏幕上会在这一行左边多画出一小段竖线） */
+  .toggles > view { position: relative; height: 48px; font-family: var(--k-sans); font-size: 14px; font-weight: 400; color: var(--k-ink); }
+  .toggles > view + view { border-top: 0; }
+  .toggles > view + view::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+  .switch { position: relative; width: 40px; height: 24px; background: #D9D4CC; } .switch::before { content: ''; position: absolute; left: -8px; right: -8px; top: -10px; bottom: -10px; }
+  .switch.on { background: var(--k-green); }
+  .switch view { width: 20px; height: 20px; }
+  .switch.on view { transform: translateX(16px); }
+  .common-row { height: 48px; margin: 8px 0 0; padding: 0 12px; border-bottom: 0; border-radius: 12px; background: var(--k-paper); font-family: var(--k-sans); font-size: 14px; font-weight: 400; color: var(--k-ink); }
+  .detail-body > :deep(.k-button) { height: 44px; margin-top: 16px; border-radius: 22px; font-size: 15px; }
+  .report-group { margin-top: 2px; padding: 10px 0; font-family: var(--k-sans); font-size: 12px; font-weight: 400; }
+
+  /* ---------- 发布行程找搭子 ---------- */
+  .publish-trip { padding: 8px 12px calc(24px + var(--k-safe-bottom)); }
+  .trip-banner, .date-card, .privacy-card, .trip-preview { border: 0; border-radius: 12px; }
+  .trip-banner > view { gap: 4px; font-weight: 600; }
+  .trip-banner > view text:last-child { font-size: 11px; }
+  /* 右边的袋鼠插画是带米色纸底的 JPG：收小到 68×54（原来上下顶满卡片），提亮到纸底变白、底边淡出，和白卡融在一起 */
+  .trip-banner image { width: 68px; height: 54px; border-radius: 8px; filter: brightness(1.08) contrast(1.06); -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 100%); mask-image: linear-gradient(180deg, #000 80%, transparent 100%); }
+  .step-title { margin: 16px 2px 8px; gap: 6px; font-family: var(--k-sans); font-size: 16px; line-height: 22px; font-weight: 700; color: var(--k-ink); }
+  .step-title > text:first-child { width: 18px; height: 18px; font-size: 11px; font-weight: 600; }
+  .activity-grid { gap: 6px; }
+  .activity-grid > view { height: 32px; border-color: transparent; border-radius: 16px; color: var(--k-ink2); }
+  .activity-grid > view.active { border-color: transparent; background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; }
+  .arrow { display: flex; align-items: center; }
+  .picked :deep(.k-icon) { display: block; }
+  .preview-more { display: flex; align-items: center; gap: 1px; }
+  .privacy-card > view > view:first-child { gap: 2px; }
+  .privacy-card > view > view:first-child text:first-child { font-weight: 600; }
+  .privacy-card > view > view:first-child text:last-child { font-size: 11px; }
+  .trip-preview > image { border-radius: 8px; }
+  .trip-preview-title { font-family: var(--k-sans); font-weight: 600; }
+  .public { padding: 0 5px; color: var(--k-ochre-deep); font-size: 11px; line-height: 17px; }
+  .preview-tags text { padding: 0 5px; background: var(--k-paper2); font-size: 11px; line-height: 17px; }
+  .publish-trip > :deep(.k-button) { height: 44px; margin-top: 14px; box-shadow: none; }
+
+  @media (max-width: 359px) {
+    .composer-row .composer-send { min-width: 52px; }
+    .overlap > view { gap: 6px; }
+  }
+}
+</style>
+
+<style scoped lang="scss">
+/* ==========================================================================
+   11-18 第三轮精修：群聊顶上三块统一成白底（公告左边一道暖棕短竖条标「置顶」，安全提醒退成一行小字）；
+   群详情的设置项收成两张列表卡（每行 48 高、发丝线分隔）；文字符号「◉」全部换成线性图标。
+   ========================================================================== */
+.k-page.chat-page {
+  /* 群聊：置顶公告白卡 + 暖棕短竖条 */
+  .announcement { position: relative; padding: 10px 12px 10px 16px; border-radius: 12px; background: var(--k-paper); }
+  .announcement::before { content: ''; position: absolute; left: 0; top: 13px; width: 3px; height: 14px; border-radius: 0 2px 2px 0; background: var(--k-red); }
+  .announcement-title { color: var(--k-red-deep); font-size: 12px; line-height: 18px; }
+  .announcement > text { color: var(--k-ink); font-size: 13px; line-height: 20px; }
+  .announcement-last { color: var(--k-muted); }
+  .group-tools { height: 68px; }
+  .group-activity { padding: 12px; }
+  .group-meta { display: flex; align-items: center; }
+  .signed { display: flex; align-items: center; gap: 4px; margin-left: auto; color: var(--k-green); font-size: 11px; }
+  .location-share { display: flex; align-items: center; gap: 4px; color: var(--k-red-deep); font-size: 11px; }
+  .safety.group-safety { margin: 20px 8px 8px; padding: 0; border-radius: 0; background: transparent; color: var(--k-muted); font-size: 11px; line-height: 18px; text-align: center; }
+
+  /* 群详情：两张列表卡 */
+  .set-card { margin-top: 8px; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+  .set-card > .setting-section, .set-card > .qr-card, .set-card > .common-row { position: relative; margin: 0; border-radius: 0; background: transparent; }
+  .set-card > .setting-section { padding: 14px 12px 12px; }
+  .set-card > .qr-card { min-height: 64px; padding: 8px 12px; align-items: center; }
+  .set-card > .qr-card .card-title { font-size: 14px; font-weight: 400; color: var(--k-ink); }
+  .set-card > .qr-card > view { gap: 2px; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+  .set-card > .qr-card > image { width: 40px; height: 40px; margin-right: 6px; border-radius: 4px; }
+  .set-card > .common-row { height: 48px; }
+  .set-card > .qr-card::before, .set-card > .common-row::before { content: ''; position: absolute; left: 12px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+  .set-card > .setting-section .setting-head > text { font-size: 14px; font-weight: 400; color: var(--k-ink); }
+  .set-card > .setting-section .announcement-copy { margin-top: 4px; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+  .set-card :deep(.subscribe-entry) { position: relative; padding: 0; }
+  .set-card :deep(.subscribe-entry)::before { content: ''; position: absolute; left: 12px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); z-index: 1; }
+  .set-card :deep(.subscribe-entry button) { justify-content: flex-start; gap: 8px; height: 48px; min-height: 48px; margin: 0; padding: 0 12px; border-radius: 0; background: transparent; color: var(--k-ink); font-size: 14px; line-height: 48px; }
+  .set-card :deep(.subscribe-entry button text) { flex: 1; text-align: left; }
+  .members-head { margin-top: 20px; }
+  .toggles { margin-top: 8px; }
+  .detail-body > :deep(.k-button) { margin-top: 24px; }
+
+  /* 发布行程：预览卡两行小字前面是 12 号线性图标 */
+  .preview-line { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+  .preview-line > text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .preview-line--city { flex: 1 1 auto; }
+  /* 预览卡标题过长换行时，「公开」小标签不再被挤成竖排；标签字号统一到 11 */
+  .trip-preview-copy > .k-between:first-child { align-items: flex-start; gap: 8px; }
+  .trip-preview-title { min-width: 0; flex: 1; }
+  .public { flex: 0 0 auto; white-space: nowrap; font-size: 11px; }
+  .preview-tags text { font-size: 11px; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 1 轮：群聊气泡随内容变宽（最宽 75%）；时间紧跟名字（名字 12/500、时间 11 浅灰、间距 6）；
+   自己发的消息和私信同一个规矩：靠右、绿色浅底、不显示名字 */
+.k-page.chat-page {
+  .group-message { display: flex; flex-direction: column; align-items: flex-start; }
+  .msg-head { gap: 6px; }
+  .msg-head image { margin-right: 2px; }
+  .msg-head text:nth-child(2) { color: var(--k-ink2); font-size: 12px; font-weight: 500; }
+  .msg-head text:last-child { margin-left: 0; color: var(--k-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .group-bubble { box-sizing: border-box; width: auto; max-width: 75%; }
+  .group-message > .shared-post { margin: -2px 0 0 40px; }
+  .group-message.is-mine { align-items: flex-end; }
+  .group-message.is-mine .msg-head { flex-direction: row-reverse; }
+  .group-message.is-mine .msg-head image { margin: 0 0 0 2px; }
+  .group-message.is-mine .group-bubble { margin: -2px 40px 0 0; border-radius: 12px 4px 12px 12px; background: var(--k-green-soft); }
+  .group-message.is-mine .group-image { margin: 0 40px 0 0; }
+  .group-message.is-mine > .shared-post { margin: -2px 40px 0 0; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 2 轮：私信快捷开场离导航 12、浅棕胶囊 13 号、和消息之间 16；交换联系方式收成一行；文件名单行；
+   群聊顶部压缩（公告 40 高横条、工具一排小胶囊、群内活动 64 高横条），第一条消息上移；安全提醒自然换行；
+   群详情设置卡每行都有 16 号图标、分隔线右侧统一缩进 12 */
+.k-page.chat-page {
+  .quick-title { margin: 12px 0 8px; }
+  .quick-list { gap: 8px; margin-bottom: 16px; }
+  .quick-list view { height: 32px; padding: 0 12px; border-radius: 16px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 13px; }
+  .contact-bar { min-height: 40px; padding: 0 4px 0 12px; gap: 6px; }
+  .contact-bar__text { flex: 1; min-width: 0; font-size: 12px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-card__copy { min-width: 0; }
+  .file-card__name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; word-break: normal; }
+
+  .group-body { padding-top: 8px; }
+  .announcement { display: flex; align-items: center; gap: 6px; height: 40px; min-height: 40px; padding: 0 12px; box-sizing: border-box; border-radius: 12px; background: var(--k-paper); }
+  .announcement::before { display: none; }
+  .announcement-title { flex: 0 0 auto; margin: 0; color: var(--k-red-deep); font-size: 12px; line-height: 18px; font-weight: 600; }
+  .announcement > .announcement-first { flex: 0 1 auto; min-width: 0; color: var(--k-ink); font-size: 13px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .announcement-last { flex: 1 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; }
+  .announcement-last > text { max-width: 36px; overflow: hidden; white-space: nowrap; direction: rtl; color: var(--k-red); font-size: 12px; line-height: 20px; }
+  .group-tools { display: flex; gap: 8px; height: auto; margin: 8px 0 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .group-tools > view { flex: 1 1 0; min-width: 0; height: 32px; flex-direction: row; gap: 4px; padding: 0; border: 0; border-radius: 16px; background: var(--k-paper); color: var(--k-ink2); font-size: 12px; white-space: nowrap; }
+  .group-tools > view::before, .group-tools > view::after { display: none; }
+  .group-activity { display: flex; align-items: center; gap: 12px; min-height: 72px; height: auto; margin-top: 8px; padding: 8px 12px; box-sizing: border-box; }
+  .group-activity > image { order: -1; flex: 0 0 56px; width: 56px; height: 56px; border-radius: 8px; }
+  .group-activity-copy { flex: 1; min-width: 0; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 6px; row-gap: 2px; }
+  .group-activity-copy > .group-section { flex: 0 0 auto; margin: 0; padding: 0; font-size: 11px; line-height: 16px; font-weight: 600; color: var(--k-red-deep); }
+  .group-activity-copy .activity-kind { flex: 0 0 auto; margin: 0; }
+  .group-activity-title { flex: 0 0 100%; min-width: 0; margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .group-activity-copy .group-meta { flex: 0 0 auto; margin: 0; gap: 4px; font-size: 11px; line-height: 16px; white-space: nowrap; }
+  .group-activity-copy .group-meta + .group-meta { flex: 1 1 0; min-width: 0; overflow: hidden; }
+  .group-activity-copy .group-meta + .group-meta > text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .group-safety text { white-space: normal; font-size: 12px; line-height: 18px; }
+
+  .set-ico-row { display: flex; align-items: center; gap: 6px; }
+  .qr-card { gap: 6px; }
+  .qr-card__ico { align-self: flex-start; margin-top: 2px; }
+  .set-card .setting-section, .set-card .qr-card, .set-card .common-row { box-shadow: none; }
+  .trip-preview { align-items: flex-start; }
+  .trip-preview > image { flex: 0 0 80px; width: 80px; height: 80px; border-radius: 8px; align-self: flex-start; }
+  .trip-preview-title { word-break: keep-all; overflow-wrap: break-word; }
+  /* 11-18 第四轮：群内活动卡 —— 标题 1 行截断；时间一行；地点和报名人数一行（地点省略，人数不折行靠右）。工具胶囊不收缩不换行，窄屏横滑 */
+  .group-tools { gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  .group-tools::-webkit-scrollbar { display: none; }
+  .group-tools > view { flex: 1 0 auto; min-width: auto; padding: 0 10px; }
+  .group-activity { align-items: center; gap: 12px; padding: 12px; }
+  .group-activity > image { flex: 0 0 72px; width: 72px; height: 72px; }
+  .group-activity-copy { row-gap: 4px; }
+  .group-activity-copy .group-meta, .group-activity-copy .group-meta + .group-meta { display: flex; flex: 0 0 100%; min-width: 0; overflow: hidden; white-space: nowrap; }
+  .group-activity-copy .group-meta > text { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .group-activity-copy .group-meta :deep(.k-icon) { flex: 0 0 auto; }
+  .group-activity-copy .group-meta .signed { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; margin-left: auto; padding-left: 8px; white-space: nowrap; }
+  .group-safety text { white-space: pre-line; }
+  .safety.group-safety { margin: 20px 0 8px; }
+  .group-safety text { font-size: 11px; line-height: 18px; }
+  /* 群详情设置卡：四行同一种行样式 —— 左边 16 暖棕图标 + 14 号墨字（文字起点都在 40），右边 12 号灰字 + 箭头 */
+  .set-card .set-ico-row { flex: 1; min-width: 0; gap: 12px; color: var(--k-ink); font-size: 14px; font-weight: 400; line-height: 20px; }
+  .set-card .setting-head > view:last-child, .set-card .common-row > view:last-child { flex: 0 0 auto; gap: 2px; color: var(--k-muted); font-size: 12px; }
+  .set-card > .setting-section { padding: 14px 12px; }
+  .set-card > .setting-section .announcement-copy { margin: 4px 0 0 28px; }
+  .set-card > .qr-card { gap: 12px; min-height: 64px; padding: 12px; }
+  .set-card > .qr-card .qr-card__ico { margin-top: 2px; }
+  .set-card > .qr-card > view { gap: 2px; }
+  .set-card > .qr-card .card-title { line-height: 20px; }
+  .set-card > .qr-card > image { margin-right: 0; }
+  .set-card > .common-row { padding: 0 12px; }
+  .set-card :deep(.subscribe-entry button) { gap: 12px; color: var(--k-ink); font-size: 14px; font-weight: 400; }
+  .members-head { margin: 20px 0 8px; }
+  /* 私信：交换联系方式提示允许两行，按钮和第一行对齐；发布行程预览卡内边距 12 */
+  .contact-bar { align-items: flex-start; gap: 8px; padding: 8px 8px 8px 12px; }
+  .contact-bar > :deep(.k-icon) { flex: 0 0 auto; margin-top: 1px; }
+  .contact-bar__text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow: hidden; }
+  .contact-bar__btn { height: 28px; line-height: 28px; margin-top: -5px; }
+  .trip-preview { padding: 12px; gap: 12px; }
+  .set-card > .qr-card::before, .set-card > .common-row::before, .set-card :deep(.subscribe-entry)::before { left: 40px; }
+  .set-card > .qr-card > view > text:not(.card-title) { font-size: 12px; line-height: 18px; word-break: keep-all; overflow-wrap: break-word; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 5 轮：交换联系方式提示条左右和页面内容对齐（12），句子在逗号处换行；群公告摘要只留一行；
+   免打扰 / 置顶两行也配 16 号暖棕图标，文字和上面设置卡对在同一条线；群聊安全提醒在标点处换行 */
+.k-page.chat-page {
+  .contact-bar { margin-left: 4px; margin-right: 4px; }
+  .contact-bar__text { word-break: keep-all; overflow-wrap: anywhere; }
+  .set-card > .setting-section .announcement-copy { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
+  .toggles .set-ico-row { flex: 1; min-width: 0; gap: 12px; }
+  .group-safety text { word-break: keep-all; overflow-wrap: anywhere; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 6 轮：自己发的消息头部照改前显示「我」（12 号灰字，在时间左边）；交换联系方式「同意」改暖棕实底；
+   「举报该群」和「退出群聊」拉开 16、退成灰字（只留退出是红色）；开关开启色统一暖棕 */
+.k-page.chat-page {
+  .group-message.is-mine .msg-head text:nth-child(2) { order: 2; font-size: 12px; color: var(--k-muted); }
+  .group-message.is-mine .msg-head text:nth-child(3) { order: 1; }
+  .contact-bar__btn.is-primary { background: var(--k-red); color: var(--k-paper); }
+  .report-group { margin-top: 16px; color: var(--k-muted); }
+  .switch.on { background: var(--k-green); } /* 11-18 夜：开关全站绿色（主人定的） */
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 返修第 6 轮：发布行程顶部说明卡的手绘袋鼠换成 44 浅棕方块 + 24 暖棕线性图标 */
+.k-page.chat-page {
+  .trip-banner__ico { flex: 0 0 44px; width: 44px; height: 44px; margin-left: 12px; border-radius: 14px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-18 夜 第四轮精修：「正在连接会话…」从输入栏上方挪到消息区正中（转圈 + 12 号灰字）；
+   群详情——群信息卡去描边、圆角 12，列表行标题 14 号常规字，开关一张卡里用发丝线隔开 */
+@keyframes chat-spin { to { transform: rotate(360deg); } }
+.k-page.chat-page {
+  .composer-error--soft { position: fixed; left: 0; right: 0; top: 42%; z-index: 1; padding: 0 16px; text-align: center; font-size: 12px; line-height: 16px; color: var(--k-muted); pointer-events: none; }
+  .composer-error--soft::before { content: ''; display: block; width: 14px; height: 14px; margin: 0 auto 8px; box-sizing: border-box; border: 1.5px solid var(--k-line2); border-top-color: var(--k-muted); border-radius: 50%; animation: chat-spin .9s linear infinite; }
+  .group-info { border: 0; border-radius: 12px; padding: 12px; }
+  .set-card .card-title { font-size: 14px; font-weight: 400; line-height: 20px; color: var(--k-ink); }
+  .setting-section.toggles { border: 0; border-radius: 12px; }
+  .setting-section.toggles > view { position: relative; border: 0; }
+  .setting-section.toggles > view + view::before { content: ''; position: absolute; left: 40px; right: 0; top: 0; height: 1px; transform: scaleY(.5); background: var(--k-line); }
+  .setting-section.toggles .set-ico-row > text { font-size: 14px; font-weight: 400; }
+}
+</style>
+<style scoped lang="scss">
+/* 11-19 第四轮返修：群聊顶栏没有「···」，标题右边只让出微信胶囊，「群名（人数）」在 320 宽也放得下，人数不被省略号吃掉；359 以下 15 号 */
+/* #ifdef MP-WEIXIN */
+.k-page.chat-page.is-group-chat :deep(.k-navbar__title) { left: 48px; right: calc(var(--chat-cap, 97px) + 8px); text-align: left; }
+/* #endif */
+/* #ifndef MP-WEIXIN */
+.k-page.chat-page.is-group-chat :deep(.k-navbar__title) { left: 48px; right: 104px; text-align: left; }
+/* #endif */
+@media (max-width: 359px) { .k-page.chat-page.is-group-chat :deep(.k-navbar__title) { font-size: 15px; } }
+</style>
+<style scoped lang="scss">
+/* 11-19 微信实拍返修：群聊工具行去掉四个白胶囊，改成透明底「16 图标 + 12 字」四等分；输入栏两个图标同为 muted；
+   「发送」不能点时用平底灰字（不再像被洗淡的主按钮）；群详情行首图标退成 muted；行程发布页顶部说明去掉白卡，图标方块 40 */
+.k-page.chat-page {
+  .group-tools { margin-top: 4px; gap: 0; }
+  .group-tools > view { height: 40px; padding: 0; border-radius: 0; background: transparent; color: var(--k-ink2); font-size: 12px; gap: 4px; }
+  .group-activity { margin-top: 4px; }
+  .composer-row .composer-send[disabled] { background: var(--k-fill) padding-box; color: var(--k-muted); opacity: 1; }
+  .trip-banner { height: auto; padding: 4px 0 0; background: transparent; }
+  .trip-banner__ico { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 12px; }
+}
+
+.chat-page.user-surface {
+  .person-card, .shared-post { border-radius: 12px; }
+  .message-bubble { line-height: 1.6; }
+  .message-composer { border-top-color: var(--k-line); }
+  .composer-field { border-radius: 10px; background: var(--user-inset); }
+  .composer-field:focus-within { box-shadow: inset 0 0 0 1px var(--k-red-line); }
+  .composer-send { border-radius: 10px; }
+}
 </style>

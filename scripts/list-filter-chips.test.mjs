@@ -49,7 +49,7 @@ test('岗位列表：「筛选▾」展开面板，选了的条件（城市也�
 test('岗位列表：四个页签各自的条件组（换宿有性别，兼职 / 全职没有；线上只有任务类型）', () => {
   const groups = literal(filters, 'GROUPS')
   assert.deepEqual(groups, {
-    volunteer: ['gender', 'skills', 'restModes', 'minStay', 'roomTypes', 'assured', 'workKind'],
+    volunteer: ['gender', 'skills', 'restModes', 'minStay', 'roomTypes', 'bathroom', 'assured', 'workKind'],
     // 2026-10-17 主人反馈：兼职 = 食宿 + 日薪，全职 = 类型 + 食宿 + 月薪
     parttime: ['board', 'payDay'],
     fulltime: ['categories', 'board', 'payMonth'],

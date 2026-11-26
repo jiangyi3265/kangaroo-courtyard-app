@@ -40,10 +40,10 @@
     <!-- #endif -->
     <!-- 人工客服小钮（common/support-fab.js）：贴屏幕右边、不跟着滑；用户身份和合作商家出，员工不出。小程序直接打开微信客服会话，网页版去客服中心 -->
     <!-- #ifdef MP-WEIXIN -->
-    <button v-if="fabOn" class="k-fab" :style="fabStyle" open-type="contact" :session-from="fabFrom" hover-class="k-press-s" aria-label="联系人工客服"><k-icon name="headset" :size="16" color="red" :stroke="1.9" /><text class="k-fab__text">客</text><text class="k-fab__text">服</text></button>
+    <button v-if="fabOn" class="k-fab" :style="fabStyle" open-type="contact" :session-from="fabFrom" hover-class="k-press-s" aria-label="联系人工客服"><k-icon name="headset" :size="14" color="red" /><text class="k-fab__text">客</text><text class="k-fab__text">服</text></button>
     <!-- #endif -->
     <!-- #ifndef MP-WEIXIN -->
-    <view v-if="fabOn" class="k-fab" :style="fabStyle" hover-class="k-press-s" aria-label="联系人工客服" @click="openSupport"><k-icon name="headset" :size="16" color="red" :stroke="1.9" /><text class="k-fab__text">客</text><text class="k-fab__text">服</text></view>
+    <view v-if="fabOn" class="k-fab" :style="fabStyle" hover-class="k-press-s" aria-label="联系人工客服" @click="openSupport"><k-icon name="headset" :size="14" color="red" /><text class="k-fab__text">客</text><text class="k-fab__text">服</text></view>
     <!-- #endif -->
   </view>
 </template>
@@ -167,10 +167,14 @@ const openSupport = () => go('/pages/notice/support')
 .k-news__text { flex: 1; min-width: 0; color: #fff; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* 人工客服小钮：竖排的侧边小标签，贴屏幕右边。宽 28 只盖卡片边和留白；字 13px，年纪大的人也看得清。
    高度见脚本 fabStyle（逐页量过，那两带压到的输入框和按钮最少，也高过所有固定底栏）；这里的 55% 是取不到屏幕信息时用的 */
-.k-fab { position: fixed; right: 0; left: auto; top: 55%; width: 28px; height: 64px; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 12px 0 0 12px; background: rgba(255, 255, 255, .97); box-shadow: -2px 2px 8px rgba(120, 84, 48, .18), inset 0 0 0 .5px rgba(160, 120, 80, .25); color: var(--k-red-deep); }
+/* 11-18 第三轮：宽 28→24。页面内容离屏幕右边是 24（页边 12 + 卡片内边距 12），原来 28 宽会压住每行最右边 4px（订单详情「实付 ¥736」看着像「¥73」）；收到 24 正好贴着内容外沿，谁也不压 */
+/* 11-18 第四轮：再收到 20 宽、图标 14、不传粗细。新版页面卡片外沿离屏幕右边只有 16，24 宽还会压住两列卡右列和列表行末尾的箭头约 8px；20 宽只碰卡片外沿 4px，碰不到卡内文字 */
+.k-fab { position: fixed; right: 0; left: auto; top: 55%; width: 20px; height: 60px; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 10px 0 0 10px; background: rgba(255, 255, 255, .97); box-shadow: -2px 2px 8px rgba(120, 84, 48, .18), inset 0 0 0 .5px rgba(160, 120, 80, .25); color: var(--k-red-deep); }
 .k-fab::after { border: 0; }
-.k-fab__text { display: block; font-size: 13px; line-height: 14px; font-weight: 500; }
+.k-fab__text { display: block; font-size: 12px; line-height: 14px; font-weight: 500; }
 .k-statusbar { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 0 22px 0 30px; }
+/* #ifdef H5 */
+/* 网页版画的假状态栏、假胶囊（模板里也只有网页版才有）：小程序用不到，不打进主包 */
 .k-statusbar__time { font-size: 15px; font-weight: 600; letter-spacing: .2px; }
 .k-statusbar__notch { position: absolute; left: 50%; top: 11px; width: 120px; height: 34px; margin-left: -60px; border-radius: 20px; background: #000; }
 .k-statusbar__icons { display: flex; align-items: center; gap: 6px; }
@@ -179,15 +183,21 @@ const openSupport = () => go('/pages/notice/support')
 .k-bat { width: 26px; height: 12px; border: 1.5px solid rgba(36,27,23,.5); border-radius: 4px; padding: 1.5px; position: relative; }
 .k-bat::after { content: ""; position: absolute; right: -4px; top: 3px; width: 2px; height: 4px; border-radius: 1px; background: rgba(36,27,23,.5); }
 .k-bat__fill { width: 100%; height: 100%; border-radius: 2px; background: var(--k-ink); }
-.is-dark .k-statusbar__time, .is-dark .k-navbar__title { color: #fff; }
+.is-dark .k-statusbar__time { color: #fff; }
 .is-dark .k-sig__bar, .is-dark .k-bat__fill { background: #fff; }
 .is-dark .k-bat { border-color: rgba(255,255,255,.6); }
+/* #endif */
 
 .k-navbar { position: relative; display: flex; align-items: center; padding: 0 8px 0 8px; }
 .k-navbar__left { display: flex; align-items: center; min-width: 0; flex: 1; }
 .k-navbar__back { width: 40px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -4px; }
-.k-navbar__title { position: absolute; left: 96px; right: 96px; top: 50%; transform: translateY(-50%); text-align: center; font-family: var(--k-serif); font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+/* 标题左右各让 102：微信胶囊左边离屏幕右边约 94–97，长标题单行省略、离胶囊还留 5–8，又不会把 375 宽上 10 个字的标题截掉 */
+.k-navbar__title { position: absolute; left: 102px; right: 102px; top: 50%; transform: translateY(-50%); text-align: center; font-family: var(--k-serif); font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.is-dark .k-navbar__title { color: #fff; }
+/* 11-18 精修：320 宽的手机上标题只有约 116px，「推荐更合适的机会」这类 8 个字的标题被截成「…」；窄屏收到 15 号、两边各让出 96（仍躲开右上角微信胶囊） */
+@media (max-width: 340px) { .k-navbar__title { left: 96px; right: 96px; font-size: 15px; } }
 .k-navbar__right { display: flex; align-items: center; justify-content: flex-end; min-width: 94px; }
+/* #ifdef H5 */
 .k-capsule { width: 87px; height: 32px; border: 1px solid rgba(36,27,23,.14); border-radius: 16px; display: flex; align-items: center; justify-content: space-around; background: rgba(255,255,255,.55); }
 .is-dark .k-capsule { background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.25); }
 .k-capsule__dots { display: flex; gap: 3px; }
@@ -199,4 +209,5 @@ const openSupport = () => go('/pages/notice/support')
 .is-dark .k-capsule__ring { border-color: #fff; }
 .k-capsule__core { width: 6px; height: 6px; border-radius: 50%; background: var(--k-ink); }
 .is-dark .k-capsule__core { background: #fff; }
+/* #endif */
 </style>

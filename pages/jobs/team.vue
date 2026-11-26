@@ -5,14 +5,14 @@
   <!-- #endif -->
   <k-feature-gate feature="recruitment">
 <k-feature-gate feature="private-chat">
-  <view class="k-page team-page">
+  <view class="k-page team-page" :class="$userSurface">
     <k-topbar :title="titles[s - 1]" back custom-back @back="onBack" />
     <view v-if="entryError" class="tm-card tm-entry-error"><text class="tm-card__title">岗位暂不可用</text><text class="tm-entry-error__copy">{{ entryError }}</text><k-button v-if="jobId" block type="outline" @click="retryEntry">重新加载</k-button><k-button block @click="openJobList">查看其他岗位</k-button></view>
     <!-- 寻伴同行：插画、关联岗位卡、四种分享方式。岗位及核验信息来自当前岗位。 -->
     <view v-else-if="s === 1" class="tm k-pad-tab">
       <view class="tm-hero">
-        <view class="tm-sticker tm-sticker--pack"><k-icon name="backpack" :size="22" color="#C9782E" :stroke="2" /></view>
-        <view class="tm-sticker tm-sticker--beer"><k-icon name="beer" :size="21" color="#C9782E" :stroke="2" /></view>
+        <view class="tm-sticker tm-sticker--pack"><k-icon name="backpack" :size="22" color="red" /></view>
+        <view class="tm-sticker tm-sticker--beer"><k-icon name="beer" :size="20" color="red" /></view>
         <view class="tm-hero__copy">
           <text class="tm-hero__title" :class="{ 'tm-hero__title--long': (head.line1 + head.line2).length > 15 }">{{ head.line1 }}{{ head.line2 }}</text>
           <text class="tm-hero__sub">{{ TEAM_SUBTITLE }}</text>
@@ -25,15 +25,15 @@
       <view class="tm-job" hover-class="k-press-s" @click="openJob">
         <image class="tm-job__img" :src="jobImg" mode="aspectFill" />
         <view class="tm-job__main">
-          <view class="tm-job__head"><text class="tm-job__title k-display">{{ displayWording(job.title, [job.storeName]) || '岗位' }}</text><text v-if="cityShort" class="tm-job__city">｜{{ cityShort }}</text></view>
-          <view v-if="badgeText" class="tm-job__chip"><image class="tm-job__chip-icon" src="/static/media/brand-kangaroo.png" mode="aspectFit" /><text>{{ badgeText }}</text></view>
+          <view class="tm-job__head"><text class="tm-job__title k-display">{{ displayWording(job.title, [job.storeName]) || '岗位' }}</text><view v-if="cityShort" class="tm-job__city"><k-icon name="map-pin" :size="12" color="muted" /><text>{{ cityShort }}</text></view></view>
+          <view v-if="badgeText" class="tm-job__chip"><image class="tm-job__chip-icon" src="/static/user-icons/roo-mark.png" mode="aspectFit" /><text>{{ badgeText }}</text></view>
           <text v-if="jobMeta && !badgeText" class="tm-job__meta">{{ jobMeta }}</text>
         </view>
         <!-- #ifdef MP-WEIXIN -->
-        <button class="tm-job__share" :open-type="jobReady ? 'share' : ''" :disabled="!jobReady" hover-class="k-press" @click.stop><k-icon name="share-2" :size="16" color="red" :stroke="2" /></button>
+        <button class="tm-job__share" :open-type="jobReady ? 'share' : ''" :disabled="!jobReady" hover-class="k-press" @click.stop><k-icon name="share-2" :size="16" color="red" /></button>
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <view class="tm-job__share" hover-class="k-press" @click.stop="copyLink"><k-icon name="share-2" :size="16" color="red" :stroke="2" /></view>
+        <view class="tm-job__share" hover-class="k-press" @click.stop="copyLink"><k-icon name="share-2" :size="16" color="red" /></view>
         <!-- #endif -->
       </view>
 
@@ -43,31 +43,31 @@
         <text class="tm-ways__title">选择分享方式</text>
         <view class="tm-ways__panel">
         <button v-for="way in SHARE_WAYS.filter(item => communityEnabled || item.key !== 'community')" :key="way.key" class="tm-way" :open-type="jobReady && isMp && way.key === 'wechat' ? 'share' : ''" :disabled="!jobReady" hover-class="k-press-s" @click="tapWay(way.key)">
-          <view class="tm-way__icon" :class="'tm-way__icon--' + way.tone"><k-icon :name="way.icon" :size="23" color="white" :stroke="2" :fill="way.icon === 'wechat'" /></view>
+          <view class="tm-way__icon" :class="'tm-way__icon--' + way.tone"><k-icon :name="way.icon === 'wechat' ? 'message-circle' : way.icon" :size="20" :color="way.tone === 'wechat' ? 'green' : 'red'" /></view>
           <view class="tm-way__main"><text class="tm-way__title">{{ way.title }}</text><text class="tm-way__desc">{{ way.desc }}</text></view>
-          <k-icon name="arrow-right" :size="20" color="#9A6B3F" :stroke="2.2" />
+          <k-icon name="chevron-right" :size="12" color="muted" />
         </button>
         </view>
       </view>
 
-      <view class="tm-safe"><k-icon name="shield-check" :size="16" color="#C9782E" :stroke="2" /><text v-for="(safeText, si) in TEAM_SAFETY" :key="safeText" class="tm-safe__item" :class="{ 'tm-safe__item--sep': si > 0 }">{{ safeText }}</text></view>
+      <view class="tm-safe"><k-icon name="shield-check" :size="12" color="green" /><text v-for="(safeText, si) in TEAM_SAFETY" :key="safeText" class="tm-safe__item" :class="{ 'tm-safe__item--sep': si > 0 }">{{ safeText }}</text></view>
 
       <!-- 不论是否报名，都先进入独立的同行伙伴页；加入与退出由伙伴页处理。 -->
-      <view v-if="teamLoaded" class="tm-cta" role="button" aria-label="查看同行伙伴" hover-class="k-press-s" @click="openCompanions"><view class="tm-cta__icon"><k-icon name="users" :size="22" color="red" :stroke="1.7" /></view><view class="tm-cta__copy"><view class="tm-cta__head"><text class="tm-cta__title">看看一起去的伙伴</text><text class="tm-cta__count">{{ companionCount }} 位</text></view><text class="tm-cta__text">{{ entryNotice }}</text></view><k-icon name="chevron-right" :size="17" color="red" /></view>
+      <view v-if="teamLoaded" class="tm-cta" role="button" aria-label="查看同行伙伴" hover-class="k-press-s" @click="openCompanions"><view class="tm-cta__icon"><k-icon name="users" :size="18" color="red" /></view><view class="tm-cta__copy"><view class="tm-cta__head"><text class="tm-cta__title">看看一起去的伙伴</text><text class="tm-cta__count">{{ companionCount }} 位</text></view><text class="tm-cta__text">{{ entryNotice }}</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view>
     </view>
 
-    <view v-else-if="s === 3" class="poster-body k-pad-tab">
-      <view class="poster-card"><image class="poster-hero" :src="jobImg" mode="aspectFill" /><view class="poster-benefits"><view v-for="item in posterBenefits" :key="item.label"><k-icon :name="item.icon" :size="27" color="ochre" /><text>{{ item.label }}</text></view></view><view class="poster-tags"><text class="poster-tags__title">岗位标签</text><view><k-chip v-for="item in posterTags" :key="item"><text>{{ item }}</text></k-chip></view></view><view class="poster-foot"><image v-if="false" src="/static/media/jobs-poster-qr.png" mode="aspectFit" /><view class="poster-foot__copy"><text>{{ displayWording(job.title, [job.storeName]) }}</text><text>微信搜索「袋鼠全球青年」查看</text></view><view class="poster-foot__brand"><text>来自 袋鼠全球青年</text><text>{{ posterId }}</text></view></view></view>
+    <view v-else-if="s === 3" class="poster-body k-pad-tab" :style="posterStyle">
+      <view class="poster-card"><image class="poster-hero" :src="jobImg" mode="aspectFill" /><view class="poster-benefits"><view v-for="item in posterBenefits" :key="item.label"><k-icon :name="item.icon" :size="28" color="red" /><text>{{ item.label }}</text></view></view><view class="poster-tags"><text class="poster-tags__title">岗位标签</text><view><k-chip v-for="item in posterTags" :key="item"><text>{{ item }}</text></k-chip></view></view><view class="poster-foot"><image v-if="false" src="/pages/jobs/static/jobs-poster-qr.png" mode="aspectFit" /><view class="poster-foot__copy"><text>{{ displayWording(job.title, [job.storeName]) }}</text><text>微信搜索「袋鼠全球青年」查看</text></view><view class="poster-foot__brand"><image class="poster-foot__logo" src="/static/user-icons/roo-mark.png" mode="aspectFit" /><text>来自 袋鼠全球青年</text><text>{{ posterId }}</text></view></view></view>
       <view class="poster-actions"><k-button block type="outline" @click="savePoster">保存图片</k-button><k-button block @click="shareTip">{{ isMp ? '转发给朋友' : '复制岗位链接' }}</k-button></view>
     </view>
 
     <view v-else class="shop-body k-pad-tab">
       <!-- 门店没传封面时不放「暂无图片」占位图，换成浅杏底 + 小店图标（和岗位详情门店卡同一个样子，10-19 复查） -->
-      <view class="shop-head"><image v-if="store.cover" :src="shopImg" mode="aspectFill" /><view v-else class="shop-head__noimg"><k-icon name="store" :size="30" color="#B08A62" :stroke="1.5" /></view><view class="shop-head__main"><text class="shop-head__title">{{ store.storeName }}</text><text class="shop-head__place">{{ store.city }}</text><view class="shop-head__chips"><k-chip v-if="String(store.safeCert) === '0'" tone="green"><text>安心商家</text></k-chip><k-chip v-if="false" tone="ochre"><text></text></k-chip></view><text class="shop-head__meta">{{ shopMeta }}</text></view></view>
-      <view class="ai-summary"><view class="ai-summary__copy"><view><view class="ai-mark"><text>统计</text></view><text class="block-title">评价概况</text></view><text>{{ shopSummary }}</text></view><view class="score"><text>{{ avg }}</text><text>{{ ratingStars }}</text><text>{{ scoreLabel }}</text></view></view>
+      <view class="shop-head"><image v-if="store.cover" :src="shopImg" mode="aspectFill" /><view v-else class="shop-head__noimg"><k-icon name="store" :size="24" color="red" /></view><view class="shop-head__main"><text class="shop-head__title">{{ store.storeName }}</text><text class="shop-head__place">{{ store.city }}</text><view class="shop-head__chips"><k-chip v-if="String(store.safeCert) === '0'" tone="green"><text>安心商家</text></k-chip><k-chip v-if="false" tone="ochre"><text></text></k-chip></view><text class="shop-head__meta">{{ shopMeta }}</text></view></view>
+      <view class="ai-summary"><view class="ai-summary__copy"><view><view class="ai-mark"><text>统计</text></view><text class="block-title">评价概况</text></view><text>{{ shopSummary }}</text></view><view class="score"><text>{{ avg }}</text><view class="score__stars" :aria-label="ratingStars"><k-icon v-for="n in 5" :key="n" name="star" :size="12" :color="n <= Math.round(Number(shownAvg) || 0) ? 'ochre' : 'line'" fill /></view><text>{{ scoreLabel }}</text></view></view>
       <view class="score-panels"><view class="distribution"><text class="block-title">评分分布</text><view v-for="row in scoreRows" :key="row.star" class="score-row"><text>{{ row.star }}星</text><view><view :style="{ width: row.width }" /></view><text>{{ row.percent }}</text></view></view><view class="filters"><text class="block-title">评价筛选</text><view><text v-for="(item,i) in reviewFilters" :key="item" :class="{ active: rfilter === item }" @click="setFilter(item)">{{ item }}</text></view></view></view>
-      <view class="review-sort"><view @click="toggleSort"><text>{{ sortLabel }}</text><k-icon name="chevron-down" :size="15" color="ink" /></view><view @click="pickReviewTime"><text>{{ timeLabel }}</text><k-icon name="chevron-down" :size="15" color="ink" /></view></view>
-      <view v-for="(r, ri) in reviews" :key="ri" class="shop-review"><view class="shop-review__head"><image :src="r.avatar" mode="aspectFill" /><view><view><text class="shop-review__name">{{ r.name || '伙伴' }}</text><k-chip v-if="r.tag"><text>{{ r.tag }}</text></k-chip></view><text class="shop-review__stars">{{ r.stars }}</text></view><text class="shop-review__date">{{ r.date }}</text></view><text class="shop-review__copy">{{ r.content }}</text><view v-if="r.photoCount" class="shop-review__photos"><image v-for="item in r.photos" :key="item" :src="item" mode="aspectFill" /><view><text>共{{ r.photoCount }}张</text></view></view><view v-if="r.reply" class="reply"><view><text>主理人回复</text><text>{{ r.replyDate }}</text></view><text>{{ r.reply }}</text></view></view>
+      <view class="review-sort"><view @click="toggleSort"><text>{{ sortLabel }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view><view @click="pickReviewTime"><text>{{ timeLabel }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view></view>
+      <view v-for="(r, ri) in reviews" :key="ri" class="shop-review"><view class="shop-review__head"><image :src="r.avatar" mode="aspectFill" /><view><view><text class="shop-review__name">{{ r.name || '伙伴' }}</text><k-chip v-if="r.tag"><text>{{ r.tag }}</text></k-chip></view><view class="shop-review__stars" :aria-label="r.stars"><k-icon v-for="n in 5" :key="n" name="star" :size="12" :color="n <= Number(r.rating || 0) ? 'ochre' : 'line'" fill /><text>{{ Number(r.rating || 0).toFixed(1) }}</text></view></view><text class="shop-review__date">{{ r.date }}</text></view><text class="shop-review__copy">{{ r.content }}</text><view v-if="r.photoCount" class="shop-review__photos"><image v-for="item in r.photos" :key="item" :src="item" mode="aspectFill" /><view><text>共{{ r.photoCount }}张</text></view></view><view v-if="r.reply" class="reply"><view><text>主理人回复</text><text>{{ r.replyDate }}</text></view><text>{{ r.reply }}</text></view></view>
       <text v-if="shopLoaded && !reviews.length" class="reviews-empty">{{ rfilter === '全部' && !reviewDays ? '这家店还没有评价' : '没有符合筛选条件的评价' }}</text><view class="shop-actions"><k-button type="outline" icon="bell-ring" :disabled="reminding" @click="remindVacancy">这家店缺人了提醒我</k-button><k-button icon="phone" @click="contact">联系客服</k-button></view>
     </view>
     <k-tabbar active="" />
@@ -130,6 +130,12 @@ const s = useScreen(4, {
   }
 })
 const titles = ['寻伴同行', '寻伴同行', '分享海报', '商家评价']
+// 纯展示：分享海报在顶栏和底部导航之间上下居中。顶栏高 = 状态栏 + 44，和 k-topbar 同一个算法（CSS 的 --status-bar-height 在小程序里是固定 25px，对不上）
+let posterTop = 88
+// #ifndef H5
+try { posterTop = (uni.getSystemInfoSync().statusBarHeight || 20) + 44 } catch (e) { posterTop = 64 }
+// #endif
+const posterStyle = 'min-height: calc(100vh - ' + posterTop + 'px)'
 // 寻伴同行 → 海报是点进来的：左上角返回先退回进页时那一屏
 let landing = 0
 const onBack = () => { if (landing && s.value > landing && s.value <= 3) s.value = landing; else back() }
@@ -181,7 +187,7 @@ const jobImg = computed(() => {
 })
 const cityShort = computed(() => String(job.value.city || '').split('·')[0])
 const head = computed(() => teamHeadline(job.value.jobType || (info.value && info.value.jobType), cityShort.value))
-const TYPE = { volunteer: '换宿旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' }
+const TYPE = { volunteer: '换工旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' }
 const jobMeta = computed(() => [TYPE[job.value.jobType], job.value.storeName].filter(Boolean).join(' · '))
 const openJob = () => { if (requireJob()) go(R.jobDetail + '?jobId=' + jobId.value) }
 const openCompanions = () => { if (requireJob()) go(R.jobCompanions + '?jobId=' + jobId.value) }
@@ -386,7 +392,7 @@ onShareAppMessage(() => jobReady.value ? ({ title: job.value.title ? '找个搭�
 .shop-body { padding: 8px 12px calc(164px + var(--k-safe-bottom)); }.shop-head { display: flex; border: 0; background: transparent; }.shop-head>image { width: 126px; height: 102px; border-radius: 10px; }.shop-head__noimg { flex: 0 0 126px; width: 126px; height: 102px; border-radius: 10px; background: #F3E9DD; display: flex; align-items: center; justify-content: center; }.shop-head__main { padding: 6px 0 0 14px; min-width: 0; }.shop-head__title { display: block; font-size: 20px; font-weight: 700; }.shop-head__place { display: block; color: var(--k-muted); font-size: 14px; margin-top: 2px; }.shop-head__chips { display: flex; gap: 8px; margin-top: 8px; }.shop-head__meta { display: block; margin-top: 7px; font-size: 12px; }
 .ai-summary { margin-top: 10px; padding: 12px; display: flex; }.ai-summary__copy { flex: 1; padding-right: 10px; }.ai-summary__copy>view { display: flex; align-items: center; gap: 7px; }.ai-summary__copy>text { display: block; margin-top: 6px; color: var(--k-muted); font-size: 12px; line-height: 1.6; }.ai-mark { flex: 0 0 auto; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--k-indigo); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; white-space: nowrap; }.score { width: 92px; border-left: 1px solid var(--k-line); display: flex; flex-direction: column; align-items: center; justify-content: center; }.score text:first-child { color: var(--k-red); font: 38px/1 var(--k-sans); }.score text:nth-child(2) { color: var(--k-ochre); font-size: 17px; letter-spacing: 1px; }.score text:last-child { color: var(--k-muted); font-size: 12px; }
 .score-panels { margin-top: 8px; display: grid; grid-template-columns: 1.3fr 1fr; }.distribution,.filters { padding: 10px; }.distribution { border-right: 1px solid var(--k-line); }.score-row { display: grid; grid-template-columns: 27px 1fr 31px; gap: 5px; align-items: center; font-size: 11px; margin-top: 5px; }.score-row>view { height: 5px; border-radius: 3px; background: var(--k-line); overflow: hidden; }.score-row>view>view { height: 100%; border-radius: 3px; background: var(--k-red); }.filters>view { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }.filters>view text { height: 30px; border: 1px solid var(--k-line); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 12px; }.filters>view text.active { border-color: var(--k-red); color: var(--k-red); }
-.review-sort { margin: 8px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.review-sort>view { height: 32px; border: 1px solid var(--k-line); border-radius: 15px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; }.shop-review { padding: 11px; }.shop-review__head { display: flex; align-items: flex-start; }.shop-review__head>image { width: 38px; height: 38px; border-radius: 50%; margin-right: 8px; }.shop-review__head>view>view { display: flex; align-items: center; gap: 5px; }.shop-review__name { font-weight: 700; }.shop-review__stars { display: block; margin-top: 3px; color: var(--k-ochre); font-size: 12px; }.shop-review__date { margin-left: auto; color: var(--k-muted); font-size: 10px; }.shop-review__copy { display: block; margin-top: 8px; font-size: 12px; line-height: 1.55; }.shop-review__photos { margin-top: 8px; display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }.shop-review__photos image,.shop-review__photos>view { width: 100%; height: 51px; border-radius: 7px; }.shop-review__photos>view { background: var(--k-line2); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }.reply { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--k-paper2); font-size: 11px; }.reply>view { display: flex; justify-content: space-between; margin-bottom: 3px; font-weight: 700; }.reply>view text:last-child { color: var(--k-muted); font-weight: 400; }.shop-actions { position: fixed; z-index: 45; left: 0; right: 0; bottom: calc(90px + var(--k-safe-bottom)); padding: 8px 12px; background: rgba(253,251,247,.96); border-top: 1px solid var(--k-line); display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; }
+.review-sort { margin: 8px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.review-sort>view { height: 32px; border: 1px solid var(--k-line); border-radius: 15px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; }.shop-review { padding: 11px; }.shop-review__head { display: flex; align-items: flex-start; }.shop-review__head>image { width: 38px; height: 38px; border-radius: 50%; margin-right: 8px; }.shop-review__head>view>view { display: flex; align-items: center; gap: 5px; }.shop-review__name { font-weight: 700; }.shop-review__stars { display: block; margin-top: 3px; color: var(--k-ochre); font-size: 12px; }.shop-review__date { margin-left: auto; color: var(--k-muted); font-size: 11px; }.shop-review__copy { display: block; margin-top: 8px; font-size: 12px; line-height: 1.55; }.shop-review__photos { margin-top: 8px; display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }.shop-review__photos image,.shop-review__photos>view { width: 100%; height: 51px; border-radius: 7px; }.shop-review__photos>view { background: var(--k-line2); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }.reply { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--k-paper2); font-size: 11px; }.reply>view { display: flex; justify-content: space-between; margin-bottom: 3px; font-weight: 700; }.reply>view text:last-child { color: var(--k-muted); font-weight: 400; }.shop-actions { position: fixed; z-index: 45; left: 0; right: 0; bottom: calc(90px + var(--k-safe-bottom)); padding: 8px 12px; background: rgba(253,251,247,.96); border-top: 1px solid var(--k-line); display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; }
 .reviews-empty { display: block; padding: 28px 0; text-align: center; color: var(--k-muted); font-size: 13px; }
 @import "./team-reference.scss";
 </style>

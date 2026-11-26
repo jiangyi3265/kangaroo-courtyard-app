@@ -21,11 +21,16 @@ $fc-tap-h: 44px; // 最小点击高度：分段选项、步进器、时间按钮
 :global(.fc-ph) { color: var(--k-muted); font-size: 16px; font-weight: 400; }
 
 // ---------------- 页面与分组 ----------------
+// 2026-11-17 改版「小而精」（主人按样张第三版拍板）：用到这套样式的页面，整页底色统一成浅灰 #F7F5F2（第 1 条的唯一例外：主题里还没有这个变量）。
+// 写在页面根节点 .k-page 上：顶栏、底部操作条、列表屏读的都是 --k-bg，一起变；公共卡片的阴影（--k-sh1）在这些页面里关掉；顶栏标题和别的页面一样用系统黑体 16 / 600。
+// 填写区的字号、控件高度一个没动。
+.k-page { --k-bg: #F7F5F2; --k-sh1: none; background: #F7F5F2; }
+.k-page :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
 // 底部留白按「操作条 + 报错那一行」算（8 + 36 + 48 + 8 + 8），报错时最后一行也不被盖住
 .fc-form { padding-bottom: calc(108px + var(--k-safe-bottom)); background: var(--k-bg); }
-// 一组一块白底，组与组之间隔一条奶白；标题和它下面的字段在同一块里，一眼看出是一组
-.fc-block { margin-top: 10px; background: var(--k-paper); border-top: 1px solid var(--k-line); border-bottom: 1px solid var(--k-line); }
-.fc-group__title { display: block; padding: 16px $fc-gutter 6px; font-family: var(--k-serif); font-size: 18px; font-weight: 700; line-height: 26px; color: var(--k-ink); }
+// 一组一块白底，组与组之间隔一条浅灰；标题和它下面的字段在同一块里，一眼看出是一组（白块不再描上下两条线，靠浅灰底分开）
+.fc-block { margin-top: 10px; background: var(--k-paper); }
+.fc-group__title { display: block; padding: 16px $fc-gutter 6px; font-family: var(--k-sans); font-size: 18px; font-weight: 700; line-height: 26px; color: var(--k-ink); }
 
 // ---------------- 字段：两种版式 ----------------
 // .fc-field 名字在上、控件在下：输入框、大段文字、分段选项、照片
@@ -72,6 +77,8 @@ $fc-tap-h: 44px; // 最小点击高度：分段选项、步进器、时间按钮
 // 确实要先看到的话（驳回原因、上线中哪些能直接改）
 .fc-notice { display: block; margin: 12px $fc-gutter 0; padding: 12px; border-radius: 12px; background: var(--k-paper2); font-size: 14px; line-height: 22px; color: var(--k-ink2); }
 .fc-notice--alert { background: var(--k-alert-soft); color: var(--k-alert); }
+// 合作商家的协议入口（components/merchant-agreement.vue）放在填写页里时：和上面的提示框一样左右留 16、和上一块隔 12（组件自己默认左右 12，是给列表页用的）
+.fc-form :deep(.ma) { margin: 12px $fc-gutter 0; }
 // 房源向导：只写真实的步数，不再画五个点
 .fc-steps { display: flex; align-items: baseline; gap: 8px; padding: 12px $fc-gutter 0; font-size: 14px; line-height: 22px; color: var(--k-muted); }
 .fc-steps__t { font-weight: 600; color: var(--k-ink); }
@@ -163,9 +170,12 @@ $fc-tap-h: 44px; // 最小点击高度：分段选项、步进器、时间按钮
 
 // ---------------- 底部操作条：只放按钮，不写流程字（确认框和提交成功页会说） ----------------
 // 商家在填写屏看到的客服方块（components/fc-kefu.vue）排在提交按钮左边；员工看不到它，提交按钮自己占满
-.fc-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 43; box-sizing: border-box; padding: 8px $fc-gutter calc(8px + var(--k-safe-bottom)); background: var(--k-paper); border-top: 1px solid var(--k-line); }
+.fc-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 43; box-sizing: border-box; padding: 8px $fc-gutter calc(8px + var(--k-safe-bottom)); background: var(--k-paper); border-top: 0; }
+// 2026-11-18 第二轮精修：顶上那条线换成发丝线（1px 再压一半），和全站底部操作条一样
+.fc-bar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
 .fc-bar__err { display: flex; align-items: center; justify-content: center; min-height: $fc-tap-h; margin-top: -8px; font-size: 14px; color: var(--k-alert); }
 .fc-bar__btns { display: flex; gap: 12px; }
 .fc-btn { flex: 1; min-width: 0; height: $fc-ctl-h; border-radius: 12px; background: var(--k-red-deep); color: var(--k-paper); display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; }
 .fc-btn--ghost { flex: 0 0 38%; background: var(--k-paper2); color: var(--k-ink); }
-.fc-btn--off { background: var(--k-paper2); color: var(--k-muted); }
+// 不可点（提交中、上传中）：仍是实心棕，整体变淡 .45；原来奶油底灰字和「保存草稿」那种次按钮几乎一样，会被看成另一个按钮
+.fc-btn--off { background: var(--k-red-deep); color: var(--k-paper); opacity: .45; }

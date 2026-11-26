@@ -1,7 +1,7 @@
 <template>
-  <view class="uc-page" @touchstart="armCues" @click="armCues" :class="{'uc-playing': playing}" :style="{'--uc-nav-top': navTop + 'px'}">
+  <view class="uc-page" @touchstart="armCues" @click="armCues" :class="[$userSurface, {'uc-playing': playing}]" :style="{'--uc-nav-top': navTop + 'px'}">
     <k-topbar back custom-back title="谁是卧底" :fab="false" @back="lobby" />
-    <view class="uc-body">
+    <view class="uc-body" :class="{ 'uc-body--guest': room && !room.me }">
       <view v-if="!code" class="uc-state">
         <text>房间号无效，请确认朋友发来的邀请。</text>
         <k-button block @click="lobby">返回大厅</k-button>
@@ -17,13 +17,15 @@
               <text class="uc-muted">好友房间</text>
               <button class="uc-code" aria-label="复制房间号" @click="copy(code, '房间号已复制')">{{ code }} <k-icon name="copy" :size="16" color="muted" /></button>
             </view>
-            <button class="uc-link" @click="go('/pages/undercover/rules')">玩法说明</button>
+            <button class="uc-link" @click="go('/pages/undercover/rules')"><k-icon name="book-open" :size="14" color="ink2" /><text>玩法说明</text></button>
           </view>
 
           <template v-if="!room.me">
-            <view class="uc-state">
+            <view class="uc-state uc-invite">
+              <view class="uc-invite__icon"><k-icon name="users" :size="28" color="green" /></view>
               <text class="uc-section-title">{{ hostName }}邀请你加入</text>
               <text class="uc-muted">{{ room.players.length }}/10人 · {{ categoryLabel(room.category) }}</text>
+              <view class="uc-invite__slots" aria-hidden="true"><view v-for="n in 10" :key="n" class="uc-invite__slot" :class="{ on: n <= room.players.length }" /></view>
               <k-button block :disabled="busy || room.phase !== 'waiting' || room.players.length >= 10" @click="join">
                 {{ room.phase !== 'waiting' ? '本局已开始，请等待下一局' : room.players.length >= 10 ? '房间已满' : '加入房间' }}
               </k-button>
@@ -50,12 +52,12 @@
             </view>
             <view class="uc-share-row">
               <!-- #ifdef MP-WEIXIN -->
-              <button class="uc-secondary" open-type="share">邀请微信好友</button>
+              <button class="uc-secondary" open-type="share"><k-icon name="share-2" :size="16" color="muted" /><text>邀请微信好友</text></button>
               <!-- #endif -->
               <!-- #ifndef MP-WEIXIN -->
-              <button class="uc-secondary" @click="copy(invitation(code), '邀请已复制')">复制邀请链接</button>
+              <button class="uc-secondary" @click="copy(invitation(code), '邀请已复制')"><k-icon name="link" :size="16" color="muted" /><text>复制邀请链接</text></button>
               <!-- #endif -->
-              <button class="uc-secondary" :disabled="qrBusy" @click="showCode">{{ qrBusy ? '正在生成…' : '房间二维码' }}</button>
+              <button class="uc-secondary" :disabled="qrBusy" @click="showCode"><k-icon name="qr-code" :size="16" color="muted" /><text>{{ qrBusy ? '正在生成…' : '房间二维码' }}</text></button>
             </view>
             <view v-if="qrImage || qrError" class="uc-qr">
               <image v-if="qrImage" :src="qrImage" mode="aspectFit" class="uc-qr__image" @click="previewCode" />
@@ -84,7 +86,7 @@
 
           <template v-else-if="room.phase === 'finished'">
             <view class="uc-result">
-              <k-icon name="flag" :size="36" color="green" />
+              <view class="uc-result__icon"><k-icon name="flag" :size="28" color="green" /></view>
               <text class="uc-title">{{ resultLabel(room.winner) }}</text>
               <text class="uc-muted">{{ room.round }}轮描述后，答案揭晓</text>
             </view>
@@ -94,7 +96,7 @@
             </view>
             <view class="uc-results">
               <view v-for="person in room.players" :key="person.userId" class="uc-result-person">
-                <text class="uc-seat">{{ person.seat }}</text>
+                <text class="uc-seat" :class="{ 'uc-seat--spy': person.role === 'undercover' }">{{ person.seat }}</text>
                 <view class="uc-player__copy"><text class="uc-strong">{{ person.name }}</text><text class="uc-muted">{{ person.alive ? '留到最后' : '已出局' }} · {{ person.word }}</text></view>
                 <text :class="person.role === 'undercover' ? 'uc-spy' : 'uc-success'">{{ person.role === 'undercover' ? '卧底' : '平民' }}</text>
               </view>
@@ -109,10 +111,10 @@
           <template v-else-if="room.phase !== 'closed'">
             <view class="uc-phase">
               <view><text class="uc-muted">第{{ room.round }}轮{{ room.runoff ? ' · 平票加赛' : '' }}</text><text class="uc-section-title">{{ phaseTitle }}</text></view>
-              <button class="uc-cue" @click="toggleCues">{{cuesBlocked?'开启提示音':cuesEnabled?'提示音开':'提示音关'}}</button><text class="uc-timer" :class="{ urgent: secondsLeft <= 10 }">{{ secondsLeft }}<text class="uc-timer__unit">秒</text></text>
+              <button class="uc-cue" @click="toggleCues"><k-icon :name="cuesEnabled && !cuesBlocked ? 'bell' : 'bell-off'" :size="12" color="green" /><text>{{cuesBlocked?'开启提示音':cuesEnabled?'提示音开':'提示音关'}}</text></button><text class="uc-timer" :class="{ urgent: secondsLeft <= 10 }">{{ secondsLeft }}<text class="uc-timer__unit">秒</text></text>
             </view>
             <button class="uc-secret" :aria-label="revealed ? '收起我的词语' : '查看我的词语'" @click="toggleWord">
-              <k-icon :name="revealed ? 'eye' : 'lock'" :size="25" color="green" />
+              <view class="uc-secret__icon"><k-icon :name="revealed ? 'eye' : 'lock'" :size="20" color="green" /></view>
               <view><text class="uc-secret__word">{{ revealed ? room.me.word : '查看我的词语' }}</text><text class="uc-muted">{{ revealed ? '仅自己可见 · 点击收起' : '避开朋友的视线，点开查看' }}</text></view>
             </button>
             <text class="uc-instruction">{{ instruction }}</text>
@@ -128,20 +130,20 @@
                 <view class="uc-player__copy"><text class="uc-player__name">{{ person.name }}{{ person.userId === room.me.userId ? '（我）' : '' }}</text><text class="uc-player__status">{{ !person.alive ? '已出局' : room.speaker === person.seat ? '正在描述' : target === person.seat ? '已选择' : room.runoff && candidateSeats.includes(Number(person.seat)) ? '平票候选' : !person.online ? '暂时离线' : '游戏中' }}</text></view>
               </button>
             </view>
-            <view v-if="canVote" class="uc-actions">
-              <k-button block :disabled="busy || !target" @click="act('vote', { target })">{{ target ? '确认投给' + target + '号' : '请先选择一位玩家' }}</k-button>
-              <button class="uc-link" :disabled="busy" @click="act('vote', { target: 0 })">本轮弃票</button>
-            </view>
             <view v-if="room.phase === 'vote'" class="uc-vote-status">
               <text>{{ room.me.submitted ? '你的投票已提交，等待统一揭晓' : !room.me.alive ? '你已出局，可以继续观看' : '投票提交后无法修改' }}</text>
               <text class="uc-muted">{{ room.votesSubmitted }}/{{ aliveCount }}人已投票</text>
             </view>
+            <view v-if="canVote" class="uc-actions">
+              <k-button block :disabled="busy || !target" @click="act('vote', { target })">{{ target ? '确认投给' + target + '号' : '请先选择一位玩家' }}</k-button>
+              <button class="uc-link" :disabled="busy" @click="act('vote', { target: 0 })">本轮弃票</button>
+            </view>
             <ww-chat :active="pageActive" :room="room" :busy="busy" recorded-voice voice-only game="undercover" @refresh="refresh" />
-            <text class="uc-muted">可录音描述；发送后可继续发言，点“发言完毕”交给下一位。不要直接说出词语。</text>
+            <text class="uc-muted uc-voice-note">可录音描述；发送后可继续发言，点“发言完毕”交给下一位。不要直接说出词语。</text>
           </template>
 
           <view v-if="room.me && room.events.length" class="uc-log">
-            <button class="uc-heading uc-log-toggle" @click="showLog = !showLog"><text class="uc-section-title">对局记录</text><k-icon :name="showLog ? 'chevron-up' : 'chevron-down'" :size="18" color="muted" /></button>
+            <button class="uc-heading uc-log-toggle" @click="showLog = !showLog"><view class="uc-row uc-log-title"><k-icon name="list" :size="16" color="green" /><text class="uc-section-title">对局记录</text></view><k-icon :name="showLog ? 'chevron-up' : 'chevron-down'" :size="16" color="muted" /></button>
             <scroll-view v-if="showLog" scroll-y style="height:180px"><text v-for="(event, index) in room.events" :key="index" class="uc-log__event">{{ event }}</text></scroll-view>
           </view>
         </template>

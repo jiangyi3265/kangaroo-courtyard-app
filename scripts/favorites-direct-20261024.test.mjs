@@ -38,6 +38,7 @@ test('游客切换收藏/关注不请求私人列表，登录返回后保留分�
   let enter, show; const calls=[]
   const h=setup('pages/profile/follows.vue',{
     onLoad:f=>{enter=f}, onShow:f=>{show=f},
+    stayBookingEnabled:vue.ref(true),
     apiJobFavorites:async()=>{calls.push('job');return {data:[]}},
     apiStayFavorites:async()=>{calls.push('stay');return {data:[]}},
     apiMyFollows:async()=>{calls.push('store');return {data:[]}},

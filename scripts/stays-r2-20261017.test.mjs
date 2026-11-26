@@ -43,6 +43,7 @@ function runList({ areas = [], districts = [], all = 0 } = {}) {
   for (const n of ast.program.body.filter(n => n.type === 'ImportDeclaration')) for (const s of n.specifiers) sandbox[s.local.name] = () => new Promise(() => {})
   const calls = [], gets = [], screen = {}
   Object.assign(sandbox, ui, {
+    stayBookingEnabled: vue.ref(true), refreshFeatures: async () => ({ stayBookingEnabled: true }),
     ref: vue.ref, reactive: vue.reactive, computed: vue.computed, watch: vue.watch, onUnmounted() {}, onReachBottom() {},
     useScreen: (max, extra) => { screen.s = vue.ref(1); screen.extra = extra; return screen.s },
     stayState: vue.reactive({ city: '', checkIn: '2026-10-17', checkOut: '2026-10-18', guests: 1 }), normalizeDates() {}, saveStayState() {},

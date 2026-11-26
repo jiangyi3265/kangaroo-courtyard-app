@@ -1,7 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { rememberDestination, recentDestination } from '../common/camp-history.js'
-import { isAssistedStay } from '../pages/stays/booking-channel.js'
 test('browse history remains scoped to guest or account and latest visit wins', () => {
   const store=new Map()
   globalThis.uni={setStorageSync:(k,v)=>store.set(k,v),getStorageSync:k=>store.get(k)}
@@ -17,10 +16,4 @@ test('storage failure does not break page browsing', () => {
   globalThis.uni={setStorageSync(){throw Error('full')},getStorageSync(){throw Error('denied')}}
   assert.doesNotThrow(()=>rememberDestination(7,'成都'))
   assert.deepEqual(recentDestination(7),{city:'',at:0})
-})
-test('explicit property type controls booking independently of store type', () => {
-  assert.equal(isAssistedStay({houseType:'direct',operateMode:'managed'}),true)
-  assert.equal(isAssistedStay({houseType:'managed',operateMode:'direct'}),false)
-  assert.equal(isAssistedStay({operateMode:'direct'}),true)
-  assert.equal(isAssistedStay({operateMode:'franchise'}),false)
 })

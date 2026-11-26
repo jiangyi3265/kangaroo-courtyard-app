@@ -102,3 +102,46 @@ test('a short tap during permission inspection resolves without leaving recordin
   const mic=f.recorder(assert.fail,e=>errors.push(e.message));const starting=mic.start();mic.stop();settings({authSetting:{}});await starting
   assert.equal(f.startCalls(),0);assert.equal(mic.busy(),false);assert.match(errors[0],/至少1秒/)
 })
+
+test('取消后再次按住时，上一次迟到的微信授权回调不能抢走新的录音',async()=>{
+  const settings=[],errors=[],sent=[]
+  const f=nativeRecorderFixture({getSetting:q=>settings.push(q),authorize:assert.fail})
+  const mic=f.recorder(clip=>sent.push(clip),e=>errors.push(e.message))
+  const oldStart=mic.start()
+  mic.cancel()
+  const newStart=mic.start()
+  settings[0].success({authSetting:{'scope.record':true}})
+  await oldStart
+  assert.equal(f.startCalls(),0)
+  settings[1].success({authSetting:{'scope.record':true}})
+  await newStart
+  assert.equal(f.startCalls(),1)
+  f.emit('start');mic.stop();f.emit('stop',{tempFilePath:'second.mp3'})
+  assert.deepEqual(errors,[])
+  assert.equal(sent.length,1);assert.equal(sent[0].file,'second.mp3')
+})
+
+test('H5迟到的麦克风授权只释放旧音轨，不能启动或关闭后一次录音',async()=>{
+  const pending=[],started=[],released=[]
+  class FakeRecorder {
+    static isTypeSupported(){return true}
+    constructor(stream){this.stream=stream}
+    start(){started.push(this.stream.id)}
+    stop(){}
+  }
+  const stream=id=>({id,getTracks:()=>[{stop:()=>released.push(id)}]})
+  const source=readFileSync(new URL('../pages/werewolf/voice.js',import.meta.url),'utf8')
+    .replace(/^[\t ]*\/\/ #ifdef MP-WEIXIN\r?\n[\s\S]*?^[\t ]*\/\/ #endif\r?\n/gm,'')
+    .replace(/^import .*\r?\n/gm,'').replace(/^export /gm,'')
+  const recorder=vm.runInNewContext(source+'\nrecorder',{MediaRecorder:FakeRecorder,
+    navigator:{mediaDevices:{getUserMedia:()=>new Promise(resolve=>pending.push(resolve))}},setTimeout,clearTimeout})
+  const mic=recorder(assert.fail,assert.fail)
+  const old=mic.start();mic.cancel();const current=mic.start()
+  pending[1](stream('current'));await current
+  pending[0](stream('old'));await old
+  try {
+    assert.deepEqual(started,['current'])
+    assert.deepEqual(released,['old'])
+  } finally { mic.cancel() }
+  assert.deepEqual(released,['old','current'])
+})

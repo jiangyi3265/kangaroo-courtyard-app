@@ -7,7 +7,7 @@
   <view class="k-page rt-page">
     <k-topbar :title="s === 3 ? '房态（价格 / 库存 / 关房）' : (s === 1 ? '房型和价格' : (editor && editor.roomTypeId ? '修改房型' : '新增房型'))" back custom-back :fab="false" @back="onBack" />
 
-    <view v-if="merchantStaff && s !== 3" class="fc-form">
+    <view v-if="merchantStaff && s !== 3" class="fc-form rt-agree">
       <merchant-agreement ref="stayAgreement" :store-id="currentStaffStoreId()" type="stay" />
     </view>
 
@@ -23,7 +23,7 @@
       <view v-for="room in rooms" :key="room.roomTypeId" class="rt-card" :class="{ 'rt-card--off': room.status === '1' }">
         <view class="rt-card__top">
           <text class="rt-card__name">{{ room.typeName }}</text>
-          <text class="rt-card__state" :class="{ 'rt-card__state--off': room.status === '1' }">{{ room.status === '1' ? '已停用' : '可预订' }}</text>
+          <text class="rt-card__state" :class="{ 'rt-card__state--off': room.status === '1' }">{{ room.status === '1' ? '已停用' : '已启用' }}</text>
         </view>
         <text class="rt-card__line">{{ kindLabel(room.roomKind) }} · 可住 {{ room.capacity }} 人 · 每晚 {{ room.stock }} {{ room.unitLabel || '间' }}</text>
         <text class="rt-card__price">门店定价 · {{ weekPriceText(room) }}</text>
@@ -33,7 +33,7 @@
           <view class="rt-btn rt-btn--ghost" hover-class="k-press-s" @click="toggleStatus(room)"><text>{{ room.status === '1' ? '重新启用' : '停用' }}</text></view>
         </view>
       </view>
-      <view v-if="!listingFlow" class="rt-btn rt-btn--ghost" hover-class="k-press" @click="go('/pages/staff/rooms?stayId='+stayId)"><text>房源上架 / 下架与审核管理 ›</text></view>
+      <view v-if="!listingFlow" class="rt-btn rt-btn--ghost" hover-class="k-press" @click="go('/pages/staff/rooms?stayId='+stayId)"><text>房源上架 / 下架与审核管理</text><k-icon name="chevron-right" :size="18" color="muted" /></view>
       <text v-if="loaded && !rooms.length && !loadError" class="rt-empty">还没有房型。点下面「新增房型」，填好名称、可住人数、间数和 7 天的价格就行。</text>
       <text v-if="editable && rooms.length" class="fc-footnote">房型已保存。继续补齐资质后统一提交审核。</text>
       <view v-if="editable || stay.status === 'online'" class="fc-bar">
@@ -63,7 +63,7 @@
         </view>
         <view class="fc-row">
           <text class="fc-row__k">每晚能卖几{{ unit }}</text>
-          <view class="fc-stepper"><view class="fc-stepper__btn" hover-class="k-press" @click="step('stock', -1, 1, 999)"><k-icon name="minus" :size="20" :color="editor.stock <= 1 ? 'light' : 'ink'" /></view><text class="fc-stepper__num">{{ editor.stock }} {{ unit }}</text><view class="fc-stepper__btn" hover-class="k-press" @click="step('stock', 1, 1, 999)"><k-icon name="plus" :size="20" :color="editor.stock >= 999 ? 'light' : 'ink'" /></view></view>
+          <view class="fc-stepper"><view class="fc-stepper__btn" hover-class="k-press" @click="step('stock', -1, editor.originalStock === 0 ? 0 : 1, 999)"><k-icon name="minus" :size="20" :color="editor.stock <= (editor.originalStock === 0 ? 0 : 1) ? 'light' : 'ink'" /></view><text class="fc-stepper__num">{{ editor.stock }} {{ unit }}</text><view class="fc-stepper__btn" hover-class="k-press" @click="step('stock', 1, 1, 999)"><k-icon name="plus" :size="20" :color="editor.stock >= 999 ? 'light' : 'ink'" /></view></view>
         </view>
       </view>
       <view class="fc-block">
@@ -112,14 +112,14 @@
         <view class="fc-block">
           <text class="fc-group__title">未来 14 天</text>
           <text class="rt-hint cal-hint">自营房源不加价、免平台服务费；合作、加盟、代运营房源按原规则加价5%，长住优惠按订单明细展示。点哪一天就改哪一天的价格、库存，或者关房 / 开房。剩余 = 还能卖的间数 / 每晚总间数。</text>
-          <text v-if="calError" class="fc-notice fc-notice--alert">{{ calError }}</text>
+          <view v-if="calError" class="fc-notice fc-notice--alert" hover-class="k-press" @click="loadCalendar"><text>{{ calError }} · 重新加载</text></view>
           <view class="cal-table">
             <view class="cal-tr cal-tr--head"><text class="cal-td cal-td--date">日期</text><text class="cal-td">价格</text><text class="cal-td">剩余</text><text class="cal-td cal-td--state">状态</text></view>
             <view v-for="dayRow in calDays" :key="dayRow.date" class="cal-tr" :class="{ 'cal-tr--closed': dayRow.closed, 'cal-tr--on': dayEdit && dayEdit.date === dayRow.date }" hover-class="k-press" @click="openDay(dayRow)">
               <text class="cal-td cal-td--date" :class="{ 'cal-td--weekend': dayRow.weekend }">{{ dayRow.label }}</text>
               <text class="cal-td cal-td--price">¥{{ dayRow.price }}</text>
               <text class="cal-td">{{ dayRow.left }} / {{ dayRow.stock }}</text>
-              <text class="cal-td cal-td--state" :class="{ 'cal-td--off': dayRow.closed }">{{ dayRow.closed ? '已关房' : '可订' }}</text>
+              <text class="cal-td cal-td--state" :class="{ 'cal-td--off': dayStatus(dayRow) !== '可订' }">{{ dayStatus(dayRow) }}</text>
             </view>
             <text v-if="calLoading" class="cal-loading">正在加载房态…</text>
             <text v-else-if="calRoom && !calDays.length && !calError" class="cal-loading">这个房型还没有房态数据</text>
@@ -262,7 +262,7 @@ function openEditor(room) {
   originalRoom.value = room ? { ...room } : {}
   editor.value = room ? {
     roomTypeId: room.roomTypeId, typeName: room.typeName || '', roomKind: room.roomKind || 'private',
-    capacity: Number(room.capacity) || 2, stock: Number(room.stock) || 1, status: String(room.status ?? '0'), unitLabel: room.unitLabel || '',
+    capacity: Number(room.capacity) || 2, stock: Number(room.stock ?? 1), originalStock: Number(room.stock ?? 1), status: String(room.status ?? '0'), unitLabel: room.unitLabel || '',
     weekTotal: weekTotalOf(room), originalWeekTotalFen: roomWeekTotalFen(room)
   } : { roomTypeId: 0, typeName: '', roomKind: 'private', capacity: 2, stock: 1, status: '0', unitLabel: '', weekTotal: '', originalWeekTotalFen: null }
   editor.value.originalPeriodPrices = {}
@@ -353,17 +353,31 @@ const calRaw = ref([])         // 接口给的这个月 + 下个月的 days
 const calLoading = ref(false)
 const calError = ref('')
 const calSaving = ref(false)
+let calendarRequest = 0
 const calDays = computed(() => calendarRows(calRaw.value, 14))
+function dayStatus(row) {
+  if (String(calRoom.value?.status) === '1') return '已停用'
+  if (row.closed) return '已关房'
+  return row.left > 0 ? '可订' : '无余量'
+}
 // 进第三屏时：带了 roomTypeId 就选它，没带就选第一个可用的；房型变了（比如被停用）重新对一遍
 function ensureCalRoom() {
   const list = rooms.value
-  if (!list.length) { calRoom.value = null; calRaw.value = []; return }
+  if (!list.length) {
+    calRoom.value = null
+    calRaw.value = []
+    calLoading.value = false
+    calError.value = ''
+    closeDay()
+    return
+  }
   const cur = calRoom.value && list.find(r => r.roomTypeId === calRoom.value.roomTypeId)
   const want = !cur && wantRoomTypeId && list.find(r => r.roomTypeId === wantRoomTypeId)
   pickCalRoom(cur || want || list.find(r => String(r.status) === '0') || list[0])
 }
 function pickCalRoom(room) {
   if (!room) return
+  if (calRoom.value?.roomTypeId !== room.roomTypeId) resetRange()
   calRoom.value = room
   dayEdit.value = null
   loadCalendar()
@@ -372,17 +386,19 @@ function pickCalRoom(room) {
 async function loadCalendar() {
   const room = calRoom.value
   if (!room) return
+  const request = ++calendarRequest
+  calRaw.value = []
   calLoading.value = true
   calError.value = ''
   try {
     const ym = todayCn().slice(0, 7)
     const [a, b] = await Promise.all([apiStaffRoomCalendar(room.roomTypeId, ym), apiStaffRoomCalendar(room.roomTypeId, nextMonth(ym))])
-    if (calRoom.value !== room) return
+    if (request !== calendarRequest || calRoom.value !== room) return
     calRaw.value = [...(((a && a.data) || {}).days || []), ...(((b && b.data) || {}).days || [])]
   } catch (e) {
-    if (calRoom.value === room) calError.value = errText(e, '房态加载失败，请重试')
+    if (request === calendarRequest && calRoom.value === room) calError.value = errText(e, '房态加载失败')
   } finally {
-    if (calRoom.value === room) calLoading.value = false
+    if (request === calendarRequest && calRoom.value === room) calLoading.value = false
   }
 }
 // 统一发 PUT：成功提示接口的「已更新 N 晚」，再把表刷新
@@ -408,6 +424,7 @@ const dayErr = ref('')
 // 打开面板时的原值：保存只发这次真改了的。之前固定价格、库存一起发，只改库存那天的价格也被「钉死」，之后改 7 天价这天不跟着变
 let dayOrig = null
 function openDay(row) {
+  if (calLoading.value || calError.value || calSaving.value) return
   dayErr.value = ''
   dayOrig = { price: String(row.price ?? '').trim(), priceFen: Number(row.priceFen) || 0, stock: Number(row.stock) }
   dayEdit.value = { date: row.date, label: row.label, price: row.price, stock: row.stock, occupied: row.occupied, closed: row.closed }
@@ -432,7 +449,7 @@ async function saveDay() {
   if (!dayOrig || Number(e.stock) !== dayOrig.stock) body.stock = Number(e.stock)
   dayErr.value = ''
   if (body.priceFen == null && body.stock == null) { closeDay(); return toast('没有改动') }
-  if (await setCalendar(body, e.label + ' 已更新')) closeDay()
+  if (await setCalendar(body, e.label + ' 已更新') && dayEdit.value === e) closeDay()
 }
 async function toggleDayClosed() {
   const e = dayEdit.value
@@ -476,11 +493,16 @@ async function applyRangePrice() {
   await setCalendar({ from: range.from, to: range.to, priceFen }, '已更新 ' + rangeNights.value + ' 晚的价格')
 }
 async function applyRangeClosed(closed) {
+  if (calSaving.value || !calRoom.value) return
   const bad = rangeProblem()
   if (bad) { rangeErr.value = bad; return toast(bad) }
-  if (closed && !(await confirm('这 ' + rangeNights.value + ' 晚都关房？', range.from + ' 到 ' + range.to + ' 住客就订不到「' + (calRoom.value ? calRoom.value.typeName : '') + '」了，已有订单照常。'))) return
+  const roomId = calRoom.value.roomTypeId
+  const { from, to } = range
+  const nights = rangeNights.value
+  if (closed && !(await confirm('这 ' + nights + ' 晚都关房？', from + ' 到 ' + to + ' 住客就订不到「' + calRoom.value.typeName + '」了，已有订单照常。'))) return
+  if (roomId !== calRoom.value?.roomTypeId || from !== range.from || to !== range.to) return
   rangeErr.value = ''
-  await setCalendar({ from: range.from, to: range.to, closed }, closed ? '已关房 ' + rangeNights.value + ' 晚' : '已开房 ' + rangeNights.value + ' 晚')
+  await setCalendar({ from, to, closed }, (closed ? '已关房 ' : '已开房 ') + nights + ' 晚')
 }
 
 async function onBack() {
@@ -503,11 +525,14 @@ async function onBack() {
 <style scoped lang="scss">
 /* 输入框、分段、步进器、底部操作条用填写页共用的 form-clean.scss；这里只有房型卡和 7 天价格那几行 */
 @import './form-clean.scss';
+/* 2026-11-17 改版「小而精」：只统一细节——房型卡不再描边（浅灰底上白卡自己分得开），房型格子不描边，标题用系统黑体，状态角标收成 4 圆角；字号和按钮高度是 2026-11-03 定的大字，没动 */
 .rt-head { display: flex; align-items: center; gap: 10px; padding: 16px 16px 4px; }
-.rt-head__name { flex: 1; min-width: 0; font-family: var(--k-serif); font-size: 20px; font-weight: 700; color: var(--k-ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.rt-head__state { flex-shrink: 0; padding: 4px 10px; border-radius: 8px; background: var(--k-paper2); font-size: 14px; color: var(--k-ink2); }
-.rt-card { margin: 12px 16px 0; padding: 16px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); }
-.rt-card--off { background: var(--k-paper2); }
+.rt-head__name { flex: 1; min-width: 0; font-family: var(--k-sans); font-size: 20px; font-weight: 700; color: var(--k-ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.rt-head__state { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; background: var(--k-paper); font-size: 14px; color: var(--k-ink2); }
+.rt-card { margin: 10px 16px 0; padding: 16px; border-radius: 12px; background: var(--k-paper); }
+/* 已停用的房型：仍是白卡，只把名称、说明、价格整体变淡（词典「不可点：原配色变淡」）；下面两个按钮照常可点、不变淡 */
+.rt-card--off { background: var(--k-paper); }
+.rt-card--off .rt-card__name, .rt-card--off .rt-card__line, .rt-card--off .rt-card__price { opacity: .5; }
 .rt-card__top { display: flex; align-items: center; gap: 10px; }
 .rt-card__name { flex: 1; min-width: 0; font-size: 18px; font-weight: 700; line-height: 26px; color: var(--k-ink); }
 .rt-card__state { flex-shrink: 0; font-size: 14px; font-weight: 600; color: var(--k-green); }
@@ -518,7 +543,11 @@ async function onBack() {
 .rt-btn { flex: 1; min-width: 0; height: 48px; border-radius: 12px; background: var(--k-red-deep); color: var(--k-paper); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 16px; font-weight: 600; }
 .rt-btn--ghost { flex: 0 0 34%; background: var(--k-paper2); color: var(--k-ink); }
 .rt-btn__t { margin-left: 6px; }
-.rt-empty { display: block; margin: 24px 16px 0; padding: 20px 16px; border: 1px dashed var(--k-line2); border-radius: 12px; font-size: 16px; line-height: 26px; color: var(--k-ink2); text-align: center; }
+/* 列表最下面那一条「房源上架 / 下架与审核管理」：左右留出页边距，不再顶到屏幕边 */
+.fc-form > .rt-btn--ghost { margin: 10px 16px 0; background: var(--k-paper); }
+/* 合作商家顶上的协议入口单独包在一层 fc-form 里：这一层只放入口，不要表单底部那 108 的留白（原来入口和下面的房型之间空着一大截） */
+.fc-form.rt-agree { padding-bottom: 0; }
+.rt-empty { display: block; margin: 10px 16px 0; padding: 24px 16px; border-radius: 12px; background: var(--k-paper); font-size: 16px; line-height: 26px; color: var(--k-ink2); text-align: center; }
 .rt-hint { display: block; margin-bottom: 12px; font-size: 14px; line-height: 22px; color: var(--k-muted); }
 .rt-fill { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; margin-bottom: 12px; border: 1px solid var(--k-red-line); border-radius: 12px; background: var(--k-red-soft); font-size: 16px; font-weight: 600; color: var(--k-red-deep); }
 .rt-day { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
@@ -529,13 +558,14 @@ async function onBack() {
 /* 2026-11-03 房态（s=3）：房型是一排大格子（44px 高）；14 天小表每行 48px、字 15；周末日期棕色、关房那行灰底；
    底部面板和 fc-sheet 一样 998 层、只有它有阴影，里面是普通的输入框和步进器 */
 .cal-types { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px; }
-.cal-type { min-height: 44px; padding: 0 16px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper2); display: flex; align-items: center; font-size: 15px; color: var(--k-ink2); box-sizing: border-box; }
-.cal-type.on { border-color: var(--k-red-deep); background: var(--k-red-deep); color: var(--k-paper); font-weight: 600; }
+.cal-type { min-height: 44px; padding: 0 16px; border-radius: 12px; background: var(--k-paper2); display: flex; align-items: center; font-size: 15px; color: var(--k-ink2); box-sizing: border-box; }
+.cal-type.on { background: var(--k-red-deep); color: var(--k-paper); font-weight: 600; }
 .cal-hint { padding: 0 16px; margin-bottom: 8px; }
-.cal-table { margin: 0 16px 16px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+/* 11-18：小表已经在白色区块里，不再画外框；表头和关房行是中性浅灰底（不是奶油色），行线保留 */
+.cal-table { margin: 0 16px 16px; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
 .cal-tr { display: flex; align-items: center; min-height: 48px; padding: 0 12px; border-top: 1px solid var(--k-line); font-size: 15px; color: var(--k-ink); }
-.cal-tr--head { min-height: 40px; border-top: 0; background: var(--k-paper2); font-size: 13px; color: var(--k-muted); }
-.cal-tr--closed { background: var(--k-paper2); color: var(--k-muted); }
+.cal-tr--head { min-height: 40px; border-top: 0; background: #F7F5F2; font-size: 13px; color: var(--k-muted); }
+.cal-tr--closed { background: #F7F5F2; color: var(--k-muted); }
 .cal-tr--on { background: var(--k-red-soft); }
 .cal-td { flex: 1; min-width: 0; text-align: center; }
 .cal-td--date { flex: 0 0 96px; text-align: left; font-weight: 600; }
@@ -543,6 +573,8 @@ async function onBack() {
 .cal-td--price { font-weight: 600; }
 .cal-td--state { flex: 0 0 64px; text-align: right; color: var(--k-green); }
 .cal-td--off { color: var(--k-alert); }
+/* 表头的「状态」两个字是表头，不是状态值：和别的表头一样灰 */
+.cal-tr--head .cal-td--state { color: var(--k-muted); }
 .cal-loading { display: block; padding: 14px 12px; font-size: 14px; color: var(--k-muted); text-align: center; }
 .cal-apply { margin-top: 12px; }
 .cal-apply-row { display: flex; gap: 10px; margin-top: 10px; }

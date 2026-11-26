@@ -1,1 +1,86 @@
-.governance{background:#faf7f0;min-height:100vh;color:#493d32}.gov-body{padding:16px 18px calc(28px + env(safe-area-inset-bottom))}.gov-title{display:block;font-size:24px;font-weight:600;margin:8px 0 12px;line-height:1.4}.gov-copy{display:block;line-height:1.8;font-size:14px;white-space:pre-wrap;word-break:break-word}.gov-muted{font-size:12px;line-height:1.7;color:#8a8074}.gov-section{margin:22px 0;padding:18px;background:#fffdf8;border:1px solid #e5ded2;border-radius:15px}.gov-heading{display:block;font-size:17px;font-weight:600;line-height:1.5;margin:0 0 14px}.gov-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.gov-actions,.gov-tabs{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}.gov-tabs button{flex:1;white-space:nowrap}.governance button{margin:0;background:#f1e6d6;color:#805a35;font-size:13px;line-height:1.5;padding:10px 14px;border-radius:11px}.governance button::after{border:0}.governance button.primary{background:#91623b;color:#fff9ee}.governance button[disabled]{opacity:.45}.governance button.active{background:#e9d5b7;color:#624225}.governance .form-label{display:block;font-size:14px;margin:18px 0 9px;line-height:1.6}.governance input,.governance textarea,.gov-select{box-sizing:border-box;width:100%;border:1px solid #ddd3c3;border-radius:10px;background:#fffdf8;padding:12px;font-size:14px;color:#443a31}.governance input{height:46px}.governance textarea{height:140px;line-height:1.7}.gov-error,.gov-success{display:block;padding:12px;margin:12px 0;border-radius:10px;background:#f8e9e1;color:#ab4736;font-size:13px;line-height:1.7}.gov-success{background:#edf1e3;color:#4d6b42}.gov-empty{display:block;font-size:14px;padding:28px 8px;text-align:center;line-height:1.8;color:#918574}.gov-badge{font-size:12px;line-height:1.5;border-radius:6px;padding:4px 8px;background:#f0e4d1;color:#8a6038}.gov-urgent{background:#f8e4df;color:#ae4839}.gov-item{padding:17px 0;border-bottom:1px solid #e4ddd1}.gov-item-title{display:block;font-size:16px;font-weight:600;line-height:1.7}.gov-time{display:block;font-size:12px;color:#9b8b78;margin-top:6px}.gov-check{display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.7;margin:16px 0}.gov-select{min-height:46px}.gov-link{color:#8d623a;font-size:13px}.gov-separator{height:1px;background:#e5ddcf;margin:20px 0}
+/* 2026-11-17 改版「小而精」：纠纷调解 / 大众评审 / 合作复核 / 徽章共用 —— 浅灰底 + 白卡（12 圆角、不描边不加阴影），标题和说明收小一档；按钮是白底细棕边的小胶囊，主按钮暖棕渐变，选中的页签 / 选项是暖棕实底。表单输入框保持 44 高、字 14。功能和文字都不变。 */
+.governance{--k-bg:var(--k-page);background:var(--k-page);min-height:100vh;color:var(--k-ink)}.governance .k-navbar__title{font-family:var(--k-sans);font-size:16px;font-weight:600}.gov-body{padding:8px 12px calc(24px + env(safe-area-inset-bottom))}.gov-title{display:block;font-size:17px;font-weight:700;margin:8px 0 4px;line-height:1.4}.gov-copy{display:block;line-height:1.7;font-size:13px;white-space:pre-wrap;word-break:break-word;color:var(--k-ink2)}.gov-muted{font-size:12px;line-height:1.65;color:var(--k-muted)}.gov-section,.gov-form{margin:8px 0;padding:12px;background:var(--k-paper);border:0;border-radius:12px}.gov-form{padding-top:2px}.gov-heading{display:block;font-size:16px;font-weight:700;line-height:22px;color:var(--k-ink);margin:0 0 8px}.gov-body>.gov-heading{margin:16px 0 8px}.gov-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.gov-row>picker{flex:1;min-width:0}.gov-body>picker .gov-select{margin-bottom:8px}.gov-actions,.gov-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.gov-tabs button{flex:1;white-space:nowrap}.governance button{margin:0;background:var(--k-paper);color:var(--k-red-deep);font-size:13px;line-height:20px;padding:8px 14px;border-radius:18px;box-shadow:inset 0 0 0 1px var(--k-red-line)}.governance button::after{border:0}.governance .subscribe-entry button{box-shadow:none}.governance .gov-tabs button{border-radius:10px;color:var(--k-ink2);box-shadow:none}.governance .gov-section .gov-tabs button,.governance .gov-form .gov-tabs button{background:var(--k-fill)}.governance button.primary{background:linear-gradient(135deg,#B5814D,#8E5E33);color:var(--k-paper);font-weight:600;box-shadow:none}.governance .gov-section>button,.governance .gov-body>button{margin-top:10px}.governance .gov-body>button{margin-bottom:8px}.governance .gov-section>button+.gov-time{margin-top:8px}.governance .gov-form+.gov-actions button{padding:12px 20px;border-radius:22px;font-size:15px}.governance .gov-form+.gov-actions button.primary{flex:1}.governance .gov-section>button.primary,.governance .gov-body>button.primary{padding:12px 20px;border-radius:22px;font-size:15px}.governance button[disabled]{opacity:.45}.governance button.active,.governance .gov-tabs button.active,.governance .gov-section .gov-tabs button.active,.governance .gov-form .gov-tabs button.active{background:var(--k-red-soft);color:var(--k-red-deep);font-weight:500;box-shadow:inset 0 0 0 1px var(--k-red)}.governance .form-label{display:block;font-size:14px;font-weight:500;margin:14px 0 6px;line-height:1.5;color:var(--k-ink)}.governance input,.governance textarea,.gov-select{box-sizing:border-box;width:100%;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper);padding:0 12px;font-size:14px;color:var(--k-ink)}.governance input{height:44px}.governance textarea{height:120px;padding:10px 12px;line-height:1.6}.gov-error,.gov-success{display:block;padding:8px 10px;margin:8px 0;border-radius:8px;background:var(--k-alert-soft);color:var(--k-alert);font-size:12px;line-height:1.65}.gov-success{background:var(--k-green-soft);color:var(--k-green)}.gov-empty{display:block;font-size:13px;padding:28px 8px;text-align:center;line-height:1.7;color:var(--k-muted)}.gov-badge{display:inline-block;flex-shrink:0;height:17px;font-size:10px;font-weight:500;line-height:17px;border-radius:4px;padding:0 5px;background:var(--k-red-soft);color:var(--k-red-deep);white-space:nowrap}.gov-urgent{background:var(--k-alert-soft);color:var(--k-alert)}.gov-item{position:relative;padding:12px 0}.gov-item::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--k-line);transform:scaleY(.5)}.gov-body>.gov-item{margin-bottom:8px;padding:12px;border-bottom:0;border-radius:12px;background:var(--k-paper)}.gov-section .gov-item:last-child{padding-bottom:0;border-bottom:0}.gov-body>.gov-item::after,.gov-section .gov-item:last-child::after{display:none}.gov-item-title{display:block;font-size:14px;font-weight:600;line-height:1.5}.gov-time{display:block;font-size:11px;line-height:1.6;color:var(--k-muted);margin-top:4px}.gov-check{display:flex;align-items:center;gap:8px;font-size:13px;line-height:1.6;margin:12px 0}.gov-select{display:flex;align-items:center;min-height:44px}.gov-link{color:var(--k-red-deep);font-size:12px}.gov-separator{height:1px;background:var(--k-line);margin:12px 0;transform:scaleY(.5)}
+/* 2026-11-18 看图复查：页签（我的调解 / 已获得 / 用户评审员…）原来是通栏的暖棕渐变方条，和真正的主按钮抢戏、分不清哪个才是按钮 —— 改成靠左排的 32 高小胶囊：没选中的白底（白卡里是浅灰底）灰字，选中的浅棕底 + 深棕字 + 一圈细棕边；实心渐变只留给主按钮。开关收到约 40×25、圆钮的阴影减轻。 */
+.governance .gov-tabs button,.governance .gov-section .gov-tabs button,.governance .gov-form .gov-tabs button{flex:0 1 auto;min-width:88px;padding:6px 14px;border-radius:16px}.governance .gov-tabs button.active,.governance .gov-section .gov-tabs button.active,.governance .gov-form .gov-tabs button.active{background:var(--k-red-soft);color:var(--k-red-deep);font-weight:500;box-shadow:inset 0 0 0 1px var(--k-red-line)}.governance .gov-check switch{transform:scale(.78);transform-origin:left center;margin-right:-11px}.governance .wx-switch-input::after,.governance .uni-switch-input::after{box-shadow:0 1px 2px rgba(0,0,0,.14)}
+/* 2026-11-18 第二轮精修：选中的选项（你的独立判断、你的诉求、页签）一律浅棕底 + 深棕字，实心渐变只留给提交钮（复查：选中的细边要留着 —— 页签没选中是浅米底、投票选项直接放在浅灰页面底上，去掉边就和没选中的分不开；页签用细棕边，投票 / 诉求选项没选中时本来就有细棕边，选中改实棕边）；区块标题 16 / 700；列表行、分隔改发丝线；没有记录时的那句灰字放进白卡；标题下的「刷新记录」收成 28 高的小胶囊（四周 4px 透明边撑着，可点范围 36）。 */
+.governance .gov-body>.gov-empty{background:var(--k-paper);border-radius:12px;margin:8px 0;padding:28px 16px;font-size:13px;line-height:1.6;color:var(--k-muted)}.governance .gov-body>button:not(.primary){display:flex;align-items:center;justify-content:center;width:-webkit-max-content;width:max-content;height:36px;margin:6px 0 4px -4px;padding:0 12px;border:4px solid transparent;border-radius:18px;background-clip:padding-box;font-size:12px;font-weight:500;line-height:20px}
+/* 2026-11-18 第三轮逐页精修（纠纷调解 / 大众评审 / 合作复核 / 徽章共用）：
+   1) 标题行右侧的「刷新」退成灰色小字钮（14 号图标 + 12 号字），不再和真正的按钮长一样；
+   2) 空状态统一：56 的浅棕圆角方块 + 40 号线性图标 + 12 号说明（最宽 260，两行长度接近），整块在白卡里居中；
+   3) 页面底部操作条：白底 + 顶部发丝线，里面 44 高暖棕主按钮；
+   4) 开关关着的时候轨道是暖灰（原来白钮配极浅灰轨道，几乎看不出是开关）；
+   5) 列表卡、区块卡内边距 16，区块之间 20。 */
+.governance .gov-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.governance .gov-head .gov-title{flex:1;min-width:0}
+.governance button.gov-refresh,.governance .gov-body>button.gov-refresh{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;width:auto;height:36px;margin:0 -8px 0 0;padding:0 8px;border:0;border-radius:18px;background:transparent;box-shadow:none;color:var(--k-muted);font-size:12px;font-weight:400;line-height:36px}
+.governance .gov-empty-box{display:flex;flex-direction:column;align-items:center;margin:8px 0;padding:28px 16px;border-radius:12px;background:var(--k-paper)}
+.governance .gov-empty-art{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:16px;background:var(--k-red-soft)}
+.governance .gov-empty-box>.gov-empty,.governance .gov-body>.gov-empty-box>.gov-empty{max-width:260px;margin:12px auto 0;padding:0;background:transparent;font-size:12px;line-height:1.6;color:var(--k-muted)}
+.governance .gov-footbar{height:calc(60px + env(safe-area-inset-bottom))}
+.governance .gov-footbar__inner{position:fixed;z-index:20;left:0;right:0;bottom:0;padding:8px 16px calc(8px + env(safe-area-inset-bottom));background:var(--k-paper)}
+.governance .gov-footbar__inner::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.governance .gov-footbar__inner button.primary{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;height:44px;margin:0;padding:0;border-radius:22px;font-size:15px;line-height:44px}
+.governance .gov-body{padding:8px 16px calc(24px + env(safe-area-inset-bottom))}
+.governance .gov-section,.governance .gov-form{padding:16px}
+.governance .gov-body>.gov-item{padding:14px 16px}
+.governance .gov-body>.gov-title{margin-top:12px}
+.governance .gov-section .gov-heading{margin-bottom:8px}
+.governance .gov-body>.gov-section{margin-top:12px}
+.governance .gov-body>.gov-heading{margin:24px 0 8px}
+.governance .gov-check switch{flex-shrink:0}
+.governance .wx-switch-input:not(.wx-switch-input-checked),.governance .uni-switch-input:not(.uni-switch-input-checked){background:var(--k-line2)!important;border-color:var(--k-line2)!important}
+/* 2026-11-18 第三轮返修（评审第 1 轮）—— 四个治理页共用：
+   1) 状态小标签 11 号、20 高（原来 10 号 17 高，低于最小字号档）；
+   2) 页标题 20/700、行高 1.3，和卡片标题 15/600 拉开层次；
+   3) 列表卡内边距 16、卡与卡之间 12（原来 14/16、8，几张卡连成一片）；
+   4) 输入框 / 选择框统一：浅灰底、不描边、圆角 8（原来白底 + 描边 + 圆角 10，和意见箱、申诉框不是一套）；
+   5) 处理记录改成时间轴：左边 8 的圆点 + 1px 竖线，最新一条暖棕点，其余浅灰点。 */
+.governance .gov-badge{height:20px;padding:0 6px;font-size:11px;line-height:20px}
+.governance .gov-title,.governance .gov-body>.gov-title{font-size:20px;font-weight:700;line-height:1.3}
+.governance .gov-body>.gov-item{margin-bottom:12px;padding:16px}
+.governance input,.governance textarea,.governance .gov-select{border:0;border-radius:8px;background:var(--k-bg)}
+.governance textarea{padding:10px 12px}
+.governance .gov-timeline{margin-top:4px}
+.governance .gov-timeline .gov-item{position:relative;padding:0 0 16px 20px}
+.governance .gov-timeline .gov-item:last-child{padding-bottom:0}
+.governance .gov-timeline .gov-item::before{content:'';position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:50%;background:var(--k-line2)}
+.governance .gov-timeline .gov-item:last-child::before{background:var(--k-red)}
+.governance .gov-timeline .gov-item::after,.governance .gov-section .gov-timeline .gov-item::after{display:block;content:'';position:absolute;left:3.5px;right:auto;top:19px;bottom:-3px;width:1px;height:auto;background:var(--k-line2);transform:none}
+.governance .gov-timeline .gov-item:last-child::after,.governance .gov-section .gov-timeline .gov-item:last-child::after{display:none}
+.governance .gov-timeline .gov-copy{font-size:14px;line-height:22px;color:var(--k-ink)}
+.governance .gov-timeline .gov-time{margin-top:2px}
+.governance .gov-empty-box>.gov-empty-title{display:block;margin-top:12px;font-size:14px;font-weight:500;line-height:20px;color:var(--k-ink2);text-align:center}
+.governance .gov-empty-box>.gov-empty-title+.gov-empty{margin-top:4px}
+.governance .gov-body>.gov-empty-box{padding:32px 16px}
+/* 2026-11-18 第三轮返修（评审第 2 轮）—— 四个治理页共用：
+   1) 顶部「订阅…提醒」条左右和下面的卡片对齐到 16 的页面边距（原来 12，比别的块宽出 4）；
+   2) 不能点的按钮一律暖灰底 + 浅灰字、去掉描边（原来是淡化的渐变或浅字描边，看不出是不能点还是本来就浅）；
+   3) 已关闭的工单标签退成暖灰底 + 灰字。 */
+.governance .gov-sub{display:block;margin:0 4px}
+.governance button[disabled]{opacity:1;background:var(--k-line)!important;color:var(--k-light)!important;box-shadow:none!important}
+.governance .gov-badge.gov-badge--closed{background:var(--k-line);color:var(--k-muted)}
+/* 2026-11-18 第三轮返修（评审第 4 轮）：说明 / 正文 / 灰字在窄屏折行时避开第二行只剩一两个字（text-wrap:pretty，不支持的环境照常显示）。 */
+.governance .gov-copy,.governance .gov-muted,.governance .gov-time,.governance .gov-empty{text-wrap:pretty}
+/* 同上：短说明（灰字说明、头卡进度说明、卡里正文）两行等长，pretty 在中文里不一定生效时也不会出现第二行只剩一两个字；超过 6 行的长文照常排。 */
+.governance .gov-muted{text-wrap:balance}
+/* 2026-11-18 第三轮返修（评审第 5 轮）：卡里多行正文改回普通折行（上一轮的「对半切」让右边空出 60–90px，还把「写的」「不一致」拆开）；
+   头卡里一两行的进度说明只在标点处折行（「裁决已发布，/ 请阅读结果并确认是否接受。」），一段太长时照常折行。 */
+.governance .gov-case-head .gov-copy{text-wrap:balance}
+/* 2026-11-18 第四轮精修（按微信实拍评审）—— 四个治理页共用：
+   1) 页面大标题按无卡页标题 22/700，下面说明 13 号灰字；
+   2) 顶部「订阅…提醒」改成轻量文字链：不要白底，12 号暖棕字靠右放在页面最上面，第一眼落到页面标题；
+   3) 页面说明、空状态说明只在标点和词组处折行（不再出现「再次进入。」这种几个字挂在末行）；长正文照常折行。 */
+.governance .gov-body>.gov-title,.governance .gov-body>.gov-head>.gov-title{font-size:22px;font-weight:700;line-height:30px}
+.governance .gov-body>.gov-title+.gov-muted,.governance .gov-body>.gov-head+.gov-muted{font-size:13px;line-height:1.6}
+.governance.governance :deep(.subscribe-entry){padding:4px 16px 0}
+.governance.governance :deep(.subscribe-entry button){justify-content:flex-end;min-height:32px;margin:0;padding:0;background:transparent;border-radius:0}
+.governance .gov-empty{word-break:keep-all;overflow-wrap:anywhere}
+/* 2026-11-19 第四轮返修（按复评）：页面说明、评审资格说明这类多行灰字不再 balance（会在「参与」「积分」中间切开、第一行右边空一截），改成排满一行、只避开末行剩一两个字（pretty）；左对齐的说明也不再 keep-all。 */
+.governance .gov-body>.gov-muted,.governance .jury-will .gov-muted{text-wrap:pretty}
+
+.governance.user-surface {
+  .gov-section { border-radius: 12px; }
+  .gov-form:focus-within { border-color: var(--k-red-line); }
+  .gov-empty-art { background-color: var(--user-icon-field); }
+  .gov-time { font-variant-numeric: tabular-nums; }
+}

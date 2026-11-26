@@ -9,7 +9,7 @@
     <!-- 1 核心指标 -->
     <view v-if="s === 1" class="k-body k-pad-tab">
       <view class="k-between">
-        <view class="k-row k-gap6" @click="explainMetrics"><text class="k-title">核心指标</text><k-icon name="info" :size="16" color="ink" :stroke="1.5" /></view>
+        <view class="k-row k-gap6" @click="explainMetrics"><text class="k-title">核心指标</text><k-icon name="info" :size="14" color="muted" :stroke="1.5" /></view>
         <text class="k-meta">与上周期对比</text>
       </view>
       <view class="k-between k-mt4">
@@ -39,7 +39,7 @@
         </view>
       </view>
       <!-- 之前第 1 屏没有任何去往业务趋势 / 门店排名 / 评价统计的入口：从业务中心、工作台进来只能看核心指标，门店排名谁都打不开 -->
-      <view class="links k-mt10"><view v-for="l in links" :key="l.s" class="links__item" @click="s = l.s"><text>{{ l.label }}</text><k-icon name="chevron-right" :size="14" color="ink" :stroke="1.7" /></view></view>
+      <view class="links k-mt10"><view v-for="l in links" :key="l.s" class="links__item" @click="s = l.s"><text>{{ l.label }}</text><k-icon name="chevron-right" :size="12" color="muted" :stroke="1.7" /></view></view>
       <text class="k-tiny k-mt14 note">{{ ov.note || '指标说明：* 以上数据为你有权限的门店汇总' }}</text>
     </view>
 
@@ -101,7 +101,7 @@
       </view>
       <view class="k-between k-mt12">
         <text class="k-small k-muted">{{ rk.range }}</text>
-        <view class="k-row k-gap6" @click="pickRankPeriod"><text class="k-small">筛选</text><k-icon name="filter" :size="16" color="ink" :stroke="1.6" /></view>
+        <view class="k-row k-gap6" @click="pickRankPeriod"><text class="k-small">筛选</text><k-icon name="filter" :size="14" color="muted" :stroke="1.6" /></view>
       </view>
       <k-card class="k-mt10" :pad="0">
         <view v-for="(r, i) in ranks" :key="r.storeId" class="rank" :class="{ line: i < ranks.length - 1 }" @click="openDaily(r)">
@@ -556,4 +556,125 @@ async function makePlan() {
 .review-body .k-grid-2,
 .review-body .k-grid-3 { margin-top: 8px; }
 .review-body .obtn { height: 31px; margin-top: 6px; }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底 + 白卡 12 圆角、不描边不加阴影；大数字 20–22 / 700，标签 11–12 灰字；
+   页签、下拉、入口都收小一档。只改样子：四屏的入口、筛选、图表、按钮、文字都在，涨跌箭头和颜色的判断没动。
+   下面每条都带 .dash，盖住上面的旧值；图表颜色用 --k-* 语义色。 */
+@import './manage-refine.scss';
+.dash .k-title { font-family: var(--k-sans); font-size: 16px; font-weight: 700; }
+.dash .k-subtitle { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.dash .k-mt10 { margin-top: 8px; }
+.dash .k-mt14 { margin-top: 10px; }
+.dash .k-grid-2, .dash .k-grid-3 { gap: 8px; }
+/* 页签：字 14，选中是深棕字 + 一小段圆头下划线 */
+.dash .ptabs { border-bottom: 0; }
+.dash .ptabs__item { padding: 9px 0 11px; font-size: 14px; color: var(--k-ink2); }
+.dash .ptabs__item.active { color: var(--k-red-deep); font-weight: 600; }
+.dash .ptabs__item.active::after { left: 50%; right: auto; bottom: 3px; width: 20px; height: 3px; margin-left: -10px; border-radius: 2px; }
+.dash .rtabs { padding: 3px; border: 0; border-radius: 12px; }
+.dash .rtabs__item { height: 36px; padding: 0; border-radius: 9px; font-size: 13px; line-height: 36px; color: var(--k-ink2); white-space: nowrap; }
+.dash .rtabs__item.active { color: var(--k-red-deep); background: var(--k-red-soft); font-weight: 600; }
+.dash .rtabs__item.active::after { content: none; }
+@media (max-width: 340px) { .dash .rtabs__item { font-size: 12px; } }
+/* 指标卡 */
+/* 左右留 16：小折线的宽度是脚本按屏宽算的（半栏减 51），这样正好铺到卡片右边 */
+.dash .metric { padding: 12px 16px; border: 0; border-radius: 12px; }
+.dash .metric .k-small, .dash .kpi .k-small { font-size: 12px; line-height: 18px; }
+.dash .metric__value { margin-top: 2px; font-size: 22px; line-height: 28px; }
+.dash .metric__delta { margin-top: 0; font-size: 12px; line-height: 18px; }
+.dash .metric__delta :deep(.k-icon), .dash .totals__delta :deep(.k-icon), .dash .kpi__delta :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+.dash .note { line-height: 16px; }
+/* 下拉 */
+.dash .select { height: 36px; padding: 0 10px 0 12px; border: 0; border-radius: 10px; font-size: 13px; }
+.dash .select :deep(.k-icon) { width: 14px !important; height: 14px !important; }
+.dash .select--icon { width: 40px; padding: 0; }
+.dash .select--icon :deep(.k-icon) { width: 18px !important; height: 18px !important; }
+.dash .select--sm { height: 28px; padding: 0 8px 0 10px; border-radius: 14px; font-size: 12px; }
+/* 趋势图 */
+.dash .legend { gap: 14px; font-size: 11px; color: var(--k-muted); }
+.dash .legend__item { gap: 5px; }
+.dash .legend__bar { width: 14px; height: 4px; border-radius: 2px; background: var(--k-indigo); }
+.dash .legend__line { width: 14px; }
+.dash .legend__dash { width: 14px; border-top-color: var(--k-indigo); }
+.dash .chart__axis { font-size: 10px; }
+.dash .chart__axis--l text, .dash .chart__axis--r text { margin-top: -5px; }
+.dash .chart__plot { border-left-color: var(--k-line); border-right-color: var(--k-line); }
+.dash .chart__bar { background: var(--k-indigo); }
+.dash .chart__dash { border-top-color: var(--k-indigo); }
+.dash .chart__flat { border-top-color: var(--k-line2); }
+/* 卡片比原来宽了 8：图两边各让 4，柱子仍然铺到右边刻度前 */
+.dash .chart { padding: 0 4px; }
+.dash .chart__x { padding-left: 38px; padding-right: 24px; font-size: 11px; }
+.dash .totals { border: 0; border-radius: 12px; }
+.dash .totals__cell { position: relative; padding: 12px 4px 10px; }
+.dash .totals__cell.line { border-right: 0; }
+.dash .totals__cell.line::after { content: ""; position: absolute; right: 0; top: 14px; bottom: 14px; width: 1px; background: var(--k-line); }
+.dash .totals__value { margin-top: 2px; font-size: 20px; line-height: 26px; }
+.dash .totals__delta { margin-top: 0; font-size: 11px; line-height: 16px; }
+.dash .bullet { line-height: 20px; color: var(--k-ink2); }
+/* 排名 */
+.dash .rank { position: relative; padding: 12px 12px 12px 6px; }
+.dash .rank.line { border-bottom: 0; }
+.dash .rank.line::after { content: ""; position: absolute; left: 46px; right: 0; bottom: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.dash .rank__crown { width: 24px; height: 26px; border-radius: 6px; }
+.dash .rank__num { font-size: 15px; color: var(--k-muted); }
+.dash .rank__thumb { width: 40px; height: 40px; border-radius: 8px; }
+.dash .rank .k-meta { font-size: 11px; }
+.dash .rank__amount { font-size: 14px; }
+.dash .rank__chg { font-size: 11px; }
+.dash .rank :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+/* 评价统计 */
+.dash .score { width: 92px; }
+.dash .score__big { margin-top: 6px; font-size: 32px; line-height: 38px; }
+.dash .score :deep(.k-icon) { width: 13px !important; height: 13px !important; }
+.dash .score .k-meta { font-size: 11px; }
+.dash .dist__label { width: 26px; font-size: 12px; color: var(--k-ink2); }
+.dash .dist__bar { height: 6px; border-radius: 3px; background: var(--k-line); }
+.dash .dist__bar .k-bar__fill { border-radius: 3px; }
+.dash .dist__num { width: 64px; font-size: 11px; }
+.dash .word-list .k-small { font-size: 12px; color: var(--k-ink2); }
+.dash .kpi { padding: 10px 6px; border: 0; border-radius: 12px; }
+.dash .kpi__value { margin-top: 2px; font-size: 20px; line-height: 26px; }
+.dash .kpi__delta { margin-top: 0; font-size: 11px; line-height: 16px; }
+.dash .review-body .obtn { height: 32px; margin-top: 8px; border-color: var(--k-red-line); border-radius: 16px; background: var(--k-paper); color: var(--k-red-deep); font-family: var(--k-sans); font-size: 13px; font-weight: 500; }
+/* 2026-11-18 复查：小下拉、小按钮、「筛选」和标题旁的问号看着小，手指能点的范围不能跟着小——上下各补一截透明的可点区，凑够 36 高（样子不变） */
+.dash .select--sm, .dash .review-body .obtn, .dash .k-between > .k-row.k-gap6 { position: relative; }
+.dash .select--sm::after { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+.dash .review-body .obtn::after { content: ""; position: absolute; left: 0; right: 0; top: -3px; bottom: -3px; }
+.dash .k-between > .k-row.k-gap6::after { content: ""; position: absolute; left: -8px; right: -8px; top: -9px; bottom: -8px; }
+/* 窄屏（320）营业额上了百万时，大数字从中间断成两行：窄屏收小一号 */
+@media (max-width: 340px) { .dash .metric__value { font-size: 20px; line-height: 26px; } }
+/* 2026-11-18 第二轮精修（精修词典：同一种东西全站一个样子；只改样子，四屏的入口、筛选、图表、按钮、文字都在，涨跌判断没动） */
+/* 1) 区块标题 16 / 700（「核心指标」本来就是，补齐行高和颜色）；「近 30 天合计」夹在两张白卡中间，按区块标题画，不再像一行说明 */
+.dash .k-title { line-height: 22px; color: var(--k-ink); }
+.dash .k-mt16.block { margin-top: 16px; font-size: 16px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
+/* 2) 顶栏下的页签按词典：没选中 400 灰字，选中 600 墨色 + 16×3 的暖棕短条 */
+.dash .ptabs__item { color: var(--k-muted); }
+.dash .ptabs__item.active { color: var(--k-ink); }
+.dash .ptabs__item.active::after { width: 16px; margin-left: -8px; background: var(--k-red); }
+/* 3) 门店排名的四个榜单按分段控件：灰米色轨道 32 高、白色选中块、选中字用墨色（和任务页的状态页签一个样子）；
+      视觉 28 高，上下各补 4 的透明可点区，点击高度仍有 36（340 以下 12 号字照旧） */
+.dash .rtabs { height: 32px; padding: 2px; border-radius: 16px; background: #F0EBE4; }
+.dash .rtabs__item { height: 28px; line-height: 28px; border-radius: 14px; }
+.dash .rtabs__item.active { color: var(--k-ink); background: var(--k-paper); }
+.dash .rtabs__item::after, .dash .rtabs__item.active::after { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; height: auto; background: transparent; }
+/* 4) 指标卡数字只留营业额用暖棕，其余统一墨色（小折线的颜色不动，仍能分出是哪一项）；小折线下的面积淡一点，减弱台阶感 */
+.dash .k-grid-2 > .metric:not(:first-child) .metric__value { color: var(--k-ink) !important; }
+.dash .spark__area { opacity: .6; }
+/* 5) 合计卡的竖线改发丝线 */
+.dash .totals__cell.line::after { transform: scaleX(.5); }
+/* 6) 评分分布：五根条统一成星星的赭黄（颜色是脚本写在行内的，只能用 !important 盖），数字等宽、列宽收窄一点让条子变长
+      （服务端给的是「20 (72%)」这种写法，最长「1,234 (62%)」约 60 宽，所以留 56、不折行，多出的几 px 落在卡片内边距里） */
+.dash .dist__bar .k-bar__fill { background: var(--k-ochre) !important; }
+.dash .dist__num { width: 56px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* 7) 评价统计的卡片内边距统一 12（模板传的是 10，行内样式只能 !important 盖；业务趋势那屏的图表卡不动，图宽是按卡宽算的） */
+.dash .review-body :deep(.k-card) { padding: 12px !important; }
+/* 8) 「评价概况」「改进建议」两张卡一样高，按钮却一高一低：卡片改成竖排，按钮贴卡底对齐，上面的文字和按钮之间至少留 8 */
+.dash .review-body .k-grid-2 :deep(.k-card) { display: flex; flex-direction: column; }
+.dash .review-body .obtn { margin-top: auto; }
+.dash .review-body .block, .dash .review-body .k-col.k-gap4 { margin-bottom: 8px; }
+/* 9) 好评率 / 回复率 / 差评数三格：和上一屏的合计卡一样，合成一张白卡 + 发丝竖线 */
+.dash .review-body .k-grid-3 { gap: 0; border-radius: 12px; background: var(--k-paper); }
+.dash .kpi { position: relative; border-radius: 0; background: transparent; }
+.dash .kpi + .kpi::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 1px; background: var(--k-line); transform: scaleX(.5); }
 </style>

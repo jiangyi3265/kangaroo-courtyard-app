@@ -51,7 +51,7 @@ function runModule(source, stubs, filename) {
   return { run: code => vm.runInContext(code, sandbox), sandbox }
 }
 
-const NAMES = 'msgs, start, ask, openFaq, openLink, older, loadingOlder, loadOlder, owner'
+const NAMES = 'msgs, start, ask, send, input, asking, order, openFaq, openLink, older, loadingOlder, loadOlder, owner'
 // 两页聊天记录：第一页（最近的）带卡片、退款试算、信息来源；第二页更早
 const PAGE1 = { more: true, list: [
   { id: 41, from: 'me', text: '保险查询', source: '', cards: [], links: [] },
@@ -159,6 +159,69 @@ test('重新开场时上一场还没回来的聊天记录不插进来（不会�
   assert.ok(keys.includes('h3') && !keys.includes('h41'), keys.join(','))
 })
 
+test('询问真人照片走普通问答；明确要求找真人客服才打开工单确认', async () => {
+  const h = chat()
+  await h.load()
+  const asked = [], confirmed = []
+  h.sandbox.apiSupportAsk = async ({ question }) => { asked.push(question); return { data: { text: '答复' } } }
+  h.sandbox.confirm = async (_, text) => { confirmed.push(text); return false }
+  await h.run("ask('头像一定要用真人照片吗？')")
+  assert.deepEqual(asked, ['头像一定要用真人照片吗？'])
+  assert.equal(confirmed.length, 0)
+  await h.run("ask('退款到账了吗？我想找真人客服')")
+  assert.equal(confirmed.length, 1)
+})
+
+test('输入详细问题并要求转人工，取消时保留原话供修改，成功后才清空', async () => {
+  const h = chat()
+  await h.load()
+  let consent = false
+  const submitted = []
+  h.sandbox.confirm = async () => consent
+  h.sandbox.submitSupportTicket = async (uid, body) => { submitted.push(body.question); return { data: { ticketId: '1' } } }
+  const question = '我的报名一直没回复，帮我转人工'
+  h.sandbox.typed = question
+  h.run('input.value = typed; send()')
+  await flush()
+  assert.equal(h.run('input.value'), question)
+  consent = true
+  h.run('send()')
+  await flush()
+  assert.deepEqual(submitted, [question])
+  assert.equal(h.run('input.value'), '')
+})
+
+test('订单切换后迟到的订单资料和 AI 回复不会进入新对话，发送中的草稿也不会丢', async () => {
+  const h = chat()
+  let resolveOldOrder, resolveOldAnswer, resolveNewAnswer
+  h.sandbox.apiStayOrder = no => no === 'A'
+    ? new Promise(resolve => { resolveOldOrder = resolve })
+    : Promise.resolve({ data: { orderNo: no } })
+  h.sandbox.apiSupportAsk = ({question}) => new Promise(resolve => {
+    if (question === '旧订单问题') resolveOldAnswer = resolve
+    else resolveNewAnswer = resolve
+  })
+  await h.run("start('order', 'A')")
+  const oldQuestion = h.run("ask('旧订单问题')")
+  h.run("input.value = '尚未发给旧订单的内容'")
+  await h.run("start('order', 'B')")
+  assert.equal(h.run('input.value'), '')
+  assert.equal(h.run('asking.value'), false)
+  const newQuestion = h.run("ask('新订单问题')")
+  h.run("input.value = '下一条草稿'; send()")
+  assert.equal(h.run('input.value'), '下一条草稿')
+  resolveOldOrder({ data: { orderNo: 'A' } })
+  resolveOldAnswer({ data: { text: '旧订单的回复' } })
+  await oldQuestion
+  assert.equal(h.run('order.value.orderNo'), 'B')
+  assert.equal(h.run('asking.value'), true)
+  resolveNewAnswer({ data: { text: '新订单的回复' } })
+  await newQuestion
+  const texts = plain(h.run('msgs.value')).map(m => m.text)
+  assert.ok(texts.includes('新订单的回复'))
+  assert.ok(!texts.includes('旧订单的回复'))
+})
+
 test('页面和弹层：有「查看更早的聊天记录」、分隔线 / 登录提示；换了账号重新开场；没有任何删除、清空聊天记录的按钮和接口', () => {
   const page = readSfc('pages/notice/support.vue')
   assert.match(page.template.content, /v-if="older" class="sp-more"[^>]*@click="more"/)
@@ -170,7 +233,6 @@ test('页面和弹层：有「查看更早的聊天记录」、分隔线 / 登�
   const sheet = readSfc('components/k-ai-sheet/k-ai-sheet.vue')
   assert.match(sheet.template.content, /v-if="older" class="k-ai__more"[^>]*@click="more"/)
   assert.match(sheet.template.content, /:scroll-into-view="intoView"/)
-  assert.match(sheet.scriptSetup.content, /const key = props\.ctx \+ '\|' \+ props\.orderNo \+ '\|' \+ \(\(experience\.account && experience\.account\.id\) \|\| ''\)/)
   const api = read('common/api.js')
   assert.match(api, /export const apiSupportHistory = \(before\) => get\('\/app\/support\/history'/)
   assert.match(api, /export const apiSupportFaqRead = \(faqId, context\) => post\('\/app\/support\/faq-read', \{ faqId, context \}\)/)

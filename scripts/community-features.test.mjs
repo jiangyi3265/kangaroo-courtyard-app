@@ -16,7 +16,7 @@ test('failed refresh closes a previously enabled feature and does not reuse stal
 })
 test('closed community shares cannot include cached post titles, pictures or identifiers',()=>{
   const result=publicShare('/pages/community/index',{postId:77},'cached private title','https://example.test/old.jpg')
-  assert.equal(result.path,'/pages/home/index');assert.equal(result.title,'袋鼠全球青年');assert.equal(result.imageUrl,'/static/media/brand-kangaroo.png');assert.equal(timelineShare(result).query,'')
+  assert.equal(result.path,'/pages/home/index');assert.equal(result.title,'袋鼠全球青年');assert.equal(result.imageUrl,'/static/share/brand-cover.jpg');assert.equal(timelineShare(result).query,'')
   featureState.stayBookingEnabled=true
   assert.equal(publicShare('/pages/stays/detail',{stayId:3}).path,'/pages/stays/detail?stayId=3')
 })

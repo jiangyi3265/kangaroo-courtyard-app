@@ -31,6 +31,12 @@ const arrowFn = (src, name) => {
   return m[0]
 }
 const slotDuration = Function(arrowFn(progress, 'parseTime') + arrowFn(progress, 'formatSlotDuration') + 'return formatSlotDuration')()
+const slotTime = Function(arrowFn(progress, 'parseTime') + arrowFn(progress, 'formatSlotTime') + 'return formatSlotTime')()
+
+test('公开时段跨到次日时标出结束日期，同一天只显示时分', () => {
+  assert.equal(slotTime('2026-12-31 23:50:00', '2027-01-01 00:20:00'), '23:50 - 1月1日 00:20')
+  assert.equal(slotTime('2026-12-31 20:00:00', '2026-12-31 20:30:00'), '20:00 - 20:30')
+})
 
 test('面试时段的时长按起止时间算，跨整点、整小时、缺结束时间都对', () => {
   assert.equal(slotDuration('2026-10-14 23:20:00', '2026-10-14 23:50:00'), '30 分钟')

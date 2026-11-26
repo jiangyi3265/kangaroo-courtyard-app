@@ -1,5 +1,5 @@
 <template>
-  <view class="k-page orders">
+  <view class="k-page orders" :class="$userSurface">
     <k-topbar :title="titles[s - 1]" back custom-back @back="onBack">
       <!-- 10-18「我的行程」：上面一排分类（旅居订单 / 参与活动 / 兼职 / 全职 / 换宿旅行，有线上任务时多一个），横向可滑 -->
       <scroll-view v-if="s === 1" scroll-x class="cats" :show-scrollbar="false" :scroll-into-view="'cat-' + cat" scroll-with-animation>
@@ -22,11 +22,11 @@
       </view>
       <!-- 原来的「我的行程」时间线、「我的活动」（发起的 / 收藏的活动）从这里进 -->
       <view v-if="catLink" class="jump" hover-class="k-press" @click="go(catLink.url)">
-        <k-icon :name="catLink.icon" :size="16" color="red" :stroke="1.8" /><text class="jump__text">{{ catLink.text }}</text><k-icon name="chevron-right" :size="14" color="muted" />
+        <k-icon :name="catLink.icon" :size="16" color="red" /><text class="jump__text">{{ catLink.text }}</text><k-icon name="chevron-right" :size="12" color="muted" />
       </view>
       <view v-for="o in filteredOrders" :key="o.key" class="oc">
         <view class="oc__head">
-          <view class="oc__ic" :style="{ borderColor: o.iconHex }"><k-icon :name="o.icon" :size="18" :color="o.iconHex" :stroke="1.8" /></view>
+          <view class="oc__ic" :style="{ borderColor: o.iconHex }"><k-icon :name="o.icon" :size="16" color="ink2" /></view>
           <text class="oc__type">{{ o.typeLabel }}</text>
           <text class="oc__dot">·</text>
           <text class="oc__status" :class="'is-' + o.tone">{{ o.status }}</text>
@@ -34,15 +34,16 @@
         <view class="oc__body">
           <view class="oc__left">
             <!-- 10-19 复查：没有封面的行程（增值服务、部分活动）不再放「暂无图片」占位图，换成浅杏底 + 这一类的图标 -->
+            <view v-if="o.image" class="oc__img oc__img--empty oc__ph"><k-icon :name="o.icon || 'calendar-days'" :size="24" color="red" /></view>
             <image v-if="o.image" class="oc__img" :src="o.img" mode="aspectFill" />
-            <view v-else class="oc__img oc__img--empty"><k-icon :name="o.icon || 'calendar-days'" :size="26" color="#B08A62" :stroke="1.6" /></view>
+            <view v-else class="oc__img oc__img--empty"><k-icon :name="o.icon || 'calendar-days'" :size="24" color="red" /></view>
             <text v-if="o.deposit" class="oc__deposit">{{ o.deposit }}</text>
           </view>
           <view class="oc__right">
             <text class="oc__title">{{ displayWording(o.title, [o.storeName]) }}</text>
-            <view v-if="o.loc" class="oc__meta"><k-icon name="map-pin" :size="12" color="light" :stroke="1.7" /><text class="oc__loc">{{ o.loc }}</text></view>
+            <view v-if="o.loc" class="oc__meta"><k-icon name="map-pin" :size="12" color="muted" /><text class="oc__loc">{{ o.loc }}</text></view>
             <view class="oc__meta oc__meta--row">
-              <view class="k-row k-gap4"><k-icon name="calendar-days" :size="12" color="light" :stroke="1.7" /><text>{{ o.date }}</text></view>
+              <view class="k-row k-gap4"><k-icon name="calendar-days" :size="12" color="muted" /><text>{{ o.date }}</text></view>
               <text v-if="o.signed" class="oc__signed">{{ o.signed }}</text>
               <text v-else class="oc__price">{{ o.price }}<text v-if="o.unit" class="oc__unit">{{ o.unit }}</text></text>
             </view>
@@ -53,17 +54,18 @@
         </view>
       </view>
       <view v-if="!filteredOrders.length" class="empty" @click="retryOrders">
-        <view class="empty__ring"><k-icon :name="catIcon" :size="30" color="muted" :stroke="1.5" /></view>
+        <view class="empty__ring"><k-icon :name="catIcon" :size="32" color="red" /></view>
         <text class="k-meta">{{ ordersState === 'loading' ? '正在加载…' : ordersState === 'error' ? '加载失败，点此重试' : emptyText }}</text>
+        <text v-if="ordersState !== 'loading' && ordersState !== 'error'" class="empty__desc">报名、预订或参加活动后，行程会按时间排在这里</text>
       </view>
     </view>
 
     <!-- 2 评价管理 -->
     <view v-else-if="s === 2" class="k-pad-tab">
-      <view class="tip"><text>{{ reviewTip }}</text></view>
+      <view class="tip" :class="{ 'tip--empty': !reviewList.length }"><view v-if="!reviewList.length" class="empty__ring"><k-icon name="star" :size="32" color="red" /></view><text>{{ reviewTip }}</text><text v-if="!reviewList.length" class="tip__desc">{{ reviewTab === '待评价' ? '住宿离店、活动或岗位完成后 30 天内可以评价' : reviewTab === '已发布' ? '在「待评价」里写下你的真实体验，发布后会出现在这里' : '用心写的真实评价，有机会被平台精选' }}</text></view>
       <view class="k-body">
         <view v-for="r in reviewList" :key="r.key" class="rc">
-          <image class="rc__img" :src="r.img" mode="aspectFill" />
+          <view class="rc__ph"><k-icon :name="r.sub === '住宿' ? 'bed' : r.sub === '活动' ? 'ticket' : (r.sub === '换宿' || r.sub === '换工') ? 'house' : 'briefcase'" :size="22" color="red" /><image v-if="r.image" class="rc__img" :src="r.img" mode="aspectFill" /></view>
           <view class="k-flex1">
             <view class="k-row k-gap4">
               <text class="rc__name" :class="{ 'rc__name--lg': !r.sub }">{{ r.name }}</text>
@@ -73,28 +75,28 @@
             <text class="rc__time">{{ r.time }}</text>
             <text class="rc__deadline" :class="{ 'rc__deadline--green': reviewTab !== '待评价' }">{{ r.deadline }}</text>
           </view>
-          <view v-if="reviewTab === '待评价'" class="rc__btn" @click="writeReview(r)"><text>去评价</text></view>
+          <view v-if="reviewTab === '待评价'" class="rc__btn" hover-class="k-press" @click="writeReview(r)"><text>去评价</text></view>
           <k-chip v-else :tone="reviewTab === '已精选' ? 'ochre' : 'green'">{{ reviewTab }}</k-chip>
         </view>
         <view class="k-divider k-mt8" />
         <text class="sec-title">评价权益</text>
         <view class="rights">
           <view class="rights__row rights__row--line">
-            <view class="k-circle k-circle--soft-ochre rights__ic"><k-icon name="medal" :size="22" color="ochre" :stroke="1.6" /></view>
+            <view class="k-circle k-circle--soft-red rights__ic"><k-icon name="medal" :size="20" color="red" /></view>
             <view class="k-flex1">
               <text class="rights__title">精选奖励</text>
               <text class="rights__desc">优质评价由平台精选\n<text class="k-red k-bold">优先展示</text> 在门店页</text>
             </view>
           </view>
           <view class="rights__row">
-            <view class="k-circle k-circle--soft-green rights__ic"><k-icon name="heart" :size="22" color="green" :stroke="1.6" fill /></view>
+            <view class="k-circle k-circle--soft-red rights__ic"><k-icon name="heart" :size="20" color="red" /></view>
             <view class="k-flex1">
               <text class="rights__title">帮助他人</text>
               <text class="rights__desc">真实评价帮助更多小伙伴\n发现好工作好体验</text>
             </view>
           </view>
         </view>
-        <text class="foot-note">评价提交后直接展示；含联系方式等内容会先隐藏，平台复核后展示</text>
+        <text class="foot-note foot-note--review">评价提交后直接展示；含联系方式等内容会先隐藏，平台复核后展示</text>
       </view>
     </view>
 
@@ -102,22 +104,20 @@
     <view v-else-if="s === 3" class="k-body k-pad-tab">
       <view class="k-between rem-head">
         <text class="k-small k-muted">开启提醒，不错过心仪机会</text>
-        <text class="k-small" @click="editPrefs">编辑</text>
+        <text class="k-small rem-edit" @click="editPrefs">编辑</text>
       </view>
       <view class="rem-card">
         <view v-for="(r, i) in reminders" :key="r.title" class="rem" :class="{ 'rem--line': i < reminders.length - 1 }">
-          <view class="rem__ic"><k-icon :name="r.icon" :size="26" :color="r.color" :stroke="1.5" /></view>
-          <view class="k-flex1"><text class="rem__title">{{ displayWording(r.title, [r.storeName]) }}</text><text class="rem__desc">{{ r.desc }}</text></view>
-          <text class="rem__freq">{{ r.freq }}</text>
+          <view class="rem__ic"><k-icon :name="r.icon" :size="20" color="ink2" /></view>
+          <view class="k-flex1"><view class="rem__top"><text class="rem__title">{{ displayWording(r.title, [r.storeName]) }}</text><text class="rem__freq">{{ r.freq }}</text></view><text class="rem__desc">{{ r.desc }}</text></view>
           <view class="k-switch" :class="{ on: r.on }" @click="togglePref(r)" />
         </view>
       </view>
       <text class="rem-label">已暂停的提醒</text>
       <view class="rem-card">
         <view v-for="(r, i) in paused" :key="r.title" class="rem" :class="{ 'rem--line': i < paused.length - 1 }">
-          <view class="rem__ic"><k-icon :name="r.icon" :size="26" color="ink" :stroke="1.5" /></view>
-          <view class="k-flex1"><text class="rem__title">{{ displayWording(r.title, [r.storeName]) }}</text><text class="rem__desc">{{ r.desc }}</text></view>
-          <text class="rem__freq">已暂停</text>
+          <view class="rem__ic"><k-icon :name="r.icon" :size="20" color="muted" /></view>
+          <view class="k-flex1"><view class="rem__top"><text class="rem__title">{{ displayWording(r.title, [r.storeName]) }}</text><text class="rem__freq">已暂停</text></view><text class="rem__desc">{{ r.desc }}</text></view>
           <view class="rem__open" @click="enablePref(r)"><text>开启</text></view>
         </view>
       </view>
@@ -126,34 +126,42 @@
 
     <!-- 4 旅行体验官攻略申请 -->
     <view v-else class="k-pad-tab">
-      <image class="hero" src="/pages/profile/static/orders-hero.jpg" mode="widthFix" />
+      <!-- 11-18 第三轮返修 2：头卡 = 左边真文字（标题 + 两颗权益胶囊），右边是原头图里的人物插画（只露右半边，图里写死的字裁在外面） -->
+      <view class="hero-card">
+        <view class="k-flex1 k-col hero-card__copy"><text class="hero-card__title">成为旅行体验官</text><view class="hero-card__perks"><view class="hero-card__perk"><k-icon name="circle-check" :size="16" color="red" /><text class="hero-card__desc">免费解锁全国城市攻略</text></view><view class="hero-card__perk"><k-icon name="circle-check" :size="16" color="red" /><text class="hero-card__desc">享淡季民宿低价权益</text></view></view></view>
+        <view class="hero-card__art"><image class="hero-card__img" src="/pages/profile/static/orders-hero.jpg" mode="widthFix" /></view>
+      </view>
       <view class="k-body">
         <view class="perks">
           <view v-for="(p, i) in perks" :key="p.title" class="perk" :class="{ 'perk--line': i < perks.length - 1 }">
-            <view class="k-circle k-circle--soft-green perk__ic"><k-icon :name="p.icon" :size="16" :color="p.color" :stroke="1.6" /></view>
+            <view class="k-circle k-circle--soft-red perk__ic"><k-icon :name="p.icon" :size="20" color="red" /></view>
             <view class="k-col"><text class="perk__title">{{ p.title }}</text><text class="perk__desc">{{ p.desc }}</text></view>
           </view>
         </view>
+        <view class="apply-card city-card">
         <view class="k-between k-mt16">
           <text class="sec-title sec-title--flat">可创作的城市</text>
-          <view class="k-row k-gap2" @click="allCities"><text class="k-small k-muted">{{ cityCount }}</text><k-icon name="chevron-right" :size="14" color="muted" /></view>
+          <view class="k-row k-gap2 cities-more" hover-class="k-press" @click="allCities"><text class="k-small k-muted">{{ cityCount }}</text><text class="k-small cities-more__all" @click.stop="allCities">查看全部</text><k-icon name="chevron-right" :size="14" color="muted" /></view>
         </view>
         <view class="cities">
-          <view v-for="c in cities" :key="c" class="city" @click="openCity(c)"><text>{{ c }}</text></view>
-          <text class="k-small city__all" @click="allCities">查看全部</text>
+          <view v-for="c in cities" :key="c" class="city" hover-class="k-press" @click="openCity(c)"><text>{{ c }}</text></view>
+        </view>
         </view>
         <view class="k-divider k-mt12" />
+        <view class="apply-card">
         <text class="sec-title">申请条件</text>
         <view class="k-col k-gap10 k-mt4">
-          <view v-for="c in conditions" :key="c" class="k-row k-gap8"><k-icon name="circle-check" :size="18" color="green" :stroke="1.6" /><text class="k-small">{{ c }}</text></view>
+          <view v-for="c in conditions" :key="c" class="k-row k-gap8"><k-icon name="circle-check" :size="16" color="red" /><text class="k-small">{{ c }}</text></view>
+        </view>
         </view>
         <view class="k-divider k-mt16" />
+        <view class="apply-card">
         <text class="sec-title">申请信息</text>
         <view class="form">
           <text class="form__label">选择城市（可多选）</text>
           <view class="k-row k-gap8 k-mt8">
             <view class="k-input k-flex1 k-between" @click="pickCities"><text class="k-placeholder" :style="pickedStyle">{{ pickedText }}</text><k-icon name="chevron-down" :size="16" color="muted" /></view>
-            <k-button type="secondary" size="md" @click="locateCity">开启</k-button>
+            <k-button type="secondary" size="md" icon="locate-fixed" class="locate-btn" @click="locateCity">开启</k-button>
           </view>
         </view>
         <view class="k-mt12">
@@ -169,8 +177,9 @@
           <text class="form__label">代表作品（选填）</text>
           <view class="k-row k-gap8 k-mt8">
             <view class="k-input k-flex1"><input v-model="work" maxlength="300" :placeholder="workHint" placeholder-class="k-placeholder" /></view>
-            <view class="k-input add" @click="addWork"><k-icon name="plus" :size="18" color="ink" :stroke="1.8" /></view>
+            <view class="k-input add" @click="addWork"><k-icon name="plus" :size="18" color="red" /></view>
           </view>
+        </view>
         </view>
         <k-button block class="k-mt20" :disabled="submitting" :label="submitting ? '提交中…' : '提交申请'" @click="submit" />
         <text class="foot-note foot-note--tight">{{ guideNote }}</text>
@@ -242,7 +251,7 @@ const CATS = [
   { key: 'activity', label: '参与活动', types: ['活动'], icon: 'ticket' },
   { key: 'parttime', label: '兼职旅行', types: ['兼职'], icon: 'briefcase' },
   { key: 'fulltime', label: '全职旅行', types: ['全职'], icon: 'briefcase-business' },
-  { key: 'volunteer', label: '换宿旅行', types: ['换工'], icon: 'heart-handshake' },
+  { key: 'volunteer', label: '换工旅行', types: ['换工'], icon: 'heart-handshake' },
   { key: 'online', label: '线上任务', types: ['在线'], icon: 'laptop', optional: true }
 ]
 // 旅居订单的小页签：待付款的单放在「进行中」里（还要去付款），已结束 / 未到店算「已完成」，已取消算「退款」
@@ -277,7 +286,7 @@ const FALLBACK = { 换工: 'orders-cafe', 兼职: 'orders-pottery', 全职: 'ord
 const isZero = (v) => v !== null && v !== undefined && String(v).trim() !== '' && Number(v) === 0
 // 10-19 复查：卡片左上的类型用用户看得懂的名字（服务端 type 是内部叫法：换工 / 兼职 / 全职 / 在线 / 二消，分类还按它分）——
 // 和上面分类、找机会四个页签同名；「二消」是店里的增值服务（stays/shop 页就叫「增值服务」）
-const TYPE_LABEL = { 换工: '换宿旅行', 兼职: '兼职旅行', 全职: '全职旅行', 在线: '线上任务', 二消: '增值服务' }
+const TYPE_LABEL = { 换工: '换工旅行', 兼职: '兼职旅行', 全职: '全职旅行', 在线: '线上任务', 二消: '增值服务' }
 const unitText = (u) => (!u || u === '元' ? '' : '/' + u.replace(/^元\//, ''))
 const orders = computed(() => raw.value.map((o, i) => ({
   ...o,
@@ -294,7 +303,7 @@ const cats = computed(() => CATS.filter(c => !c.optional || raw.value.some(o => 
   .map(c => ({ key: c.key, label: c.label, count: raw.value.filter(o => c.types.includes(o.type)).length })))
 const filteredOrders = computed(() => orders.value.filter(o => inCat(o, cat.value) && (cat.value !== 'stay' || (SUB_STATUS[staySub.value] || []).includes(o.status))))
 const catIcon = computed(() => catOf(cat.value).icon)
-const EMPTY_TEXT = { activity: '还没有报名过活动，去社区「活动」看看', volunteer: '还没有换宿旅行，报名换工岗位后会出现在这里',
+const EMPTY_TEXT = { activity: '还没有报名过活动，去社区「活动」看看', volunteer: '还没有换工旅行，报名换工岗位后会出现在这里',
   parttime: '还没有兼职旅行', fulltime: '还没有全职旅行', online: '还没有线上任务' }
 const emptyText = computed(() => (cat.value === 'stay' ? '没有' + staySub.value + '的旅居订单' : EMPTY_TEXT[cat.value]))
 // 分类下面的一行入口：原「我的行程」时间线（按城市和日期排的行程、找搭子），原「我的活动」（我发起的、收藏的活动）
@@ -515,7 +524,7 @@ async function submit() {
 .cats__item.active .cats__n { color: var(--k-red); }
 .subs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .subs__item { height: 34px; border-radius: 17px; background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-line); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--k-ink2); }
-.subs__item.on { background: var(--k-red-soft, #F5EBDD); box-shadow: inset 0 0 0 1px var(--k-red); color: var(--k-red-deep, #8A5E36); font-weight: 600; }
+.subs__item.on { background: var(--k-red-soft); box-shadow: inset 0 0 0 1px var(--k-red); color: var(--k-red-deep); font-weight: 600; }
 .jump { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 12px; background: var(--k-paper); box-shadow: var(--k-sh1); }
 .jump__text { flex: 1; min-width: 0; font-size: 13px; color: var(--k-ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .empty { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 12px; padding: 32px 20px; border-radius: 16px; background: var(--k-paper); box-shadow: var(--k-sh1); text-align: center; }
@@ -549,7 +558,7 @@ async function submit() {
 .oc__loc { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .oc__btn { min-width: 72px; height: 26px; padding: 0 10px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; }
 .oc__btn.is-outline { background: var(--k-paper); border: 1px solid var(--k-line2); color: var(--k-ink); }
-.oc__btn.is-primary { background: var(--k-red); color: #fff; }
+.oc__btn.is-primary { background: var(--k-red); color: var(--k-paper); }
 
 /* s2 */
 .tip { padding: 8px 16px; background: var(--k-paper2); font-size: 12px; color: var(--k-ink2); }
@@ -634,7 +643,17 @@ async function submit() {
 .oc__btn { height: 30px; padding: 0 14px; border-radius: 999px; font-weight: 600; }
 .oc__btn.is-outline { border-color: rgba(201, 147, 95, .7); color: $look-chip-on-ink; }
 .oc__btn.is-primary { background: $look-grad-brown; box-shadow: 0 4px 10px rgba(138, 90, 48, .22); }
-.rc { border: $look-hairline; border-radius: 18px; background: #fff; box-shadow: $look-shadow-sm; }
+.rc { border: $look-hairline; border-radius: 18px; background: var(--k-paper); box-shadow: $look-shadow-sm; }
 .rc__btn { border-color: $look-chip-on-line; color: $look-chip-on-ink; }
 @import './orders-premium.scss';
+
+.orders.user-surface {
+  .oc { border-radius: 12px; box-shadow: var(--k-sh1); }
+  .oc__img { border-radius: 9px; }
+  .oc__ic, .empty__ring { background-color: var(--user-icon-field); }
+  .oc__right { min-width: 0; }
+  .oc__title { line-height: 1.45; }
+  .oc__price, .oc__meta { font-variant-numeric: tabular-nums; }
+  .oc__btn { border-radius: 9px; }
+}
 </style>

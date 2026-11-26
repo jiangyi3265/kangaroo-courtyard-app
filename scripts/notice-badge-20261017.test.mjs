@@ -35,10 +35,9 @@ test('清角标：记下当前版本、只增不减；不动「看过」（首�
   assert.deepEqual(notice.readSeenNotices(), {}, '弹窗看的「看过」记录没被动')
 })
 
-test('进「系统通知」清掉所有新公告的角标（含要弹窗的）；消息页角标按新规则算，「全部已读」也清公告角标', () => {
-  assert.match(inbox, /clearNoticeBadge\(notices\.value\.filter\(n => n\.fresh\)\)/)
-  assert.match(inbox, /if \(n\.fresh && !n\.popup\) rememberNoticeSeen/, '要弹窗的公告仍不记「看过」')
+test('浏览平台通知列表保留公告的未读标记，主动点「全部已读」清入口角标', () => {
+  assert.doesNotMatch(inbox, /(?:clearNoticeBadge|rememberNoticeSeen|markNoticeSeen)\(/)
   assert.match(messages, /const unseenNotices = computed\(\(\) => notices\.value\.filter\(n => noticeBadged\(n, noticeSeen\.value, badgeCleared\.value\)\)\.length\)/)
   assert.match(messages, /badgeCleared\.value = readNoticeBadgeCleared\(\)/)
-  assert.match(messages, /await markAllMessagesRead\(\)\s+badgeCleared\.value = clearNoticeBadge\(notices\.value\)/)
+  assert.match(messages, /await markAllMessagesRead\(\)\s+if \(scope !== messageScope\(\)\) return\s+badgeCleared\.value = clearNoticeBadge\(notices\.value\)/)
 })

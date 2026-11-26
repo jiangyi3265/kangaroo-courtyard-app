@@ -76,11 +76,33 @@ test('activity notification locates a later page under the same city identity', 
   t.after(h.stop)
   await h.boot({ id: '88', storeId: '201' })
   assert.deepEqual(h.selected, [])
-  assert.deepEqual(requests.map(([, params]) => [params.storeId, params.pageNum]), [[102, 1], [102, 2]])
+  assert.deepEqual(requests.map(([, params]) => [params.storeId, params.pageNum]), [['201', 1], ['201', 2]])
   assert.equal(h.s.value, 2)
   assert.equal(h.run('current.value.activityId'), 88)
   await h.run('audit(true)')
-  assert.equal(h.requests[0][0], '/app/staff/service/activities/88/audit?storeId=102')
+  assert.equal(h.requests[0][0], '/app/staff/service/activities/88/audit?storeId=201')
+})
+
+test('a failed identity switch stops the activity request; retry reopens the original notice', async t => {
+  let allowed = false
+  const queries = []
+  const h = page('service-activities.vue', {
+    merchantService: { value: false },
+    KEEPER_ACTIVITIES_API: '/app/staff/keeper/activities',
+    selectStaffStore: async () => { if (!allowed) throw new Error('门店授权已失效') },
+    get: async (_, q) => { queries.push(q); return { data: { rows: [{ activityId: 88 }] } } }
+  })
+  t.after(h.stop)
+  h.s.value = 2
+  await h.boot({ id: '88', storeId: '201', as: 'keeper' })
+  assert.equal(h.s.value, 1)
+  assert.equal(h.run('entryError.value'), '门店授权已失效')
+  assert.equal(queries.length, 0)
+  allowed = true
+  await h.run('retryEntry()')
+  assert.equal(queries[0].storeId, '201')
+  assert.equal(h.s.value, 2)
+  assert.equal(h.run('current.value.activityId'), 88)
 })
 
 test('failed activity pagination stops instead of retrying or reporting already handled', async t => {

@@ -1,0 +1,28 @@
+// 2026-11-17 改版「小而精」（主人按样张第三版拍板）：管理端六页（日报 / 周报 / 看板 / 任务 / 钱包 / 荣誉）共用的底子。
+// 浅灰底（#F7F5F2）上放纯白卡片，卡片 12 圆角、不描边、不加阴影，靠留白分开；按钮收成胶囊；小标签 4 圆角。
+// 只改样子：入口、按钮、文字、判断一个没动。各页自己的细节写在各页 <style> 的最后（都带页面的类名，盖住上面的旧值）。
+//
+// 用法：在页面 <style scoped lang="scss"> 的最后写 @import './manage-refine.scss';
+// 放在 manage 分包目录：编译时并进各页自己的 wxss，不进主包。
+.k-page { --k-bg: #F7F5F2; background: #F7F5F2; }
+.k-page :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+// 只写左右和上边：下边的留白（让开底栏）是 .k-pad-tab 给的，不能盖掉
+.k-page .k-body { padding-top: 10px; padding-left: 12px; padding-right: 12px; }
+.k-page :deep(.k-card) { border-radius: 12px !important; box-shadow: none; }
+.k-page :deep(.k-button) { box-shadow: none; }
+.k-page :deep(.k-button.is-md) { border-radius: 20px; }
+.k-page :deep(.k-button.is-sm) { border-radius: 16px; }
+// 小标签全站统一：高 17、左右 5、圆角 4、字 10 / 500（和找机会卡片、首页的小标签一个尺寸）
+.k-page :deep(.k-chip:not(.is-pill)) { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+// 三个并排的入口（看板：业务趋势 / 门店排名 / 评价统计；钱包：收益明细 / 结算记录 / 分佣规则；荣誉：经营成长 / 生日礼物 / 委屈奖申报）
+.k-page .links { gap: 8px; margin-top: 8px; }
+.k-page .links__item { height: 40px; border: 0; border-radius: 10px; font-size: 13px; color: var(--k-ink); }
+// 11-18 第二轮：入口箭头按词典在模板里改成 12 号灰色（muted），不再靠 opacity 调淡
+.k-page .links__item :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+// 11-18 第二轮：金额、数字一律等宽，上下几行的数字对得齐（只加等宽，各页后面写的字号、颜色不受影响；列表里有别的页才有的类名也没关系）
+.k-page .metric__amount, .k-page .profit__amount, .k-page .summary-card__amount,
+.k-page .stat4__value, .k-page .fee__amt, .k-page .total__num, .k-page .works__value,
+.k-page .metric__value, .k-page .totals__value, .k-page .kpi__value, .k-page .rank__amount, .k-page .score__big,
+.k-page .balance, .k-page .income-card__num, .k-page .rule__rate, .k-page .source-card__amount, .k-page .recent__right,
+.k-page .withdraw-balance__num, .k-page .withdraw-amount__num,
+.k-page .hours__num, .k-page .growth-metric > text:nth-child(2) { font-variant-numeric: tabular-nums; }

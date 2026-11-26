@@ -29,7 +29,7 @@
           <text v-if="detail.basis" class="hint">{{ detail.basis }}</text>
           <text class="hint">{{ detail.kind === 'stay' ? (detail.directFeeFree ? '退房完成后可提现到微信零钱。商家实得为剩余实收房费，不扣平台服务费；退款后的金额须由平台重新核对。' : detail.merchantFeePolicy ? '退房完成后可提现到微信零钱。本单按原规则扣除5%服务费；退款后的金额须由平台重新核对。' : '本单按订单生成时的结算规则。长住优惠等折扣按客人实付比例分摊；退款产生的金额差异由平台核对。') : '服务费从工资中扣除，商家代扣后交给平台。' }}</text>
         </view>
-        <view v-if="detail.kind === 'stay'" class="section">
+        <view v-if="detail.kind === 'stay'" class="section section--form">
           <text class="title">微信提现</text>
           <view class="line"><text>可提现金额</text><text>{{ money(detail.withdrawableFen || 0) }}</text></view>
           <view v-if="detail.withdrawingFen > 0" class="line"><text>提现处理中</text><text>{{ money(detail.withdrawingFen) }}</text></view>
@@ -250,23 +250,49 @@ onShow(() => { load(); if (detail.value) updateDetail(detail.value.billId, curre
 </script>
 
 <style scoped>
-.content { padding: 20px 16px calc(32px + env(safe-area-inset-bottom)); }
-.store-name { display: block; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
-.tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-.tabs > view { flex: 1; text-align: center; padding: 14px 0; border-radius: 8px; background: var(--k-paper2); font-size: 15px; }
-.tabs .active { background: var(--k-red-deep); color: var(--k-paper); }
-.title { display: block; font-size: 16px; font-weight: 600; line-height: 1.6; overflow-wrap: anywhere; }
-.hint { display: block; font-size: 14px; line-height: 1.6; color: var(--k-muted); }
-.line, .bill-head { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; font-size: 14px; }
-.line > text:last-child { flex-shrink: 0; }
-.bill-head { color: var(--k-red-deep); align-items: center; }
-.bill, .section { padding: 18px 0; border-bottom: 1px solid var(--k-line); }
-.actions { display: flex; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
-.field-label { display: block; font-size: 16px; margin: 20px 0 10px; }
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边、不加阴影），页边距 12、卡片之间 8。
+   每张账单、每个小节各是一张白卡；页签收成 40 高的白色胶囊，选中是暖棕；账单类型是一枚小标签，金额行左灰右黑。
+   文字、金额、规则说明一个字没动；「登记工资」「提现」两处填写的字号和 48 高的输入框没动 */
+.settlement-page { --k-bg: #F7F5F2; --k-sh1: none; background: #F7F5F2; }
+.settlement-page :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+.settlement-page :deep(.k-button) { border-radius: 999px; }
+.content { padding: 8px 12px calc(32px + env(safe-area-inset-bottom)); }
+.store-name { display: block; font-size: 17px; font-weight: 700; line-height: 24px; margin-bottom: 10px; }
+.tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+/* 11-18 精修词典「筛选胶囊」（和保险、订单台同一种）：28 高、12 号；选中是浅棕底 + 深棕字，不再是整块实心渐变（实心只留给「登记工资」） */
+.tabs > view { flex: 1; min-height: 28px; height: 28px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 999px; background: var(--k-paper); font-size: 12px; color: var(--k-ink2); }
+.tabs .active { background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; }
+.title { display: block; font-size: 15px; font-weight: 700; line-height: 22px; overflow-wrap: anywhere; }
+.bill .title { font-size: 14px; font-weight: 600; line-height: 20px; }
+.hint { display: block; font-size: 12px; line-height: 1.65; color: var(--k-muted); }
+.content > .hint { margin: 0 2px; }
+.line, .bill-head { display: flex; justify-content: space-between; gap: 14px; padding: 5px 0; font-size: 13px; line-height: 20px; }
+.line > text:first-child { color: var(--k-muted); }
+.line > text:last-child { flex-shrink: 0; color: var(--k-ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+.bill-head { padding: 0 0 6px; align-items: center; }
+.bill-head > text:first-child { height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 10px; font-weight: 500; line-height: 17px; }
+.bill-head .hint { font-size: 11px; line-height: 17px; text-align: right; }
+.bill, .section { margin-bottom: 8px; padding: 12px; border-radius: 12px; background: var(--k-paper); }
+.bill .hint, .section .hint { margin-top: 4px; }
+.section .hint { font-size: 13px; }
+/* 微信提现这一节里有输入框：说明文字和「登记工资」一样保持 14 */
+.section--form .hint { font-size: 14px; }
+.bill .title + .hint { margin-top: 2px; }
+.actions { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+.section .actions { margin-bottom: 0; }
+/* 列表上面的「刷新 / 登记工资」、底下的「上一页 / 下一页」和详情顶上的「返回账单列表」不在填写区里：收成 40 高、字 14，和账单卡片的大小配得上；
+   填写区里的按钮（保存工资、取消、提现到微信零钱、刷新提现状态）仍是 48 高、字 16 */
+.content > .actions :deep(.k-button) { height: 40px; padding: 0 18px; font-size: 14px; box-shadow: none; }
+.content :deep(.k-button.is-ghost) { height: 40px; padding: 0 2px; font-size: 14px; font-weight: 500; color: var(--k-red-deep); }
+.field-label { display: block; font-size: 16px; margin: 16px 0 8px; }
 .input, .picker-field { box-sizing: border-box; width: 100%; min-height: 48px; padding: 12px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); font-size: 16px; }
 .basis { height: 112px; }
-.work-form .hint { margin-top: 10px; }
-.error { display: block; color: var(--k-alert); font-size: 14px; padding: 12px 0; }
-.empty { display: block; padding: 32px 0; color: var(--k-muted); font-size: 15px; line-height: 1.7; }
-.history { padding: 14px 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; overflow-wrap: anywhere; }
+.section.work-form .hint { margin-top: 10px; font-size: 14px; }
+.error { display: block; color: var(--k-alert); font-size: 13px; padding: 8px 2px; }
+/* 空状态放进白卡（词典「空状态」） */
+.empty { display: block; margin-bottom: 8px; padding: 28px 12px; border-radius: 12px; background: var(--k-paper); color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 1.7; text-align: center; }
+.history { position: relative; margin-top: 10px; padding: 10px 0 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 20px; overflow-wrap: anywhere; }
+.history .line { padding: 0; }
+/* 提现 / 核对记录之间是发丝线 */
+.history::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
 </style>

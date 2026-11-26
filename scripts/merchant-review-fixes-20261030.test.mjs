@@ -94,17 +94,20 @@ test('门店没有地址时工作地点必填，提示里不再写「默认：�
   assert.match(jobs, /storeAddress\.value \? '默认：门店地址 ' \+ storeAddress\.value : '请选择或填写工作地点'/)
 })
 
-test('成为商家：没验证手机号先去验证，验证完回来读一次账号', () => {
+test('成为商家：申请页直接调用微信手机号授权，不再跳到绑定页或要求再输入号码', () => {
   const page = src('pages/profile/merchant.vue')
-  assert.match(page, /experience\.account\?\.phoneVerified === false/)
-  assert.match(page, /R\.login \+ '\?s=4&mode=bind-phone'/)
-  assert.match(page, /if \(needVerify\.value\) return '请先验证手机号'/)
-  assert.match(page, /onShow\(\(\) => \{ if \(needVerify\.value\) refreshAccount\(\)/)
+  assert.match(page, /@getphonenumber="verifyMerchantPhone"/)
+  assert.match(page, /getPhoneNumber/)
+  assert.doesNotMatch(page, /mode=bind-phone|v-model="form\.phone"/)
 })
 
 test('我的：合作商家能自己退出，服务端说还差什么就照实显示', () => {
   const page = src('pages/profile/index.vue')
-  assert.match(page, /v-if="merchantStaff" @click="exitMerchant"/)
+  const home = page.slice(page.indexOf('class="mine-links staff-account__links"'), page.indexOf('<view v-else-if="s === 1"'))
+  assert.doesNotMatch(home, /exitMerchant/)
+  assert.match(home, /设置[\s\S]*返回用户首页<\/text><k-icon[^>]+\/><\/view><\/view>/)
+  const settings = page.slice(page.indexOf('class="k-body k-pad-tab settings"'), page.indexOf('<script setup>'))
+  assert.match(settings, /v-if="staffMode && merchantStaff"[^>]*>\s*<view[^>]*@click="exitMerchant"/)
   assert.match(page, /post\('\/app\/merchant\/exit'\)/)
   assert.match(page, /await apiMerchantExit\(\)/)
   assert.match(page, /confirm\('暂时不能退出', errText\(e/)

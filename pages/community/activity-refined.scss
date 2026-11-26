@@ -95,3 +95,121 @@
  .form-body .two-fields .form-input>text { font-size:12px; }
  .form-body .cover-row:not(.cover-row--selected) .cover-upload { flex-basis:76%; }
 }
+
+/* ==========================================================================
+   2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底上放白卡，不用阴影、不描边，圆角 12、图片 8、标签 4。
+   「我的活动」列表和「活动管理」照新规范收小；「创办活动 / 发布确认」是填写页，按 10-31 定的大字风格不动字号，
+   只统一底色、圆角、去阴影。功能和文字不变：创办活动、四个页签、群聊 / 取消报名 / 管理活动 / 查看回顾 / 取消收藏 / 移除记录、
+   表单每一项、须知勾选、手机号校验、管理工具、活动操作、报名成员、批量联系、报名趋势都在。上面的旧规则保留，这里盖过去。
+   ========================================================================== */
+.k-page.mine-page {
+  --k-bg: var(--k-page); --k-paper2: var(--k-fill); --am-veil: rgba(255, 255, 255, .3); /* 本组暖米填充、已结束封面蒙层，只在根上定义一次 */
+  background: var(--k-page);
+  :deep(.k-topbar) { background: var(--k-page); }
+  /* 顶栏标题这一页不改小（填写屏和列表屏共用同一个顶栏），只换成系统黑体 */
+  :deep(.k-navbar__title) { font-family: var(--k-sans); font-weight: 600; }
+  /* 空状态：白卡内居中，字 14 / 500 二级墨，上下留白 28 */
+  .empty-tip { margin: 0 0 8px; padding: 28px 16px; border-radius: 12px; background: var(--k-paper); color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 1.6; }
+
+  /* ---------- 我的活动 ---------- */
+  /* 「创办活动」和四个页签垫一条白底，接在顶栏下面（和「活动」页的页签一样）；「创办活动」是细边小胶囊，上下各多 5 的透明可点范围 */
+  .mine-body { padding: 0 12px 100px; }
+  .mine-head { min-height: 36px; margin: 0 -12px; padding: 4px 12px 0; background: var(--k-paper); }
+  .create-link { position: relative; height: 26px; padding: 0 10px; border: 1px solid var(--k-red-line); border-radius: 13px; color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+  .create-link::before { content: ''; position: absolute; left: 0; right: 0; top: -6px; bottom: -6px; }
+  .create-link { z-index: 1; } /* 页签改成固定 40 高后会压住「创办活动」撑出来的可点范围下沿，这里把它提到页签上面；上下各撑 6，可点高度保持 36 */
+  .create-link :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+  .mine-tabs { margin: 0 -12px 8px; padding: 0 12px; border-bottom: 0; background: var(--k-paper); }
+  /* 下划线页签：未选 14 / 400 浅灰，选中 14 / 600 深墨 + 16×3 暖棕短条，行高 40 */
+  .mine-tabs .k-tabs__item { height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; box-sizing: border-box; color: var(--k-muted); font-size: 14px; font-weight: 400; }
+  .mine-tabs .k-tabs__item.active { color: var(--k-ink); font-weight: 600; }
+  .mine-tabs .k-tabs__item.active::after { bottom: 4px; width: 16px; height: 3px; margin-left: -8px; border-radius: 2px; background: var(--k-red); }
+  .mine-card { margin-bottom: 8px; padding: 12px; border: 0; border-radius: 12px; }
+  .mine-main { gap: 10px; }
+  .mine-photo { width: 104px; height: 104px; border-radius: 8px; overflow: hidden; background: var(--k-paper2); }
+  .mine-photo image { width: 104px; height: 104px; border-radius: 0; }
+  .state-chip { left: 4px; top: 4px; padding: 0 6px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 17px; }
+  .state-chip--green { background: rgba(255, 255, 255, .94); color: var(--k-green); }
+  .state-chip--ochre { background: rgba(255, 255, 255, .94); color: var(--k-ochre-deep); }
+  .state-chip--blue { background: rgba(255, 255, 255, .94); color: var(--k-indigo); }
+  .mine-copy { gap: 3px; }
+  .mine-copy > .k-between { align-items: flex-start; gap: 6px; }
+  .mine-copy > .k-between .kind-chip { margin-top: 2px; }
+  .mine-title { font-family: var(--k-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
+  .kind-chip { flex: 0 0 auto; padding: 0 5px; border: 0; border-radius: 4px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 11px; font-weight: 500; line-height: 17px; }
+  .mine-card .meta { gap: 4px; font-size: 11px; line-height: 16px; }
+  .mine-card .meta :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+  .attend { gap: 6px; }
+  .tiny-avatar { width: 18px; height: 18px; }
+  .mine-actions { justify-content: flex-end; gap: 8px; margin-top: 8px; padding: 0; }
+  /* 卡片右下的小按钮：一律 28 高、圆角 14、12 / 500；灰框墨字的 outline 统一成次按钮（白底 + 棕色细边 + 深棕字），和旁边的「取消报名」一个样子 */
+  .mine-actions :deep(.k-button) { height: 28px; padding: 0 12px; border-radius: 14px; font-size: 12px; font-weight: 500; }
+  .mine-actions :deep(.k-button.is-outline), .mine-actions :deep(.k-button.is-secondary) { background: #fff; border-color: var(--k-red-line); color: var(--k-red-deep); }
+
+  /* ---------- 创办活动 / 发布确认（填写页：字号不动，只统一底色、圆角、去阴影） ---------- */
+  .form-body .form-label { font-weight: 600; color: var(--k-ink); } /* 字号不动（17），只把 650 收成 600、颜色用深墨 */
+  .form-body .form-input { border-color: var(--k-line2); border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .form-body .cover-row { border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); box-shadow: none; } /* 和上下的输入框一样带 1px 细边，同一页的白块不再有的带边有的不带 */
+  .form-body .cover-row:not(.cover-row--selected) .cover-upload { background: var(--k-paper); }
+  .form-body .cover-upload { border-color: var(--k-line2); border-radius: 8px; }
+  .form-body .cover-upload > text { color: var(--k-ink2); }
+  .form-body .cover-upload .cover-tip { color: var(--k-muted); }
+  /* 收费方式选中：浅棕底 + 深棕字 + 1px 棕色细边（填写页照顾年纪大的人，选中要比没选中的更醒目；三颗边框一样粗、一样大），不再是实心棕；没选中的仍是白底灰细边 */
+  .fee-seg__item.on { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; }
+  .cover-preview, .cover-preview image { border-radius: 8px; }
+  .form-body .fee-side { border-left-color: var(--k-line); }
+  .schedule-date, .schedule-clock { border-radius: 12px; }
+  .form-body .form-submit :deep(.k-button), .confirm-body .confirm-submit :deep(.k-button) { background: linear-gradient(135deg, #B5814D, #8E5E33); box-shadow: none; }
+  .confirm-body .confirm-card, .confirm-body .option-card { padding: 12px; border: 0; border-radius: 12px; box-shadow: none; }
+  /* 三张卡的标题一样大、离卡片左边一样远（原来「活动预览」17、另两张 18，内边距 12 / 15） */
+  .confirm-body .confirm-title, .confirm-body .card-title { color: var(--k-ink); font-size: 18px; }
+  .confirm-body .confirm-name { color: var(--k-ink); font-weight: 700; } /* 字号不动（21） */
+  .confirm-body .check-row { min-height: 44px; margin-top: 0; }
+  /* 预览封面：整块撑满卡片内宽、圆角 8，图片完整显示时两边空出来的地方垫浅色（原来图片缩在中间、四角是直角）；没传封面时矮一些，占位图标跟着变小 */
+  .confirm-body .confirm-cover { border-radius: 8px; background: var(--k-paper2); }
+  .confirm-body .confirm-cover--empty { height: 112px; background: #F3EADF; }
+  .confirm-body .checkbox { border-color: var(--k-line2); }
+  .confirm-body .checkbox.checked { border-color: var(--k-red); background: var(--k-red); }
+
+  /* ---------- 活动管理 ---------- */
+  .reject-reason { border-radius: 8px; background: var(--k-alert-soft); }
+  .manage-body { padding: 8px 12px 102px; }
+  .manage-body .manage-hero { padding: 12px 12px 68px; border: 0; border-radius: 12px; box-shadow: none; }
+  .manage-body .manage-hero > image { border-radius: 8px; }
+  .manage-title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; }
+  .manage-body .manage-tools { border-top-color: var(--k-line); border-radius: 0 0 12px 12px; background: var(--k-paper); }
+  .manage-tools > view { border-right: 0; color: var(--k-ink2); }
+  .manage-tools :deep(.k-icon) { width: 20px !important; height: 20px !important; }
+  .manage-operations { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; }
+  .operations-title { margin-bottom: 10px; font-size: 15px; }
+  .operations-grid { gap: 8px; }
+  /* 活动操作：统一 36 高的次按钮（白底 + 棕色细边 + 深棕字）；处理中不可点时整体淡到 .45 */
+  .operations-grid :deep(.k-button) { height: 36px; min-height: 36px; border-radius: 18px; }
+  .operations-grid :deep(.k-button.is-outline) { background: #fff; border-color: var(--k-red-line); color: var(--k-red-deep); }
+  .operations-grid :deep(.k-button.is-disabled) { opacity: .45; }
+  .manage-body .stats { margin-top: 8px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  /* 数据格：数字在上（18 / 700 深墨、等宽），说明在下（11 浅灰），上下间距 2；只用 CSS 换上下顺序，数字不再分绿 / 赭色 */
+  .stats > view { flex-direction: column-reverse; gap: 2px; border-right: 0; color: var(--k-muted); font-size: 11px; }
+  .manage-body .stat-num, .manage-body .stat-num.green, .manage-body .stat-num.ochre { color: var(--k-ink); font-size: 18px; font-weight: 700; line-height: 24px; font-variant-numeric: tabular-nums; }
+  .members-title { margin: 16px 2px 8px; font-size: 16px; line-height: 22px; font-weight: 700; color: var(--k-ink); }
+  /* 报名成员：「已确认 / 候补中」两组收进一张白卡，行与行之间一道细线（原来两行标题直接写在灰底上，和上下都对不齐） */
+  .members-layout { gap: 8px; }
+  .member-groups { box-sizing: border-box; padding: 0 12px; border-radius: 12px; background: var(--k-paper); }
+  .group-head { height: 40px; color: var(--k-ink2); font-size: 12px; }
+  .group-head.wait { margin-top: 0; border-top: 1px solid var(--k-line); }
+  .group-head__link { display: flex; align-items: center; gap: 2px; color: var(--k-muted); }
+  .member-row, .member-row:first-of-type { padding: 0; border: 0; border-top: 1px solid var(--k-line); border-radius: 0; background: transparent; }
+  .expand-more { height: 36px; border: 0; border-top: 1px solid var(--k-line); border-radius: 0; font-size: 11px; }
+  /* 报名趋势：标题在左、小图在右。图上的点是按 116 宽算的位置（原来图表只占三分之一宽），图撑满整行时点会挤在左边；竖线改成清楚的 1px 细线 */
+  .manage-body .chart { display: grid; grid-template-columns: minmax(0, 1fr) 116px; grid-template-rows: auto auto 1fr auto; column-gap: 12px; height: auto; min-height: 0; margin-top: 0; padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .chart-title { grid-column: 1; grid-row: 1; font-family: var(--k-sans); font-weight: 600; }
+  .chart-sub { grid-column: 1; grid-row: 2; }
+  .chart-area { grid-column: 2; grid-row: 1 / 4; margin-top: 0; background-image: linear-gradient(var(--k-line), var(--k-line)), linear-gradient(var(--k-line), var(--k-line)), linear-gradient(var(--k-line), var(--k-line)); background-size: 1px 100%; background-position: 25% 0, 50% 0, 75% 0; background-repeat: no-repeat; }
+  .chart-axis { grid-column: 2; grid-row: 4; }
+  .member-tag { padding: 0 5px; font-size: 11px; line-height: 17px; }
+  .member-tag.leader { color: var(--k-ochre-deep); }
+
+  @media (max-width: 359px) {
+    .mine-photo, .mine-photo image { width: 88px; height: 88px; }
+  }
+}

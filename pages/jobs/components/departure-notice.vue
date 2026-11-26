@@ -2,7 +2,7 @@
   <view class="ma">
     <view class="ma__entry" @click="open">
       <view><text class="ma__title">行前安全须知</text><text class="ma__hint">{{ doc?.accepted ? '已确认 · 可查看协议与记录' : '出发前，请阅读并确认本次报名须知' }}</text></view>
-      <text class="ma__link">查看 ›</text>
+      <view class="ma__more"><text class="ma__link">查看</text><k-icon name="chevron-right" :size="12" color="red" /></view>
     </view>
     <view v-if="visible" class="ma__mask" @click="close">
       <view class="ma__sheet" @click.stop>
@@ -21,7 +21,7 @@
             <k-agreement-reader :content-key="doc.version" :html="doc.html" height="38vh" @read="markRead" />
             <view v-if="doc.records?.length" class="ma__records">
               <text class="ma__title">我的确认记录</text>
-              <view v-for="record in doc.records" :key="record.id" class="ma__record" @click="readRecord(record.id)"><text>{{ record.confirmedAt }}</text><text class="ma__link">查看原文 ›</text></view>
+              <view v-for="record in doc.records" :key="record.id" class="ma__record" @click="readRecord(record.id)"><text>{{ record.confirmedAt }}</text><view class="ma__more"><text class="ma__link">查看原文</text><k-icon name="chevron-right" :size="12" color="red" /></view></view>
             </view>
           </view>
         </view>
@@ -45,6 +45,7 @@
 import { ref, watch, onBeforeUnmount } from 'vue'
 import { get, post } from '@/common/request.js'
 import { errText } from '@/common/ui.js'
+import { experience } from '@/common/experience.js'
 const props = defineProps({ appId: [String, Number] })
 const api = () => '/app/application/' + props.appId + '/departure-notice'
 const visible = ref(false), loading = ref(false), saving = ref(false), agreed = ref(false)
@@ -53,9 +54,15 @@ function markRead(value) { readComplete.value = value; if (!value) agreed.value 
 const doc = ref(null), history = ref(null), error = ref(''), notice = ref('')
 let generation = 0, pending = null, recordId = null
 function finish(value) { visible.value = false; const resolve = pending; pending = null; if (resolve) resolve(value) }
-function close() { if (!saving.value) finish(false) }
+function close() {
+  if (saving.value) return
+  generation++
+  loading.value = false
+  finish(false)
+}
 async function load() {
   const seq = ++generation
+  saving.value = false
   doc.value = null; history.value = null; recordId = null; agreed.value = false; readComplete.value = false; error.value = ''; loading.value = true
   try {
     if (!props.appId) throw new Error('请从具体报名进入')
@@ -68,9 +75,12 @@ async function load() {
 }
 async function open() { visible.value = true; notice.value = ''; await load() }
 async function confirm() {
-  if (pending || saving.value) return false
+  if (pending || saving.value || loading.value) return false
   notice.value = ''
-  if (!await load()) { visible.value = true; return false }
+  const reading = load(), seq = generation
+  const ready = await reading
+  if (seq !== generation) return false
+  if (!ready) { visible.value = true; return false }
   if (doc.value.draft || doc.value.accepted) return true
   visible.value = true
   return new Promise(resolve => { pending = resolve })
@@ -85,18 +95,24 @@ async function accept() {
     doc.value = d; finish(true)
   } catch (e) {
     if (seq !== generation) return
-    if (e.code === 409) { await load(); notice.value = '协议已更新，请重新阅读并勾选。' }
+    if (e.code === 409) { if (await load()) notice.value = '协议已更新，请重新阅读并勾选。' }
     else notice.value = errText(e, '确认失败，请重试')
-  } finally { saving.value = false }
+  } finally { if (seq === generation) saving.value = false }
 }
 async function readRecord(id) {
-  const seq = ++generation; recordId = id; loading.value = true; error.value = ''
+  if (saving.value) return
+  const seq = ++generation; recordId = id; loading.value = true; error.value = ''; markRead(false)
   try { const d = (await get(api() + '/records/' + id)).data; if (seq === generation) history.value = d }
   catch (e) { if (seq === generation) error.value = errText(e, '记录读取失败，请重试') }
   finally { if (seq === generation) loading.value = false }
 }
 function retry() { return recordId ? readRecord(recordId) : load() }
-watch(() => [props.appId], () => { generation++; finish(false); doc.value = null; agreed.value = false })
+watch([() => props.appId, () => experience.account?.id, () => experience.mode], () => {
+  generation++
+  finish(false)
+  doc.value = null; history.value = null; loading.value = false; saving.value = false
+  markRead(false)
+}, { flush: 'sync' })
 onBeforeUnmount(() => { generation++; finish(false) })
 defineExpose({ confirm })
 </script>
@@ -123,4 +139,27 @@ defineExpose({ confirm })
 .ma__records { border-top: 1px solid #e6dccc; padding-top: 16px; margin-top: 24px; }
 .ma__record { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; padding: 8px 0; }
 .ma__notice { display: block; color: #ad3e29; font-size: 13px; margin-bottom: 8px; }
+/* 2026-11-17 改版「小而精」：入口是一张白卡（12 圆角、不描边），标题 14 / 600；弹层白底、顶上 16 圆角；
+   「确认同意」暖棕渐变胶囊，次按钮白底细棕边。阅读、勾选、确认、查看记录都照旧。 */
+.ma { margin: 8px 12px; color: var(--k-ink); font-size: 13px; }
+.ma__entry { gap: 10px; padding: 12px 16px; border: 0; border-radius: 12px; background: var(--k-paper); } /* 11-18 返修：卡内左右 16，和签约页阅读进度卡、条款卡同一条线 */
+.ma__title { font-size: 14px; }
+.ma__hint { margin-top: 2px; color: var(--k-muted); font-size: 11px; }
+.ma__link { color: var(--k-red-deep); font-size: 12px; }
+.ma__sheet { border-radius: 16px 16px 0 0; background: var(--k-paper); }
+.ma__head { padding: 10px 16px; border-bottom-color: var(--k-line); }
+.ma__head .ma__title { font-size: 16px; font-weight: 700; }
+.ma__body { padding: 8px 16px 20px; font-size: 13px; }
+.ma__foot { padding: 10px 16px 12px; border-top-color: var(--k-line); }
+.ma__check { font-size: 12px; margin-bottom: 10px; }
+.ma__primary, .ma__secondary { border-radius: 22px; font-size: 15px; font-weight: 600; line-height: 44px; }
+.ma__primary { background: linear-gradient(135deg, #B5814D, #8E5E33); }
+/* 第二轮：点不了时保持暖棕渐变，整体变淡（不再是冷灰底） */
+.ma__primary[disabled] { background: linear-gradient(135deg, #B5814D, #8E5E33); color: #FFFFFF; opacity: .45; }
+.ma__secondary { margin-top: 10px; background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-weight: 500; }
+.ma__primary::after, .ma__secondary::after { border: 0; }
+.ma__records { margin-top: 16px; padding-top: 12px; border-top-color: var(--k-line); }
+.ma__record { font-size: 12px; }
+.ma__notice { color: var(--k-alert); font-size: 12px; }
+.ma__more { flex-shrink: 0; display: flex; align-items: center; gap: 2px; }
 </style>

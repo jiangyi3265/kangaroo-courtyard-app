@@ -1,30 +1,33 @@
 <template>
-  <view class="uc-page">
+  <view class="uc-page" :class="$userSurface">
     <k-topbar back title="谁是卧底" :fab="false" />
     <view class="uc-body">
       <view class="uc-intro">
-        <view class="uc-intro__mark"><k-icon name="search" :size="36" color="green" /></view>
+        <view class="uc-intro__mark"><k-icon name="search" :size="40" color="green" /></view>
         <text class="uc-title">{{ '同桌的朋友，\n谁藏着另一个词？' }}</text>
         <text class="uc-muted">4～10人 · 轮流描述 · 投票找出卧底</text>
+        <k-button block :disabled="busy" :label="busy ? '正在创建房间…' : '邀请朋友开一局'" @click="create" />
       </view>
-      <k-button block :disabled="busy" :label="busy ? '正在创建房间…' : '邀请朋友开一局'" @click="create" />
       <button v-if="currentRoom" class="uc-resume" @click="go(roomPath(currentRoom.code))">
-        <view><text class="uc-strong">继续我的房间</text><text class="uc-muted">{{ currentRoom.code }} · {{ currentRoom.phase === 'waiting' ? '等待朋友准备' : currentRoom.phase === 'finished' ? '查看本局结果' : '对局进行中' }}</text></view>
-        <k-icon name="chevron-right" :size="20" color="green" />
+        <view class="uc-resume__icon"><k-icon name="door-open" :size="22" color="green" /></view>
+        <view class="uc-resume__copy"><text class="uc-strong">继续我的房间</text><text class="uc-muted">{{ currentRoom.code }} · {{ currentRoom.phase === 'waiting' ? '等待朋友准备' : currentRoom.phase === 'finished' ? '查看本局结果' : '对局进行中' }}</text></view>
+        <k-icon name="chevron-right" :size="16" color="muted" />
       </button>
       <view class="uc-join">
         <text class="uc-section-title">朋友已经开好房？</text>
-        <view class="uc-row">
+        <view class="uc-row uc-join__bar">
           <input v-model="joinCode" class="uc-input" type="number" maxlength="6" placeholder="输入6位房间号" aria-label="6位房间号" confirm-type="go" @confirm="join" />
           <k-button type="outline" :disabled="busy" @click="join">加入</k-button>
         </view>
       </view>
       <view v-if="error" class="uc-error">{{ error }}</view>
       <view class="uc-how">
-        <view class="uc-heading"><text class="uc-section-title">一看就会玩</text><button class="uc-link" @click="go('/pages/undercover/rules')">完整规则 ›</button></view>
-        <view class="uc-how__row"><k-icon name="lock" :size="21" color="green" /><view><text class="uc-strong">悄悄看词</text><text class="uc-muted">大多数人拿到同一个词，卧底拿到相近的词。</text></view></view>
-        <view class="uc-how__row"><k-icon name="message-circle" :size="21" color="green" /><view><text class="uc-strong">说一点，留一点</text><text class="uc-muted">用一句话描述，听听谁的说法有些不同。</text></view></view>
-        <view class="uc-how__row"><k-icon name="users" :size="21" color="green" /><view><text class="uc-strong">一起找卧底</text><text class="uc-muted">每轮投票淘汰一人，结束后揭晓所有词语。</text></view></view>
+        <view class="uc-heading"><text class="uc-section-title">一看就会玩</text><button class="uc-link" @click="go('/pages/undercover/rules')"><text>完整规则</text><k-icon name="chevron-right" :size="12" color="muted" /></button></view>
+        <view class="uc-how__list">
+        <view class="uc-how__row"><view class="uc-how__icon"><k-icon name="lock" :size="22" color="green" /></view><view><text class="uc-strong">悄悄看词</text><text class="uc-muted">大多数人拿到同一个词，卧底拿到相近的词。</text></view></view>
+        <view class="uc-how__row"><view class="uc-how__icon"><k-icon name="message-circle" :size="22" color="green" /></view><view><text class="uc-strong">说一点，留一点</text><text class="uc-muted">用一句话描述，听听谁的说法有些不同。</text></view></view>
+        <view class="uc-how__row"><view class="uc-how__icon"><k-icon name="users" :size="22" color="green" /></view><view><text class="uc-strong">一起找卧底</text><text class="uc-muted">每轮投票淘汰一人，结束后揭晓所有词语。</text></view></view>
+        </view>
       </view>
     </view>
   </view>

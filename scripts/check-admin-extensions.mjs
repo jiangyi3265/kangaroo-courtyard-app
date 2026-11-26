@@ -32,6 +32,24 @@ try {
   const source=await readFile(file,'utf8'),entry=manifest.find(x=>x.component===route.component)
   assertExtensionSource(entry,source)
   const entity=entry.entity
+  if (entry.kind === 'insurance-finance') {
+    for (const [tab, label] of [['applies', '投保申请'], ['refunds', '保险退费']]) {
+      const pending = page.waitForResponse(r => new URL(r.url()).pathname === '/dev-api/kangaroo/insurance-finance/' + tab && r.request().method() === 'GET')
+      if (tab === 'applies') await page.goto(BASE + route.path, { waitUntil: 'domcontentloaded' })
+      else await page.getByRole('tab', { name: label }).click()
+      const response = await pending
+      assert.equal(response.status(), 200)
+      const payload = await response.json()
+      assert.equal(payload.code, 200)
+      assert.ok(Array.isArray(payload.data.rows))
+      await page.waitForFunction(() => !document.querySelector('.insurance-admin .el-table .el-loading-mask') || getComputedStyle(document.querySelector('.insurance-admin .el-table .el-loading-mask')).display === 'none')
+      const rows = page.locator('.insurance-admin .el-table__body-wrapper tr.el-table__row')
+      assert.equal(await rows.count(), payload.data.rows.length)
+      for (const [index, row] of payload.data.rows.entries()) assert.equal((await rows.nth(index).locator('td').first().innerText()).trim(), String(row.applyId))
+    }
+    results.push({ component: route.component, entity, title: route.meta?.title, path: route.path, detail: '投保及退费列表', status: '已实测通过' })
+    continue
+  }
   if(entry.kind==='application-list'){
     const pending=page.waitForResponse(r=>new URL(r.url()).pathname==='/dev-api/kangaroo/application/list'&&r.request().method()==='GET')
     await page.goto(BASE+route.path,{waitUntil:'domcontentloaded'})

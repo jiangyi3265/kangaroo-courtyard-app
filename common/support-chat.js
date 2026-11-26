@@ -4,7 +4,7 @@
 //   · 回答来自 /app/support/ask：按问题意图查你本人的报名、订单、退款规则等真实数据，认不出意图时到常见问题里按关键词找，
 //     都不是大模型生成；回答里带卡片和最多 3 个跳转按钮；
 //   · 订单情境（ctx=order&orderNo=）：取这张订单，问「取消要扣多少？」时把退款试算画成一块；
-//   · 转人工：小程序是微信自带的客服会话按钮（页面上放 open-type="contact"，这里只给 session-from），网页版提交人工工单。
+//   · 转人工：两个端共用工单流程，微信端的欢迎消息另有原生客服会话入口。
 //   · 聊天记录（2026-11-03 主人：「历史聊天记录，永久保存，不能删除」）：登录了，问答由服务端记进 kg_support_chat（V72），
 //     打开时先取最近 30 条摆在开场白上面，「查看更早的聊天记录」往前翻；没有删除 / 清空。游客照旧不存，开场白下面提示「登录后聊天记录会保存」。
 // open(url)：点卡片 / 按钮要去的页面，弹层先收起再跳；scroll()：来了新气泡滚到最下面。
@@ -13,9 +13,10 @@ import { ref, computed } from 'vue'
 import { toast } from '@/common/screen.js'
 import { apiSupportFaqs, apiSupportAsk, apiSupportQuick, apiSupportTicket, apiSupportContact, apiStayOrder, apiSupportHistory, apiSupportFaqRead } from '@/common/api.js'
 import { experience, ensureSession } from '@/common/experience.js'
-import { confirm, errText, yuan } from '@/common/ui.js'
+import { confirm, prompt, errText, yuan } from '@/common/ui.js'
 import { absUrl } from '@/common/upload.js'
 import R from '@/common/routes.js'
+import { submitSupportTicket } from './support-ticket-request.js'
 
 // 情境：我的 / 首页 / 订单 / 城市页和岗位页（city）。别的一律按「我的」
 export const SUPPORT_CTX = ['home', 'profile', 'order', 'city']
@@ -24,8 +25,9 @@ const DEFAULT_CHIPS = {
   home: ['这周有什么活动？', '附近有什么兼职？', '附近换工'],
   profile: ['报名进度', '退款规则', '保险查询', '积分明细', '攻略申请']
 }
-// 直接写「转人工 / 人工客服 / 真人」的：网页版走工单，小程序提示点右上角（客服会话只能由用户点按钮打开）
-const WANT_HUMAN = /转人工|找人工|人工客服|真人/
+// 输入人工协助关键词时沿用上一条问题，直接进入工单流程。
+const WANT_HUMAN = /转人工|找人工|人工客服|真人客服|(?:转接?|找|联系)真人(?:[，。！？、\s]|$)/
+const ONLY_HANDOFF = /^(?:请|我要|我想|帮我|麻烦)?(?:转人工(?:客服)?|找人工(?:客服)?|人工客服|真人(?:客服)?)[。！!?？\s]*$/
 
 export function useSupportChat({ open = () => {}, scroll = () => {} } = {}) {
   const ctx = ref('profile')
@@ -96,6 +98,9 @@ export function useSupportChat({ open = () => {}, scroll = () => {} } = {}) {
     ctx.value = SUPPORT_CTX.includes(c) ? c : 'profile'
     orderNo.value = no || ''
     msgs.value = []
+    input.value = ''
+    asking.value = false
+    ticketing = false
     order.value = null
     older.value = false
     loadingOlder.value = false
@@ -105,7 +110,7 @@ export function useSupportChat({ open = () => {}, scroll = () => {} } = {}) {
     lastQuestion = ''
     chips.value = DEFAULT_CHIPS[ctx.value === 'city' ? 'home' : ctx.value]
     say({
-      from: 'bot',
+      from: 'bot', humanContact: true,
       text: ctx.value === 'order'
         ? '你好，我是AI袋鼠。这张订单的问题可以直接问我，点「取消要扣多少？」我按它的退订政策给你试算退款。'
         : '你好，我是AI袋鼠，可以问我报名进度、退款、保险、活动和岗位，也可以点下面的常见问题。答不上来的，点右上角「转人工」。'
@@ -115,17 +120,19 @@ export function useSupportChat({ open = () => {}, scroll = () => {} } = {}) {
     owner.value = String((experience.account && experience.account.id) || '')
     if (owner.value) loadHistory(true)
     else say({ from: 'tip', text: '登录后聊天记录会保存，点这里登录', url: R.login })
-    apiSupportQuick(ctx.value).then((r) => { const list = (r && r.data) || []; if (list.length) chips.value = list.slice(0, 8) }).catch(() => {})
+    apiSupportQuick(ctx.value).then((r) => { const list = (r && r.data) || []; if (g0 === gen && list.length) chips.value = list.slice(0, 8) }).catch(() => {})
     apiSupportFaqs().then((r) => {
       const faqs = ((r && r.data) || []).slice(0, 5)
-      if (faqs.length) say({ from: 'bot', text: '猜你想问：', faqs })
+      if (g0 === gen && faqs.length) say({ from: 'bot', text: '猜你想问：', faqs })
     }).catch(() => {})
     apiSupportContact().then((r) => {
       const d = (r && r.data) || {}
-      if (d.available && d.phone) say({ from: 'bot', text: `也可以打客服热线 ${d.phone}（${d.hours || '工作日 9:00–18:00'}）。`, links: [{ label: '拨打电话', phone: d.phone }] })
+      if (g0 === gen && d.available && d.phone) say({ from: 'bot', text: `也可以打客服热线 ${d.phone}（${d.hours || '工作日 9:00–18:00'}）。`, links: [{ label: '拨打电话', phone: d.phone }] })
     }).catch(() => {})
     if (ctx.value === 'order' && orderNo.value) {
-      apiStayOrder(orderNo.value).then((r) => { order.value = (r && r.data) || null }).catch(() => toast('订单加载失败'))
+      apiStayOrder(orderNo.value).then((r) => {
+        if (g0 === gen) order.value = (r && r.data) || null
+      }).catch(() => { if (g0 === gen) toast('订单加载失败') })
     }
   }
 
@@ -144,29 +151,30 @@ export function useSupportChat({ open = () => {}, scroll = () => {} } = {}) {
     ]
   }
 
-  async function ask(question) {
+  async function ask(question, fromInput = false) {
     const q = String(question || '').trim()
-    if (!q || asking.value) return
+    if (!q || asking.value || ticketing) return
     say({ from: 'me', text: q })
+    if (ONLY_HANDOFF.test(q) || WANT_HUMAN.test(q)) {
+      if (!ONLY_HANDOFF.test(q)) lastQuestion = q
+      return toHuman()
+    }
+    if (fromInput) input.value = ''
     lastQuestion = q
-    if (WANT_HUMAN.test(q)) return humanHint()
+    const conversation = gen
     asking.value = true
     scroll()
     try {
       const d = (await apiSupportAsk({ question: q, context: ctx.value, city: city.value, orderNo: orderNo.value || undefined })).data || {}
-      say(botBubble(d, Number((order.value && order.value.payFen) || 0)))
+      if (conversation === gen) say(botBubble(d, Number((order.value && order.value.payFen) || 0)))
     } catch (e) {
-      say({ from: 'bot', text: errText(e, '暂时问不到，稍后再试') })
+      if (conversation === gen) say({ from: 'bot', text: errText(e, '暂时问不到，稍后再试') })
     } finally {
-      asking.value = false
+      if (conversation === gen) asking.value = false
     }
   }
 
-  const send = () => {
-    const q = input.value
-    input.value = ''
-    ask(q)
-  }
+  const send = () => ask(input.value, true)
 
   function openFaq(f) {
     say({ from: 'me', text: f.question })
@@ -177,6 +185,10 @@ export function useSupportChat({ open = () => {}, scroll = () => {} } = {}) {
   }
 
   function openLink(l) {
+    if (l.retryQuestion) {
+      if (l.owner === experience.account?.id && l.mode === experience.mode) return toHuman(l.retryQuestion, l.requestId)
+      return
+    }
     if (l.phone) {
       uni.makePhoneCall({ phoneNumber: l.phone, fail: () => {} })
       return
@@ -184,36 +196,61 @@ export function useSupportChat({ open = () => {}, scroll = () => {} } = {}) {
     if (l.url) open(l.url)
   }
 
-  function humanHint() {
-    // #ifdef MP-WEIXIN
-    say({ from: 'bot', text: '点右上角「转人工」，直接进入微信里的人工客服对话，可以发文字和图片。' })
-    // #endif
-    // #ifndef MP-WEIXIN
-    toHuman()
-    // #endif
-  }
-
-  // 网页版转人工：把刚才问的（或输入框里写的）问题提交成工单，客服工作日回复到消息中心
-  async function toHuman() {
-    if (!experience.account) return toast('请先登录')
-    const typed = input.value.trim()
-    const q = typed || (WANT_HUMAN.test(lastQuestion) ? '' : lastQuestion)
-    if (!q) {
-      say({ from: 'bot', text: '先在下面写下你要咨询的问题，再点右上角「转人工」，我把它交给人工客服。' })
-      return
-    }
-    if (ticketing || !(await confirm('转人工客服', `把问题「${q}」提交给人工客服？工作日 9:00–18:00 处理，回复会发到消息中心。`))) return
+  async function toHuman(retryQuestion, retryId) {
+    if (ticketing) return
+    const clickedAccount = experience.account?.id
+    if (owner.value && owner.value !== String(clickedAccount || '')) return start('profile')
     ticketing = true
+    const conversation = gen
+    const clickedMode = experience.mode, typed = input.value.trim(), originalQuestion = lastQuestion
+    const sameCaller = () => clickedAccount == null || (clickedAccount === experience.account?.id && clickedMode === experience.mode)
+    let account, mode, submittedText
+    const stillCurrent = () => conversation === gen && experience.account?.id === account && experience.mode === mode
     try {
+      await ensureSession()
+      if (conversation !== gen || !sameCaller()) return
+      if (!experience.account) { open(R.login); return }
+      account = experience.account.id
+      mode = experience.mode
+      let q = typeof retryQuestion === 'string' ? retryQuestion : (typed && !ONLY_HANDOFF.test(typed) ? typed : originalQuestion)
+      const prompted = !q
+      if (prompted) q = await prompt('联系人工客服', { placeholder: '请简要描述需要协助的问题' })
+      if (!q || !stillCurrent()) return
+      if (q.length > 500) return toast('请将问题控制在 500 字以内')
+      const confirmed = await confirm('转人工客服', `把问题「${q}」提交给人工客服？回复会发到消息中心。`)
+      if (!stillCurrent()) return
+      if (!confirmed) {
+        if (prompted && input.value.trim() === typed) input.value = q
+        return
+      }
       const related = orderNo.value ? `订单：${orderNo.value}　${orderTitle.value}` : ''
       // 带上当前身份：员工身份下提交的，客服回复发回员工身份的消息中心
-      const d = (await apiSupportTicket({ question: q, context: ctx.value, summary: orderNo.value ? `用户咨询订单 ${orderNo.value} 的问题：${q}` : `用户咨询：${q}`, related, mode: experience.mode })).data || {}
-      if (typed) input.value = ''
-      say({ from: 'bot', text: d.message || '已提交人工客服', links: d.ticketId ? [{ label: '查看工单', url: R.assistant + '?ticket=' + d.ticketId }] : [] })
+      submittedText = q
+      if (!retryId) {
+        for (const message of msgs.value) {
+          const previous = message.links?.find(l => l.retryQuestion === q && l.owner === account && l.mode === mode)
+          if (previous) { retryId = previous.requestId; break }
+        }
+      }
+      const d = (await submitSupportTicket(account, { question: q, context: ctx.value, summary: orderNo.value ? `用户咨询订单 ${orderNo.value} 的问题：${q}` : `用户咨询：${q}`, related, mode }, apiSupportTicket, retryId)).data
+      if (!stillCurrent()) return
+      if (typed && input.value.trim() === typed && (typeof retryQuestion !== 'string' || typed === q)) input.value = ''
+      const ticketLink = { label: '查看工单', url: R.assistant + '?ticket=' + d.ticketId }
+      for (const message of msgs.value) {
+        if (message.links?.some(l => l.retryQuestion === q && l.owner === account && l.mode === mode)) message.links = [ticketLink]
+      }
+      say({ from: 'bot', text: d.message || '已提交人工客服', links: [ticketLink] })
     } catch (e) {
-      say({ from: 'bot', text: errText(e, '提交失败，请稍后再试') })
+      if (conversation === gen && sameCaller() && (account == null || stillCurrent())) {
+        if (submittedText && lastQuestion === originalQuestion) lastQuestion = submittedText
+        say({ from: 'bot', text: errText(e, '提交失败，请稍后再试'), links: submittedText && e.ticketRequestId
+          ? [{ label: '重新提交工单', retryQuestion: submittedText, requestId: e.ticketRequestId, owner: account, mode }] : [] })
+      }
     } finally {
-      ticketing = false
+      if (conversation === gen) {
+        ticketing = false
+        if (clickedAccount && clickedAccount !== experience.account?.id) start('profile').catch(() => {})
+      }
     }
   }
 

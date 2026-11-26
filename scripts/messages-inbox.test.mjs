@@ -26,7 +26,6 @@ const INBOX = 'pages/notice/inbox.vue'
 
 // 按名字取出页面 <script setup> 顶层的 const / let 声明，放进沙箱执行；extra 是声明里用到的外部名字（页面 import 的函数、ref 等）
 function pick(rel, names, extra = {}) {
-  if (names.includes('markUpTo')) names = [...names, 'rememberRead']
   const { descriptor } = sfc.parse(read(rel))
   const code = descriptor.scriptSetup.content
   const found = {}
@@ -97,7 +96,8 @@ test('列表行：分类 → 图标 / 色调 / 小标签', () => {
     const k = kindOf({ category, bizType })
     assert.deepEqual([k[0], k[1], k[2]], [icon, tone, tag], key)
     assert.ok(icons[k[0]], `图标 ${k[0]} 不在 common/icons.js 里`)
-    assert.match(css, new RegExp('\\.t-' + k[1] + '\\{'), `缺少底色 .t-${k[1]}`)
+    // 11-18 第三轮返修（纯样式）：方块统一浅棕底 + 暖棕图标，不再按色调分 .t-* 底色
+    assert.match(css, /\.tile,\.ava\{background:var\(--k-red-soft\)!important\}/, '方块统一浅棕底')
     if (k[2]) assert.match(css, new RegExp('\\.g-' + k[1] + '\\{'), `缺少小标签配色 .g-${k[1]}`)
   }
 })
@@ -112,12 +112,12 @@ test('子页的行图标都在图标库里，系统通知按 bizType 细分', ()
   assert.equal(kindOf({ category: 'order', bizType: 'activity' })[0], 'receipt-text')
 })
 
-test('顶部入口：用户身份 系统通知 / 评论 / 赞，员工身份 系统通知 / 报名 / 订单，都能在子页打开', () => {
+test('顶部入口：用户身份 平台通知 / 评论 / 赞，员工身份 平台通知 / 报名 / 订单，都能在子页打开', () => {
   const { ENTRIES } = pick(MAIN, ['ENTRIES'])
   const { TITLES, EMPTY } = pick(INBOX, ['TITLES', 'EMPTY'])
   // 沙箱里的数组和这里的不是同一个 Array，先 Array.from 再比
-  assert.deepEqual(Array.from(ENTRIES.user, (e) => e[1]), ['系统通知', '评论', '赞'])
-  assert.deepEqual(Array.from(ENTRIES.staff, (e) => e[1]), ['系统通知', '报名', '订单'])
+  assert.deepEqual(Array.from(ENTRIES.user, (e) => e[1]), ['平台通知', '评论', '赞'])
+  assert.deepEqual(Array.from(ENTRIES.staff, (e) => e[1]), ['平台通知', '报名', '订单'])
   for (const [type, , icon] of [...ENTRIES.user, ...ENTRIES.staff]) {
     assert.ok(TITLES[type] && EMPTY[type], `子页不认识 type=${type}`)
     assert.ok(icons[icon] && icons[EMPTY[type][1]], `图标缺失：${icon}`)
@@ -133,7 +133,12 @@ test('老链接：?s=4 去客服页，?s=2 去系统通知子页，其余留在�
   assert.equal(legacyUrl({ s: '3' }), '')
   assert.equal(legacyUrl({}), '')
   // 页面在 onLoad 里用 redirectTo 换掉自己，客服页返回时回到原来那一页（评价页的「联系客服」）
-  assert.match(read(MAIN), /onLoad\(\(q\) => \{ leaving = legacyUrl\(q \|\| \{\}\); if \(leaving\) uni\.redirectTo\(\{ url: leaving \}\) \}\)/)
+  assert.match(read(MAIN), /onLoad\(\(q\) => \{ leaving = legacyUrl\(q \|\| \{\}\); if \(leaving\) uni\.redirectTo\(\{ url: leaving,/)
+  const staffPage = '/pages/profile/subscription-message?id=77&mode=staff&scope=store%3A8%3Amanager'
+  assert.equal(legacyUrl({subscriptionId:'77',mode:'staff',scope:'store:8:manager'}),staffPage)
+  assert.equal(legacyUrl({subscriptionId:'77',mode:'staff',scope:'store%3A8%3Amanager'}),staffPage)
+  assert.equal(legacyUrl({subscriptionId:'42'}),'/pages/profile/subscription-message?id=42&mode=user&scope=')
+  assert.equal(legacyUrl({subscriptionId:'oops'}),'')
 })
 
 test('评论 / 赞：服务端拼好的标题拆成昵称和动作，老通知不编名字', () => {
@@ -239,68 +244,78 @@ test('入口角标：有 buckets 用服务端分组数；老接口（没有 buck
   // 页面里 /summary 没有 buckets 时记成 null（不是空对象），全部已读后也清成 null
   const src = read(MAIN)
   assert.match(src, /buckets\.value = r\.buckets \|\| null/)
-  assert.match(src, /markAllMessagesRead\(\)\s*\n\s*badgeCleared\.value = clearNoticeBadge\(notices\.value\)\s*\n\s*buckets\.value = null/)
+  assert.match(src, /badgeCleared\.value = clearNoticeBadge\(notices\.value\)\s*\n\s*buckets\.value = null/)
 })
 
-test('子页：老接口没有整组标已读时，点开一条就标这一条已读；新接口不再逐条标', () => {
-  const src = read(INBOX)
-  assert.match(src, /grouped = paged/)
-  assert.match(src, /if \(\(\(!grouped && m\.fresh\) \|\| \(m\.read && !m\.expiresAt\)\) && !m\.marked\) \{\s*m\.marked = true\s*const scope = messageScope\(\)\s*apiMarkRead\(m\.id\)/)
-  // 新接口：每页到手后按取到过的最大ID整组标已读（第一页一定标），下一页等标已读回来再取
-  assert.match(src, /if \(paged\) marking = markUpTo\(mode, list\)/)
-  assert.match(src, /if \(more\) await marking/)
-  assert.match(src, /apiMarkAllRead\(mode, type\.value, top\)/)
-  assert.match(src, /toRow\(m, freshOf\(m\)\)/)
-})
-
-// 2026-10-16：第一页一到手就整组标已读，往下翻的几页取回来已经是已读，小红点和「新的」一段从第 2 页起丢了。
-// 现在标已读带 maxId（取到过的最大ID），服务端只读掉这个ID及以前的，并回读掉之前还没读的ID；子页记住它们
-test('子页往下翻：进来那一刻没读的行，第 2 页起照样是「新的」；之后新来的也会被标已读', async () => {
-  // 假服务端：ids 45..1（新的在前），10 以上、双数的没读
-  const server = Array.from({ length: 45 }, (_, i) => ({ id: 45 - i, read: !((45 - i) >= 10 && (45 - i) % 2 === 0) }))
-  const unreadBefore = server.filter((m) => !m.read).map((m) => m.id)
-  const calls = []
-  const apiMarkAllRead = async (mode, bucket, maxId) => {
-    calls.push([mode, bucket, maxId])
-    const ids = server.filter((m) => !m.read && m.id <= maxId).map((m) => m.id)
-    server.forEach((m) => { if (m.id <= maxId) m.read = true })
-    return { code: 200, data: { updated: ids.length, unreadIds: ids } }
+// 执行完整子页脚本，观察实际的读写请求和刷新后的行状态。
+function inboxPage({ paged = true, mark = async () => {} } = {}) {
+  const calls = { pages: [], reads: [], groups: [], previews: [] }
+  const records = Array.from({length: 23}, (_, i) => ({
+    id:i+1, read:i===2, category:'system', title:'通知 '+(i+1), content:'通知正文'
+  }))
+  const src = sfc.parse(read(INBOX)).descriptor.scriptSetup.content
+  const nodes = sfc.babelParse(src, {sourceType:'module'}).program.body
+  const sandbox = { ...require('vue'), R, experience:{account:{id:7},mode:'user'}, getMessageScopeKey:()=> 'user-7',
+    ensureSession:async()=>{}, onLoad(){}, onShow(){}, onHide(){}, onUnload(){}, onReachBottom(){},
+    toast(){}, refreshUnread(){}, showMessagePreview:m=>calls.previews.push(m), messageWording:m=>m, absUrl:x=>x,
+    apiMessageSummary:async()=>({buckets:{system:{unread:records.filter(m=>!m.read).length}}}),
+    apiMessages:async (_mode,_category,{page,size})=>{
+      calls.pages.push(page)
+      const list = paged ? records.slice((page-1)*size,page*size) : records
+      return {rows:list.map(m=>({...m})), ...(paged ? {hasMore:page*size<records.length} : {})}
+    },
+    apiMarkAllRead:async (...args)=>{calls.groups.push(args);return {data:{updated:0}}},
+    apiMarkRead:async id=>{calls.reads.push(id);await mark(id);records.find(m=>m.id===id).read=true;return {data:{updated:1}}}
   }
-  let refreshed = 0
-  const ctx = { apiMarkAllRead, refreshUnread: () => { refreshed++ }, type: { value: 'like' }, Promise }
-  const h = pick(INBOX, ['markedUpTo', 'unreadAtEntry', 'marking', 'freshOf', 'seenTop', 'markUpTo'], ctx)
-  const page = (n) => server.slice((n - 1) * 20, n * 20).map((m) => ({ ...m }))
-  const p1 = page(1)
-  const fresh1 = p1.filter(h.freshOf).map((m) => m.id)
-  await h.markUpTo('user', p1)
-  assert.deepEqual(calls, [['user', 'like', 45]])
-  assert.equal(refreshed, 1)
-  // 服务端已经整组读掉了：第 2、3 页取回来都是已读，但进来时没读的照样算新的
-  const p2 = page(2), p3 = page(3)
-  assert.ok(p2.every((m) => m.read) && p3.every((m) => m.read))
-  const fresh = fresh1.concat(p2.filter(h.freshOf).map((m) => m.id), p3.filter(h.freshOf).map((m) => m.id))
-  assert.deepEqual(fresh, unreadBefore)
-  // 取到的行没有比 45 更新的：不再标
-  await h.markUpTo('user', p2)
-  assert.equal(calls.length, 1)
-  // 滑动时来了一条新的（46，没读）挤进来：它本身没读，算新的；再按 46 标一次
-  server.unshift({ id: 46, read: false })
-  const p = page(2)
-  await h.markUpTo('user', [{ id: 46, read: false }].concat(p))
-  assert.ok(h.freshOf({ id: 46, read: true }), '46 进来时没读')
-  assert.deepEqual(calls[1], ['user', 'like', 46])
-  assert.ok(!h.freshOf({ id: 11, read: true }), '本来就读过的不算新的')
+  const context=vm.createContext(sandbox)
+  const script=nodes.filter(n=>n.type!=='ImportDeclaration').map(n=>src.slice(n.start,n.end)).join('\n')
+  const subject=vm.runInContext(script+"\n;({load,open,rows})",context)
+  return {...subject,calls,unread:()=>Array.from(subject.rows.value.filter(m=>m.fresh),m=>m.id)}
+}
+const settleInbox = ()=>new Promise(resolve=>setImmediate(resolve))
+
+test('打开子页和翻页都保留未读状态，点开一条只标记这一条',async()=>{
+  const h=inboxPage()
+  await h.load(false);await h.load(true)
+  assert.deepEqual(h.calls.pages,[1,2])
+  assert.deepEqual(h.calls.groups,[])
+  assert.deepEqual(h.calls.reads,[])
+  const before=h.unread()
+  assert.ok(before.includes(1) && before.includes(21))
+  assert.ok(!before.includes(3))
+  h.open(h.rows.value.find(m=>m.id===21))
+  await settleInbox()
+  assert.deepEqual(h.calls.reads,[21])
+  assert.deepEqual(h.unread(),before.filter(id=>id!==21))
 })
 
-test('子页标已读失败：不记已标到哪，下一页再标', async () => {
-  const calls = []
-  const apiMarkAllRead = async (mode, bucket, maxId) => { calls.push(maxId); if (calls.length === 1) throw new Error('网络错误'); return { data: { unreadIds: [3] } } }
-  const h = pick(INBOX, ['markedUpTo', 'unreadAtEntry', 'marking', 'freshOf', 'seenTop', 'markUpTo'],
-    { apiMarkAllRead, refreshUnread: () => {}, type: { value: 'system' }, Promise })
-  await h.markUpTo('user', [{ id: 9 }, { id: 3 }])
-  await h.markUpTo('user', [{ id: 2 }])
-  assert.deepEqual(calls, [9, 9], '第二次还按取到过的最大ID标')
-  assert.ok(h.freshOf({ id: 3, read: true }))
+test('旧接口的未读标记也只由用户点开触发，重开已读行不重复提交',async()=>{
+  const h=inboxPage({paged:false})
+  await h.load(false)
+  assert.deepEqual(h.calls.groups,[])
+  assert.deepEqual(h.calls.reads,[])
+  const row=h.rows.value[0]
+  h.open(row);h.open(row);await settleInbox();h.open(row);await settleInbox()
+  assert.deepEqual(h.calls.reads,[row.id])
+  assert.equal(row.read,true)
+  assert.equal(h.rows.value[1].fresh,true)
+})
+
+test('单条标记失败后仍未读，再次点开才重试该条',async()=>{
+  let offline=true
+  const h=inboxPage({mark:async()=>{if(offline)throw Error('网络中断')}})
+  await h.load(false)
+  const row=h.rows.value[1], before=h.unread()
+  h.open(row);await settleInbox()
+  assert.deepEqual(h.unread(),before)
+  offline=false
+  await h.load(true)
+  assert.deepEqual(h.calls.reads,[row.id])
+  h.open(row);await settleInbox()
+  assert.deepEqual(h.calls.reads,[row.id,row.id])
+  assert.deepEqual(h.calls.groups,[])
+  assert.equal(row.read,true)
+  assert.ok(h.unread().includes(1) && h.unread().includes(21))
 })
 
 test('pages.json：三个子页在 pages/notice 分包里，进消息页预下载这个分包，状态样例页移出主包', () => {
@@ -341,8 +356,8 @@ test('挪进分包的图片：页面引用分包自己的 static，主包 /stati
   assert.deepEqual(offenders, [])
 })
 
-test('首页公告弹窗底下的提示指向「消息 → 系统通知」（改版后没有「公告」页签了，公告在系统通知子页最上面）', () => {
+test('首页公告的回看提示指向当前的「平台通知」入口', () => {
   const popup = read('components/k-notice-popup/k-notice-popup.vue')
-  assert.ok(popup.includes('以后可以在「消息 → 系统通知」里再看'))
+  assert.ok(popup.includes('以后可以在「消息 → 平台通知」里再看'))
   assert.ok(!popup.includes('「消息 → 公告」'))
 })

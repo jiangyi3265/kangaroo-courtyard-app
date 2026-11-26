@@ -1,23 +1,25 @@
 <template>
-  <view class="k-page sc">
+  <view class="k-page sc" :class="$userSurface">
     <k-topbar title="写评论" back custom-back @back="onBack" />
 
     <view v-if="stage === 'loading'" class="sc-gate"><text class="sc-gate__sub">加载中…</text></view>
 
-    <view v-else-if="stage === 'error'" class="sc-gate">
+    <view v-else-if="stage === 'error'" class="sc-gate sc-gate--error">
+      <view class="sc-gate__ic"><k-icon name="house" :size="32" color="red" /></view>
       <text class="sc-gate__title">{{ loadError }}</text>
+      <text class="sc-gate__sub">小院可能已下线，或链接不完整</text>
       <view class="sc-gate__btn"><k-button size="md" label="重新加载" @click="loadMe" /></view>
     </view>
 
-    <view v-else-if="stage === 'guest'" class="sc-gate">
-      <image class="sc-gate__img" src="/static/media/stays-kangaroo-stamp.png" mode="aspectFit" />
+    <view v-else-if="stage === 'guest'" class="sc-gate sc-gate--card">
+      <view class="sc-gate__ic"><k-icon name="log-in" :size="32" color="red" /></view>
       <text class="sc-gate__title">登录后才能写评论</text>
       <text class="sc-gate__sub">登录并验证手机号就能写，登录后会回到这里。</text>
       <view class="sc-gate__btn"><k-button size="md" label="去登录" @click="goLogin" /></view>
     </view>
 
-    <view v-else-if="stage === 'phone'" class="sc-gate">
-      <image class="sc-gate__img" src="/static/media/stays-kangaroo-stamp.png" mode="aspectFit" />
+    <view v-else-if="stage === 'phone'" class="sc-gate sc-gate--card">
+      <view class="sc-gate__ic"><k-icon name="smartphone" :size="32" color="red" /></view>
       <text class="sc-gate__title">先验证手机号</text>
       <text class="sc-gate__sub">验证后就能写评论。号码不会显示给其他人，已经写的内容不会丢。</text>
       <view class="sc-gate__btn"><k-button size="md" open-type="getPhoneNumber" label="授权并验证" @getphonenumber="onPhone" @click="onPhoneClick" /></view>
@@ -25,6 +27,7 @@
 
     <view v-else class="sc-form">
       <view class="sc-tip">
+        <view class="sc-tip__ic"><k-icon name="info" :size="14" color="muted" /></view>
         <text class="sc-tip__line">评论由平台审核后才展示，审核中只有你看得到。</text>
         <text class="sc-tip__line">不打星，不计入小院评分，和「住过的家人评价」分开。</text>
       </view>
@@ -38,25 +41,25 @@
 
       <view class="sc-media">
         <view class="sc-media__head"><text class="sc-media__title">图片或视频</text><text class="sc-media__hint">选填，二选一 · {{ video ? '1 段视频' : pics.length ? pics.length + '/' + PIC_MAX + ' 张' : '最多 ' + PIC_MAX + ' 张或 1 段视频' }}</text></view>
-        <view class="sc-grid">
+        <view class="sc-grid" :class="{ 'is-compact': !video && !pics.length }">
           <view v-for="(pic, picIdx) in pics" :key="pic.url" class="sc-cell">
             <image class="sc-cell__img" :src="pic.img" mode="aspectFill" @click="previewPic(picIdx)" />
-            <view class="sc-cell__del" role="button" aria-label="删除这张照片" hover-class="k-press-s" @click.stop="removePic(picIdx)"><k-icon name="x" :size="12" color="white" :stroke="2.4" /></view>
+            <view class="sc-cell__del" role="button" aria-label="删除这张照片" hover-class="k-press-s" @click.stop="removePic(picIdx)"><k-icon name="x" :size="12" color="white" /></view>
           </view>
           <view v-if="video" class="sc-cell">
             <image v-if="video.cover" class="sc-cell__img" :src="absUrl(video.cover)" mode="aspectFill" @click="previewOwnVideo" />
             <view v-else class="sc-cell__img sc-cell__img--video" hover-class="k-press-s" @click="previewOwnVideo" />
             <view class="sc-cell__play" hover-class="k-press-s" @click="previewOwnVideo"><k-icon name="play" :size="14" color="white" fill /></view>
-            <view class="sc-cell__del" role="button" aria-label="删除这段视频" hover-class="k-press-s" @click.stop="removeVideo"><k-icon name="x" :size="12" color="white" :stroke="2.4" /></view>
+            <view class="sc-cell__del" role="button" aria-label="删除这段视频" hover-class="k-press-s" @click.stop="removeVideo"><k-icon name="x" :size="12" color="white" /></view>
           </view>
-          <view v-if="!video && pics.length < PIC_MAX" class="sc-cell sc-cell--add" role="button" aria-label="添加照片" hover-class="k-press-s" @click="addPics"><view class="sc-cell__in"><k-icon name="image-plus" :size="24" color="#8A5E36" :stroke="1.6" /><text class="sc-cell__text">{{ picUploading ? '上传中' : '添加照片' }}</text></view></view>
-          <view v-if="!video && !pics.length" class="sc-cell sc-cell--add" role="button" aria-label="添加视频" hover-class="k-press-s" @click="addVideo"><view class="sc-cell__in"><k-icon name="video" :size="24" color="#8A5E36" :stroke="1.6" /><text class="sc-cell__text">{{ videoUploading ? '上传中' : '添加视频' }}</text></view></view>
+          <view v-if="!video && pics.length < PIC_MAX" class="sc-cell sc-cell--add" role="button" aria-label="添加照片" hover-class="k-press-s" @click="addPics"><view class="sc-cell__in"><k-icon name="image-plus" :size="22" color="red" /><text class="sc-cell__text">{{ picUploading ? '上传中' : '添加照片' }}</text></view></view>
+          <view v-if="!video && !pics.length" class="sc-cell sc-cell--add" role="button" aria-label="添加视频" hover-class="k-press-s" @click="addVideo"><view class="sc-cell__in"><k-icon name="video" :size="22" color="red" /><text class="sc-cell__text">{{ videoUploading ? '上传中' : '添加视频' }}</text></view></view>
         </view>
         <text class="sc-media__rule">视频 {{ VIDEO_MAX_SECONDS }} 秒、{{ VIDEO_MAX_MB }}MB 以内</text>
       </view>
 
       <view v-if="pics.length || video" class="sc-check" role="checkbox" :aria-checked="portrait" hover-class="k-press" @click="portrait = !portrait">
-        <view class="sc-check__box" :class="{ on: portrait }"><k-icon v-if="portrait" name="check" :size="13" color="white" :stroke="2.8" /></view>
+        <view class="sc-check__box" :class="{ on: portrait }"><k-icon v-if="portrait" name="check" :size="14" color="white" /></view>
         <text class="sc-check__text">我确认图片和视频不侵犯他人肖像，拍到的人已经同意</text>
       </view>
 
@@ -245,7 +248,7 @@ async function onBack() {
 
 <style scoped lang="scss">
 @import '../../styles/look.scss';
-.sc { background: #FCF9F3; }
+.sc { background: var(--k-bg); }
 .sc-gate { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 56px 28px 0; }
 .sc-gate__img { width: 150px; height: 100px; }
 .sc-gate__title { margin-top: 12px; font-size: 17px; font-weight: 700; color: var(--k-ink); }
@@ -270,7 +273,7 @@ async function onBack() {
 .sc-cell { position: relative; height: 0; padding-bottom: 100%; border-radius: 10px; overflow: hidden; background: var(--k-paper2); }
 .sc-cell--add { border: 1px dashed #CDBBA7; background: #F6EEE4; box-sizing: border-box; }
 .sc-cell__img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.sc-cell__img--video { background: #3A322B; }
+.sc-cell__img--video { background: var(--k-ink); }
 .sc-cell__in { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
 .sc-cell__text { font-size: 12px; color: #80522E; }
 .sc-cell__del { position: absolute; right: 2px; top: 2px; width: 24px; height: 24px; border-radius: 50%; background: rgba(58, 50, 43, .62); display: flex; align-items: center; justify-content: center; }
@@ -284,4 +287,133 @@ async function onBack() {
 .sc-who { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
 .sc-who__line { font-size: 13px; line-height: 1.6; color: var(--k-muted); }
 .sc-who__line--warn { color: #A33A2C; font-weight: 600; }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底，输入区和图片区各一张白卡（12 圆角、不描边），说明文字收小一档。
+   功能和文字不变：登录 / 验证手机号提示、输入、加图片或视频、肖像确认、提交评论都在；输入的字仍是 15 */
+.sc { --k-bg: var(--k-page); --k-radius: 12px; background: var(--k-page); }
+.sc :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+.sc :deep(.k-button.is-lg) { height: 44px; font-size: 15px; box-shadow: none; }
+.sc :deep(.k-button) { border-radius: 999px; }
+/* 不能点的按钮（提交中）：11-18 第二轮起交给公共组件 —— 原配色整体 .45，不再盖成冷灰块 */
+.sc-gate { padding-top: 48px; }
+.sc-gate__img { border-radius: 12px; }
+.sc-gate__title { font-size: 16px; }
+.sc-gate__sub { font-size: 13px; }
+.sc-form { padding: 8px 12px calc(92px + var(--k-safe-bottom)); }
+.sc-tip { border-radius: 8px; background: #FFF8EE; }
+.sc-tip__line { font-size: 12px; color: #7A5A22; }
+.sc-box { margin-top: 8px; padding: 12px 12px 26px; border: 0; }
+.sc-count { font-size: 11px; }
+.sc-media { margin-top: 8px; padding: 12px; border-radius: 12px; background: var(--k-paper); }
+.sc-media__title { font-size: 14px; font-weight: 600; }
+.sc-media__hint, .sc-media__rule { font-size: 11px; }
+.sc-cell { border-radius: 8px; background: var(--k-page); }
+.sc-cell--add { border-color: var(--k-red-line); background: var(--k-paper); }
+.sc-cell__text { font-size: 11px; color: var(--k-red-deep); }
+.sc-check { min-height: 36px; margin-top: 10px; padding: 8px 2px; box-sizing: border-box; }
+.sc-check__box { border-radius: 4px; }
+.sc-check__box.on { border-color: var(--k-red); background: var(--k-red); }
+.sc-check__text { font-size: 13px; }
+.sc-who { margin-top: 8px; padding: 0 2px; }
+.sc-who__line { font-size: 12px; }
+.sc-who__line--warn { color: var(--k-alert); }
+/* 11-18 第二轮：读取出错时整块放进白卡（居中，出错原因 14 / 500 二级墨），「重新加载」是 32 高的次按钮小胶囊（白底细棕边深棕字），不再是实心主按钮 */
+.sc-gate--error { margin: 8px 12px 0; padding: 28px 12px; border-radius: 12px; background: var(--k-paper); }
+.sc-gate--error .sc-gate__title { margin-top: 0; font-size: 14px; font-weight: 500; line-height: 1.6; color: var(--k-ink2); }
+.sc-gate--error .sc-gate__btn { margin-top: 8px; }
+/*    11-18 返修：按钮原来 40 高，看着 32，上下各 6 的透明边，点按高度 44（和权益、邀请等页的「重新加载」同一写法） */
+.sc-gate--error :deep(.k-button) { height: 44px; padding: 0 16px; border: 6px solid transparent; border-radius: 22px; background: var(--k-paper) padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-size: 13px; font-weight: 500; }
+/* ===================================================================================================
+   11-18 第三轮「逐页精修」（只动样子；功能、文字、点按区不变）：页边距 16、卡内 16、卡间 12；
+   提示条左边一枚 16 号线性 info 图标；出错卡加 56 浅棕方块 + 小院图标；加图格子用暖棕线性图标。
+   =================================================================================================== */
+.sc-form { padding: 12px 16px calc(92px + var(--k-safe-bottom)); }
+.sc-tip { position: relative; padding: 12px 12px 12px 34px; border-radius: 12px; background: var(--k-red-soft); }
+.sc-tip__ic { position: absolute; left: 12px; top: 13px; width: 16px; height: 16px; }
+.sc-tip__line { font-size: 12px; line-height: 20px; color: var(--k-red-deep); }
+.sc-box { margin-top: 12px; padding: 16px 16px 28px; border-radius: 12px; }
+.sc-area { font-size: 15px; line-height: 1.65; }
+.sc-count { right: 16px; bottom: 8px; font-variant-numeric: tabular-nums; }
+.sc-media { margin-top: 12px; padding: 16px; }
+.sc-media__title { font-size: 14px; line-height: 20px; }
+.sc-grid { margin-top: 10px; }
+.sc-cell--add { border: 1px dashed var(--k-red-line); background: var(--k-paper); }
+.sc-cell__text { margin-top: 2px; }
+.sc-media__rule { margin-top: 10px; }
+.sc-check { margin-top: 12px; padding: 8px 0; }
+.sc-check__box { width: 18px; height: 18px; border-color: var(--k-line2); }
+.sc-who { margin-top: 8px; padding: 0; }
+.sc-who__line { font-size: 12px; line-height: 1.6; }
+.sc-gate { padding-top: 56px; }
+.sc-gate__title { line-height: 24px; }
+.sc-gate__sub { margin-top: 6px; line-height: 1.6; }
+.sc-gate--error { margin: 12px 16px 0; padding: 32px 16px 28px; }
+.sc-gate__ic { width: 56px; height: 56px; border-radius: 16px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+.sc-gate--error .sc-gate__title { margin-top: 12px; }
+.sc-gate--error .sc-gate__btn { margin-top: 10px; }
+/* 窄屏：说明文字放不下一行时整段换到标题下面、靠左，不再剩一个「频」字挂在右边 */
+.sc-media__head { flex-wrap: wrap; row-gap: 2px; }
+.sc-media__hint { white-space: nowrap; }
+@media (max-width: 374px) { .sc-media__hint { flex-basis: 100%; text-align: left; } }
+/* ===================================================================================================
+   11-18 第三轮返修（独立评审第 1 轮；只动样子）
+   =================================================================================================== */
+/* 游客 / 没验证手机号的挡板：和出错卡一个样子 —— 白卡、56 浅棕方块 + 32 号线性图标、14 / 500 标题、12 号说明、36 高按钮（不再用带米色方底的邮戳图） */
+.sc-gate--card { margin: 12px 16px 0; padding: 32px 16px 28px; border-radius: 12px; background: var(--k-paper); }
+.sc-gate--card .sc-gate__title { margin-top: 12px; font-size: 14px; font-weight: 500; line-height: 20px; color: var(--k-ink2); }
+.sc-gate--card .sc-gate__sub { margin-top: 4px; font-size: 12px; line-height: 1.6; color: var(--k-muted); text-align: center; }
+.sc-gate--card .sc-gate__btn { margin-top: 16px; }
+.sc-gate--card :deep(.k-button) { height: 36px; padding: 0 20px; border-radius: 18px; font-size: 14px; font-weight: 600; }
+@media (max-width: 359px) {
+  .sc-tip { padding: 10px 10px 10px 30px; }
+  .sc-tip__ic { left: 10px; top: 12px; }
+  .sc-tip__line { font-size: 11px; line-height: 18px; }
+}
+/* ===================================================================================================
+   11-18 第三轮返修 2（独立评审第 2 轮；只动样子）
+   =================================================================================================== */
+/* 加图 / 加视频格子：虚线框 1px 算进高度后不再是 75.5 × 77.5，宽高相等 */
+.sc-cell--add { padding-bottom: calc(100% - 2px); }
+/* 卡外说明：11 号脚注（和简历页尾的隐私说明同一档），390 宽一行收住，不再剩「到。」两个字 */
+.sc-who__line { font-size: 11px; line-height: 18px; }
+/* 出错卡：和游客挡板一套 —— 标题下面加一行 12 号灰色说明，按钮 36 高 */
+.sc-gate--error .sc-gate__title { font-size: 14px; font-weight: 500; line-height: 20px; color: var(--k-ink2); }
+.sc-gate--error .sc-gate__sub { margin-top: 4px; font-size: 12px; line-height: 1.6; color: var(--k-muted); text-align: center; }
+.sc-gate--error .sc-gate__btn { margin-top: 16px; }
+.sc-gate--error :deep(.k-button) { height: 36px; padding: 0 20px; border-radius: 18px; font-size: 14px; font-weight: 600; }
+/* 11-18 第三轮返修 3：出错卡「重新加载」和游客卡「去登录」同一尺寸（36 高、最少 112 宽）：去登录实心，重新加载描边 */
+.sc .sc-gate :deep(.k-button) { min-width: 112px; height: 36px; padding: 0 20px; border: 0; border-radius: 18px; box-sizing: border-box; font-size: 14px; font-weight: 600; }
+.sc .sc-gate--error :deep(.k-button) { background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-weight: 500; }
+/* ===================================================================================================
+   11-18 第三轮返修 4（独立评审第 4 轮；只动样子）
+   =================================================================================================== */
+/* 出错卡 / 游客 / 验证手机号挡板：和评价页「推荐暂不可用」「权限与错误恢复」同一套 —— 不要白卡，整块放在距顶约 30% 处；
+   56 浅棕方块 + 32 图标、17 / 700 标题、13 号灰色说明、主按钮 248 × 44 */
+.sc .sc-gate--error, .sc .sc-gate--card { margin: 0; padding: 22vh 32px 0; border-radius: 0; background: transparent; }
+.sc .sc-gate--error .sc-gate__title, .sc .sc-gate--card .sc-gate__title { margin-top: 16px; font-size: 17px; font-weight: 700; line-height: 24px; color: var(--k-ink); }
+.sc .sc-gate--error .sc-gate__sub, .sc .sc-gate--card .sc-gate__sub { margin-top: 6px; font-size: 13px; line-height: 1.7; color: var(--k-muted); }
+.sc .sc-gate--error .sc-gate__btn, .sc .sc-gate--card .sc-gate__btn { margin-top: 24px; }
+.sc .sc-gate :deep(.k-button), .sc .sc-gate--error :deep(.k-button) { width: 248px; height: 44px; border-radius: 22px; background: var(--k-grad-brown); box-shadow: none; color: var(--k-paper); font-size: 15px; font-weight: 600; }
+/* ===================================================================================================
+   11-18 第三轮返修 5（独立评审第 5 轮；只动样子）
+   =================================================================================================== */
+/* 还没加图片 / 视频时：两个添加格各占半宽、72 高（和评价页同一个控件一个样子），右边不再空一大片 */
+.sc-grid.is-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sc-grid.is-compact .sc-cell, .sc-grid.is-compact .sc-cell--add { height: 72px; padding-bottom: 0; }
+/* ===================================================================================================
+   11-18 第四轮精修（只动样子）：出错页保持；表单态正文输入当主角（16 号字、行高 1.7、最小 200 高），提示退成无底 12 灰小注（和简历技能页一套）
+   =================================================================================================== */
+.k-page.sc .sc-tip { padding:0 4px 0 22px;border-radius:0;background:transparent; }
+.k-page.sc .sc-tip__ic { left:4px;top:2px;width:14px;height:14px; }
+.k-page.sc .sc-tip__line { font-size:12px;line-height:18px;color:var(--k-muted); }
+.k-page.sc .sc-area { height:200px;font-size:16px;line-height:1.7; }
+.k-page.sc .sc-area--idle { height:auto;min-height:200px; }
+.k-page.sc .sc-gate__sub, .k-page.sc .sc-tip__line { word-break:keep-all;overflow-wrap:break-word;overflow-wrap:anywhere; }
+/* 11-19 第四轮返修：窄屏顶部提示 —— 第二句最宽 21 个字，在「，」处断成两行（「不打星，不计入小院评分，和」/「「住过的家人评价」分开。」），不再剩「分开。」；320 宽字号 11，第一句一行放下 */
+@media (max-width:374px) {
+  .k-page.sc .sc-tip__line + .sc-tip__line { max-width:21em; }
+}
+@media (max-width:359px) {
+  .k-page.sc .sc-tip__line { font-size:11px; }
+}
 </style>

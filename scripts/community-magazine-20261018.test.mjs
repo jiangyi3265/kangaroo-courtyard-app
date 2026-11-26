@@ -83,12 +83,12 @@ test('连续有图帖子也有横向卡；穿插活动不丢帖、不重复、�
 })
 
 test('信息流模板：类型色 class、类型小字、开篇卡、文字小卡的封面字、通栏摘要引号块', () => {
-  assert.match(itpl, /<view v-else class="card fc" :class="\['fc--' \+ b\.type, 'kd-' \+ b\.post\.kindKey\]">/)
+  assert.match(itpl, /<view v-else class="card fc feed-card" :class="\['fc--' \+ b\.type, 'kd-' \+ b\.post\.kindKey\]">/)
   assert.match(itpl, /<view v-else class="card fc-col" :class="'kd-' \+ c\.post\.kindKey" hover-class="k-press-s" @click="openPost\(c\.post\.postId\)">/)
   assert.match(itpl, /<view v-else-if="b\.type === 'lead'" class="fc__band" hover-class="k-press" @click="openPost\(b\.post\.postId\)">/)
-  // 多图帖子采用原稿双拼，单图保持完整封面；详情仍可查看全部照片。
+  // 列表和详情共用完整的图片列表，组件负责横向切换。
   assert.match(itpl, /<view v-if="c\.post\.imgs\.length" class="fc-col__media"/)
-  assert.match(itpl, /v-if="c\.post\.imgCount > 1" class="img-count"/)
+  assert.match(itpl, /<post-photos :photos="c\.post\.imgs"/)
   assert.match(itpl, /<view v-else class="fc-col__cover">[\s\S]*?<text class="fc-col__cover-title">\{\{ c\.post\.titleText \}\}<\/text>/)
   assert.match(itpl, /<view v-if="b\.post\.content && b\.type === 'text'" class="fc__excerpt">/)
   assert.match(itpl, /<text class="kicker__kind">\{\{ b\.post\.kindText \}\}<\/text>/)
@@ -116,7 +116,7 @@ test('样式：类型色小字在类型浅底和白底上都够 4.5:1', () => {
 
 // ---------------------------------------------------------------- 把信息流这一屏真的渲染出来看（服务端渲染成 HTML）
 const renderFeed = (() => {
-  const out = compiler.compileTemplate({ source: itpl, filename: 'index.vue', id: 'mag', compilerOptions: { isCustomElement: (t) => t !== 'k-topbar' } })
+  const out = compiler.compileTemplate({ source: itpl, filename: 'index.vue', id: 'mag', compilerOptions: { isCustomElement: (t) => !['post-photos', 'k-topbar'].includes(t) } })
   assert.deepEqual(out.errors, [])
   const code = out.code
     .replace(/^import \{([^}]+)\} from "vue"\n/m, (m, names) => `const {${names.replace(/ as /g, ': ')}} = vue\n`)
@@ -136,9 +136,12 @@ async function feedHtml(rows) {
   const ctx = {
     s: 1, filterOpen: false, dateOpen: false, sortOpen: false, feedTab: '全部', BUDDY_TAB: '找搭子', DIARY_TAB: '经验分享', FEED_TABS: feedJs.FEED_TABS,
     keyword: '', sort: 'new', feedFailed: false, feedLoaded: true, posts, blocks: buildBlocks(posts, []), feed: { hasMore: false },
-    canShare: feedJs.canShare, canInteract: feedJs.canInteract, displayWording, R: {}, activeFilters: [], cats: [], mates: [], wideNow: false
+    privateChatEnabled: true, canShare: feedJs.canShare, canInteract: feedJs.canInteract, displayWording, R: {}, activeFilters: [], cats: [], mates: [], wideNow: false
   }
-  const comp = { setup: () => ctx, render: renderFeed, components: { 'k-topbar': { render() { return vue.h('header') } } } }
+  const comp = { setup: () => ctx, render: renderFeed, components: {
+    'k-topbar': { render() { return vue.h('header') } },
+    'post-photos': { props: ['photos'], render() { return vue.h('div', { class: 'test-slides' }, this.photos.map(src => vue.h('image', { src }))) } }
+  } }
   const app = vue.createSSRApp(comp)
   app.config.warnHandler = () => {}
   return renderToString(app)
@@ -148,10 +151,10 @@ const textPost = (id, kind, extra = {}) => ({ postId: id, kind, title: '标题' 
 
 test('渲染：全是文字帖时，开篇卡 + 文字小卡 + 通栏引号块，卡片里没有任何照片；赞 / 评论 / 关注 / 分享都在', async () => {
   const html = await feedHtml([textPost(1, 'daily'), textPost(2, 'buddy'), textPost(3, 'diary'), textPost(4, 'daily', { status: 'pending' })])
-  assert.match(html, /class="card fc fc--text kd-daily"/)
-  assert.match(html, /class="card fc fc--text kd-buddy"/)
-  assert.match(html, /class="card fc fc--text kd-diary"/)
-  assert.match(html, /class="card fc fc--text kd-daily"/)
+  assert.match(html, /class="card fc feed-card fc--text kd-daily"/)
+  assert.match(html, /class="card fc feed-card fc--text kd-buddy"/)
+  assert.match(html, /class="card fc feed-card fc--text kd-diary"/)
+  assert.match(html, /class="card fc feed-card fc--text kd-daily"/)
   assert.match(html, /class="fc__excerpt"/)
   // 只有开篇卡上的袋鼠贴纸和头像，没有帖子照片 / 占位图
   const imgs = [...html.matchAll(/<image [^>]*src="([^"]*)"/g)].map(m => m[1])
@@ -167,11 +170,10 @@ test('渲染：全是文字帖时，开篇卡 + 文字小卡 + 通栏引号块�
 test('渲染：所有带图帖子使用通栏缩略图卡，保留作者和多图数量', async () => {
   const img = (id, kind, n = 1) => textPost(id, kind, { images: Array.from({ length: n }, (_, i) => '/p' + id + '-' + i + '.jpg') })
   const html = await feedHtml([img(1, 'daily'), img(2, 'buddy'), img(3, 'diary', 3)])
-  for (const kind of ['daily','buddy','diary']) assert.ok(html.includes('card fc fc--thumb kd-' + kind))
+  for (const kind of ['daily','buddy','diary']) assert.ok(html.includes('card fc feed-card fc--thumb kd-' + kind))
   assert.ok(html.includes('/p1-0.jpg') && html.includes('/p3-0.jpg'))
   assert.ok(html.includes('小院同学'))
-  assert.match(html, /class="img-count"[\s\S]*?<text>3<\/text>/)
-  assert.ok(!html.includes('/p3-2.jpg'))
+  assert.match(html, /class="test-slides">[\s\S]*?src="\/p3-0.jpg"[\s\S]*?src="\/p3-1.jpg"[\s\S]*?src="\/p3-2.jpg"/)
 })
 
 test('渲染：岗位称呼用换工，作者名与引用保持原样，源记录不改写', async () => {
@@ -186,14 +188,14 @@ test('渲染：岗位称呼用换工，作者名与引用保持原样，源记�
 
 // ---------------------------------------------------------------- 发布页
 
-test('发布页：经验分享是照片九宫格（第一格大「添加经历照片」），旅居日常是 16:9 大封面 + 铅笔圆钮，找搭子照旧', () => {
+test('发布页：经验分享是照片九宫格（第一格大「添加经历照片」），旅居日常选图后可预览或移除，找搭子照旧', () => {
   const out = compiler.compileTemplate({ source: ptpl, filename: 'publish.vue', id: 'pub' })
   assert.deepEqual(out.errors, [])
   assert.match(ptpl, /<view v-if="type === '经验分享'" class="exp-grid" :class="\{ 'exp-grid--filled': uploads.length > 1 \}">/)
   assert.match(ptpl, /class="exp-grid__big exp-grid__add" hover-class="k-press" @click="addImages">[\s\S]*?<text class="media-empty__title">添加经历照片<\/text><text class="media-empty__sub">最多 9 张<\/text>/)
   assert.match(ptpl, /<view v-if="uploads\.length < 9" class="exp-grid__cell exp-grid__plus" hover-class="k-press" @click="addImages">/)
   assert.match(ptpl, /class="cover__pen exp-grid__pen" hover-class="k-press-s" @click="replaceCover"/)
-  assert.match(ptpl, /<view v-else-if="type === '旅居日常' && !uploads\.length" class="cover cover--empty" hover-class="k-press" @click="addImages">[\s\S]*?添加封面[\s\S]*?最多 9 张图片，第一张是封面/)
+  assert.match(ptpl, /v-else-if="type === '旅居日常'"[\s\S]*?@click="previewUpload\(index\)"[\s\S]*?@click="removeUpload\(index\)"[\s\S]*?class="upload-add daily-add"[^>]*@click="addImages"/)
   assert.match(ptpl, /<view v-else-if="!uploads\.length" class="media-empty" hover-class="k-press" @click="addImages">/, '找搭子还是原来的虚线框')
   assert.match(pcss, /\.cover \{ position: relative; height: 0; padding-top: 56\.25%;/, '封面 16:9')
   assert.match(pcss, /\.exp-grid__big \{[^}]*grid-column: span 2; grid-row: span 2;/)

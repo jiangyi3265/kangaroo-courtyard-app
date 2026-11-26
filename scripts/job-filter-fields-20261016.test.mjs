@@ -113,7 +113,11 @@ test('mapper：三列查得出、能写，筛选条件走参数绑定', () => {
   // 代招用实际招聘门店的认证状态，自招才读发布门店。
   assert.match(mapper, /<if test="params\.assured == true"> and j\.job_type &lt;&gt; 'online' and j\.insurance_flag = '0' and \(case when j\.recruit_store_id is null then s\.safe_cert else rs\.safe_cert end\) = '0'<\/if>/)
   assert.match(mapper, /<foreach item="kt" collection="params\.keywordTerms">/)
-  assert.doesNotMatch(mapper, /\$\{/, '不拼 SQL')
+  const fragments = [...mapper.matchAll(/\$\{([^}]+)\}/g)].map(m => m[1]).sort()
+  assert.deepEqual(fragments, ['jobDisplayOrder', 'jobEffectiveUrgency'], '仅允许后端静态排序片段')
+  for (const [name, method] of [['jobDisplayOrder', 'sql'], ['jobEffectiveUrgency', 'effectiveUrgency']]) {
+    assert.ok(mapper.includes(`<bind name="${name}" value="@com.ruoyi.kangaroo.ext.user.KgJobDisplayOrder@${method}()"/>`))
+  }
   // 关键词规则写在 KgJobKeyword 的注释里（文档就是代码）
   for (const w of ['海边', '一二线', '小众', '安静', '风景']) assert.ok(keywordJava.includes(`"${w}"`), w)
 })

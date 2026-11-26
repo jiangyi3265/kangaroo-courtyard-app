@@ -1,30 +1,34 @@
 <template>
   <k-feature-gate feature="recruitment">
   <!-- 2026-10-18 主人：去掉顶上「岗位信息 / 评价」两个页签（连同整页左右滑切页签），评价放进页面里「用户反馈」那一块 -->
-  <view class="k-page detail-page" :class="{ 'detail-page--volunteer': isVolunteer, 'detail-page--parttime': pt }" :style="isVolunteer || pt ? { '--detail-weave': 'url(' + DETAIL_ART.paper + ')' } : {}">
+  <view class="k-page detail-page" :class="[$userSurface, { 'detail-page--volunteer': isVolunteer, 'detail-page--parttime': pt, 'detail-page--online': isOnline }]" :style="isVolunteer || pt ? { '--detail-weave': 'url(' + DETAIL_ART.paper + ')' } : {}">
     <k-topbar :title="isOnline ? '线上任务详情' : '岗位详情'" :bg="isVolunteer ? '#FFF9FA' : ''" back custom-back @back="back" />
 
     <view class="overview k-pad-bottom">
-      <k-job-urgency :job="detail" expanded />
       <!-- 线上任务：照旧是这一套（照片图集 → 标题 / 标签 / 收藏 → 关键信息 → 线上任务须知 → 工作内容 → 我们希望你 → 门店卡片） -->
       <template v-if="isOnline">
         <!-- 岗位照片（V49，门店传的最多 9 张）：可以左右滑、点开看大图；没传照片时就是封面一张（岗位封面 / 门店封面）。
              门店已通过安心商家认证、并且岗位含保险：左上角挂「经袋鼠实地拍摄并含保险」（和列表卡片同一个角标，线上任务没有） -->
+        <!-- 2026-11-18 第三轮：没有真实照片（只有占位封面）时不放头图，56 的浅棕方块 + 32 号电脑图标放在标题左边，内容从顶栏下 12 开始；有照片照旧是上面那套 -->
+        <view class="hero-wrap" :class="{ 'hero-wrap--empty': !images.length }">
         <view class="hero"><swiper class="hero__swiper" :circular="gallery.length > 1" :current="heroIndex" @change="onHeroChange"><swiper-item v-for="(img, i) in gallery" :key="img + i"><image class="hero__img" :src="img" mode="aspectFill" @click="previewHero(i)" /></swiper-item></swiper><view v-if="assured" class="hero__badge"><job-badge size="hero" /></view><text v-if="gallery.length > 1" class="hero__count">{{ heroIndex + 1 }}/{{ gallery.length }}</text></view>
+        <view v-if="!images.length" class="hero-empty" aria-hidden="true"><view class="hero-empty__icon"><k-icon name="monitor" :size="32" color="red" /></view></view>
+        </view>
         <view class="overview-body">
-          <view class="overview-title"><text>{{ displayWording(title, [storeInfo?.storeName]) }}</text><k-chip v-if="blockedShort || headcountText" :tone="blockedShort ? 'neutral' : 'green'"><text>{{ blockedShort || headcountText }}</text></k-chip></view>
+          <view class="overview-title"><text>{{ displayWording(title, [storeInfo?.storeName]) }}</text></view>
+          <k-job-urgency :job="detail" expanded />
           <!-- 换工类型（门店发布时选的，如「摄影换工」）；门店勾了「做满一个月有红包」（V44）时旁边加「满月红包」 -->
           <view v-if="kindLabel || redpacket" class="overview-kind"><k-chip v-if="kindLabel" tone="ochre" icon="tag"><text>{{ kindLabel }}</text></k-chip><view v-if="redpacket" class="redpacket-tag"><text>满月红包</text></view></view>
-          <view class="overview-flags"><view v-if="safeText && !assured" class="safe"><k-icon name="shield-check" :size="16" color="green" /><text>{{ safeText }}</text></view><view class="favorite" :class="{ 'is-busy': favoriteBusy }" role="button" :aria-label="favorite ? '取消收藏岗位' : '收藏岗位'" :aria-disabled="favoriteBusy" :aria-pressed="favorite" @click.stop="toggleFavorite"><k-icon name="star" :size="23" :color="favorite ? 'ochre' : 'muted'" :fill="favorite" /><text>{{ favorite ? '已收藏' : '收藏' }}</text></view></view>
-          <view v-if="applyBlockedText" class="blocked-tip"><k-icon name="info" :size="17" color="alert" /><text>{{ applyBlockedText }}</text></view>
+          <view class="overview-flags"><view v-if="safeText && !assured" class="safe"><k-icon name="shield-check" :size="12" color="green" /><text>{{ safeText }}</text></view><k-chip v-if="blockedShort || headcountText" :tone="blockedShort ? 'neutral' : 'green'"><text>{{ blockedShort || headcountText }}</text></k-chip><view class="favorite" :class="{ 'is-busy': favoriteBusy }" role="button" :aria-label="favorite ? '取消收藏岗位' : '收藏岗位'" :aria-disabled="favoriteBusy" :aria-pressed="favorite" @click.stop="toggleFavorite"><k-icon name="star" :size="14" :color="favorite ? 'red' : 'ink2'" :fill="favorite" /><text>{{ favorite ? '已收藏' : '收藏' }}</text></view></view>
+          <view v-if="applyBlockedText" class="blocked-tip"><k-icon name="info" :size="16" color="alert" /><text>{{ applyBlockedText }}</text></view>
           <!-- 关键信息：之前「职位概览」「工作与权益」两页各写一遍，合成一张。工作地点有地图坐标（门店发布时在地图上选过点）时整行可点，打开地图看位置、导航 -->
-          <view class="info-card"><view v-for="item in overviewRows" :key="item.label" class="info-row" :class="{ 'info-row--tap': item.tap }" @click="tapRow(item)"><k-icon :name="item.icon" :size="19" color="ink" /><text class="info-row__label">{{ item.label }}</text><text class="info-row__value">{{ item.value }}</text><text v-if="item.tap" class="info-row__map">{{ mapTag }}</text><k-icon v-if="item.tap" name="chevron-right" :size="16" color="muted" /></view></view>
+          <view class="info-card"><view v-for="item in overviewRows" :key="item.label" class="info-row" :class="{ 'info-row--tap': item.tap }" @click="tapRow(item)"><k-icon :name="item.icon" :size="16" color="muted" /><text class="info-row__label">{{ item.label }}</text><text class="info-row__value">{{ item.value }}</text><text v-if="item.tap" class="info-row__map">{{ mapTag }}</text><k-icon v-if="item.tap" name="chevron-right" :size="12" color="muted" /></view></view>
           <!-- 线上任务：报名前先看看从接单到结算怎么走（后台「小程序公告」里固定标识 online-guide 那一条） -->
-          <view v-if="isOnline" class="guide-link" hover-class="k-press" @click="openOnlineGuide"><k-icon name="book-open" :size="18" color="red" /><text class="guide-link__title">线上任务须知</text><text class="guide-link__sub">接单、交成果到结算怎么走</text><k-icon name="chevron-right" :size="16" color="muted" /></view>
-          <view class="plain-card"><text class="plain-card__title">具体工作内容</text><text class="plain-card__list">{{ contentText || '门店暂未填写，报名前可以和店主确认' }}</text></view>
-          <view class="plain-card"><text class="plain-card__title">我们希望你</text><text class="plain-card__list">{{ requirementText || '门店暂未填写' }}</text></view>
+          <view v-if="isOnline" class="guide-link" hover-class="k-press" @click="openOnlineGuide"><k-icon name="book-open" :size="18" color="ink2" /><text class="guide-link__title">线上任务须知</text><text class="guide-link__sub">接单、交成果到结算怎么走</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
+          <view class="plain-card"><text class="plain-card__title">具体工作内容</text><text class="plain-card__list" :class="{ 'plain-card__list--empty': !contentText }">{{ contentText || '门店暂未填写，报名前可以和店主确认' }}</text></view>
+          <view class="plain-card"><text class="plain-card__title">我们希望你</text><text class="plain-card__list" :class="{ 'plain-card__list--empty': !requirementText }">{{ requirementText || '门店暂未填写' }}</text></view>
           <!-- 奖金、提成、结算方式：门店写了才有这一张 -->
-          <view v-if="payRows.length" class="section-card"><text class="section-card__title">奖金与结算</text><view v-for="item in payRows" :key="item.label" class="section-row"><k-icon :name="item.icon" :size="18" color="ink" /><text class="section-row__label">{{ item.label }}</text><text class="section-row__value">{{ item.value }}</text></view></view>
+          <view v-if="payRows.length" class="section-card"><text class="section-card__title">奖金与结算</text><view v-for="item in payRows" :key="item.label" class="section-row"><k-icon :name="item.icon" :size="16" color="muted" /><text class="section-row__label">{{ item.label }}</text><text class="section-row__value">{{ item.value }}</text></view></view>
           <!-- 门店：点「关注」后这家店发布新岗位会在消息中心通知你；点门店名看这家店在招的其他岗位 -->
           <view v-if="storeInfo.storeId" class="store-card">
             <image v-if="storeInfo.cover" class="store-card__cover" :src="storeCover" mode="aspectFill" @click="openStoreJobs" />
@@ -44,20 +48,21 @@
         @interview="playInterview" @close-video="closeVideo" @preview-daily="previewDaily" @daily="openDaily" @reviews="openStoreReviews"
         @write-review="writeReview" @assurance="tapAssurance" @store="openStoreJobs" @follow="toggleFollow" @training="openTraining">
         <template #subscription><job-city-subscribe ref="subscriptionRef" :city="detail.city || storeInfo.city || ''" /></template>
+        <template #lead><text v-if="detail.compensationText || detail.salaryText" class="pt-lead__pay">{{ detail.compensationText || detail.salaryText }}</text><k-job-urgency :job="detail" expanded /></template>
       </parttime-detail>
       <view v-else-if="detail" class="sp" :data-interview-mode="mode">
         <!-- 1 头图随真实照片数量排版：单图完整展示，多图使用拼图，不补空格。
              兼职 / 全职：左大、中、右小三张并排，底部一条白字「袋鼠线下实地探访｜含意外险」代替角标 -->
         <view class="sp-hero" :class="{ 'sp-hero--grid': heroGrid.grid.length, 'sp-hero--trio': pt }">
-          <view class="sp-hero__main" @click="heroGrid.main && previewHero(0)"><image v-if="heroGrid.main" class="sp-hero__img" :src="heroGrid.main" mode="aspectFill" /><view v-else class="sp-photo-empty"><k-icon name="image" :size="28" color="#A4917E" :stroke="1.3" /><text>门店照片待补充</text></view></view>
+          <view class="sp-hero__main" @click="heroGrid.main && previewHero(0)"><image v-if="heroGrid.main" class="sp-hero__img" :src="heroGrid.main" mode="aspectFill" /><view v-else class="sp-photo-empty"><k-icon name="image" :size="28" color="muted" /><text>门店照片待补充</text></view></view>
           <view v-if="heroGrid.grid.length" class="sp-hero__grid" :class="'sp-hero__grid--' + heroGrid.grid.length">
-            <view v-for="cell in heroGrid.grid" :key="cell.index" class="sp-hero__cell" :class="{ 'sp-hero__cell--wide': heroGrid.grid.length === 3 && cell.index === 3 }" @click="cell.src && previewHero(cell.index)"><image v-if="cell.src" class="sp-hero__img" :src="cell.src" mode="aspectFill" /><view v-else class="sp-photo-empty"><k-icon name="image" :size="19" color="#A4917E" :stroke="1.3" /><text>待补充</text></view><view v-if="heroGrid.more && cell.index === heroGrid.grid.length" class="sp-hero__more"><text>+{{ heroGrid.more }}</text></view></view>
+            <view v-for="cell in heroGrid.grid" :key="cell.index" class="sp-hero__cell" :class="{ 'sp-hero__cell--wide': heroGrid.grid.length === 3 && cell.index === 3 }" @click="cell.src && previewHero(cell.index)"><image v-if="cell.src" class="sp-hero__img" :src="cell.src" mode="aspectFill" /><view v-else class="sp-photo-empty"><k-icon name="image" :size="20" color="muted" /><text>待补充</text></view><view v-if="heroGrid.more && cell.index === heroGrid.grid.length" class="sp-hero__more"><text>+{{ heroGrid.more }}</text></view></view>
           </view>
           <view v-if="badgeVariant && !pt" class="sp-hero__badge"><text v-if="isVolunteer" class="sp-visit-label">{{ volunteerVisitLabel }}</text><job-badge v-else size="detail" :variant="badgeVariant" /></view>
           <view v-if="pt && heroCaption" class="sp-hero__caption"><text>{{ heroCaption }}</text></view>
           <view v-if="images.length && !heroGrid.more" class="sp-hero__count" @click="previewHero(0)">共 {{ images.length }} 张 · 查看照片</view>
           <view class="sp-hero__tr">
-            <view class="sp-hero__check"><k-icon v-if="!isVolunteer" name="badge-check" :size="12" color="white" :stroke="2" /><text>平台岗检</text></view>
+            <view class="sp-hero__check"><k-icon v-if="!isVolunteer" name="badge-check" :size="12" color="green" /><text>平台岗检</text></view>
           </view>
         </view>
         <view class="sp-body">
@@ -68,24 +73,25 @@
               <view class="sp-pthead__main"><text class="sp-title__text k-display">{{ displayWording(title, [storeInfo?.storeName]) }}</text><text v-if="ptSubline" class="sp-pthead__sub">{{ ptSubline }}</text></view>
               <text v-if="blockedShort || headcountText" class="sp-pthead__state" :class="{ 'sp-pthead__state--off': !!blockedShort }">{{ blockedShort || headcountText }}</text>
             </view>
-            <view class="sp-heading__subscribe"><job-city-subscribe ref="subscriptionRef" :city="detail.city || storeInfo.city || ''" /></view>
           </view>
+          <k-job-urgency :job="detail" expanded />
           <!-- 3 一行标签：换工类型 | 食宿（+奖金）| 还招 N 人（不能报名时写短原因） -->
           <view class="sp-tagline">
-            <view v-if="!pt && displayTags.length" class="sp-tags"><view class="sp-tags__icon"><k-icon name="check" :size="10" color="white" :stroke="3.4" /></view><text v-for="(part, pi) in displayTags" :key="part + pi" class="sp-tags__item" :class="{ 'sp-tags__item--sep': pi > 0, 'sp-tags__item--muted': !!blockedShort && pi === displayTags.length - 1 }">{{ part }}</text></view>
-            <view class="sp-heading__favorite" :class="{ on: favorite, 'is-busy': favoriteBusy }" role="button" :aria-disabled="favoriteBusy" :aria-pressed="favorite" :aria-label="favorite ? '取消收藏岗位' : '收藏岗位'" hover-class="k-press-s" @click.stop="toggleFavorite"><image v-if="isVolunteer && !favorite" class="sp-favorite-art" :src="DETAIL_ART.star" mode="aspectFit" /><k-icon v-else name="star" :size="21" color="#94683F" :fill="favorite" :stroke="1.6" /></view>
+            <view v-if="!pt && displayTags.length" class="sp-tags"><view class="sp-tags__icon"><k-icon name="check" :size="12" color="green" /></view><text v-for="(part, pi) in displayTags" :key="part + pi" class="sp-tags__item" :class="{ 'sp-tags__item--sep': pi > 0, 'sp-tags__item--muted': !!blockedShort && pi === displayTags.length - 1 }">{{ part }}</text></view>
+            <view class="sp-heading__favorite" :class="{ on: favorite, 'is-busy': favoriteBusy }" role="button" :aria-disabled="favoriteBusy" :aria-pressed="favorite" :aria-label="favorite ? '取消收藏岗位' : '收藏岗位'" hover-class="k-press-s" @click.stop="toggleFavorite"><k-icon v-if="isVolunteer && !favorite" name="star" :size="14" color="ink2" /><k-icon v-else name="star" :size="14" :color="favorite ? 'red' : 'ink2'" :fill="favorite" /><text class="sp-favorite-text">{{ favorite ? '已收藏' : '收藏' }}</text></view>
+            <view class="sp-heading__subscribe"><job-city-subscribe ref="subscriptionRef" :city="detail.city || storeInfo.city || ''" /></view>
           </view>
           <view v-if="pt" class="sp-ptflags">
-            <view v-if="safeCertified" class="sp-safe"><view class="sp-safe__tick"><k-icon name="check" :size="12" color="white" :stroke="3" /></view><text>安心商家</text></view>
+            <view v-if="safeCertified" class="sp-safe"><view class="sp-safe__tick"><k-icon name="check" :size="12" color="white" /></view><text>安心商家</text></view>
           </view>
-          <view v-if="applyBlockedText" class="blocked-tip"><k-icon name="info" :size="17" color="alert" /><text>{{ applyBlockedText }}</text></view>
+          <view v-if="applyBlockedText" class="blocked-tip"><k-icon name="info" :size="16" color="alert" /><text>{{ applyBlockedText }}</text></view>
           <!-- 兼职 / 全职：「招募信息」表（招募人数 | 最短服务期；预计到岗），下面接位置与交通 -->
           <view v-if="pt && (ptStats.length || placeText || mapPoint || sections.travel.rows.length)" class="sp-card sp-recruit">
             <view v-if="ptStats.length" class="sp-recruit__head"><text class="sp-h k-display">招募信息</text></view>
             <view v-if="ptStats.length" class="sp-recruit__table" :class="'sp-recruit__table--' + ptCols"><view v-for="pst in ptStats" :key="pst.k" class="sp-recruit__cell"><text class="sp-recruit__k">{{ pst.k }}</text><text class="sp-recruit__v">{{ pst.v }}</text></view></view>
             <view v-if="placeText || mapPoint || sections.travel.rows.length" class="sp-loc" :class="{ 'sp-loc--inner': ptStats.length }">
               <view class="sp-loc__copy" role="button" aria-label="打开门店地图" @click="openMap"><text class="sp-h k-display">位置与交通</text><text v-if="placeText" class="sp-loc__addr">{{ placeText }}</text></view>
-              <view v-if="mapPoint || placeText" class="sp-map" hover-class="k-press-s" @click="openMap"><image v-if="isVolunteer" class="sp-map__art" :src="DETAIL_ART.map" mode="aspectFill" /><view class="sp-map__road sp-map__road--a" /><view class="sp-map__road sp-map__road--b" /><view class="sp-map__ring" /><view class="sp-map__pin"><view class="sp-map__pin-dot" /></view><text class="sp-map__tag">{{ mapTag }}</text></view>
+              <view v-if="mapPoint || placeText" class="sp-map" hover-class="k-press-s" @click="openMap"><k-icon name="map-pin" :size="20" color="red" /><text class="sp-map__tag">{{ mapTag }}</text></view>
             </view>
             <view v-if="sections.travel.rows.length" class="sp-trip"><view v-for="row in sections.travel.rows" :key="row.k" class="sp-bullet"><text class="sp-bullet__dot">·</text><text class="sp-bullet__text"><text class="sp-bullet__k">{{ row.k }}：</text>{{ row.v }}</text></view><text class="sp-note">{{ TRAVEL_NOTE }}</text></view>
           </view>
@@ -93,14 +99,14 @@
           <view v-if="!pt && (placeText || mapPoint || sections.travel.rows.length)" class="sp-card sp-location" :class="{ 'sp-location--collapsed': travelCanExpand && !travelExpanded }">
             <view class="sp-loc">
               <view class="sp-loc__copy" role="button" aria-label="打开门店地图" @click="openMap"><text class="sp-h k-display">位置与交通</text><text v-if="placeText || isVolunteer" class="sp-loc__addr">{{ placeText || '门店地址待补充' }}</text></view>
-              <view v-if="mapPoint || isVolunteer" class="sp-map" :class="{ 'sp-map--pending': !mapPoint }" hover-class="k-press-s" @click="openMap"><image v-if="isVolunteer" class="sp-map__art" :src="DETAIL_ART.map" mode="aspectFill" /><view class="sp-map__road sp-map__road--a" /><view class="sp-map__road sp-map__road--b" /><view class="sp-map__ring" /><view class="sp-map__pin"><view class="sp-map__pin-dot" /></view><text class="sp-map__tag">{{ mapPoint ? mapTag : placeText ? '搜索地址' : '位置待补充' }}</text></view>
+              <view v-if="mapPoint || isVolunteer" class="sp-map" :class="{ 'sp-map--pending': !mapPoint }" hover-class="k-press-s" @click="openMap"><k-icon name="map-pin" :size="20" color="red" /><text class="sp-map__tag">{{ mapPoint ? mapTag : placeText ? '搜索地址' : '位置待补充' }}</text></view>
             </view>
             <view v-if="sections.travel.rows.length">
-              <view class="sp-location__head"><text class="sp-sub k-display">交通参考</text><view v-if="travelCanExpand" class="sp-location__toggle" role="button" :aria-label="travelExpanded ? '收起交通详情' : '查看完整地址与交通'" :aria-expanded="travelExpanded" hover-class="k-press-s" @click="travelExpanded = !travelExpanded"><text>{{ travelExpanded ? '收起详情' : '展开详情' }}</text><k-icon :name="travelExpanded ? 'chevron-up' : 'chevron-down'" :size="14" color="#94683F" /></view></view>
+              <view class="sp-location__head"><text class="sp-sub k-display">交通参考</text><view v-if="travelCanExpand" class="sp-location__toggle" role="button" :aria-label="travelExpanded ? '收起交通详情' : '查看完整地址与交通'" :aria-expanded="travelExpanded" hover-class="k-press-s" @click="travelExpanded = !travelExpanded"><text>{{ travelExpanded ? '收起详情' : '展开详情' }}</text><k-icon :name="travelExpanded ? 'chevron-up' : 'chevron-down'" :size="12" color="red" /></view></view>
               <view class="sp-trip"><view v-for="row in sections.travel.rows" :key="row.k" class="sp-bullet"><text class="sp-bullet__dot">·</text><text class="sp-bullet__text"><text class="sp-bullet__k">{{ row.k }}：</text>{{ row.v }}</text></view><text v-if="isVolunteer" class="sp-note">{{ TRAVEL_NOTE }}</text></view>
               <text v-if="!isVolunteer" class="sp-note">{{ TRAVEL_NOTE }}</text>
             </view>
-            <view v-else-if="placeText && travelCanExpand" class="sp-location__toggle" role="button" :aria-label="travelExpanded ? '收起完整地址' : '查看完整地址'" :aria-expanded="travelExpanded" hover-class="k-press-s" @click="travelExpanded = !travelExpanded"><text>{{ travelExpanded ? '收起地址' : '查看完整地址' }}</text><k-icon :name="travelExpanded ? 'chevron-up' : 'chevron-down'" :size="14" color="#94683F" /></view>
+            <view v-else-if="placeText && travelCanExpand" class="sp-location__toggle" role="button" :aria-label="travelExpanded ? '收起完整地址' : '查看完整地址'" :aria-expanded="travelExpanded" hover-class="k-press-s" @click="travelExpanded = !travelExpanded"><text>{{ travelExpanded ? '收起地址' : '查看完整地址' }}</text><k-icon :name="travelExpanded ? 'chevron-up' : 'chevron-down'" :size="12" color="red" /></view>
           </view>
           <!-- 5 视频未上传也保留封面框、标题、播放位、说明与状态条；有视频后接原有全屏播放。 -->
           <view v-if="isVolunteer || interview" class="sp-video" :class="{ 'sp-video--pending': !interview }">
@@ -109,18 +115,18 @@
               <template v-else>
               <image v-if="interviewCover || (isVolunteer && heroGrid.main)" class="sp-video__img" :src="interviewCover || heroGrid.main" mode="aspectFill" />
               <view class="sp-video__shade" />
-              <view class="sp-video__title"><image v-if="isVolunteer" class="sp-video__mark" :src="DETAIL_ART.kangaroo" mode="aspectFit" /><k-icon v-else name="flame" :size="14" color="#F5B25C" fill :stroke="1.4" /><text>{{ videoTitle || pendingInterview.title }}</text></view>
-              <view class="sp-video__play"><k-icon :name="interview ? 'play' : 'video'" :size="22" color="white" :fill="!!interview" /></view>
+              <view class="sp-video__title"><k-icon v-if="isVolunteer" name="video" :size="14" color="red" /><k-icon v-else name="flame" :size="14" color="red" fill /><text>{{ videoTitle || pendingInterview.title }}</text></view>
+              <view class="sp-video__play"><k-icon :name="interview ? 'play' : 'video'" :size="interview ? 20 : 14" :color="interview ? 'ink' : 'white'" :fill="!!interview" /></view>
               <text class="sp-video__cap">{{ interview ? interview.caption : pendingInterview.caption }}</text>
               </template>
             </view>
-            <view class="sp-video__chiprow"><view class="sp-video__chip"><text>{{ interview ? interview.chip : pendingInterview.chip }}</text></view></view>
+            <view class="sp-video__chiprow"><view class="sp-video__chip"><k-icon v-if="interview" name="circle-check" :size="12" color="white" /><text>{{ interview ? interview.chip : pendingInterview.chip }}</text></view></view>
           </view>
           <!-- 兼职 / 全职：「岗位招募要求」下两卡并排（岗位工作内容 | 排班与工时），只有一张时占满一行 -->
           <text v-if="pt && (sections.content.length || sections.work)" class="sp-section k-display">岗位招募要求</text>
           <view v-if="pt && (sections.content.length || sections.work)" class="sp-pair" :class="{ 'sp-pair--one': !(sections.content.length && sections.work) }">
             <view v-if="sections.content.length" class="sp-card sp-half"><text class="sp-h k-display">岗位工作内容</text><view v-for="(line, li) in sections.content" :key="li" class="sp-bullet"><text class="sp-bullet__dot">·</text><text class="sp-bullet__text">{{ line }}</text></view></view>
-            <view v-if="sections.work" class="sp-card sp-half"><view class="sp-half__head"><k-icon name="clock-3" :size="16" color="#C9782E" :stroke="2" /><text class="sp-h k-display">排班与工时</text></view><view v-if="sections.work.rest" class="sp-bullet"><text class="sp-bullet__dot">·</text><text class="sp-bullet__text"><text class="sp-bullet__k">排班模式：</text>{{ sections.work.rest }}</text></view><view v-if="sections.work.hours" class="sp-bullet"><text class="sp-bullet__dot">·</text><text class="sp-bullet__text"><text class="sp-bullet__k">每日工作时长：</text>{{ sections.work.hours }}</text></view></view>
+            <view v-if="sections.work" class="sp-card sp-half"><view class="sp-half__head"><k-icon name="clock-3" :size="16" color="muted" /><text class="sp-h k-display">排班与工时</text></view><view v-if="sections.work.rest" class="sp-bullet"><text class="sp-bullet__dot">·</text><text class="sp-bullet__text"><text class="sp-bullet__k">排班模式：</text>{{ sections.work.rest }}</text></view><view v-if="sections.work.hours" class="sp-bullet"><text class="sp-bullet__dot">·</text><text class="sp-bullet__text"><text class="sp-bullet__k">每日工作时长：</text>{{ sections.work.hours }}</text></view></view>
           </view>
           <!-- 6 换工要求（换宿旅行，写性别）/ 岗位要求（兼职、全职）：深棕页签头。
                所有要求两列横排，长内容在列内换行；标签加粗换色、不写冒号。 -->
@@ -139,7 +145,7 @@
           <view v-if="!pt && (sections.content.length || sections.work)" class="sp-card sp-card--tint sp-work-card">
             <view class="sp-work">
               <view v-if="sections.content.length" class="sp-work__list"><view class="sp-tab"><text>工作内容</text></view><view v-for="(row, li) in workRows" :key="li" class="sp-bullet" :class="{ 'sp-bullet--lead': isVolunteer && li === 0 }"><text class="sp-bullet__dot">·</text><text class="sp-bullet__text"><text v-if="row.k" class="sp-bullet__k sp-req-k">{{ row.k }}</text>{{ row.v }}</text></view></view>
-              <view v-if="sections.work" class="sp-work__time" :class="{ 'sp-work__time--full': !sections.content.length, 'sp-work__time--pending': isVolunteer && !work }"><view class="sp-tab sp-work__tab"><text>工作时间</text></view><text v-if="sections.work.hours" class="sp-work__hours">{{ sections.work.hours }}</text><view v-if="sections.work.mode" class="sp-work__rest"><image v-if="isVolunteer" class="sp-work__clock" :src="DETAIL_ART.clock" mode="aspectFit" /><k-icon v-else name="clock-3" :size="17" color="#8A5A30" :stroke="2" /><text>{{ sections.work.mode }}</text></view><text v-if="sections.work.note" class="sp-work__note">{{ sections.work.note }}</text></view>
+              <view v-if="sections.work" class="sp-work__time" :class="{ 'sp-work__time--full': !sections.content.length, 'sp-work__time--pending': isVolunteer && !work }"><view class="sp-tab sp-work__tab"><text>工作时间</text></view><text v-if="sections.work.hours" class="sp-work__hours">{{ sections.work.hours }}</text><view v-if="sections.work.mode" class="sp-work__rest"><k-icon v-if="isVolunteer" name="clock-3" :size="16" color="ink2" /><k-icon v-else name="clock-3" :size="16" color="muted" /><text>{{ sections.work.mode }}</text></view><text v-if="sections.work.note" class="sp-work__note">{{ sections.work.note }}</text></view>
             </view>
           </view>
           <!-- 9 福利：换宿 + 满月红包叫「做满一个月福利」，其余「福利待遇」，兼职 / 全职「工作待遇」（深棕标题头，大字对勾）；只写门店填了的，保险只在含保险时写 -->
@@ -153,7 +159,7 @@
               </view>
             </view>
             <template v-else>
-              <view v-if="sections.welfare.highlights.length" class="sp-perks"><view v-for="(hl, hi) in sections.welfare.highlights" :key="hi" class="sp-perk"><view v-if="pt" class="sp-perk__tick"><k-icon name="check" :size="11" color="white" :stroke="3.2" /></view><text>{{ hl }}</text></view></view>
+              <view v-if="sections.welfare.highlights.length" class="sp-perks"><view v-for="(hl, hi) in sections.welfare.highlights" :key="hi" class="sp-perk"><view v-if="pt" class="sp-perk__tick"><k-icon name="check" :size="12" color="white" /></view><text>{{ hl }}</text></view></view>
               <view class="sp-welfare__items"><view v-for="(item, wi) in sections.welfare.items" :key="wi" class="sp-bullet"><text class="sp-bullet__dot">·</text><text class="sp-bullet__text">{{ item }}</text></view></view>
             </template>
           </view>
@@ -172,15 +178,14 @@
             <text class="sp-h k-display">店长介绍</text>
             <view class="sp-mgr">
               <image v-if="managerAvatar" class="sp-mgr__avatar" :src="managerAvatar" mode="aspectFill" />
-              <view v-else class="sp-mgr__avatar sp-mgr__avatar--empty"><k-icon name="user-round" :size="32" color="#AC9278" :stroke="1.3" /><text>头像待上传</text></view>
-              <view class="sp-mgr__copy"><text class="sp-mgr__name k-display">{{ sections.manager.name ? '店长：' + sections.manager.name : '店长资料待补充' }}</text><text v-if="isVolunteer && !manager" class="sp-mgr__line">完善后可了解店长与工作生活安排</text><template v-else><text v-if="sections.manager.years" class="sp-mgr__line">在这里工作{{ sections.manager.years }}</text><text v-if="sections.manager.skills" class="sp-mgr__line">擅长：{{ sections.manager.skills }}</text><text v-if="sections.manager.quote" class="sp-mgr__line">店长说：{{ sections.manager.quote }}</text></template></view>
+              <view v-else class="sp-mgr__avatar sp-mgr__avatar--empty"><k-icon name="user-round" :size="24" color="muted" /><text>头像待上传</text></view>
+              <view class="sp-mgr__copy"><text class="sp-mgr__name k-display">{{ sections.manager.name ? '店长：' + sections.manager.name : '店长资料待补充' }}</text><text v-if="isVolunteer && !manager" class="sp-mgr__line">完善后可了解店长与工作生活安排</text><template v-else><text v-if="sections.manager.years" class="sp-mgr__line">在这里工作{{ sections.manager.years }}</text><text v-if="sections.manager.skills" class="sp-mgr__line">擅长：{{ sections.manager.skills }}</text><text v-if="sections.manager.quote" class="sp-mgr__line">店长说：{{ sections.manager.quote }}</text></template><view v-if="isVolunteer || sections.manager.ratingText" class="sp-mgr__rating"><k-icon name="star" :size="12" color="red" :fill="!!sections.manager.ratingText" /><text>店长服务评分</text><text class="sp-mgr__score" :class="{ 'sp-mgr__score--pending': !sections.manager.ratingText }">{{ sections.manager.ratingText || '暂无评分' }}</text></view></view>
             </view>
-            <view v-if="isVolunteer || sections.manager.ratingText" class="sp-mgr__rating"><k-icon name="star" :size="14" color="#C69C6F" :fill="!!sections.manager.ratingText" /><text>店长服务评分</text><text class="sp-mgr__score" :class="{ 'sp-mgr__score--pending': !sections.manager.ratingText }">{{ sections.manager.ratingText || '暂无评分' }}</text></view>
           </view>
           <!-- 11 该店亮点：参考图里的六个彩色立体小图标（从参考图裁的，放在 jobs 分包 static 里）；其余设施用线条图标 -->
           <view v-if="sections.facilities.length" class="sp-card sp-facilities">
             <text class="sp-h k-display">该店亮点</text>
-            <view class="sp-fac" :class="{ 'sp-fac--row': pt && sections.facilities.length <= 6 }"><view v-for="fac in sections.facilities" :key="fac.code" class="sp-fac__item"><image v-if="FAC_IMG[fac.code]" class="sp-fac__img" :src="FAC_IMG[fac.code]" mode="aspectFit" /><k-icon v-else :name="fac.icon" :size="24" color="red" :stroke="1.7" /><text class="sp-fac__label">{{ fac.label }}</text></view></view>
+            <view class="sp-fac" :class="{ 'sp-fac--row': pt && sections.facilities.length <= 6 }"><view v-for="fac in sections.facilities" :key="fac.code" class="sp-fac__item"><k-icon :name="fac.icon" :art="'amenity-' + fac.code" :size="22" color="red" /><text class="sp-fac__label">{{ fac.label }}</text></view></view>
           </view>
           <!-- 12 换宿始终为两张并排卡片；没有评价或日常照片时保留各自的展示位。 -->
           <view class="sp-pair sp-life" :class="{ 'sp-pair--one': !isVolunteer && (!feedbackShown || !daily.length) }">
@@ -189,25 +194,25 @@
             <view v-if="isVolunteer || digest.count || reviewAppId" class="sp-card sp-fbk" role="button" aria-label="查看用户反馈" hover-class="k-press-s" @click.stop="openStoreReviews">
               <view class="sp-fbk__head" hover-class="k-press" @click.stop="openStoreReviews">
                 <text class="sp-h k-display">用户反馈</text>
-                <k-icon v-if="isVolunteer" name="chevron-right" :size="14" color="#A38A75" />
-                <view v-if="digest.count && !isVolunteer" class="sp-fbk__score"><text v-if="digest.avgText" class="sp-fbk__num">{{ digest.avgText }}</text><k-icon v-if="digest.avgText" name="star" :size="12" color="#E39A4E" fill /><text class="sp-fbk__meta">{{ digest.count }}条 ›</text></view>
+                <k-icon v-if="isVolunteer" name="chevron-right" :size="14" color="muted" />
+                <view v-if="digest.count && !isVolunteer" class="sp-fbk__score"><text v-if="digest.avgText" class="sp-fbk__num">{{ digest.avgText }}</text><k-icon v-if="digest.avgText" name="star" :size="12" color="red" fill /><text class="sp-fbk__meta">{{ digest.count }}条</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
               </view>
               <view v-for="rvItem in (isVolunteer ? digest.items.slice(0, 2) : digest.items)" :key="rvItem.key" class="sp-rv" hover-class="k-press-s" @click.stop="openStoreReviews">
                 <text class="sp-bullet__dot">·</text>
                 <view class="sp-rv__main">
                   <text class="sp-rv__text">{{ rvItem.text }}</text>
-                  <view v-if="!isVolunteer" class="sp-rv__top"><text class="sp-rv__name">{{ rvItem.name }}</text><text v-if="rvItem.days" class="sp-rv__days">{{ rvItem.days }}</text><view v-if="rvItem.rating != null" class="sp-rv__stars"><k-icon v-for="n in 5" :key="n" name="star" :size="9" :color="n <= rvItem.stars ? '#E39A4E' : 'light'" :fill="n <= rvItem.stars" /></view></view>
+                  <view v-if="!isVolunteer" class="sp-rv__top"><text class="sp-rv__name">{{ rvItem.name }}</text><text v-if="rvItem.days" class="sp-rv__days">{{ rvItem.days }}</text><view v-if="rvItem.rating != null" class="sp-rv__stars"><k-icon v-for="n in 5" :key="n" name="star" :size="12" :color="n <= rvItem.stars ? 'red' : 'light'" :fill="n <= rvItem.stars" /></view></view>
                 </view>
               </view>
               <view v-if="isVolunteer && !digest.count" class="sp-fbk__empty"><text>暂无伙伴评价</text><text>期待体验过的伙伴分享工作与生活感受</text></view>
               <text v-else-if="!digest.count" class="sp-fbk__none">还没有做过这类岗位的伙伴写评价，你可以第一个来说说</text>
               <view v-if="reviewAppId" class="sp-fbk__write" hover-class="k-press-s" @click.stop="writeReview"><k-icon name="square-pen" :size="16" color="red" /><text>我在这家店做过，写评价</text></view>
-              <view v-if="!isVolunteer && digest.count > digest.items.length" class="sp-fbk__all" hover-class="k-press" @click.stop="openStoreReviews"><text>查看全部 {{ digest.count }} 条</text><k-icon name="chevron-right" :size="14" color="red" /></view>
+              <view v-if="!isVolunteer && digest.count > digest.items.length" class="sp-fbk__all" hover-class="k-press" @click.stop="openStoreReviews"><text>查看全部 {{ digest.count }} 条</text><k-icon name="chevron-right" :size="12" color="red" /></view>
             </view>
             <!-- 整张卡进入当前门店的日常页，照片和视频在新页面打开。 -->
             <view v-if="isVolunteer || daily.length" class="sp-card sp-daily-card" role="button" aria-label="查看店里日常" hover-class="k-press-s" @click="openDaily">
-              <view class="sp-section-link"><text class="sp-h k-display">店里日常</text><k-icon v-if="isVolunteer" name="chevron-right" :size="14" color="#A38A75" /></view>
-              <view class="sp-daily" :class="[{ 'sp-daily--pair': isVolunteer || feedbackShown }, 'sp-daily--count-' + dailyShown.length]"><view v-for="(dailySrc, di) in dailyShown" :key="di" class="sp-daily__cell"><image v-if="dailySrc" class="sp-daily__img" :src="dailySrc" mode="aspectFill" /><view v-else class="sp-photo-empty"><k-icon name="image" :size="22" color="#A4917E" :stroke="1.3" /><text>待补充</text></view><view v-if="dailyMore && di === dailyShown.length - 1" class="sp-daily__more"><text>+{{ dailyMore }}</text></view></view></view>
+              <view class="sp-section-link"><text class="sp-h k-display">店里日常</text><k-icon v-if="isVolunteer" name="chevron-right" :size="14" color="muted" /></view>
+              <view class="sp-daily" :class="[{ 'sp-daily--pair': isVolunteer || feedbackShown }, 'sp-daily--count-' + dailyShown.length]"><view v-for="(dailySrc, di) in dailyShown" :key="di" class="sp-daily__cell"><image v-if="dailySrc" class="sp-daily__img" :src="dailySrc" mode="aspectFill" /><view v-else class="sp-photo-empty"><k-icon name="image" :size="22" color="muted" /><text>待补充</text></view><view v-if="dailyMore && di === dailyShown.length - 1" class="sp-daily__more"><text>+{{ dailyMore }}</text></view></view></view>
             </view>
           </view>
           <!-- 13 换宿固定展示三行，保险和资质仍以真实资料为准；有执照才出现查看入口。 -->
@@ -219,14 +224,14 @@
           </view>
           <view v-if="trainingBanner" class="detail-training" hover-class="k-press-s" @click="openTraining">
             <image v-if="trainingBanner.img" class="detail-training__image" :src="absUrl(trainingBanner.img)" mode="aspectFill" />
-            <view class="detail-training__body"><text class="detail-training__label">袋鼠成长课堂 · 培训活动</text><text class="detail-training__title">{{ trainingBanner.title }}</text><text class="detail-training__meta">{{ [trainingBanner.dateText, trainingBanner.city].filter(Boolean).join(' · ') }}</text><view class="detail-training__link"><text>了解课程与报名</text><k-icon name="arrow-right" :size="17" color="red" /></view></view>
+            <view class="detail-training__body"><text class="detail-training__label">袋鼠成长课堂 · 培训活动</text><text class="detail-training__title">{{ trainingBanner.title }}</text><text class="detail-training__meta">{{ [trainingBanner.dateText, trainingBanner.city].filter(Boolean).join(' · ') }}</text><view class="detail-training__link"><text>了解课程与报名</text><k-icon name="arrow-right" :size="12" color="red" /></view></view>
           </view>
         </view>
       </view>
       <!-- 详情还没拿到：读取中写清楚，约 8 秒后提示网络慢；网络失败留在本页给重试；岗位没了提示后退回。之前这里什么都不显示，看着像坏了 -->
       <view v-else class="detail-state" role="status">
         <template v-if="loadState === 'error'">
-          <k-icon name="info" :size="26" color="alert" />
+          <k-icon name="info" :size="24" color="alert" />
           <text class="detail-state__title">岗位信息没有加载出来</text>
           <text class="detail-state__text">{{ loadError }}</text>
           <view class="detail-state__retry" role="button" hover-class="k-press-s" @click="retryLoad"><text>重新加载</text></view>
@@ -813,7 +818,7 @@ const tagParts = computed(() => tagLine(detail.value, {
   status: blockedShort.value || headcountText.value
 }))
 const displayTags = computed(() => isVolunteer.value ? tagLine(detail.value, {
-  kindLabel: kindLabel.value || '换宿换工', board: boardShort.value || '食宿待补充',
+  kindLabel: kindLabel.value || '换工', board: boardShort.value || '食宿待补充',
   bonus: redpacket.value || !!detail.value?.bonusDesc, status: blockedShort.value || headcountText.value || '名额待确认'
 }) : tagParts.value)
 const placeText = computed(() => { const d = detail.value || {}; return joinDot(d.address, d.city) })
@@ -1004,276 +1009,299 @@ onShow(showPublicShareMenu)
 </script>
 
 <style scoped lang="scss">
-/* 10-19 参考图：页面是极浅暖米渐变底（顶部 #F7EFE6 → #FBF7F1），不是纯白；顶栏跟着页面底色（--k-bg） */
-.detail-page { font-family: var(--k-sans); --k-bg: #F7EFE6; background: linear-gradient(180deg, #F7EFE6 0%, #FBF7F1 360px, #FBF7F1 100%); }
-/* 底部操作栏：白底 + 上方一道柔和阴影；左「寻伴同行」深色描边大胶囊，右「立即报名」暖棕渐变大胶囊 */
-.detail-page .k-bottom { background: #FFFFFF; border-top-color: rgba(160, 120, 80, .14); box-shadow: 0 -6px 18px rgba(120, 84, 48, .08); }
-.team-button :deep(.k-button) { height: 48px; border: 1.5px solid #3A322B; color: #3A322B; font-size: 17px; font-weight: 700; letter-spacing: 1px; }
-.apply-button :deep(.k-button) { font-family: var(--k-display-font); height: 48px; font-size: 17px; font-weight: 700; letter-spacing: 2px; }
-.apply-button :deep(.k-button.is-primary) { background: linear-gradient(135deg, #8E5E37 0%, #6E4628 100%); box-shadow: 0 6px 14px rgba(110, 70, 40, .28); }
+/* 2026-11-17 改版「小而精」（主人：「太 low 了」「小一点精致一点，可以参考小红书」「该有的功能不要少」）：
+   浅灰底 #F7F5F2，顶上一张大图（多张时是拼版，照片完整露出），下面一整块白色内容面板；区块之间靠留白和 1px 细线分开，
+   不再用纸纹背景、棕色描边框、灰褐底卡和大号特粗字。期限 / 工时 / 排班这类数字放进浅色横条，福利写成小标签。
+   顶栏、底部操作条跟着 --k-bg 走白色。只改样子：模板里的每一块内容、每一个能点的地方都还在。 */
+.detail-page { --k-bg: #FFFFFF; font-family: var(--k-sans); background: #F7F5F2; }
+/* 换宿详情给顶栏传了一个偏粉的底色（旧版纸纹用的），统一成白色 */
+.detail-page :deep(.k-topbar) { background: #FFFFFF !important; box-shadow: 0 1px 0 rgba(58, 50, 43, .06); }
+.detail-page .overview { padding-bottom: calc(74px + var(--k-safe-bottom)); }
+/* 紧急招募条是公共组件，详情里只把它收成一条细条 */
+.detail-page :deep(.job-urgency--detail) { padding: 7px 16px; gap: 2px 10px; font-size: 13px; }
+
+.detail-page :deep(.job-urgency__deadline) { font-size: 11px; }
+/* 底部操作条：白底 + 一道细线；左「找人一起去」白底细边胶囊，右「立即报名」暖棕渐变胶囊，都是 42 高（渐变色在 detail-premium.scss，那边优先级才够） */
+.detail-page .k-bottom { background: #FFFFFF; border-top-color: var(--k-line); box-shadow: none; }
+.detail-page .k-bottom :deep(.k-bottom__inner) { padding: 8px 12px !important; gap: 10px; }
+.team-button { flex: 0 0 40%; min-width: 0; }
+.apply-button { flex: 1; min-width: 0; }
+.team-button :deep(.k-button), .apply-button :deep(.k-button) { height: 44px; padding: 0 8px; border-radius: 22px; font-family: var(--k-sans); font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.team-button :deep(.k-button) { border: 1px solid var(--k-red-line); background: #FFFFFF; color: var(--k-ink); }
+
+.apply-button :deep(.k-button.is-primary) { background: linear-gradient(135deg, #B5814D, #8E5E33); box-shadow: none; }
 /* 名额已满 / 已暂停 / 已过截止时间时按钮点不了：之前暖棕渐变盖住了按钮自带的灰底，浅灰字压在棕色上几乎看不见，也不像点不了 */
-.apply-button :deep(.k-button.is-primary.is-disabled) { background: #ECE5DC; box-shadow: none; color: #A39A92; }
+.apply-button :deep(.k-button.is-primary.is-disabled) { box-shadow: none; }
 /* 没加载完时「找人一起去」也要看得出点不了 */
-.team-button :deep(.k-button.is-disabled) { border-color: #DDD3C8; color: #A39A92; }
+/* 第二轮：点不了时保持原来的白底细棕边、整体变淡（公共按钮的禁用色带 !important，这里要更具体才盖得住） */
+.detail-page .team-button :deep(.k-button.is-disabled) { border-color: var(--k-red-line) !important; background: #FFFFFF !important; color: var(--k-ink) !important; }
 /* 详情还没拿到时的提示 */
-.detail-state { min-height: 320px; padding: 48px 28px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
-.detail-state__title { font-size: 16px; font-weight: 600; color: #3A322B; }
-.detail-state__text { font-size: 13px; line-height: 1.6; color: #8A7A6A; }
-.detail-state__retry { margin-top: 8px; min-height: 40px; padding: 0 24px; border: 1px solid #8E5E37; border-radius: 20px; color: #6E4628; font-size: 14px; font-weight: 600; display: flex; align-items: center; }
-/* 顶部照片（V49）：可以左右滑，右下角写第几张 / 共几张 */
-.hero { position: relative; height: 200px; background: var(--k-paper2); }
+.detail-state { min-height: 320px; padding: 48px 28px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.detail-state__title { font-size: 15px; font-weight: 600; color: var(--k-ink); }
+.detail-state__text { font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+.detail-state__retry { margin-top: 8px; min-height: 40px; padding: 0 24px; border: 1px solid var(--k-red-line); border-radius: 20px; background: #FFFFFF; color: var(--k-red-deep); font-size: 14px; font-weight: 600; display: flex; align-items: center; }
+/* ---------------- 线上任务：顶上照片（V49，可以左右滑，右下角写第几张 / 共几张）+ 白色内容面板 ---------------- */
+.hero { position: relative; height: 200px; background: #EFEAE3; }
 .hero__swiper { width: 100%; height: 200px; }
 .hero__img { width: 100%; height: 200px; display: block; }
 .hero__badge { position: absolute; left: 12px; top: 12px; }
-.hero__count { position: absolute; right: 14px; bottom: 10px; padding: 2px 8px; border-radius: 10px; color: #fff; background: rgba(0,0,0,.5); font-size: 11px; }
-.overview-body { padding: 12px 16px 100px; }
-.overview-body .plain-card, .overview-body .section-card { margin: 10px 0 0; }
-.overview-body .plain-card__list, .overview-body .section-row__value { font-size: 13px; }
-.overview-body .section-row__label { width: 72px; font-size: 13px; }
-.overview-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 21px; font-weight: 700; }
-.overview-title>text { flex: 1; min-width: 0; }
-.overview-flags { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; }
-.safe { height: 26px; padding: 0 10px; border-radius: 7px; background: var(--k-green-soft); color: var(--k-green); display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.hero__count { position: absolute; right: 12px; bottom: 22px; height: 22px; padding: 0 8px; border-radius: 11px; color: #fff; background: rgba(20, 14, 10, .5); font-size: 11px; line-height: 22px; }
+.overview-body { position: relative; margin-top: -12px; padding: 16px 16px 20px; border-radius: 12px 12px 0 0; background: #FFFFFF; }
+.overview-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; font-size: 18px; font-weight: 700; line-height: 26px; color: var(--k-ink); }
+.overview-title > text { flex: 1; min-width: 0; word-break: break-word; }
+/* 2026-11-18 看图评审：标题旁「还招 N 人」、下面「安心商家」按小标签规格（17 高、10 号字）；
+   收藏和兼职 / 全职详情同一种——看上去 28 高的浅色小胶囊，外面一圈 4 的透明边把可点范围留在 36 高 */
+.overview-title :deep(.k-chip) { margin-top: 2px; height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.overview-flags { margin-top: 4px; min-height: 36px; display: flex; align-items: center; justify-content: space-between; }
+.safe { height: 22px; padding: 0 8px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; }
+
 .favorite.is-busy, .sp-heading__favorite.is-busy { opacity: .6; }
-.favorite { margin-left: auto; display: flex; align-items: center; gap: 5px; color: var(--k-muted); }
-.info-card { margin-top: 12px; padding: 12px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); }
-.info-row { min-height: 37px; display: flex; align-items: center; gap: 10px; }
-.info-row__label { width: 72px; color: var(--k-muted); font-size: 13px; }
-.info-row__value { flex: 1; min-width: 0; font-size: 13px; word-break: break-all; }
-.info-row__map { flex: 0 0 auto; color: var(--k-red); font-size: 12px; }
+.favorite { margin: 0 -4px 0 auto; min-width: 76px; height: 36px; padding: 0 8px; border: 4px solid transparent; border-radius: 18px; background: #F5F1EB padding-box; display: flex; align-items: center; justify-content: center; gap: 3px; color: var(--k-ink2); font-size: 12px; font-weight: 500; white-space: nowrap; }
+
+/* 关键信息：一块浅色底，行与行之间一道细线 */
+.info-card { margin-top: 8px; padding: 2px 12px; border-radius: 8px; background: #F7F5F2; }
+.info-row { min-height: 38px; display: flex; align-items: center; gap: 8px; }
+.info-row + .info-row { border-top: 0; background-image: linear-gradient(to bottom, #ECE7E0 50%, transparent 50%); background-size: 100% 1px; background-repeat: no-repeat; background-position: left top; }
+
+.info-row__label { flex: 0 0 auto; width: 60px; color: var(--k-muted); font-size: 12px; }
+.info-row__value { flex: 1; min-width: 0; padding: 8px 0; font-size: 13px; line-height: 20px; color: var(--k-ink); word-break: break-word; }
+.info-row__map { flex: 0 0 auto; color: var(--k-red-deep); font-size: 12px; }
 .info-row--tap:active { opacity: .7; }
-.section-card, .plain-card { margin-bottom: 8px; padding: 12px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); }
-.section-card__title, .plain-card__title { display: block; margin-bottom: 6px; font-size: 16px; font-weight: 700; }
-.section-row { min-height: 29px; display: flex; align-items: center; gap: 7px; }
-.section-row__label { width: 96px; color: var(--k-muted); font-size: 12px; }
-.section-row__value { flex: 1; min-width: 0; font-size: 12px; word-break: break-all; }
-.plain-card__list { display: block; font-size: 12px; line-height: 1.55; white-space: pre-line; }
-.team-button { width: 43%; flex: 0 0 auto; }
-.apply-button { flex: 1; }
+.section-card, .plain-card { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--k-line); }
+.section-card__title, .plain-card__title { display: block; margin-bottom: 8px; font-size: 15px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
+.section-row { min-height: 30px; display: flex; align-items: center; gap: 8px; }
+
+.section-row__label { flex: 0 0 auto; width: 72px; color: var(--k-muted); font-size: 12px; }
+.section-row__value { flex: 1; min-width: 0; font-size: 13px; line-height: 20px; color: var(--k-ink); word-break: break-word; }
+/* 任务说明里常带一长串网址：放不下就在中间折行，不把页面撑出横向滚动 */
+.plain-card__list { display: block; font-size: 13px; line-height: 22px; color: var(--k-ink2); white-space: pre-line; word-break: break-word; }
 /* 门店卡片（关注门店，V37） */
-.store-card { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; gap: 10px; }
+.store-card { margin-top: 16px; padding: 12px; border-radius: 12px; background: #F7F5F2; display: flex; align-items: center; gap: 10px; }
 .store-card__cover { width: 44px; height: 44px; border-radius: 8px; flex: 0 0 auto; }
 .store-card__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.store-card__name { font-size: 15px; font-weight: 700; color: var(--k-ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.store-card__meta { font-size: 12px; color: var(--k-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.store-card__name { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--k-ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.store-card__meta { font-size: 11px; line-height: 16px; color: var(--k-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 /* 不能报名的原因（暂停、名额已满、线上任务已过截止时间等） */
-.blocked-tip { margin-top: 10px; padding: 9px 12px; border: 1px solid rgba(192, 68, 55, .28); border-radius: 10px; background: var(--k-alert-soft); color: var(--k-alert); display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.5; }
+.blocked-tip { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--k-alert-soft); color: var(--k-alert); display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 18px; }
 .blocked-tip > text { flex: 1; min-width: 0; }
+
 /* 换工类型标签、线上任务须知入口 */
-.overview-kind { margin-top: 8px; display: flex; align-items: center; gap: 8px; }
-.redpacket-tag { height: 24px; padding: 0 9px; border-radius: 6px; background: var(--k-red-soft); border: 1px solid var(--k-red-line); color: var(--k-red-deep); font-size: 12px; font-weight: 600; display: flex; align-items: center; white-space: nowrap; }
-.guide-link { margin-top: 10px; min-height: 46px; padding: 0 12px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; gap: 8px; }
-.guide-link__title { font-size: 14px; font-weight: 700; color: var(--k-ink); }
-.guide-link__sub { flex: 1; min-width: 0; font-size: 12px; color: var(--k-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-/* ---------------- 线下岗位「门店页」（2026-10-18 改版；10-19 按参考图「岗位详情」一比一还原）----------------
-   参考图的视觉：页面极浅暖米底；白卡 12 圆角 + 1px 暖色细边 + 很柔的阴影；「换工要求 / 工作内容 / 福利 / 保障」是浅暖米渐变卡，
-   左上角深棕页签头；标题超粗深棕；圆点是橙色；评分、成本这类数字用暖橙棕。 */
-.sp { padding-bottom: 8px; }
-.sp-hero { position: relative; margin: 6px 12px 0; height: 146px; padding: 2px; border-radius: 14px; overflow: hidden; background: #FFFFFF; display: flex; gap: 3px; box-shadow: 0 6px 18px rgba(120, 84, 48, .12), inset 0 0 0 1px rgba(160, 120, 80, .14); box-sizing: border-box; }
-.sp-hero__main { flex: 1; min-width: 0; height: 100%; border-radius: 12px; overflow: hidden; }
-.sp-hero--grid .sp-hero__main { flex: 0 0 55%; border-radius: 12px 0 0 12px; }
-.sp-hero__img { width: 100%; height: 100%; display: block; background: #EFE6DA; }
-.sp-hero__grid { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 3px; border-radius: 0 12px 12px 0; overflow: hidden; }
+.overview-kind { margin-top: 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.overview-kind :deep(.k-chip) { height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.redpacket-tag { height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 11px; font-weight: 500; display: flex; align-items: center; white-space: nowrap; }
+.guide-link { margin-top: 8px; min-height: 44px; padding: 6px 12px; border-radius: 8px; box-sizing: border-box; background: #F7F5F2; display: flex; align-items: center; gap: 8px; }
+.guide-link__title { flex: 0 0 auto; font-size: 13px; font-weight: 600; line-height: 20px; color: var(--k-ink); }
+/* 窄屏放不下时说明折成两行，不截成省略号 */
+.guide-link__sub { flex: 1; min-width: 0; font-size: 12px; line-height: 16px; color: var(--k-muted); }
+
+/* ---------------- 线下岗位「门店页」（换宿旅行；兼职 / 全职在 components/parttime-detail.vue，是同一套样子）----------------
+   头图 → 白色面板：标题 + 订阅 → 小标签 + 收藏 → 位置与交通 → 采访视频 → 换工要求 → 招募信息横条 → 工作内容 / 工作时间
+   → 福利 → 住宿展示 / 店里的宠物 → 店长介绍 → 该店亮点 → 用户反馈 + 店里日常 → 袋鼠安心保障。 */
+.sp { color: var(--k-ink2); font-size: 13px; line-height: 20px; }
+.sp .k-display { font-family: var(--k-sans); font-weight: 700; letter-spacing: 0; }
+/* 头图：一张 = 整幅；多张 = 左边大图 + 右边小格（放不下的在最后一格写 +N）；照片之间只留 2px 缝，不描边、不盖白雾 */
+.sp-hero { position: relative; height: 232px; display: flex; gap: 2px; overflow: hidden; background: #EFEAE3; box-sizing: border-box; }
+.sp-hero--grid { height: 208px; }
+.sp-hero__main { position: relative; flex: 1; min-width: 0; height: 100%; overflow: hidden; }
+.sp-hero--grid .sp-hero__main { flex: 0 0 56%; }
+.sp-hero__img { width: 100%; height: 100%; display: block; background: #EFEAE3; }
+.sp-hero__grid { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 2px; overflow: hidden; }
 .sp-hero__grid--1 .sp-hero__cell { grid-column: 1 / 3; grid-row: 1 / 3; }
 .sp-hero__grid--2 .sp-hero__cell { grid-column: 1 / 3; }
 .sp-hero__cell--wide { grid-column: 1 / 3; }
+.sp-hero__grid--5 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.sp-hero__grid--5 .sp-hero__cell { grid-column: span 2; }
+.sp-hero__grid--5 .sp-hero__cell:nth-child(-n+2) { grid-column: span 3; }
 .sp-hero__cell { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
-.sp-hero__more { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(36, 27, 23, .45); color: #fff; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-/* 版式 1b：左大、中、右小三张并排（多的照片点开大图里翻），底部一条白字采访说明 */
-.sp-hero--trio.sp-hero--grid .sp-hero__main { flex: 0 0 35%; }
-.sp-hero--trio .sp-hero__grid { display: flex; }
-.sp-hero--trio .sp-hero__cell { flex: 1 1 0; height: 100%; }
-.sp-hero--trio .sp-hero__cell + .sp-hero__cell { flex: 1 1 0; }
-.sp-hero--trio .sp-hero__cell:nth-child(n+3) { display: none; }
-.sp-hero__caption { position: absolute; left: 2px; right: 2px; bottom: 2px; height: 34px; padding: 10px 12px 0; border-radius: 0 0 12px 12px; background: linear-gradient(180deg, rgba(36, 27, 23, 0) 0%, rgba(36, 27, 23, .62) 100%); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .3px; display: flex; align-items: center; justify-content: flex-end; text-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
-.sp-hero__badge { position: absolute; left: 10px; top: 10px; }
-/* 右上角：「平台岗检」灰绿半透明胶囊 + 收藏（和标题旁的星标同一个状态）；收藏后换成白底赭黄星 */
-.sp-hero__tr { position: absolute; right: 10px; top: 10px; display: flex; align-items: center; gap: 6px; }
-.sp-hero__check, .sp-hero__fav { height: 24px; border-radius: 12px; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 3px; white-space: nowrap; }
-.sp-hero__check { padding: 0 9px 0 7px; background: rgba(88, 98, 72, .62); box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .35); }
-.sp-hero__fav { padding: 0 9px 0 7px; background: rgba(36, 27, 23, .46); }
-.sp-hero__fav.on { background: rgba(255, 255, 255, .95); color: var(--k-ochre-deep); box-shadow: 0 2px 8px rgba(58, 50, 43, .18); }
-.sp-body { padding: 0 12px 16px; }
-/* 标题：超粗深棕（k-display），右边圆形描边星标 */
-.sp-title { margin-top: 11px; display: flex; align-items: center; gap: 10px; }
-.sp-heading__subscribe { flex: 0 0 auto; max-width: 96px; }
-.sp-tagline { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-.sp-tagline .sp-tags { min-width: 0; }
-.sp-tagline .sp-heading__favorite { margin-left: auto; min-width: 44px; min-height: 44px; }
-.sp-title__text { flex: 1; min-width: 0; font-family: var(--k-sans); font-size: 24px; line-height: 1.25; color: #3B2A1E; word-break: break-all; }
-.sp-fav { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #B9AEA4; background: rgba(255, 255, 255, .7); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-.sp-fav.on { background: var(--k-ochre-soft); border-color: var(--k-ochre); }
-/* 标签条：浅橙底胶囊，前面一个橙色圆底对勾，「|」分隔 */
-.sp-tags { margin-top: 8px; max-width: 100%; display: inline-flex; align-items: center; flex-wrap: wrap; row-gap: 4px; padding: 4px 12px 4px 5px; border-radius: 14px; background: linear-gradient(90deg, #FBE6CF 0%, #FCEFE0 100%); color: #6B4428; font-size: 14px; font-weight: 700; box-sizing: border-box; }
-.sp-tags__icon { flex: 0 0 auto; width: 17px; height: 17px; margin-right: 6px; border-radius: 50%; background: linear-gradient(135deg, #F0A35A 0%, #DB8233 100%); display: flex; align-items: center; justify-content: center; }
-.sp-tags__item { line-height: 18px; white-space: nowrap; }
-.sp-tags__item--sep { margin-left: 7px; padding-left: 7px; border-left: 1.5px solid rgba(107, 68, 40, .35); }
-.sp-tags__item--muted { color: var(--k-muted); }
-.sp .blocked-tip { margin-top: 10px; border-radius: 12px; background: #FFF6F4; border-color: rgba(192, 68, 55, .45); }
-/* 版式 1b 的标题区：左标题 + 「兼职岗位｜城市」，右状态胶囊；下一行绿色「安心商家」+ 收藏 */
-.sp-pthead { margin-top: 14px; display: flex; align-items: flex-start; gap: 10px; }
-.sp-pthead__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.sp-pthead .sp-title__text { font-size: 23px; }
-.sp-pthead__sub { font-size: 14px; color: #8A817A; }
-.sp-pthead__state { flex: 0 0 auto; margin-top: 4px; height: 26px; padding: 0 12px; border-radius: 13px; background: #E9F2E2; color: #3F6B33; font-size: 13px; font-weight: 700; line-height: 26px; white-space: nowrap; }
-.sp-pthead__state--off { background: #FCEBD8; color: #A0632E; }
-.sp-ptflags { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.sp-safe { height: 26px; padding: 0 11px 0 4px; border-radius: 13px; background: #E6F0DE; color: #3F6B33; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
-.sp-safe__tick { width: 18px; height: 18px; border-radius: 50%; background: #4F8A45; display: flex; align-items: center; justify-content: center; }
-.sp-ptfav { margin-left: auto; height: 30px; padding: 0 12px 0 10px; border-radius: 15px; border: 1px solid #D9CFC4; background: rgba(255, 255, 255, .8); color: #5A5149; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; box-sizing: border-box; }
-.sp-ptfav.on { border-color: var(--k-ochre); background: var(--k-ochre-soft); color: var(--k-ochre-deep); }
-/* 卡片：白底、12 圆角、1px 暖色细边 + 很柔的阴影（参考图） */
-.sp-card { position: relative; margin-top: 7px; padding: 10px 11px; border-radius: 7px; background: #FFFFFF; border: 1px solid #C9B7A6; box-shadow: 0 1px 3px rgba(120,84,48,.035); box-sizing: border-box; }
-/* 浅暖米渐变卡：「换工要求」「招募信息」「工作内容」 */
-.sp-card--tint { background: linear-gradient(180deg, #F6ECE0 0%, #FBF6F0 100%); border-color: rgba(160, 120, 80, .26); box-shadow: 0 6px 18px rgba(120, 84, 48, .07), inset 0 1px 0 rgba(255, 255, 255, .7); overflow: hidden; }
-/* 暖色卡：「福利」「袋鼠安心保障」 */
-.sp-card--warm { background: linear-gradient(180deg, #F4E6D6 0%, #FAF3EA 100%); border-color: rgba(160, 120, 80, .26); }
-/* 深棕页签头：贴着卡片左上角往里缩一点，圆角小块 */
-.sp-tab { font-family: var(--k-display-font); display: inline-flex; align-items: center; height: 30px; margin: -6px 0 6px -6px; padding: 0 14px; border-radius: 8px; background: linear-gradient(135deg, #6E4A2E 0%, #946238 100%); box-shadow: 0 3px 8px rgba(110, 74, 46, .25); color: #fff; font-size: 16px; font-weight: 700; letter-spacing: 1px; }
-.sp-h { display: block; font-family: var(--k-sans); font-size: 16px; font-weight: 700; line-height: 1.35; color: #3B2A1E; }
-.sp-sub { display: block; margin-top: 8px; font-size: 16px; font-weight: 700; color: #3B2A1E; }
-.sp-section { display: block; margin: 16px 2px 0; font-size: 18px; font-weight: 700; color: #3B2A1E; }
-.sp-bullet { margin-top: 4px; display: flex; gap: 6px; font-size: 13px; line-height: 1.6; color: #5A4636; }
-.sp-bullet__dot { flex: 0 0 auto; color: #E08A3A; font-weight: 900; font-size: 16px; line-height: 20px; }
-.sp-bullet__text { flex: 1; min-width: 0; word-break: break-all; }
-.sp-bullet__k { color: #5A3A22; font-weight: 700; }
-.sp-link { flex: 0 0 auto; align-self: center; height: 22px; padding: 0 8px; border-radius: 11px; border: 1px solid rgba(160, 99, 46, .45); background: #FFF9F2; color: #8A5A30; font-size: 11px; font-weight: 700; line-height: 20px; white-space: nowrap; box-sizing: border-box; }
-.sp-note { display: block; margin-top: 6px; font-size: 11px; color: #A39A92; text-align: center; }
-.sp-loc { display: flex; align-items: center; gap: 10px; }
+.sp-hero__more { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(20, 14, 10, .45); color: #fff; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.sp-photo-empty { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: #EFEAE3; color: var(--k-light); font-size: 12px; line-height: 16px; text-align: center; }
+/* 照片上的角标：白色小胶囊（左上采访方式、右上平台岗检）；右下角「共 N 张」是深色半透明小胶囊，让开下面白色面板压上来的 12px */
+.sp-hero__badge { position: absolute; left: 12px; top: 12px; max-width: calc(100% - 110px); }
+.sp-visit-label { display: block; height: 22px; padding: 0 8px; border-radius: 11px; background: rgba(255, 255, 255, .94); color: var(--k-red-deep); font-size: 11px; font-weight: 600; line-height: 22px; white-space: nowrap; }
+.sp-hero__tr { position: absolute; right: 12px; top: 12px; display: flex; align-items: center; gap: 6px; }
+.sp-hero__check { height: 22px; padding: 0 8px; border-radius: 11px; background: rgba(255, 255, 255, .94); color: var(--k-green); font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+.sp-hero__count { position: absolute; right: 12px; bottom: 22px; z-index: 2; height: 22px; padding: 0 8px; border-radius: 11px; background: rgba(20, 14, 10, .5); color: #fff; font-size: 11px; line-height: 22px; }
+/* 白色内容面板：压住头图底边 12px，上面两个角是圆的。
+   这里（还有上面线上任务的 .overview-body）不能写 z-index：一写，面板里「住宿展示」点开的全屏视频就被压在顶栏和底部按钮下面，「关闭」和进度条都点不到。
+   面板排在头图后面，只写 position: relative 就已经盖在头图上了 */
+.sp-body { position: relative; margin-top: -12px; padding: 16px 16px 20px; border-radius: 12px 12px 0 0; background: #FFFFFF; }
+/* 标题 18 / 700，右边「订阅」小胶囊；下一行是小标签，最右边收藏 */
+.sp-heading { display: flex; align-items: flex-start; gap: 10px; }
+.sp-heading .sp-title { flex: 1; min-width: 0; }
+.sp-title { display: flex; align-items: flex-start; }
+.sp-title__text { flex: 1; min-width: 0; font-size: 18px; line-height: 26px; color: var(--k-ink); word-break: break-word; }
+/* 订阅胶囊自己带一圈 8px 的透明边（把可点范围留在 44 高），这里往回收，让看得见的 28 高胶囊和标题第一行对齐、右边贴齐 */
+.sp-heading__subscribe { flex: 0 0 auto; margin: -9px -8px -9px 0; }
+.sp-tagline { margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+.sp-tags { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.sp-tags__icon { flex: 0 0 auto; width: 12px; height: 12px; border-radius: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
+/* 标签平时一行 20 高；门店写的换工类型特别长时在标签里换行，不截成省略号 */
+.sp-tags__item { max-width: 100%; min-height: 17px; padding: 0 5px; border-radius: 4px; box-sizing: border-box; background: #F5F1EB; color: var(--k-ink2); font-size: 11px; font-weight: 500; line-height: 17px; word-break: break-word; } /* 小标签 17 高；字仍 11（门店页约定字号不小于 11） */
+.sp-tags__icon + .sp-tags__item { background: var(--k-red-soft); color: var(--k-red-deep); }
+.sp-tags .sp-tags__item--muted { background: #F5F1EB; color: var(--k-muted); }
+/* 收藏：看着是 28 的小圆钮，可点范围仍是 44 */
+.sp-heading__favorite { position: relative; flex: 0 0 44px; width: 44px; height: 44px; margin: -8px -8px -8px auto; display: flex; align-items: center; justify-content: center; }
+.sp-heading__favorite::before { content: ''; position: absolute; left: 8px; top: 8px; right: 8px; bottom: 8px; border-radius: 50%; background: #F5F1EB; }
+.sp-heading__favorite.on::before { background: var(--k-red-soft); }
+.sp-heading__favorite :deep(.k-icon), .sp-favorite-art { position: relative; }
+/* 区块：不描边、不要底色，上面一道细线，上下各留 16 */
+.sp-card { position: relative; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--k-line); box-sizing: border-box; }
+.sp-h, .sp-sub { display: block; font-size: 15px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
+.sp-sub { font-size: 13px; line-height: 20px; }
+.sp-tab { display: block; margin-bottom: 8px; font-size: 15px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
+.sp-bullet { margin-top: 4px; display: flex; gap: 6px; font-size: 13px; line-height: 20px; color: var(--k-ink2); }
+/* 圆点画成 4px 的小圆，不用字体里的「·」（各家字体大小不一样） */
+.sp-bullet__dot { flex: 0 0 4px; width: 4px; height: 4px; margin-top: 8px; border-radius: 50%; background: #C9BFB4; color: transparent; font-size: 0; overflow: hidden; }
+.sp-bullet__text { flex: 1; min-width: 0; word-break: break-word; }
+.sp-bullet__k { color: var(--k-ink); font-weight: 600; }
+.sp-note { display: block; margin-top: 6px; font-size: 11px; line-height: 16px; color: var(--k-light); }
+/* 位置与交通：左边地址，右边一块小地图（点了打开地图）；交通参考放在浅色底里 */
+.sp-loc { display: flex; align-items: flex-start; gap: 12px; }
 .sp-loc__copy { flex: 1; min-width: 0; }
-.sp-loc__addr { display: block; margin-top: 4px; font-size: 14px; font-weight: 500; line-height: 1.5; color: #3A322B; word-break: break-all; }
-/* 小地图：不放地图图片，浅灰底 + 两道青绿弧线小路 + 一道浅杏大路 + 深色定位针（参考图样子） */
-.sp-map { position: relative; flex: 0 0 auto; width: 104px; height: 60px; border-radius: 10px; overflow: hidden; border: 1px solid #E4E1E6; background: #EDECF0; box-sizing: border-box; }
+.sp-loc__addr { display: block; margin-top: 4px; font-size: 13px; line-height: 20px; color: var(--k-ink2); word-break: break-word; }
+.sp-map { position: relative; flex: 0 0 auto; width: 76px; height: 54px; border-radius: 8px; overflow: hidden; background: #ECEBEE; }
+.sp-map__art { display: block; width: 100%; height: 100%; }
 .sp-map__road { position: absolute; }
-.sp-map__road--a { left: -14px; top: 30px; width: 70px; height: 10px; background: #F3E3C9; transform: rotate(28deg); }
-.sp-map__road--b { left: 52px; top: -6px; width: 3px; height: 80px; background: #FFFFFF; transform: rotate(-28deg); }
-.sp-map__ring { position: absolute; left: 14px; top: 8px; width: 120px; height: 90px; border-radius: 50%; border: 2px solid #8FD0CB; border-right-color: transparent; border-bottom-color: transparent; box-sizing: border-box; }
-.sp-map__pin { position: absolute; left: 62px; top: 12px; width: 20px; height: 20px; border-radius: 50% 50% 50% 0; background: #2F2A26; transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0, 0, 0, .25); display: flex; align-items: center; justify-content: center; }
-.sp-map__pin-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
-.sp-map__tag { position: absolute; right: 3px; bottom: 3px; padding: 0 4px; border-radius: 4px; background: rgba(255, 255, 255, .92); color: #8A5A30; font-size: 11px; line-height: 15px; }
-/* 交通参考：浅米底圆角框里两条圆点 */
-.sp-trip { margin-top: 8px; padding: 6px 10px 8px; border-radius: 10px; background: #F8F3EC; border: 1px solid rgba(160, 120, 80, .1); }
-.sp-trip .sp-bullet { font-size: 12px; line-height: 1.6; }
-/* 采访视频：白边框卡，左上棕色胶囊标题，中央播放钮，底部白字；下面压一个「已完成线下实地核验」棕色小胶囊 */
-.sp-video { margin-top: 10px; }
-.sp-video__cover { position: relative; width: 100%; height: 0; padding-bottom: 35%; border-radius: 12px; overflow: hidden; background: #DDD5C8; border: 2px solid #FFFFFF; box-shadow: 0 6px 18px rgba(120, 84, 48, .12), 0 0 0 1px rgba(160, 120, 80, .2); box-sizing: content-box; }
+.sp-map__road--a { left: -14px; top: 26px; width: 70px; height: 9px; background: #F3E3C9; transform: rotate(28deg); }
+.sp-map__road--b { left: 40px; top: -8px; width: 3px; height: 76px; background: #FFFFFF; transform: rotate(-28deg); }
+.sp-map__ring { position: absolute; left: 10px; top: 6px; width: 100px; height: 80px; border-radius: 50%; border: 2px solid #8FD0CB; border-right-color: transparent; border-bottom-color: transparent; box-sizing: border-box; }
+.sp-map__pin { position: absolute; left: 44px; top: 10px; width: 18px; height: 18px; border-radius: 50% 50% 50% 0; background: #2F2A26; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
+.sp-map__pin-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+.sp-map__tag { position: absolute; right: 4px; bottom: 4px; padding: 0 5px; border-radius: 4px; background: rgba(255, 255, 255, .94); color: var(--k-red-deep); font-size: 11px; line-height: 16px; }
+.sp-map--pending .sp-map__art { opacity: .6; }
+.sp-location__head { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sp-location__toggle { flex: 0 0 auto; min-height: 32px; display: flex; align-items: center; justify-content: center; gap: 3px; color: var(--k-red-deep); font-size: 12px; }
+.sp-location--collapsed .sp-loc__addr, .sp-location--collapsed .sp-trip .sp-bullet__text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.sp-location--collapsed .sp-trip .sp-bullet__text { -webkit-line-clamp: 3; }
+.sp-trip { margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: #F7F5F2; }
+.sp-trip .sp-bullet { margin-top: 0; font-size: 12px; }
+.sp-trip .sp-bullet + .sp-bullet { margin-top: 2px; }
+/* 采访视频：照片完整露出，字用底部向上的黑色渐变托住；下面一枚小标签写核验状态。没有视频时收成一行，不占一整屏 */
+.sp-video { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--k-line); }
+.sp-video__cover { position: relative; width: 100%; height: 188px; border-radius: 8px; overflow: hidden; background: #EFEAE3; }
 .sp-video__img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.sp-video__shade { position: absolute; left: 0; right: 0; bottom: 0; height: 55%; background: linear-gradient(180deg, rgba(36, 27, 23, 0) 0%, rgba(36, 27, 23, .66) 100%); }
-.sp-video__title { position: absolute; left: 10px; top: 10px; height: 26px; padding: 0 11px 0 8px; border-radius: 13px; background: rgba(110, 72, 42, .86); box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .3); color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.sp-video__play { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; padding-left: 3px; border-radius: 50%; background: rgba(36, 27, 23, .35); border: 1.5px solid rgba(255, 255, 255, .9); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-.sp-video__cap { position: absolute; left: 10px; right: 10px; bottom: 10px; color: #fff; font-size: 13px; font-weight: 700; line-height: 1.45; text-align: center; text-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
-.sp-video__chiprow { position: relative; margin-top: -10px; display: flex; justify-content: center; }
-.sp-video__chip { height: 22px; padding: 0 14px; border-radius: 11px; border: 1.5px solid #FFFFFF; background: linear-gradient(135deg, #C09060 0%, #9A6B3F 100%); box-shadow: 0 2px 6px rgba(120, 84, 48, .25); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; white-space: nowrap; }
-/* 所有要求两列横排，长文案完整换行。 */
-.sp-reqs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; align-items: start; }
-.sp-reqs .sp-bullet { width: auto; min-width: 0; margin: 0; font-size: 14px; line-height: 1.65; }
-/* 加粗的标签后面不写冒号，空一点再接内容 */
-.sp-reqs .sp-req-k { padding-right: 6px; color: var(--k-red-deep); font-weight: 700; white-space: nowrap; }
-/* 招募信息三栏 */
-.sp-stats { padding: 12px 6px; }
-.sp-stats__row { display: flex; }
-.sp-stat { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
-.sp-stat--sep { border-left: 1px solid rgba(160, 120, 80, .22); }
-.sp-stat__k { font-size: 14px; color: #6B4A30; }
-.sp-stat__v { font-family: var(--k-display-font); font-size: 17px; font-weight: 700; color: #3B2A1E; word-break: break-all; }
-/* 工作内容（左，深棕页签头 + 列表）| 工作时间（右，大字） */
-.sp-work { display: flex; gap: 10px; }
-.sp-work__list { flex: 1; min-width: 0; }
-.sp-work__list .sp-bullet { color: #6B4428; font-weight: 700; }
-.sp-work__time { flex: 0 0 106px; margin: -10px -11px -10px 0; padding: 10px 8px; border-left: 1px solid rgba(160, 120, 80, .2); background: rgba(255, 255, 255, .35); display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
-.sp-work__time--full { flex: 1; margin: 0; padding: 0; border-left: 0; background: transparent; align-items: flex-start; text-align: left; }
-/* 工作时间的页签头和「工作内容」同一个样子（2026-11-03 主人）：在右边窄栏里居中，不往左上角缩 */
-.sp-work__tab { margin: -6px 0 0; padding: 0 12px; letter-spacing: 0; }
-.sp-work__time--full .sp-work__tab { margin-left: -6px; }
-.sp-work__hours { font-family: var(--k-display-font); font-size: 18px; font-weight: 900; color: #8A5A30; word-break: break-all; }
-.sp-work__rest { font-family: var(--k-display-font); display: flex; align-items: center; gap: 4px; color: #8A5A30; font-size: 15px; font-weight: 900; }
-.sp-work__rest > text { min-width: 0; word-break: break-all; }
-/* 门店写的排班说明 / 上班时段（「每周 5 天，每天 6 小时」「9:00-12:00，15:00-18:00」）：小字另起一行，不和上面两行大字抢 */
-.sp-work__note { font-size: 12px; line-height: 1.5; color: #8A6A4E; font-weight: 700; word-break: break-all; }
-/* 福利：两个白底小卡并排；版式 1b 是深棕标题头 + 大字对勾 */
-.sp-perks { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
-.sp-perk { flex: 1 1 40%; min-width: 0; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(160, 120, 80, .22); background: rgba(255, 255, 255, .85); color: #5A3A22; font-size: 13px; font-weight: 700; line-height: 1.4; text-align: center; word-break: break-all; display: flex; align-items: center; justify-content: center; gap: 6px; }
-.sp-welfare__items { margin-top: 4px; }
-.sp-welfare--pt { padding-top: 0; overflow: hidden; }
-.sp-welfare__bar { font-family: var(--k-display-font); margin: -10px -11px 8px; height: 38px; padding: 0 14px; background: linear-gradient(135deg, #6E4A2E 0%, #946238 100%); color: #fff; font-size: 17px; font-weight: 700; letter-spacing: 1px; display: flex; align-items: center; }
-.sp-welfare--pt .sp-perk { font-family: var(--k-display-font); padding: 10px 8px; border: 0; border-radius: 0; background: transparent; justify-content: flex-start; font-size: 17px; font-weight: 900; color: #5A3A22; text-align: left; }
-.sp-welfare--pt .sp-perk + .sp-perk { border-left: 1px solid rgba(160, 120, 80, .22); padding-left: 14px; }
-.sp-perk__tick { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, #F0A35A 0%, #DB8233 100%); display: flex; align-items: center; justify-content: center; }
-/* 住宿环境、店里的宠物：一句话 + 图格（年纪大的人也看得清，不跟版式里的小字走） */
-.sp-extra__line { display: block; margin-top: 4px; font-size: 14px; line-height: 1.5; color: #604B40; }
-/* 店长介绍：大圆头像（白圈 + 阴影）、超粗名字、浅橙评分胶囊 */
-.sp-mgr { margin-top: 7px; display: flex; align-items: flex-start; gap: 10px; }
-.sp-mgr__avatar { flex: 0 0 auto; width: 65px; height: 65px; border-radius: 50%; border: 3px solid #FFFFFF; box-shadow: 0 3px 10px rgba(120, 84, 48, .2); background: #EFE6DA; }
+.sp-video__shade { position: absolute; left: 0; right: 0; bottom: 0; height: 56%; background: linear-gradient(180deg, rgba(20, 14, 10, 0), rgba(20, 14, 10, .6)); }
+/* 2026-11-18 看图评审：视频左上角的角标和兼职 / 全职详情、头图角标统一成白色小胶囊（原来是深色半透明胶囊）；袋鼠小图标在白底上压深一点 */
+.sp-video__title { position: absolute; left: 8px; top: 8px; max-width: calc(100% - 16px); height: 22px; padding: 0 8px 0 6px; border-radius: 11px; background: rgba(255, 255, 255, .94); color: var(--k-red-deep); font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 3px; white-space: nowrap; box-sizing: border-box; }
+.sp-video__mark { flex: 0 0 auto; width: 14px; height: 14px; filter: brightness(.62) saturate(1.4); }
+.sp-video__play { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; padding-left: 2px; border-radius: 50%; background: rgba(20, 14, 10, .45); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+
+.sp-video__cap { position: absolute; left: 12px; right: 12px; bottom: 10px; color: #fff; font-size: 12px; font-weight: 500; line-height: 18px; }
+.sp-video__chiprow { margin-top: 8px; display: flex; }
+.sp-video__chip { min-height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; font-weight: 500; line-height: 17px; display: flex; align-items: center; }
+/* 没有视频：左边 96 宽的小图，右边标题 + 说明跟着文字自己撑高（字被系统放大或换行时不会叠在一起、也不会被截掉） */
+.sp-video--pending .sp-video__cover { height: auto; min-height: 72px; padding: 10px 10px 10px 108px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; gap: 2px; background: #F7F5F2; }
+.sp-video--pending .sp-video__img { width: 96px; }
+.sp-video--pending .sp-video__shade { right: auto; top: 0; width: 96px; height: 100%; background: rgba(20, 14, 10, .28); }
+.sp-video--pending .sp-video__play { left: 48px; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; padding: 0; }
+
+.sp-video--pending .sp-video__title { position: static; max-width: none; height: auto; padding: 0; border-radius: 0; background: none; color: var(--k-ink); font-size: 13px; line-height: 20px; white-space: normal; }
+.sp-video--pending .sp-video__cap { position: static; color: var(--k-muted); font-size: 11px; font-weight: 400; line-height: 16px; }
+.sp-video--pending .sp-video__chip { background: #F5F1EB; color: var(--k-muted); }
+/* 要求：所有要求两列横排，长文案在列内换行；标签加粗换色，后面不写冒号、空一点再接内容（2026-11-03 主人） */
+.sp-reqs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; align-items: start; }
+.sp-reqs .sp-bullet { width: auto; min-width: 0; margin: 0; }
+.sp-reqs .sp-req-k { padding-right: 6px; color: var(--k-red-deep); font-weight: 600; white-space: nowrap; }
+/* 招募信息 | 到岗时间 | 最短期限：一条浅色横条，数字在上、名称在下；紧跟在要求下面，中间不再画线 */
+.sp-stats { margin-top: 12px; padding-top: 0; border-top: 0; }
+.sp-stats__row { display: flex; padding: 10px 0; border-radius: 8px; background: #F7F5F2; }
+.sp-stat { flex: 1; min-width: 0; padding: 0 4px; display: flex; flex-direction: column-reverse; align-items: center; gap: 2px; text-align: center; box-sizing: border-box; }
+.sp-stat--sep { border-left: 1px solid #E8E2DA; }
+.sp-stat__k { font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.sp-stat__v { font-size: 15px; font-weight: 700; line-height: 22px; color: var(--k-ink); word-break: break-word; font-variant-numeric: tabular-nums; }
+/* 福利：每组一个豆绿小标题，后面跟一枚枚小标签（长的在标签里换行） */
+.sp-welfare__columns { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.sp-welfare__column { min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; }
+.sp-welfare__column-title { flex: 0 0 auto; height: 24px; padding: 0 8px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 12px; font-weight: 600; line-height: 24px; }
+.sp-welfare__column .sp-bullet { max-width: 100%; min-height: 24px; margin: 0; padding: 2px 8px; border-radius: 4px; background: #F5F1EB; font-size: 12px; gap: 5px; box-sizing: border-box; }
+.sp-welfare__column .sp-bullet__text { flex: 0 1 auto; }
+.sp-perks { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.sp-perk { max-width: 100%; min-height: 24px; padding: 2px 8px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 12px; font-weight: 600; line-height: 20px; display: flex; align-items: center; gap: 4px; box-sizing: border-box; word-break: break-word; }
+.sp-welfare__items { margin-top: 6px; }
+/* 住宿环境、店里的宠物：一句话 + 图格 */
+.sp-extra__line { display: block; margin-top: 4px; font-size: 13px; line-height: 20px; color: var(--k-ink2); }
+/* 店长介绍：小圆头像 + 名字 + 两三行介绍；评分是一枚琥珀小标签。头像没传时是一块写着「头像待上传」的浅色占位 */
+.sp-mgr { margin-top: 10px; display: flex; align-items: flex-start; gap: 12px; }
+.sp-mgr__avatar { flex: 0 0 52px; width: 52px; height: 52px; border-radius: 50%; background: #EFEAE3; }
+.sp-mgr__avatar--empty { flex-basis: 64px; width: 64px; height: 56px; border-radius: 12px; background: #F5F1EB; color: var(--k-light); font-size: 11px; line-height: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+
 .sp-mgr__copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.sp-mgr__name { font-size: 18px; font-weight: 700; color: #3B2A1E; }
-.sp-mgr__line { font-size: 13px; line-height: 1.55; color: #4A3E35; word-break: break-all; }
-.sp-mgr__rating { margin-top: 6px; height: 24px; padding: 0 14px; border-radius: 14px; background: linear-gradient(90deg, #FBE6CF 0%, #FCF1E4 100%); color: #8A5A30; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
-.sp-mgr__score { font-family: var(--k-display-font); font-size: 16px; font-weight: 900; }
-/* 该店亮点：3×2 浅灰格子，彩色立体小图标在上、文字在下；版式 1b 一行六个 */
+.sp .sp-mgr__name { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--k-ink); }
+.sp-mgr__line { font-size: 12px; line-height: 18px; color: var(--k-ink2); word-break: break-word; }
+.sp-mgr__rating { margin-top: 10px; height: 22px; padding: 0 8px; border-radius: 4px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+
+.sp-mgr__score { font-size: 12px; font-weight: 700; }
+.sp-mgr__score--pending { font-size: 11px; font-weight: 400; }
+/* 该店亮点：三列浅色小格，图标在左、名字在右 */
 .sp-fac { margin-top: 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.sp-fac--row { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
-.sp-fac__item { height: 54px; border-radius: 8px; background: linear-gradient(180deg, #F1EFF3 0%, #EEECF0 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
-.sp-fac--row .sp-fac__item { height: 58px; }
-.sp-fac__img { width: 36px; height: 27px; }
-.sp-fac__label { max-width: 100%; padding: 0 4px; box-sizing: border-box; font-size: 13px; font-weight: 600; color: #3A322B; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.sp-fac--row .sp-fac__label { padding: 0 1px; font-size: 11px; }
-/* 用户反馈 + 店里日常：两张卡并排，只有一张时占满 */
-.sp-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+.sp-fac__item { min-width: 0; min-height: 40px; padding: 4px 6px; border-radius: 8px; background: #F7F5F2; display: flex; align-items: center; justify-content: center; gap: 5px; box-sizing: border-box; }
+.sp-fac__img { flex: 0 0 auto; width: 24px; height: 19px; }
+
+/* 格子比以前窄：门店自己写的长名字在格子里换行，不截成省略号 */
+.sp-fac__label { min-width: 0; font-size: 12px; font-weight: 500; line-height: 16px; color: var(--k-ink2); word-break: break-word; }
+/* 用户反馈 + 店里日常：两块浅色小卡并排，只有一块时占满；整块能点 */
+.sp-pair { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--k-line); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+.sp-pair:empty { display: none; }
 .sp-pair--one { grid-template-columns: minmax(0, 1fr); }
-.sp-pair > .sp-card { min-width: 0; padding: 11px 10px; }
-.sp-pair--one > .sp-card { padding: 13px 14px; }
-.sp-half__head { display: flex; align-items: center; gap: 5px; }
-.sp-fbk__head { display: flex; align-items: center; gap: 6px; }
-.sp-fbk__head .sp-h { flex: 1; min-width: 0; }
+.sp-pair > .sp-card { min-width: 0; margin-top: 0; padding: 12px; border-top: 0; border-radius: 8px; background: #F7F5F2; }
+.sp-pair .sp-h { font-size: 14px; line-height: 20px; }
+.sp-fbk__head, .sp-section-link { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.sp-fbk__head .sp-h { flex: 1; min-width: 0; white-space: nowrap; }
 .sp-fbk__score { flex: 0 0 auto; display: flex; align-items: center; gap: 2px; }
-.sp-fbk__num { font-family: var(--k-display-font); font-size: 15px; font-weight: 900; line-height: 1; color: #A0632E; }
-.sp-fbk__meta { margin-left: 2px; font-size: 11px; color: #8A817A; white-space: nowrap; }
-.sp-rv { margin-top: 6px; padding: 5px 8px 6px 4px; border-radius: 8px; background: #F8F2EB; display: flex; gap: 3px; }
+.sp-fbk__num { font-size: 14px; font-weight: 700; line-height: 1; color: var(--k-ochre-deep); }
+.sp-fbk__meta { margin-left: 2px; font-size: 11px; color: var(--k-muted); white-space: nowrap; }
+.sp-rv { margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: #FFFFFF; display: flex; gap: 4px; }
+.sp-rv .sp-bullet__dot { margin-top: 7px; }
 .sp-rv__main { flex: 1; min-width: 0; }
-.sp-rv__text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: 12px; line-height: 1.6; color: #4A3E35; }
-.sp-rv__top { margin-top: 2px; display: flex; align-items: center; gap: 5px; min-width: 0; }
-.sp-rv__name { min-width: 0; font-size: 11px; color: #8A817A; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.sp-rv__days { flex: 0 0 auto; font-size: 11px; color: #A0632E; }
+.sp-rv__text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 12px; line-height: 18px; color: var(--k-ink2); }
+.sp-pair--one .sp-rv__text { -webkit-line-clamp: 3; }
+.sp-rv__top { margin-top: 2px; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.sp-rv__name { min-width: 0; font-size: 11px; color: var(--k-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.sp-rv__days { flex: 0 0 auto; font-size: 11px; color: var(--k-ochre-deep); }
 .sp-rv__stars { flex: 0 0 auto; display: flex; gap: 1px; }
-.sp-fbk__none { display: block; margin-top: 8px; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
-.sp-fbk__write { margin-top: 8px; min-height: 32px; padding: 4px 8px; border-radius: 10px; background: #FCEBD8; display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; line-height: 1.4; color: #8A5A30; }
+.sp-fbk__empty { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.sp-fbk__empty > text { display: block; font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.sp-fbk__empty > text:first-child { font-size: 12px; font-weight: 500; line-height: 18px; color: var(--k-ink2); }
+.sp-fbk__none { display: block; margin-top: 8px; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.sp-fbk__write { margin-top: 8px; min-height: 32px; padding: 4px 8px; border-radius: 6px; background: var(--k-red-soft); display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; line-height: 16px; color: var(--k-red-deep); }
 .sp-fbk__write > text { flex: 1; min-width: 0; }
-.sp-fbk__all { margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 1px; font-size: 12px; font-weight: 700; color: #8A5A30; }
-/* 店里日常：占满一行时 4 张方图；并排时左宽右窄两张（更多的写 +N） */
-.sp-daily { margin-top: 10px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.sp-daily--pair { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 5px; }
+.sp-fbk__all { margin-top: 8px; min-height: 28px; display: flex; align-items: center; justify-content: center; gap: 1px; font-size: 12px; font-weight: 600; color: var(--k-red-deep); }
+/* 店里日常：占满一行时 4 张方图；并排时两张（更多的写 +N） */
+.sp-daily { margin-top: 8px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.sp-daily--pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sp-daily--count-1 { grid-template-columns: minmax(0, 1fr); }
 .sp-daily--pair .sp-daily__cell:nth-child(n+3) { display: none; }
-.sp-daily__cell { position: relative; height: 0; padding-bottom: 100%; border-radius: 8px; overflow: hidden; background: #EFE6DA; }
-.sp-daily--pair .sp-daily__cell { height: 94px; padding-bottom: 0; }
+.sp-daily__cell { position: relative; height: 0; padding-bottom: 100%; border-radius: 6px; overflow: hidden; background: #EFEAE3; }
+.sp-daily--pair .sp-daily__cell { height: 80px; padding-bottom: 0; }
 .sp-daily__img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.sp-daily__more { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(36, 27, 23, .45); color: #fff; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-/* 袋鼠安心保障：暖色卡里一块更浅的面板放三条；保险那句橙棕加粗，执照是一个描边小按钮 */
-.sp-assure__panel { margin-top: 8px; padding: 4px 10px 8px; border-radius: 10px; background: rgba(255, 255, 255, .55); border: 1px solid rgba(160, 120, 80, .12); }
-.sp-assure__panel .sp-bullet { align-items: flex-start; }
-.sp-assure__hl { color: #A0632E; font-weight: 700; }
-/* 门店卡：左边方形封面（没有封面时灰色描边图标块）、超粗店名、右边描边「+ 关注」胶囊 */
-.sp .store-card { margin-top: 10px; padding: 12px 14px; border: 1px solid rgba(160, 120, 80, .18); border-radius: 12px; box-shadow: 0 6px 18px rgba(120, 84, 48, .07); }
-.sp .store-card__cover { width: 52px; height: 52px; border-radius: 10px; border: 1px solid #E4DDD5; box-sizing: border-box; }
-.store-card__cover--empty { background: #F7F4F0; display: flex; align-items: center; justify-content: center; }
-.sp .store-card__name { font-size: 17px; color: #3B2A1E; }
-.store-card__sub { font-size: 13px; color: #5A5149; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.store-card__follow { flex: 0 0 auto; }
-.store-card__follow :deep(.k-button) { height: 30px; padding: 0 14px; font-size: 13px; font-weight: 700; color: #3A322B; border-color: #9C948C; }
-.store-card__follow :deep(.k-button.is-disabled) { color: var(--k-light); }
-/* 版式 1b：招募信息表（两行三列）+ 内嵌位置与交通 */
-.sp-recruit__table { margin-top: 8px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 10px; overflow: hidden; border: 1px solid rgba(160, 120, 80, .2); border-bottom: 0; background: #FBF6F0; }
-.sp-recruit__cell { min-width: 0; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; border-right: 1px solid rgba(160, 120, 80, .16); border-bottom: 1px solid rgba(160, 120, 80, .16); }
-.sp-recruit__cell:nth-child(3n) { border-right: 0; }
-/* 只有一两格时按格数均分，不留空格子 */
-.sp-recruit__table--1 { grid-template-columns: minmax(0, 1fr); }
-.sp-recruit__table--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.sp-recruit__table--1 .sp-recruit__cell, .sp-recruit__table--2 .sp-recruit__cell:nth-child(2n) { border-right: 0; }
-.sp-recruit__k { font-size: 12px; color: #8A6A4E; }
-.sp-recruit__v { font-family: var(--k-display-font); font-size: 15px; font-weight: 700; color: #3B2A1E; word-break: break-all; }
-.sp-loc--inner { margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(160, 120, 80, .25); }
-.sp-recruit .sp-trip { background: #F4F2EF; }
+.sp-daily__more { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(20, 14, 10, .45); color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+/* 袋鼠安心保障：一块很浅的豆绿底放三行；保险那句豆绿加粗，执照是一枚细边小胶囊 */
+.sp-assure__panel { margin-top: 10px; padding: 8px 12px; border-radius: 8px; background: #F4F8F0; }
+.sp-assure__panel .sp-bullet { margin-top: 0; padding: 3px 0; align-items: flex-start; flex-wrap: wrap; font-size: 12px; }
+.sp-assure__panel .sp-bullet__dot { background: #A9BF9A; }
+.sp-assure__hl { color: var(--k-green); font-weight: 600; }
+.sp-link { flex: 0 0 auto; margin-left: auto; height: 24px; padding: 0 9px; border: 1px solid var(--k-red-line); border-radius: 12px; background: #FFFFFF; color: var(--k-red-deep); font-size: 11px; font-weight: 500; line-height: 22px; white-space: nowrap; box-sizing: border-box; }
+@media (max-width: 359px) {
+  .sp-hero { height: 196px; }
+  .sp-hero--grid { height: 176px; }
+  .sp-body, .overview-body { padding-left: 12px; padding-right: 12px; }
+  .sp-video__cover { height: 160px; }
+  .sp-stat__v { font-size: 13px; }
+  .sp-fac { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .team-button :deep(.k-button), .apply-button :deep(.k-button) { font-size: 14px; }
+}
 @import "./detail-training.scss";
 @import "detail-premium.scss";
 @import "detail-volunteer-reference.scss";
+@import "detail-r3.scss";
 /* Latest acceptance follows the supplied reference proportions. */
+
+.detail-page.user-surface {
+  .info-card, .section-card, .store-card { border-radius: 12px; }
+  .info-row__label, .section-row__label { color: var(--k-muted); }
+  .info-row__value, .section-row__value { min-width: 0; overflow-wrap: anywhere; }
+  .overview-title, .sp-title__text { line-height: 1.4; }
+  .guide-link { background-color: var(--user-icon-field); }
+  .pt-lead__pay { font-variant-numeric: tabular-nums; }
+}
 </style>

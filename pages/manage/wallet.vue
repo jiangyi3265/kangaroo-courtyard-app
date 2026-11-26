@@ -10,14 +10,18 @@
       <text class="section-title">收益来源占比 <text class="k-meta">（本月）</text></text>
       <view class="source-grid"><view v-for="item in sources" :key="item.label" class="source-card" @click="openEntries(item)"><k-icon :name="item.icon" :size="35" :color="item.color" /><text class="source-card__label">{{ item.label }}</text><text class="source-card__amount" :style="{color:item.hex}">{{ item.amount }}</text><text>{{ item.pct }}</text></view></view>
       <!-- 之前分佣规则屏没有任何入口（只认 ?view=rules，没人带），结算记录藏在明细的类型下拉里，审核结果消息落到本屏后找不到 -->
-      <view class="links"><view class="links__item" @click="openEntries({})"><text>收益明细</text><k-icon name="chevron-right" :size="14" color="ink" /></view><view class="links__item" @click="showWithdraws"><text>结算记录</text><k-icon name="chevron-right" :size="14" color="ink" /></view><view class="links__item" @click="s = 4"><text>分佣规则</text><k-icon name="chevron-right" :size="14" color="ink" /></view></view>
+      <view class="links"><view class="links__item" @click="openEntries({})"><text>收益明细</text><k-icon name="chevron-right" :size="12" color="muted" /></view><view class="links__item" @click="showWithdraws"><text>结算记录</text><k-icon name="chevron-right" :size="12" color="muted" /></view><view class="links__item" @click="s = 4"><text>分佣规则</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
       <text v-if="recent" class="section-title recent-title">最近一笔收益</text>
-      <view v-if="recent" class="recent"><k-icon :name="recentIcon" :size="36" color="green" /><view class="k-flex1"><text class="recent__name">{{ recent.name }}</text><text class="recent__place">{{ recent.place }}</text></view><view class="recent__right"><text>{{ recent.amount }}</text><text>{{ recent.status }}</text></view></view>
+      <view v-if="recent" class="recent"><view class="recent__icon"><k-icon :name="recentIcon" :size="18" color="green" /></view><view class="k-flex1"><text class="recent__name">{{ recent.name }}</text><text class="recent__place">{{ recent.place }}</text></view><view class="recent__right"><text>{{ recent.amount }}</text><text>{{ recent.status }}</text></view></view>
     </view>
 
     <view v-else-if="s === 2" class="k-pad-tab detail-page">
       <view class="detail-filter"><view class="filter-box" @click="pickType"><text>{{ typeLabel }}</text><k-icon name="chevron-down" :size="15" color="ink" /></view><view class="filter-box filter-box--date" @click="pickRange"><text>{{ rangeText }}</text><k-icon name="calendar-days" :size="17" color="ink" /></view><view class="square" @click="searchNo"><k-icon name="search" :size="20" color="ink" /></view><view class="square square--text" @click="exportEntries"><text>导出</text></view></view>
-      <view class="earn-table"><view class="earn-head"><text>订单信息</text><text>收入类型</text><text>订单金额</text><text>分佣率</text><text>到账金额 / 状态</text></view><view v-if="!rows.length" class="earn-empty"><text>{{ keyword ? '没有找到这个单号' : '这段时间没有收益明细' }}</text></view><view v-for="(row, ri) in rows" :key="row.id + '-' + ri" class="earn-row"><view><text>{{ row.prefix }} {{ row.id }}</text><text>{{ row.time }}</text><text>{{ row.place }}</text></view><text :class="row.tone">{{ row.type }}</text><text>{{ row.order }}</text><text>{{ row.rate }}</text><view class="earn-row__received"><text>{{ row.received }}</text><text>{{ row.status }}</text></view></view></view>
+      <view class="earn-table"><view class="earn-head"><text>订单信息</text><text>收入类型</text><text>订单金额</text><text>分佣率</text><text>到账金额 / 状态</text></view>
+        <view v-if="entriesLoading" class="earn-empty"><text>正在加载收益明细…</text></view>
+        <view v-else-if="entriesError" class="earn-empty" @click="loadEntries"><text>{{ entriesError }} · 点此重试</text></view>
+        <view v-else-if="!rows.length" class="earn-empty"><text>{{ keyword ? '没有找到这个单号' : '这段时间没有收益明细' }}</text></view>
+        <view v-for="(row, ri) in rows" :key="row.id + '-' + ri" class="earn-row"><view><text>{{ row.prefix }} {{ row.id }}</text><text>{{ row.time }}</text><text>{{ row.place }}</text></view><text :class="row.tone">{{ row.type }}</text><text>{{ row.order }}</text><text>{{ row.rate }}</text><view class="earn-row__received"><text>{{ row.received }}</text><text>{{ row.status }}</text></view></view></view>
     </view>
 
     <view v-else-if="s === 3" class="k-body k-pad-tab withdraw-page">
@@ -127,14 +131,24 @@ const from = ref('')
 const to = ref('')
 const keyword = ref('')
 const rows = ref([])
+const entriesLoading = ref(false)
+const entriesError = ref('')
+let entriesGeneration = 0
 async function loadEntries() {
+  const generation = ++entriesGeneration
+  entriesLoading.value = true
+  entriesError.value = ''
+  rows.value = []
   try {
     const d = (await apiWalletEntries({ type: type.value || undefined, from: from.value || undefined, to: to.value || undefined, keyword: keyword.value || undefined })).data
+    if (generation !== entriesGeneration) return
     rows.value = d.rows || []
     from.value = d.from
     to.value = d.to
   } catch (e) {
-    toast(errText(e, '明细加载失败'))
+    if (generation === entriesGeneration) entriesError.value = errText(e, '明细加载失败')
+  } finally {
+    if (generation === entriesGeneration) entriesLoading.value = false
   }
 }
 const typeLabel = computed(() => (TYPES.find(t => t[0] === type.value) || TYPES[0])[1])
@@ -195,6 +209,8 @@ async function searchNo() {
   loadEntries()
 }
 function exportEntries() {
+  if (entriesLoading.value) return toast('明细正在加载')
+  if (entriesError.value) return toast('请重新加载明细后再导出')
   if (!rows.value.length) return toast('没有可导出的明细')
   const head = '单号\t时间\t门店/摘要\t类型\t计佣基数\t费率\t金额\t状态'
   const body = rows.value.map(r => [r.id, r.time, r.place, r.type, r.order, r.rate, r.received, r.status].join('\t')).join('\n')
@@ -259,10 +275,10 @@ async function submitWithdraw() {
   // 之前先弹「确认提交」，点了确认才说缺验证码，白确认一次；现在先查验证码再确认
   if (smsEnabled.value && !/^\d{6}$/.test(smsCode.value)) return toast('请先获取并填写 6 位短信验证码')
   if (submitting) return
-  if (!(await confirm('提交结算申请', `结算 ${amountText.value} 到 ${w.value.payee}，平台审核通过后 3 个工作日内线下打款。确认提交？`)) || submitting) return
-  if (!idemKey) idemKey = `w-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   submitting = true
   try {
+    if (!(await confirm('提交结算申请', `结算 ${amountText.value} 到 ${w.value.payee}，平台审核通过后 3 个工作日内线下打款。确认提交？`))) return
+    if (!idemKey) idemKey = `w-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const res = await apiWalletWithdraw({ amountFen: amountFen.value, idemKey, code: smsCode.value })
     idemKey = ''
     amountFen.value = 0
@@ -307,4 +323,144 @@ const tips = computed(() => rr.value.tips || [])
 
 .rule-list { display:flex;flex-direction:column;gap:9px;margin-top:8px; }.rule { height:62px;padding:0 12px;border:1px solid var(--k-line);border-radius:10px;background:var(--k-paper);display:flex;align-items:center;gap:12px; }.rule__icon { width:42px;height:42px;border:1px solid var(--k-line);border-radius:50%;display:flex;align-items:center;justify-content:center; }.rule__title { display:block;font-family:var(--k-serif);font-size:15px;font-weight:700; }.rule__desc { display:block;margin-top:5px;color:var(--k-muted);font-size:10px; }.rule__rate { text-align:right; }.rule__rate text { display:block;color:var(--k-muted);font-size:11px; }.rule__rate text:last-child { margin-top:5px;color:var(--k-red);font-family:var(--k-sans);font-size:22px; }.rule-section { margin-top:15px; }.tier-table { margin-top:7px;border:1px solid var(--k-line);border-radius:9px;overflow:hidden; }.tier-row { height:29px;display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--k-line);text-align:center;align-items:center;font-size:13px; }.tier-row:first-child { border-top:0; }.tier-row text+text { border-left:1px solid var(--k-line); }.tier-row--head { background:var(--k-paper2);font-weight:700; }.tier-row:not(.tier-row--head) text:last-child { color:var(--k-red);font-family:var(--k-sans);font-size:16px;font-weight:700; }.case { margin-top:7px;padding:8px 10px;border:1px solid var(--k-line);border-radius:9px;background:var(--k-paper);display:flex;flex-direction:column;gap:5px;font-size:9px; }.case__total { color:var(--k-red);font-size:13px;font-weight:700; }.tips { display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px; }.tip { min-height:86px;padding:8px 9px;border:1px solid var(--k-line);border-radius:9px;background:var(--k-paper); }.tip__title { margin-left:7px;font-family:var(--k-serif);font-size:14px;font-weight:700; }.tip__line { margin:6px 0;border-top:1px solid var(--k-line); }.tip__desc { color:var(--k-muted);font-size:10px;line-height:1.45; }
 .links { display:flex;gap:8px;margin-top:10px; }.links__item { flex:1;height:34px;border:1px solid var(--k-line);border-radius:8px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;gap:2px;font-size:13px; }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底 + 白卡 12 圆角、不描边不加阴影；余额 26 / 700 只它用主色，其余金额 16–20 / 700 深色字，标签 11–12 灰字。
+   只改样子：头像卡、结算按钮、本月 / 待结算、来源占比、三个入口、最近一笔、明细筛选和导出、申请结算各项、分佣规则都在；较上月的颜色判断没动。
+   下面每条都带 .wallet，盖住上面的旧值。 */
+@import './manage-refine.scss';
+.wallet .section-title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 22px; }
+.wallet .section-title .k-meta { font-weight: 400; }
+.wallet .owner-card { gap: 12px; height: auto; padding: 12px; border: 0; border-radius: 12px; }
+.wallet .owner-card image { width: 48px; height: 48px; }
+.wallet .owner-line { gap: 8px; }
+.wallet .owner-name { font-family: var(--k-sans); font-size: 16px; font-weight: 700; }
+.wallet .owner-days { margin-top: 4px; font-size: 12px; }
+.wallet .balance-card { margin-top: 8px; padding: 14px 12px 12px; border: 0; border-radius: 12px; background: linear-gradient(180deg, #FFF8EE, var(--k-paper) 70%); }
+.wallet .card-label { font-family: var(--k-sans); font-size: 12px; font-weight: 400; color: var(--k-muted); }
+.wallet .balance { margin-top: 4px; font-size: 26px; font-weight: 700; line-height: 34px; }
+.wallet .account { margin-top: 6px; font-size: 11px; line-height: 16px; }
+.wallet .income-grid { gap: 8px; margin-top: 8px; }
+.wallet .income-card { min-height: 0; border: 0; border-radius: 12px; }
+.wallet .income-card__num { margin-top: 4px; color: var(--k-ink); font-size: 20px; font-weight: 700; line-height: 26px; }
+.wallet .income-card__meta { margin-top: 2px; font-size: 11px; }
+.wallet .source-card { gap: 3px; height: auto; padding: 14px 4px 12px; border: 0; border-radius: 12px; font-size: 11px; color: var(--k-muted); }
+.wallet .source-card :deep(.k-icon) { width: 24px !important; height: 24px !important; margin-bottom: 3px; }
+.wallet .source-card__label { font-family: var(--k-sans); font-size: 12px; font-weight: 400; color: var(--k-ink2); }
+.wallet .source-card__amount { font-size: 16px; font-weight: 700; line-height: 22px; }
+.wallet .recent { gap: 10px; height: auto; min-height: 60px; margin-top: 8px; padding: 10px 12px; border: 0; border-radius: 12px; }
+.wallet .recent :deep(.k-icon) { width: 24px !important; height: 24px !important; }
+.wallet .recent__name { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.wallet .recent__place { margin-top: 2px; }
+.wallet .recent__right text { font-size: 11px; }
+.wallet .recent__right text:first-child { font-size: 16px; font-weight: 700; }
+/* 收益明细：筛选是白色小框，表格整块白底、表头浅灰 */
+.wallet .detail-filter { align-items: stretch; gap: 6px; height: auto; padding: 10px 12px; border-bottom: 0; }
+.wallet .filter-box, .wallet .square { height: auto; min-height: 34px; padding: 0 8px; border: 0; border-radius: 10px; background: var(--k-paper); }
+/* 日期区间一长（2026-11-01 ～ 2026-11-18）一行放不下：字小一号，窄屏折成两行时框跟着长高，不再挤出框 */
+.wallet .filter-box--date { min-width: 0; font-size: 11px; line-height: 15px; }
+.wallet .filter-box :deep(.k-icon) { width: 13px !important; height: 13px !important; }
+.wallet .square { width: 34px; padding: 0; }
+.wallet .square :deep(.k-icon) { width: 16px !important; height: 16px !important; }
+.wallet .square--text { width: auto; padding: 0 8px; color: var(--k-red-deep); }
+.wallet .earn-table { border-top: 0; background: var(--k-paper); }
+.wallet .earn-head { height: 34px; background: var(--k-bg); color: var(--k-muted); font-weight: 400; }
+.wallet .earn-row { min-height: 64px; padding: 6px 0; }
+.wallet .earn-row text { overflow-wrap: anywhere; }
+.wallet .earn-row > view:first-child { padding-left: 12px; }
+.wallet .earn-empty { border-top: 0; font-size: 12px; }
+/* 申请结算 */
+.wallet .withdraw-balance, .wallet .withdraw-amount, .wallet .plain-row, .wallet .fee-card, .wallet .code-card { border: 0; border-radius: 12px; }
+.wallet .withdraw-balance { height: auto; padding: 12px; font-size: 12px; color: var(--k-muted); }
+.wallet .withdraw-balance .k-red { font-size: 13px; color: var(--k-red-deep); }
+.wallet .withdraw-balance__num { margin-top: 2px; font-size: 26px; font-weight: 700; line-height: 34px; }
+.wallet .withdraw-amount { margin-top: 8px; padding: 12px; font-size: 13px; }
+.wallet .withdraw-amount__num { margin: 8px 0 6px; font-size: 26px; font-weight: 700; line-height: 34px; }
+.wallet .plain-row { gap: 10px; height: auto; min-height: 48px; margin-top: 8px; padding: 8px 12px; }
+.wallet .plain-row > text { flex-shrink: 0; }
+.wallet .plain-row :deep(.k-icon) { width: 16px !important; height: 16px !important; }
+.wallet .fee-card { margin-top: 8px; padding: 12px; font-size: 13px; }
+.wallet .code-card { margin-top: 8px; padding: 12px; }
+.wallet .code-card__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.wallet .code-input { border-color: var(--k-line2); border-radius: 10px; font-size: 13px; }
+.wallet .safe { align-items: flex-start; margin: 12px 4px; line-height: 16px; }
+.wallet .safe :deep(.k-icon) { width: 13px !important; height: 13px !important; margin-top: 1px; }
+.wallet .confirm { margin-top: 12px; }
+/* 分佣规则 */
+.wallet .rule-list { gap: 8px; }
+.wallet .rule { gap: 10px; height: auto; min-height: 60px; padding: 10px 12px; border: 0; border-radius: 12px; }
+.wallet .rule__icon { flex: 0 0 auto; width: 38px; height: 38px; border: 0; border-radius: 11px; background: linear-gradient(145deg, #FCF4E8, #F4E4CC); }
+.wallet .rule__icon :deep(.k-icon) { width: 20px !important; height: 20px !important; }
+.wallet .rule__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.wallet .rule__desc { margin-top: 2px; font-size: 11px; line-height: 16px; }
+.wallet .rule__rate { flex: 0 0 auto; }
+.wallet .rule__rate text:last-child { margin-top: 0; font-size: 18px; font-weight: 700; line-height: 24px; }
+.wallet .rule-section { margin-top: 16px; }
+.wallet .tier-table { margin-top: 8px; border: 0; border-radius: 12px; background: var(--k-paper); }
+.wallet .tier-row { height: 36px; font-size: 12px; }
+.wallet .tier-row text + text { border-left: 0; }
+.wallet .tier-row--head { background: transparent; color: var(--k-muted); font-size: 11px; font-weight: 400; }
+.wallet .tier-row:not(.tier-row--head) text:last-child { font-size: 14px; }
+.wallet .case { gap: 4px; margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; color: var(--k-ink2); font-size: 11px; line-height: 16px; }
+.wallet .case__total { font-size: 13px; }
+.wallet .tips { gap: 8px; margin-top: 12px; }
+.wallet .tip { padding: 10px; border: 0; border-radius: 12px; }
+.wallet .tip :deep(.k-icon) { width: 18px !important; height: 18px !important; }
+.wallet .tip__title { margin-left: 5px; font-family: var(--k-sans); font-size: 13px; font-weight: 600; }
+.wallet .tip__desc { font-size: 11px; line-height: 16px; }
+/* 2026-11-18 复查 */
+/* 1) 「本月收益（11.01–11.18）」屏幕一窄就被截成「11.01–1…」：字收到 11；再窄（320）折成两行，两张卡的标题留一样高，下面的金额仍然对齐 */
+.wallet .income-card .card-label { font-size: 11px; line-height: 16px; }
+@media (max-width: 340px) { .wallet .income-card .card-label { min-height: 32px; white-space: normal; } .wallet .income-card__num { font-size: 18px; } }
+/* 金额上了万、屏幕又窄时，「¥」和数字被拆成两行：窄屏金额收小一号，保持一行 */
+@media (max-width: 374px) { .wallet .source-card__amount { font-size: 15px; } }
+@media (max-width: 340px) { .wallet .source-card__amount { padding: 0 2px; font-size: 13px; } }
+/* 分佣规则底部三张小卡：窄屏标题被挤成「结算周 / 期」。标题不许折行，窄屏把图标和字收小一号 */
+.wallet .tip__title { white-space: nowrap; }
+@media (max-width: 340px) { .wallet .tip { padding: 10px 8px; } .wallet .tip :deep(.k-icon) { width: 15px !important; height: 15px !important; } .wallet .tip__title { margin-left: 4px; font-size: 12px; } }
+/* 2) 申请结算是填写页，字不改小：还原回原来的字号（白卡、圆角、底色照新样子）。「点击输入金额」和填好的金额是同一行字，用中等粗细，提示语不至于太抢眼 */
+.wallet .withdraw-balance { color: var(--k-ink2); font-size: 14px; }
+.wallet .withdraw-balance .k-red { font-size: 14px; }
+.wallet .withdraw-balance__num, .wallet .withdraw-amount__num { font-size: 30px; font-weight: 600; line-height: 38px; }
+.wallet .withdraw-amount__num { font-weight: 500; }
+.wallet .withdraw-amount, .wallet .fee-card { font-size: 14px; }
+.wallet .code-card__title { font-size: 15px; }
+/* 3) 两处「全部结算」是文字自己在接点击，只有一行字那么高：用透明内边距把能点的范围撑到 36 以上（负外边距抵掉，位置不变）；明细页的筛选框上下各补 2 */
+.wallet .withdraw-balance > .k-red, .wallet .withdraw-amount > .k-between > text:last-child { padding: 9px 0 9px 14px; margin: -9px 0 -9px -14px; }
+.wallet .filter-box, .wallet .square { position: relative; }
+.wallet .filter-box::after, .wallet .square::after { content: ""; position: absolute; left: 0; right: 0; top: -2px; bottom: -2px; }
+.wallet .square::after { left: -2px; right: -2px; }
+/* 4) 明细页的日期区间：屏宽 360 左右时一行差一点放不下，从第二个日期中间断开（「2026-11- / 18」）。
+   屏不够宽时几个筛选框挨紧一点；再窄（375 以下）就固定在「～」后面换行，两个日期各占一行 */
+@media (max-width: 389px) { .wallet .detail-filter { gap: 4px; } .wallet .filter-box { padding: 0 6px; } }
+@media (max-width: 374px) { .wallet .filter-box--date > text { max-width: 90px; } }
+/* 2026-11-18 第二轮精修（精修词典：同一种东西全站一个样子；只改样子，头像卡、结算、来源、三个入口、明细、申请结算、分佣规则都在） */
+/* 1) 区块标题统一 16 / 700 */
+.wallet .section-title { font-size: 16px; line-height: 22px; color: var(--k-ink); }
+/* 2) 来源三格的金额统一墨色（颜色是脚本写在行内的，只能 !important 盖），只让上面的图标保留颜色来区分 */
+.wallet .source-card__amount { color: var(--k-ink) !important; }
+/* 3) 最近一笔：图标放进 36 的浅绿圆角方块（模板只加了一层包裹，图标 18） */
+.wallet .recent__icon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; background: var(--k-green-soft); display: flex; align-items: center; justify-content: center; }
+.wallet .recent .recent__icon :deep(.k-icon) { width: 18px !important; height: 18px !important; }
+/* 4) 320 宽「本月收益（2026年11月）」折两行时不再被截成省略号 */
+@media (max-width: 340px) { .wallet .income-card .card-label { overflow: visible; text-overflow: clip; } }
+/* 5) 收益明细：表头白底（和表格一体，不再像飘在灰底上），行线改发丝线；到账金额绿色等宽，下面的「已入账 / 待结算」退成灰色说明字 */
+.wallet .earn-head { background: var(--k-paper); }
+.wallet .earn-row { position: relative; border-top: 0; }
+.wallet .earn-row::before { content: ""; position: absolute; left: 12px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.wallet .earn-row__received text:first-child { font-variant-numeric: tabular-nums; }
+.wallet .earn-row__received text:last-child { font-size: 11px; font-weight: 400; color: var(--k-muted); }
+/* 6) 申请结算（填写页，字号不动）：第二个「全部结算」和上面那个一样是深棕文字链；可结算余额改墨色，暖棕只留给要填的金额，一屏一个重点 */
+.wallet .withdraw-amount > .k-between > text:last-child { color: var(--k-red-deep); }
+.wallet .withdraw-balance__num { color: var(--k-ink); }
+/* 7) 分佣规则：三行合成一张白卡，行间发丝线（从标题左边缘画起：12 + 图标 38 + 间距 10）；阶梯表行线改发丝线；案例正文 12 号 */
+.wallet .rule-list { gap: 0; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.wallet .rule { position: relative; border-radius: 0; background: transparent; }
+.wallet .rule + .rule::before { content: ""; position: absolute; left: 60px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.wallet .tier-row { position: relative; border-top: 0; }
+.wallet .tier-row + .tier-row::before { content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.wallet .case { font-size: 12px; line-height: 18px; }
+/* 8) 剩下几条 1px 通栏分隔线（手续费卡、底部三张小卡）也改成发丝线 */
+.wallet .fee-card__line, .wallet .tip__line { height: 1px; border-top: 0; background: var(--k-line); transform: scaleY(.5); }
+/* 9) 明细没有数据时按词典的空状态：标题 14 / 500 / ink2，上下留白 28 */
+.wallet .earn-empty { padding: 28px 12px; font-size: 14px; font-weight: 500; color: var(--k-ink2); }
 </style>

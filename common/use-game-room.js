@@ -39,6 +39,7 @@ export function useGameRoom(code, api, onUpdate = () => {}, options = {}) {
 		if (reading && reading.epoch === epoch) return reading.promise
 		if (!room.value) loading.value = true
 		const scope = capture()
+		const roomAtRead = room.value
 		const flight = { epoch, promise: null }
 		reading = flight
 		flight.promise = (async () => {
@@ -46,7 +47,10 @@ export function useGameRoom(code, api, onUpdate = () => {}, options = {}) {
 			const data = await readRoom(scope.code)
 			if (current(scope)) accept(data)
 		} catch (e) {
-			if (current(scope)) error.value = e.message || '房间同步失败，请重试'
+			if (current(scope) && room.value === roomAtRead) {
+				if (e.code === 404) room.value = null
+				error.value = e.message || '房间同步失败，请重试'
+			}
 		} finally {
 			if (reading === flight) reading = null
 			if (active && epoch === scope.epoch) {
@@ -119,6 +123,9 @@ export function useGameRoom(code, api, onUpdate = () => {}, options = {}) {
 	onShow(async () => {
 		stop()
 		active = true
+		room.value = null
+		error.value = ''
+		loading.value = Boolean(code.value)
 		pageActive.value = true
 		const generation = activation
 		try { await ensureSession() } catch (e) {
@@ -127,8 +134,6 @@ export function useGameRoom(code, api, onUpdate = () => {}, options = {}) {
 		}
 		if (!active || generation !== activation) return
 		sessionReady = true
-		room.value = null
-		loading.value = Boolean(code.value)
 		refresh()
 		clock = setInterval(() => {
 			now.value = Date.now() + offset

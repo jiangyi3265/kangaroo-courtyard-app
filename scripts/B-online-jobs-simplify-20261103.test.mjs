@@ -265,6 +265,7 @@ test('M5 底栏一直写着还差什么 / 可以提交；提交不弹「确认�
 
   const m = page({ merchantStaff: { value: true } })
   t.after(m.stop)
+  assert.match(m.run('todoText.value'), /接单人报酬/)
   assert.match(m.run('flowNote.value'), /袋鼠工作人员核实后上架/)
   assert.doesNotMatch(m.run('flowNote.value'), /商家服务人/)
   const o = page({ onlineStaff: { value: true } })

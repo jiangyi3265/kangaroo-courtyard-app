@@ -72,16 +72,16 @@ test('城市负责人卡片：当前订阅已管到本城就算已订阅；已�
   assert.match(homeCity, /if \(mine\.length\) return go\(R\.jobsFilter \+ '\?s=2&cur=1&addCity=' \+ encodeURIComponent\(c\)\)\n\s*await apiAddJobSub/)
 })
 
-test('筛选、选城市是底部半屏弹层：定高（小程序 scroll-view 要确定高度）、条件区自己滚、按钮固定在底部、点暗处关', () => {
+test('筛选是半屏弹层，选城市是全屏弹层：定高（小程序 scroll-view 要确定高度）、条件区自己滚、按钮固定在底部、点暗处关', () => {
   assert.match(panel, /\.fp \{ display: flex; flex-direction: column; height: 56vh; max-height: 56vh;/)
   assert.match(panel, /<scroll-view class="fp__body" scroll-y/)
   assert.match(panel, /\.fp__body \{ flex: 1; height: 0; min-height: 0;/)
   assert.match(panel, /\.fp__foot \{ flex-shrink: 0;/)
   assert.match(list, /<view v-if="filterOpen" class="jobs-filter-mask" @click="filterOpen = false" @touchmove\.stop\.prevent \/>/)
   assert.match(list, /\.jobs-filter \{ position: fixed; left: 0; right: 0; bottom: 0; z-index: 81;/)
-  assert.match(cityPanel, /\.cp \{ position: fixed; left: 0; right: 0; bottom: 0; height: 56vh; max-height: 56vh;/)
+  assert.match(cityPanel, /\.cp \{ position: fixed; left: 0; right: 0; bottom: 0; height: 100vh; max-height: 100vh;/)
   assert.match(cityPanel, /<view class="cp-mask" @click="emit\('close'\)" @touchmove\.stop\.prevent \/>/)
-  assert.match(cityPanel, /\.cp__body \{ flex: 1; height: 0; min-height: 0;/)
+  assert.match(cityPanel, /\.cp__body \{[^}]*flex: 1; height: 0; min-height: 0;/)
   // 小程序锁背景滚动仍是 page-meta
   assert.match(list, /<page-meta :page-style="noticePopup\.show \|\| cityOpen \|\| filterOpen \? 'overflow: hidden' : ''" \/>/)
 })

@@ -75,6 +75,89 @@ function jobsHarness({ canEdit = true, describe } = {}) {
 
 // ---------------------------------------------------------------- 入口
 
+test('岗位复查：派单链接的门店已撤权，不能打开另一家店的发布表', async (t) => {
+  const h = jobsHarness()
+  t.after(h.stop)
+  h.s.value = 2
+  let calls = 0
+  h.sandbox.selectStaffStore = async () => { throw new Error('该门店暂无员工授权') }
+  h.sandbox.apiStaffJobs = async () => { calls++; return { data: { canEdit: true, rows: [] } } }
+  await h.load({ s: '2', kind: 'fulltime', storeId: '203' })
+  assert.equal(h.run('formOpen.value'), false)
+  assert.equal(calls, 0)
+  let store = 102
+  const storesRead = []
+  h.sandbox.currentStaffStoreId = () => store
+  h.sandbox.selectStaffStore = async id => { store = Number(id) }
+  h.sandbox.apiStaffJobs = async p => { storesRead.push(p.storeId); return { data: { canEdit: true, rows: [] } } }
+  await h.run('retryJobs()')
+  assert.equal(h.run('formOpen.value'), true)
+  assert.equal(h.run('jobsError.value'), '')
+  assert.ok(storesRead.length && storesRead.every(id => id === 203))
+})
+
+test('岗位复查：连续切换分类，先发出的迟到列表不能盖住最后选择的岗位和权限', async (t) => {
+  const h = jobsHarness()
+  t.after(h.stop)
+  await h.load()
+  const sends = []
+  h.sandbox.apiStaffJobs = params => new Promise(resolve => sends.push({ params, resolve }))
+  h.run("setType('parttime')")
+  await flush()
+  h.run("setType('fulltime')")
+  await flush()
+  sends[1].resolve({ data: { rows: [{ jobId: 3 }], canEdit: false } })
+  await flush()
+  sends[0].resolve({ data: { rows: [{ jobId: 2 }], canEdit: true } })
+  await flush()
+  assert.deepEqual(plain(h.run('rows.value')), [{ jobId: 3 }])
+  assert.equal(h.run('canEdit.value'), false)
+})
+
+test('岗位复查：当前门店变化立即挡住旧页，重试只展示新门店的岗位', async (t) => {
+  const h = jobsHarness()
+  t.after(h.stop)
+  const store = vue.ref(102)
+  h.sandbox.currentStaffStoreId = () => store.value
+  h.sandbox.apiStaffJobs = async p => ({ data: { rows: [{ storeId: p.storeId }], canEdit: p.storeId === 102 } })
+  await h.load()
+  store.value = 203
+  assert.equal(h.run('jobsScopeChanged.value'), true)
+  assert.match(h.template, /v-if="entryLoading \|\| jobsScopeChanged/)
+  await h.run('retryJobs()')
+  assert.equal(h.run('jobsScopeChanged.value'), false)
+  assert.equal(h.run('canEdit.value'), false)
+  assert.deepEqual(plain(h.run('rows.value')), [{ storeId: 203 }])
+})
+
+test('岗位复查：上一份招聘的起草回包不能写进下一份招聘', async (t) => {
+  let resolve
+  const h = jobsHarness({ describe: () => new Promise(r => { resolve = r }) })
+  t.after(h.stop)
+  await h.load()
+  h.run("startPublish(); choosePublish('fulltime')")
+  const old = h.run('generate()')
+  await h.run('backFromPublish()')
+  h.run("choosePublish('parttime')")
+  resolve({ data: { title: '旧全职岗位', work: '旧工作' } })
+  await old
+  assert.equal(h.run('gen.value.title || ""'), '')
+})
+
+test('岗位复查：确认重写后继续改的字段保留，其他字段仍用模板', async (t) => {
+  let resolve
+  const h = jobsHarness({ describe: () => new Promise(r => { resolve = r }) })
+  t.after(h.stop)
+  await h.load()
+  h.run("startPublish(); choosePublish('fulltime'); Object.assign(gen.value, { title:'旧标题', work:'旧工作', hope:'旧要求' })")
+  const pending = h.run('generate()')
+  await flush()
+  h.run("setGen('title', '刚和店长确认的标题')")
+  resolve({ data: { title: '模板标题', work: '模板工作', hope:'模板要求' } })
+  await pending
+  assert.deepEqual(plain(h.run('gen.value')), { title: '刚和店长确认的标题', work: '模板工作', hope:'模板要求' })
+})
+
 test('发布入口：四个板块，线上任务去线上任务发布页；门店资料只给一行说明', async (t) => {
   const h = jobsHarness()
   t.after(h.stop)
@@ -327,7 +410,7 @@ test('表单分组：基本信息 / 时间与地点 / 工作安排 / 食宿与�
   // R7（主人要求改版）：字段一个没少，只是换了版式；不常用的收进「更多选填」，要求那一组拆开了
   // 2026-11-03 主人：「操作太繁琐了看不懂，增加一个预设模板」：分三步 选模板 → 必填信息 → 时间和待遇，其余在「更多设置（选填）」；没有模板（完善商家岗位）时不写第几步
   const titles = [...tpl.matchAll(/<text class="fc-group__title">([^<]+)<\/text>/g)].map(m => m[1])
-  assert.deepEqual(titles, ['第 1 步 · 选个模板', '{{ stepTitles[0] }}', '{{ stepTitles[1] }}'])
+  assert.deepEqual(titles, ['粘贴全职招聘文案', '第 1 步 · 选个模板', '{{ stepTitles[0] }}', '{{ stepTitles[1] }}'])
   assert.match(tpl, /<text class="fc-more__t">更多设置<text class="fc-more__n">（选填，/)
   for (const label of ['岗位标题', '岗位照片', '工作内容', '每日工时', '食宿', '结算方式', '其他要求', '上班时段', '食宿说明', '试用期', '培训', '招募性别', '住宿条件', '住宿照片或视频', '餐补', '店里有宠物吗', '薪资']) {
     assert.match(tpl, new RegExp('<text class="fc-label__t">' + label + '<\\/text>'), label)
@@ -349,7 +432,7 @@ test('表单分组：基本信息 / 时间与地点 / 工作安排 / 食宿与�
   assert.match(src('pages/staff/online-jobs.vue'), /@import '\.\/form-clean\.scss';/)
   const scss = src('pages/staff/publish-form.scss')
   assert.match(scss, /\.pub-chips--4\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/)
-  assert.match(scss, /\.pub-sec\{[^}]*border-radius:16px;background:var\(--k-paper\);box-shadow:0 6px 20px rgba\(58,50,43,\.08\)\}/)
+  assert.match(scss, /\.pub-sec\{[^}]*border-radius:12px;background:var\(--k-paper\)\}/) // 2026-11-17 改版「小而精」：白卡 12 圆角、不加阴影（原来是 16 圆角 + 柔和阴影）
   assert.ok(!/#A9794B/i.test(scss), '白字底色不用比主色浅的棕')
   // 发布表单的旧样式（步骤条、第 3 屏）都删掉了
   assert.ok(!/\.ai-page\{|\.next-button\{|stepLabels|chipPop/.test(page))
@@ -357,7 +440,7 @@ test('表单分组：基本信息 / 时间与地点 / 工作安排 / 食宿与�
 
 test('工作台「发布招募」：四格直接进对应的表，只给有岗位编辑权限的人（小院主理人只有线上任务、活动两格，见 luna-staff-20261030.test.mjs）', () => {
   const idx = src('pages/staff/index.vue')
-  assert.match(idx, /<template v-if="canPublish">/)
+  assert.match(idx, /<template v-if="canPublish && publishEntries\.length">/)
   assert.match(idx, /const canPublish = computed\(\(\) => staffCan\('jobs', 'edit'\)\)/)
   assert.match(idx, /const openPublish = \(kind\) => go\(kind === 'activity' \? ACTIVITY_CREATE_PAGE : kind === 'online' \? R\.staffOnline \+ '\?s=1' : R\.staffJobs \+ '\?s=2&kind=' \+ kind\)/)
   const entries = idx.slice(idx.indexOf('const PUBLISH_ENTRIES = ['), idx.indexOf('const KEEPER_PUBLISH = ['))
@@ -383,7 +466,7 @@ test('线上任务发布页：直接在表里填；佣金就地校验；带上�
   const h = onlineHarness()
   t.after(h.stop)
   assert.match(h.template, /<view v-if="s === 1" class="fc-form publish-page">/)
-  for (const label of ['任务标题', '任务类型', '交付物', '预计完成时间', '预计耗时', '单人佣金', '名额', '验收标准', '我们希望你', '任务描述']) {
+  for (const label of ['任务标题', '任务类型', '交付物', '预计完成时间', '预计耗时', '单人佣金', '名额', '验收标准', '账号与参与要求', '任务描述']) {
     assert.match(h.template, new RegExp('<text class="(fc-label__t|fc-row__k)">' + label + '<\\/text>'), label)
   }
   assert.match(h.template, /接单后在「交付记录」里发给接单人（文字、图片、文件都行），这里不用传/)
@@ -415,7 +498,7 @@ test('服务端：新字段落到 kg_job 现有的列，不加迁移；老客户
   assert.match(java, /private void readPublishFields\(Map<String, Object> in\)/)
   for (const col of ['daily_hours', 'shift_time', 'settle_desc', 'probation', 'train_desc']) assert.match(java, new RegExp('row\\.put\\("' + col + '"'), col)
   assert.match(java, /row\.put\("board_type", d\.boardType\);/)
-  assert.match(java, /throw new ServiceException\("换宿岗位要提供住宿：请选包吃包住或只包住", 422\);/)
+  assert.match(java, /throw new ServiceException\("换工岗位要提供住宿：请选包吃包住或只包住", 422\);/)
   assert.match(java, /return boardTyped \? BOARD_LABELS\.get\(boardType\) : "提供食宿";/)
   const sql = fs.readdirSync(path.join(APP, '../RuoYi-Vue/sql/kangaroo')).filter(f => /^V58__/.test(f))
   for (const name of sql) assert.doesNotMatch(fs.readFileSync(path.join(APP, '../RuoYi-Vue/sql/kangaroo', name), 'utf8'), /call kg_add_col_if_absent\('kg_job'/, '岗位发布字段不需要新增列')

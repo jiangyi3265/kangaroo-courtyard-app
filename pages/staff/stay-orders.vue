@@ -11,9 +11,9 @@
         <text class="desk-date">今天 {{ todayText }}</text>
       </view>
       <view class="tools">
-        <view class="tool" @click="openBoard"><k-icon name="calendar-days" :size="22" color="green" /><text>房态图</text></view>
-        <view v-if="canEdit" class="tool" @click="autoAssign"><k-icon name="wand-sparkles" :size="22" color="red" /><text>一键排房</text></view>
-        <view v-if="canSetup" class="tool" @click="openUnits"><k-icon name="bed-double" :size="22" color="ochre" /><text>房间床位</text></view>
+        <view class="tool" @click="openBoard"><k-icon name="calendar-days" :size="22" color="red" :stroke="1.7" /><text>房态图</text></view>
+        <view v-if="canEdit" class="tool" @click="autoAssign"><k-icon name="wand-sparkles" :size="22" color="red" :stroke="1.7" /><text>一键排房</text></view>
+        <view v-if="canSetup" class="tool" @click="openUnits"><k-icon name="bed-double" :size="22" color="red" :stroke="1.7" /><text>房间床位</text></view>
       </view>
       <scroll-view scroll-x class="tabs" :show-scrollbar="false">
         <view class="tabs__row">
@@ -24,7 +24,7 @@
       <text v-if="keyword" class="search-tip">在本店全部房源、全部状态的订单里搜（含已离店、未到店）；点上面的分组回到分组查看</text>
       <view v-if="loading && !orders.length" class="state"><text>正在加载…</text></view>
       <view v-else-if="error" class="state"><text>{{ error }}</text><k-button size="sm" type="outline" label="重新加载" @click="loadDesk" /></view>
-      <view v-else-if="!orders.length" class="state"><k-icon name="clipboard-check" :size="34" color="muted" /><text>{{ emptyText }}</text></view>
+      <view v-else-if="!orders.length" class="state"><k-icon name="clipboard-check" :size="36" color="muted" /><text>{{ emptyText }}</text></view>
       <view v-for="o in orders" :key="o.orderNo" class="order" @click="openOrder(o.orderNo)">
         <view class="order__top"><text class="order__guest">{{ o.guestName }}</text><text class="order__status" :class="'is-' + o.status">{{ o.statusLabel }}</text></view>
         <text class="order__line">{{ o.typeName }} · {{ o.unitsText }}</text>
@@ -109,10 +109,10 @@
     <!-- 4 房态图 -->
     <view v-else-if="s === 4" class="pms-body k-pad-tab">
       <view class="span-switch"><text v-for="o in SPANS" :key="o.days" class="span-switch__item" :class="{ on: boardDays === o.days }" @click="setSpan(o.days)">{{ o.label }}</text></view>
-      <view class="week-nav"><text @click="shiftWeek(-1)">‹ {{ spanNav[0] }}</text><text class="week-nav__mid" @click="shiftWeek(0)">{{ boardRange }}</text><text @click="shiftWeek(1)">{{ spanNav[1] }} ›</text></view>
+      <view class="week-nav"><view class="week-nav__btn" hover-class="k-press" @click="shiftWeek(-1)"><k-icon name="chevron-left" :size="12" color="#8A5E36" /><text>{{ spanNav[0] }}</text></view><text class="week-nav__mid" @click="shiftWeek(0)">{{ boardRange }}</text><view class="week-nav__btn" hover-class="k-press" @click="shiftWeek(1)"><text>{{ spanNav[1] }}</text><k-icon name="chevron-right" :size="12" color="#8A5E36" /></view></view>
       <text v-if="boardDays > 7" class="scroll-tip">日期多，左右滑动看后面的日子；房间名固定在左边</text>
       <view class="legend"><view><text class="dot is-booked" />待入住</view><view><text class="dot is-in" />在住</view><view><text class="dot is-done" />已离店</view><view><text class="dot is-closed" />关房 / 停用</view></view>
-      <view v-if="board.waiting" class="waiting-bar" @click="backToUnassigned"><k-icon name="circle-alert" :size="15" color="alert" /><text>今天起还有 {{ board.waiting }} 个房间 / 床位没排，去排房 ›</text></view>
+      <view v-if="board.waiting" class="waiting-bar" @click="backToUnassigned"><k-icon name="circle-alert" :size="15" color="alert" /><text>今天起还有 {{ board.waiting }} 个房间 / 床位没排，去排房</text><k-icon name="chevron-right" :size="12" color="alert" /></view>
       <view v-if="boardError" class="state"><text>{{ boardError }}</text><k-button size="sm" type="outline" label="重新加载" @click="loadBoard" /></view>
       <view v-else-if="!(board.types || []).length" class="state"><text>{{ boardLoading ? '正在加载房态…' : '这个房源还没有房型，请先在「房源管理」里添加' }}</text></view>
       <view v-for="t in board.types" :key="t.roomTypeId" class="board-type">
@@ -579,94 +579,118 @@ async function unitMenu(u) {
 </script>
 
 <style scoped lang="scss">
-.pms { background: var(--k-bg); }
-.pms-body { padding: 8px 14px 96px; }
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边、不加阴影），页边距 12、卡片之间 8。
+   订单卡：客人名 15 / 600，状态是一枚小标签；分组页签、搜索框收成白色胶囊（28 / 36 高），选中是暖棕；
+   房态图的色块换成主题里的琥珀 / 豆绿浅底；底部办理入住 / 退房的操作条是白底加一条细线。金额、状态、提示文字都没动 */
+.pms { --k-bg: #F7F5F2; --k-sh1: none; background: var(--k-bg); }
+.pms :deep(.k-navbar__title) { font-family: var(--k-sans); font-size: 16px; font-weight: 600; }
+.pms :deep(.k-button) { border-radius: 999px; }
+.pms-body { padding: 8px 12px 96px; }
 .pms-body.has-bar { padding-bottom: calc(150px + var(--k-safe-bottom)); }
-.desk-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 0 10px; }
-.stay-pick { min-width: 0; display: flex; align-items: center; gap: 6px; font-family: var(--k-serif); font-size: 17px; font-weight: 700; }
+.desk-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 2px 10px; }
+.stay-pick { min-width: 0; min-height: 28px; display: flex; align-items: center; gap: 6px; font-family: var(--k-sans); font-size: 17px; font-weight: 700; }
 .stay-pick__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .desk-date { flex-shrink: 0; color: var(--k-muted); font-size: 12px; }
 .tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.tool { height: 64px; border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 13px; font-weight: 600; }
-.tabs { margin-top: 12px; white-space: nowrap; }
-.tabs__row { display: inline-flex; flex-wrap: nowrap; gap: 8px; padding-right: 14px; }
-.tab { flex-shrink: 0; white-space: nowrap; height: 34px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 17px; background: var(--k-paper); display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
-.tab__n { min-width: 18px; text-align: center; color: var(--k-muted); font-size: 12px; }
-.tab.on { background: var(--k-red); border-color: var(--k-red); color: #fff; }
-.tab.on .tab__n { color: #fff; }
+.tool { height: 64px; border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--k-ink2); }
+.tabs { margin-top: 10px; white-space: nowrap; }
+.tabs__row { display: inline-flex; flex-wrap: nowrap; gap: 6px; padding-right: 12px; }
+.tab { flex-shrink: 0; white-space: nowrap; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--k-paper); display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--k-ink2); }
+.tab__n { min-width: 14px; text-align: center; color: var(--k-muted); font-size: 11px; }
+/* 11-18 精修词典「筛选胶囊」：选中是浅棕底 + 深棕字，不再是整块实心渐变（实心只留给页面主按钮） */
+.tab.on { background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; }
+.tab.on .tab__n { color: var(--k-red-deep); }
 .tab.warn:not(.on) .tab__n { color: var(--k-alert); font-weight: 700; }
-.search { margin: 10px 0; height: 38px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 19px; background: var(--k-paper); display: flex; align-items: center; gap: 8px; color: var(--k-muted); font-size: 13px; }
+.search { margin: 8px 0; height: 36px; padding: 0 12px; border-radius: 18px; background: var(--k-paper); display: flex; align-items: center; gap: 8px; color: var(--k-muted); font-size: 13px; }
 .search__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.search__clear { color: var(--k-red); }
-.search-tip { display: block; margin: -4px 4px 10px; color: var(--k-muted); font-size: 12px; line-height: 1.6; }
-.state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 36px 12px; color: var(--k-muted); font-size: 14px; text-align: center; line-height: 1.6; }
-.order, .card { margin-bottom: 10px; padding: 12px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; gap: 6px; }
+.search__clear { color: var(--k-red-deep); font-size: 12px; }
+.search-tip { display: block; margin: -2px 4px 8px; color: var(--k-muted); font-size: 11px; line-height: 1.6; }
+/* 空 / 加载 / 出错：放进白卡（词典「空状态」），上下留白 28 */
+.state { margin-bottom: 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 12px; border-radius: 12px; background: var(--k-paper); color: var(--k-ink2); font-size: 14px; text-align: center; line-height: 1.6; }
+.order, .card { margin-bottom: 8px; padding: 12px; border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; gap: 5px; }
 .order__top, .card__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.order__guest { min-width: 0; overflow-wrap: anywhere; font-family: var(--k-serif); font-size: 16px; font-weight: 700; }
-.order__status { flex-shrink: 0; padding: 3px 8px; border-radius: 6px; background: var(--k-ochre-soft); color: #B36A20; font-size: 12px; }
+.order__guest { min-width: 0; overflow-wrap: anywhere; font-family: var(--k-sans); font-size: 15px; font-weight: 600; line-height: 22px; }
+.order__status { flex-shrink: 0; height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 10px; font-weight: 500; line-height: 17px; }
 .order__status.is-checked_in { background: var(--k-green-soft); color: var(--k-green); }
-.order__status.is-completed, .order__status.is-no_show, .order__status.is-cancelled, .order__status.is-closed { background: #EEEAE4; color: var(--k-muted); }
+.order__status.is-completed, .order__status.is-no_show, .order__status.is-cancelled, .order__status.is-closed { background: #F5F1EB; color: var(--k-muted); }
 .order__status.is-refund_pending, .order__status.is-refunding { background: var(--k-alert-soft); color: var(--k-alert); }
-.order__line { color: var(--k-ink); font-size: 13px; }
-.order__room { display: flex; align-items: center; gap: 6px; color: var(--k-green); font-size: 13px; font-weight: 600; }
+.order__line { color: var(--k-ink2); font-size: 13px; line-height: 19px; }
+.order__room { display: flex; align-items: center; gap: 5px; color: var(--k-green); font-size: 12px; font-weight: 500; }
 .order__room.miss { color: var(--k-alert); }
 .order__note { color: var(--k-muted); font-size: 12px; overflow-wrap: anywhere; }
-.order__hint { color: var(--k-muted); font-size: 12px; }
+.order__hint { color: var(--k-muted); font-size: 11px; }
 .order__hint.center { display: block; text-align: center; margin: 6px 0; }
-.order__acts, .card__acts { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.card__title { font-family: var(--k-serif); font-size: 15px; font-weight: 700; }
-.kv { display: flex; justify-content: space-between; gap: 14px; padding: 6px 0; border-bottom: 1px solid var(--k-line); font-size: 13px; }
+.order__acts, .card__acts { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+/* 列表里每张卡都有的操作改成「小按钮」浅色胶囊（28 高、12 / 500）：排房棕浅底、办理入住绿浅底、换房 / 退房白底棕细边；
+   一屏不再一排实心块。详情页 .card__acts 和底部 .bottom-acts 的实心按钮不动 */
+.order__acts :deep(.k-button.is-sm) { height: 28px; padding: 0 12px; font-size: 12px; font-weight: 500; box-shadow: none; }
+.order__acts :deep(.k-button.is-primary) { background: var(--k-red-soft); color: var(--k-red-deep); }
+.order__acts :deep(.k-button.is-green) { background: var(--k-green-soft); color: var(--k-green); }
+.order__acts :deep(.k-button.is-outline) { border-color: var(--k-red-line); color: var(--k-red-deep); }
+.card__title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 22px; }
+/* 信息行之间用发丝线（1px 再压成一半），最后一行不画 */
+.kv { position: relative; display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; font-size: 13px; }
+.kv::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
 .kv > text:first-child { flex-shrink: 0; color: var(--k-muted); }
 .kv > text:last-child { text-align: right; overflow-wrap: anywhere; }
-.link { color: var(--k-red); }
-.muted-line { color: var(--k-muted); font-size: 13px; line-height: 1.6; }
+.card .kv:last-child { padding-bottom: 2px; }
+.card .kv:last-child::after { display: none; }
+.link { color: var(--k-red-deep); }
+.muted-line { color: var(--k-muted); font-size: 12px; line-height: 1.6; }
 .warn-text { color: var(--k-alert); font-size: 12px; font-weight: 600; }
 .warn-text.block { display: block; line-height: 1.6; }
-.assign { display: flex; align-items: center; gap: 8px; font-size: 14px; }
-.step { display: flex; gap: 12px; font-size: 13px; padding: 4px 0; }
-.step__time { flex-shrink: 0; color: var(--k-muted); width: 118px; }
-.bottom-acts { position: fixed; left: 0; right: 0; bottom: calc(56px + var(--k-safe-bottom)); z-index: 30; padding: 10px 14px; background: var(--k-bg); border-top: 1px solid var(--k-line); display: flex; gap: 10px; }
-.pick-head { display: flex; flex-direction: column; gap: 4px; padding: 4px 0 10px; font-size: 13px; color: var(--k-muted); }
+.assign { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.step { display: flex; gap: 12px; font-size: 12px; padding: 4px 0; }
+.step__time { flex-shrink: 0; color: var(--k-muted); width: 112px; }
+/* 底栏 2026-11-17 起是 50 高：操作条贴着它，中间不留缝；下边多留 10，让开底栏中间凸起来的「发布」圆钮（凸出 16） */
+.bottom-acts { position: fixed; left: 0; right: 0; bottom: calc(50px + var(--k-safe-bottom)); z-index: 30; padding: 8px 12px 18px; background: var(--k-paper); display: flex; gap: 10px; }
+/* 两个底部操作条顶上是一条发丝线 */
+.bottom-acts::before, .pick-bar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.pick-head { display: flex; flex-direction: column; gap: 2px; padding: 4px 2px 10px; font-size: 12px; color: var(--k-muted); }
+.pick-head .card__title { color: var(--k-ink); }
 .units-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.unit { min-height: 64px; padding: 8px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); display: flex; flex-direction: column; justify-content: center; gap: 4px; }
-.unit__name { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.unit { min-height: 60px; padding: 8px; border: 1px solid transparent; border-radius: 10px; background: var(--k-paper); display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.unit__name { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .unit__sub { color: var(--k-green); font-size: 11px; }
-.unit.on { border-color: var(--k-red); background: #F9E9E4; }
-.unit.on .unit__sub { color: var(--k-red); }
-.unit.busy { background: #EEEAE4; }
+.unit.on { border-color: var(--k-red); background: var(--k-red-soft); }
+.unit.on .unit__sub { color: var(--k-red-deep); }
+.unit.busy { background: #EEEBE6; }
 .unit.busy .unit__sub, .unit.off .unit__sub { color: var(--k-muted); }
 .unit.off { opacity: .55; }
-.pick-bar { position: fixed; left: 0; right: 0; bottom: calc(56px + var(--k-safe-bottom)); z-index: 30; padding: 10px 14px; background: var(--k-bg); border-top: 1px solid var(--k-line); }
-.week-nav { display: flex; align-items: center; justify-content: space-between; height: 40px; font-size: 13px; color: var(--k-red); }
-.week-nav__mid { color: var(--k-ink); font-weight: 700; }
+.pick-bar { position: fixed; left: 0; right: 0; bottom: calc(50px + var(--k-safe-bottom)); z-index: 30; padding: 8px 12px 18px; background: var(--k-paper); }
+.week-nav { display: flex; align-items: center; justify-content: space-between; height: 40px; font-size: 13px; color: var(--k-red-deep); }
+/* 翻页：文字 + 12 号小箭头（不再用 ‹ › 字符），点按范围撑满 40 高 */
+.week-nav__btn { display: flex; align-items: center; gap: 2px; min-height: 40px; }
+.week-nav__mid { color: var(--k-ink); font-weight: 600; }
 .legend { display: flex; flex-wrap: wrap; gap: 12px; padding-bottom: 8px; color: var(--k-muted); font-size: 11px; }
 .legend > view { display: flex; align-items: center; gap: 4px; }
 .dot { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--k-line2); }
-.dot.is-booked { border-color: #D9A65E; }
-.dot.is-in { border-color: #7FA894; }
-.dot.is-done { border-color: #BDB4AA; }
-.waiting-bar { margin-bottom: 10px; padding: 9px 12px; border-radius: 10px; background: #F9E9E4; color: var(--k-red); display: flex; align-items: center; gap: 6px; font-size: 13px; }
-.board-type { margin-bottom: 14px; }
-.board-type__head { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 6px; }
-.grid { border: 1px solid var(--k-line); border-radius: 10px; overflow: hidden; background: var(--k-paper); }
+.dot.is-booked { border-color: #E2C692; }
+.dot.is-in { border-color: #B5CBA4; }
+.dot.is-done { border-color: #D9D3CB; }
+.waiting-bar { min-height: 36px; margin-bottom: 8px; padding: 8px 12px; border-radius: 12px; background: var(--k-alert-soft); color: var(--k-alert); display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.waiting-bar > text { flex: 1; min-width: 0; }
+.board-type { margin-bottom: 12px; }
+.board-type__head { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 6px; }
+.grid { border-radius: 12px; overflow: hidden; background: var(--k-paper); }
 .row { display: flex; border-top: 1px solid var(--k-line); }
 .row:first-child { border-top: 0; }
 .cell { flex: 1; min-width: 0; height: 40px; border-left: 1px solid var(--k-line); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; overflow: hidden; }
-.cell--label { flex: 0 0 72px; border-left: 0; padding: 0 6px; align-items: flex-start; font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.cell--label { flex: 0 0 72px; border-left: 0; padding: 0 6px 0 8px; align-items: flex-start; font-size: 12px; font-weight: 500; overflow-wrap: anywhere; }
 .cell--label.off { color: var(--k-light); text-decoration: line-through; }
 .cell--date { height: 44px; color: var(--k-muted); }
-.cell--date.today { color: var(--k-red); font-weight: 700; }
+.cell--date.today { color: var(--k-red-deep); font-weight: 700; }
 .cell--stat { height: 38px; color: var(--k-ink); }
 .cell--stat.closed { color: var(--k-light); }
-.waiting { color: var(--k-red); font-weight: 700; }
+.waiting { color: var(--k-alert); font-weight: 700; }
 .cell__guest { padding: 0 2px; white-space: nowrap; font-size: 11px; font-weight: 600; }
 .is-free { background: var(--k-paper); }
-.is-booked { background: #F3DDB8; color: #8A5418; }
-.is-in { background: #D3E5DA; color: var(--k-green); }
-.is-done { background: #EEEAE4; color: var(--k-muted); }
+.is-booked { background: var(--k-ochre-soft); color: var(--k-ochre-deep); }
+.is-in { background: var(--k-green-soft); color: var(--k-green); }
+.is-done { background: #F0EDE8; color: var(--k-muted); }
 .is-refund { background: var(--k-alert-soft); color: var(--k-alert); }
-.is-closed, .is-disabled { background: repeating-linear-gradient(135deg, #EEEAE4 0 4px, #F6F3EE 4px 8px); }
-.row-hint { display: block; padding: 10px; color: var(--k-muted); font-size: 12px; border-top: 1px solid var(--k-line); }
+.is-closed, .is-disabled { background: repeating-linear-gradient(135deg, #ECE9E4 0 4px, #F7F5F2 4px 8px); }
+.row-hint { display: block; padding: 10px 12px; color: var(--k-muted); font-size: 12px; border-top: 1px solid var(--k-line); }
 /* 房态图：左边房间名一列固定，右边日期格子单独左右滑；两周 / 一个月时每格固定 44px，不再挤成一条线 */
 .grid__body { display: flex; }
 .grid__names { flex: 0 0 72px; width: 72px; border-right: 1px solid var(--k-line); }
@@ -676,21 +700,22 @@ async function unitMenu(u) {
 .grid__days.wide .cell { flex: 0 0 44px; width: 44px; }
 .row--head .cell { height: 44px; }
 .row--stat .cell { height: 38px; }
-.span-switch { display: inline-flex; margin: 2px 0 4px; padding: 2px; border: 1px solid var(--k-line2); border-radius: 16px; background: var(--k-paper); }
-.span-switch__item { padding: 4px 14px; border-radius: 14px; font-size: 12px; color: var(--k-muted); }
-.span-switch__item.on { background: var(--k-red); color: #fff; font-weight: 600; }
+/* 一周 / 两周 / 一个月：词典「分段控件」——#F0EBE4 轨道 32 高，选中是白块 13 / 600 / 墨色 */
+.span-switch { display: inline-flex; align-items: center; height: 32px; margin: 2px 0 4px; padding: 2px; border-radius: 16px; background: #F0EBE4; box-sizing: border-box; }
+.span-switch__item { height: 28px; line-height: 28px; padding: 0 14px; border-radius: 14px; font-size: 13px; color: var(--k-ink2); }
+.span-switch__item.on { background: var(--k-paper); color: var(--k-ink); font-weight: 600; }
 .scroll-tip { display: block; margin-bottom: 6px; color: var(--k-muted); font-size: 11px; }
 /* 给客人退款 */
 .refunded { color: var(--k-alert); }
 .rf-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
 .rf-row__label { flex-shrink: 0; width: 32px; color: var(--k-muted); font-size: 13px; }
-.rf-input { flex: 1; min-width: 0; height: 38px; padding: 0 10px; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper2); display: flex; align-items: center; gap: 4px; font-size: 14px; }
+.rf-input { flex: 1; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); display: flex; align-items: center; gap: 4px; font-size: 14px; }
 .rf-input > input { flex: 1; min-width: 0; height: 38px; font-size: 14px; }
 .rf-all { flex-shrink: 0; font-size: 13px; }
 .rf-count { align-self: flex-end; color: var(--k-light); font-size: 11px; }
-.tip { display: block; margin-bottom: 10px; color: var(--k-muted); font-size: 12px; line-height: 1.7; }
+.tip { display: block; margin: 0 2px 10px; color: var(--k-muted); font-size: 12px; line-height: 1.7; }
 .uchips { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 6px; }
-.uchip { padding: 6px 10px; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper2); display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.uchip { padding: 6px 10px; border-radius: 8px; background: #F5F1EB; display: flex; align-items: center; gap: 4px; font-size: 13px; }
 .uchip.off { color: var(--k-light); }
-.uchip__off { font-size: 11px; color: var(--k-red); }
+.uchip__off { font-size: 11px; color: var(--k-red-deep); }
 </style>

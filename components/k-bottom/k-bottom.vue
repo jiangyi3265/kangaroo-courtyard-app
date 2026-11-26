@@ -16,7 +16,8 @@ defineProps({
 </script>
 
 <style scoped lang="scss">
-.k-bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: var(--k-bg); border-top: 1px solid var(--k-line); }
+/* 11-19 第四轮：精修词典「底部操作条白底」，各页原来都在自己盖成白色；组件默认就是白底（上边线照旧，页面自己去掉的不受影响） */
+.k-bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: var(--k-paper); border-top: 1px solid var(--k-line); }
 .k-bottom.is-flat { border-top-color: transparent; }
 .k-bottom.is-dark { background: #1C1917; border-top-color: #2A2624; }
 .k-bottom__inner { display: flex; align-items: center; gap: 10px; }

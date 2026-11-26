@@ -23,7 +23,7 @@ const SHEET = 'components/k-ai-sheet/k-ai-sheet.vue'
 /** 在沙箱里跑一段脚本：import 全部先给永远不返回的函数，再用 stubs 覆盖；defineXxx 编译宏换成桩 */
 function runScript(source, stubs, filename) {
   const ast = compiler.babelParse(source, { sourceType: 'module' })
-  const sandbox = { console }
+  const sandbox = { console, setTimeout, clearTimeout }
   for (const n of ast.program.body.filter(n => n.type === 'ImportDeclaration')) for (const s of n.specifiers) sandbox[s.local.name] = () => new Promise(() => {})
   const body = ast.program.body.filter(n => n.type !== 'ImportDeclaration').map(n => source.slice(n.start, n.end).replace(/^export\s+/, '')).join('\n')
   Object.assign(sandbox, {
@@ -44,8 +44,8 @@ test('弹层的样子：遮罩 + 75% 屏高、顶部 16px 圆角；顶栏「AI�
   assert.match(t, /<view class="k-ai__mask" @click="close" @touchmove\.stop\.prevent="noop" \/>/)
   assert.match(t, /<text class="k-ai__title">AI袋鼠<\/text>/)
   assert.match(t, /<view class="k-ai__x" hover-class="k-press" aria-role="button" aria-label="关闭" @click="close">/)
-  assert.match(t, /<!-- #ifdef MP-WEIXIN -->\s*<button class="k-ai__human" open-type="contact" :session-from="contactFrom">/)
-  assert.match(t, /<!-- #ifndef MP-WEIXIN -->\s*<view class="k-ai__human" hover-class="k-press" @click="toHuman">/)
+  assert.match(t, /<button v-if="[^"]+\.humanContact" class="k-ai__human" open-type="contact" :session-from="contactFrom">/)
+  assert.match(t, /<view class="k-ai__human" aria-role="button" hover-class="k-press" @click="toHuman">/)
   assert.match(t, /v-for="chipText in chips"[^>]*@click="ask\(chipText\)"/)
   assert.match(t, /<scroll-view scroll-y class="k-ai__body" :scroll-top="scrollTop"/)
   assert.match(t, /v-for="linkItem in msgItem\.links"[^>]*@click="openLink\(linkItem\)"/)
@@ -68,6 +68,7 @@ function sheet(props0 = {}) {
   const emits = [], gone = [], starts = []
   const props = vue.reactive({ show: false, ctx: 'profile', orderNo: '', ...props0 })
   const h = runScript(readSfc(SHEET).scriptSetup.content, {
+    experience: vue.reactive({ account: { id: 7 }, mode: 'user' }),
     defineProps: () => props, defineEmits: () => (...a) => emits.push(a),
     go: (u) => gone.push(u),
     useSupportChat: (opts) => ({ opts, chips: vue.ref([]), msgs: vue.ref([]), input: vue.ref(''), asking: vue.ref(false), order: vue.ref(null), contactFrom: vue.ref(''), orderTitle: vue.ref(''), orderDates: vue.ref(''), start: (c, n) => starts.push([c, n]), ask() {}, send() {}, openFaq() {}, openLink() {}, toHuman() {} })
@@ -86,6 +87,15 @@ test('弹层打开时开场（带情境和订单号），收起再打开接着�
   s.props.show = false; s.props.orderNo = 'SO2'; await flush()
   s.props.show = true; await flush()
   assert.deepEqual(s.starts, [['order', 'SO1'], ['order', 'SO2']])
+  s.stop()
+})
+
+test('弹层打开期间订单、账号或身份变化时重新载入', async () => {
+  const s = sheet({ show: true, ctx: 'order', orderNo: 'A' })
+  s.props.orderNo = 'B'; await flush()
+  s.sandbox.experience.account = { id: 8 }; await flush()
+  s.sandbox.experience.mode = 'staff'; await flush()
+  assert.deepEqual(s.starts, [['order', 'A'], ['order', 'B'], ['order', 'B'], ['order', 'B']])
   s.stop()
 })
 
@@ -164,7 +174,7 @@ test('不再有问问题跳去客服页 / 城市页客服屏的入口（整页�
   const msg = read('pages/messages/index.vue')
   assert.match(msg, /<view class="help" hover-class="k-press" @click="aiOpen = true">[\s\S]*?<text>联系袋鼠全球青年客服<\/text>[\s\S]*?<\/view>/)
   assert.match(msg, /else if \(\/\[\?&\]s=4\(&\|\$\)\/\.test\(m\.route\)\) aiOpen\.value = true/)
-  assert.match(msg, /const legacyUrl = \(q\) => q\.s === '4' \? R\.support/)
+  assert.match(msg, /: q\.s === '4' \? R\.support : q\.s === '2' \? R\.inbox/)
   // 面试页：点了回答里的按钮跳走的，回来时刷新进度
   assert.match(read('pages/jobs/interview.vue'), /const closeAi = \(why\) => \{ aiOpen\.value = false; if \(why === 'nav'\) awayToPage = true \}/)
 })

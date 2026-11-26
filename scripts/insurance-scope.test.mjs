@@ -2,6 +2,17 @@ import {fixture,ready} from './insurance-scope-base.mjs'
 import './insurance-financial-cases.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
+test('merchant policy page replaces a prior keeper-store filter with the selected merchant store',async t=>{
+ const h=fixture('insurance',{screen:2,role:'merchant'});t.after(h.dispose)
+ h.experience.account.staffGrants[1].roleCode='keeper'
+ h.pq.value.storeId='202'
+ const load=h.loadPolicies()
+ assert.equal(h.calls.find(c=>c.kind==='apiStaffPolicies').args[0].storeId,'101')
+ h.respond('apiStaffPolicies',{data:{rows:[]}});await load
+ const pick=h.pickPolicyStore()
+ assert.deepEqual(h.calls.find(c=>c.kind==='pick').args[0],['own A'])
+ h.respond('pick',0);await pick
+})
 test('deep insurance first request hidden then shown resumes exact application and valid form',async t=>{
  const h=fixture('interviews');t.after(h.dispose);h.d.value={};h.setDeep()
  const old=h.loadSchedule();await ready();await h.lifecycle('hide')

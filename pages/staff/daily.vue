@@ -43,7 +43,7 @@
             <!-- 小院名一整行（窄屏也不被门店名、标签挤成「海.」）；门店名和「新订单 / 待审退款」放第二行 -->
             <view class="k-between stay__top">
               <text class="stay__name">{{ h.stayName }}</text>
-              <k-icon name="chevron-right" :size="16" color="muted" :stroke="1.8" />
+              <k-icon name="chevron-right" :size="12" color="muted" :stroke="1.8" />
             </view>
             <view v-if="multiStore || h.flags.length" class="stay__sub">
               <text v-if="multiStore" class="stay__store">{{ h.storeName }}</text>
@@ -56,7 +56,7 @@
           <view v-for="a in c.apps" :key="'a' + a.storeId" class="stay apps" hover-class="k-press-s" @click="open(a.link, a.storeId)">
             <view class="k-between stay__top">
               <text class="stay__name">报名 · {{ a.storeName }}</text>
-              <k-icon name="chevron-right" :size="16" color="muted" :stroke="1.8" />
+              <k-icon name="chevron-right" :size="12" color="muted" :stroke="1.8" />
             </view>
             <view class="stats">
               <view v-for="x in a.stats" :key="x.label" class="stat" :class="{ warn: x.warn }"><text class="stat__value">{{ x.value }}</text><text class="stat__label">{{ x.label }}</text><text class="stat__sub">{{ x.sub }}</text></view>
@@ -159,48 +159,57 @@ onPullDownRefresh(() => {
 </script>
 
 <style scoped lang="scss">
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边、不加阴影），城市胶囊和「新订单 / 待审退款」小标签按统一规范，数字加粗做大小对比；内容和入口不变。共用写法在 ./work-lite.scss */
+@import './work-lite.scss';
+.daily { @include lite-page; }
 .daily-body { padding-top: 6px; }
 .dbar { display: flex; align-items: center; gap: 8px; }
-.dbar__arrow { width: 40px; height: 40px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-.dbar__arrow.off { opacity: .35; }
-.dbar__mid { flex: 1; min-width: 0; height: 40px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; gap: 6px; }
-.dbar__title { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dmeta { margin: 8px 2px 4px; font-size: 12px; }
+.dbar__arrow { width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.dbar__arrow.off { opacity: .45; }
+.dbar__mid { flex: 1; min-width: 0; height: 40px; border: 0; border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.dbar__title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dmeta { margin: 8px 0 4px; font-size: 11px; }
 .dmeta__tip, .dmeta__time { color: var(--k-muted); }
-.dmeta__back { color: var(--k-red); font-weight: 700; }
-.chips { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { height: 30px; padding: 0 14px; border: 1px solid var(--k-line2); border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; font-size: 13px; }
-.chip.on { border-color: var(--k-red); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 700; }
-.sum { margin-top: 10px; padding: 12px 12px 6px; border-radius: 14px; background: var(--k-paper); box-shadow: var(--k-sh1); }
-.sum__title { display: block; font-size: 15px; font-weight: 700; margin: 0 2px 8px; }
+.dmeta__back { color: var(--k-red-deep); font-size: 12px; font-weight: 600; }
+.chips { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; font-size: 12px; color: var(--k-ink2); }
+/* 11-18 第二轮精修：筛选胶囊选中不描边、字重 500（全站一个样子） */
+.chip.on { background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; box-shadow: none; }
+/* 城市胶囊看着 28 高，上下各多出一圈看不见的可点范围，手指好点 */
+.chip { position: relative; }
+.chip::after { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+.sum { margin-top: 8px; padding: 12px 12px 6px; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+.sum__title { display: block; font-family: var(--k-sans); font-size: 15px; font-weight: 700; margin: 0 2px 8px; }
 .sum__grid { display: flex; flex-wrap: wrap; }
-.tile { width: 25%; padding: 6px 2px 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; min-width: 0; }
-.tile__label { font-size: 12px; color: var(--k-muted); white-space: nowrap; }
-.tile__value { margin-top: 2px; font-size: 22px; font-weight: 700; line-height: 1.2; color: var(--k-ink); }
-.tile__sub { margin-top: 1px; font-size: 10.5px; color: var(--k-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+/* 数据格（11-18）：数字在上 18 / 700 等宽，说明 11 / muted 在下，间距 2（只用 order 调顺序，模板不动）；最下面的小字从浅灰换成 muted，看得清 */
+.tile { width: 25%; padding: 6px 2px 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.tile__label { font-size: 11px; color: var(--k-muted); white-space: nowrap; }
+.tile__value { order: -1; margin-top: 0; font-size: 18px; font-weight: 700; line-height: 1.25; color: var(--k-ink); font-variant-numeric: tabular-nums; }
+.tile__sub { margin-top: 0; font-size: 10px; color: var(--k-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .tile.warn .tile__value { color: var(--k-alert); }
 .city { margin-top: 16px; }
-.city__head { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 8px; flex-wrap: wrap; }
-.city__name { font-size: 17px; font-weight: 700; }
+.city__head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 8px; flex-wrap: wrap; }
+.city__name { font-family: var(--k-sans); font-size: 16px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
 .city__count { font-size: 12px; color: var(--k-muted); }
 .city__sum { margin-left: auto; font-size: 12px; color: var(--k-ink2); }
-.stay { margin-top: 8px; padding: 10px 12px 8px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); }
-.stay.apps { background: var(--k-bg); }
+.stay { margin-top: 8px; padding: 12px 12px 10px; border: 0; border-radius: 12px; background: var(--k-paper); }
+/* 报名那几张（标题「报名 · 门店」）11-18 起也是白卡，靠标题区分，不再另铺浅杏底 */
 .stay__top { gap: 8px; }
-.stay__name { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stay__name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stay__sub { margin-top: 4px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .stay__store { min-width: 0; max-width: 100%; font-size: 11px; color: var(--k-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.flag { font-size: 11px; padding: 1px 6px; border-radius: 5px; }
+.flag { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 500; line-height: 17px; }
 .flag--green { color: var(--k-green); background: var(--k-green-soft); }
 .flag--alert { color: var(--k-alert); background: var(--k-alert-soft); }
-.flag--muted { color: var(--k-muted); background: var(--k-paper2); }
-.stats { margin-top: 6px; display: flex; }
+.flag--muted { color: var(--k-ink2); background: #F5F1EB; }
+.stats { margin-top: 8px; display: flex; }
 .stat { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
-.stat__value { font-size: 18px; font-weight: 700; line-height: 1.25; }
-.stat__label { font-size: 12px; color: var(--k-muted); }
-.stat__sub { min-height: 14px; font-size: 10.5px; color: var(--k-light); white-space: nowrap; }
+.stat__value { font-size: 18px; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.stat__label { font-size: 11px; color: var(--k-muted); }
+.stat__sub { min-height: 14px; font-size: 10px; color: var(--k-muted); white-space: nowrap; }
 .stat.warn .stat__value { color: var(--k-alert); }
-.empty { margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--k-muted); font-size: 14px; text-align: center; }
-.empty__btn { height: 34px; padding: 0 20px; border-radius: 999px; border: 1px solid var(--k-red); color: var(--k-red); display: flex; align-items: center; }
-.note { display: block; margin: 16px 4px 0; font-size: 11.5px; line-height: 1.6; color: var(--k-muted); }
+/* 空状态 / 读取中（11-18）：白卡里居中，14 / 500 二级墨，上下留白 28 */
+.empty { margin-top: 8px; padding: 28px 16px; border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 1.6; text-align: center; }
+.empty__btn { height: 32px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--k-red-line); background: var(--k-paper); color: var(--k-red-deep); font-size: 13px; display: flex; align-items: center; }
+.note { display: block; margin: 16px 0 0; font-size: 11px; line-height: 1.6; color: var(--k-muted); }
 </style>

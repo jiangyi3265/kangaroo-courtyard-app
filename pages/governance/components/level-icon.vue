@@ -1,12 +1,14 @@
 <template>
   <view class="lv" :class="['lv--' + idx, { 'lv--off': off }]" :style="boxStyle" :aria-label="'会员等级 ' + (idx + 1)">
-    <view class="lv__crop" :style="cropStyle"><image class="lv__emblem" src="/pages/governance/static/member-travel-atlas.png" :style="spriteStyle" mode="scaleToFill" /></view>
+    <view class="lv__crop" :style="cropStyle"><image v-if="userIcons" class="lv__emblem" src="/pages/governance/static/apricot-levels.png" :style="spriteStyle" mode="scaleToFill" /><image v-else class="lv__emblem" src="/pages/governance/static/member-travel-atlas.png" :style="spriteStyle" mode="scaleToFill" /></view>
     <text v-if="px >= 40" class="lv__rank" :style="rankStyle">{{ rank }}</text>
   </view>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useUserIcons } from '@/common/user-icons/scope.js'
+const userIcons = useUserIcons()
 defineOptions({ options: { virtualHost: true, styleIsolation: 'apply-shared' } })
 const props = defineProps({
   level: { type: [Number, String], default: 0 },

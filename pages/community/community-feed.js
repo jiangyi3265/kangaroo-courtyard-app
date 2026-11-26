@@ -4,14 +4,14 @@
 // 页签：全部 / 找搭子 / 旅居日常 / 经验分享。「经验分享」就是原来的「换工日记」（只改名字，后端代码还是 diary）。
 // 2026-10-21：恢复「旅居日常」名称，沿用 daily 数据类型和已有帖子。
 // 找搭子不再跳到单独的一屏：留在社区页，下面换成找搭子列表（分类 + 筛选 + 安全须知），数据走 apiBuddies。
-export const FEED_TABS = ['全部', '找搭子', '旅居日常', '经验分享']
+export const FEED_TABS = ['全部', '找搭子', '经验分享', '旅居日常']
 export const FEED_KIND = { 全部: '', 旅居日常: 'daily', 经验分享: 'diary' }
 export const BUDDY_TAB = '找搭子'
 export const DIARY_TAB = '经验分享'
 
 // 「经验分享」下面那行小字（主人原话）：按关联经历的岗位类型筛，后端参数 jobType
 export const JOB_CHIPS = [
-  { key: 'volunteer', label: '换宿旅行' },
+  { key: 'volunteer', label: '换工旅行' },
   { key: 'parttime', label: '线下兼职' },
   { key: 'fulltime', label: '全职' }
 ]
@@ -23,7 +23,7 @@ export const SEARCH_PLACEHOLDER = '搜索搭子、旅居日常、经验分享'
 // 每个类型自己的标题 / 正文提示字，和「补充信息」卡的副标题（写的是这一类收进去的字段）
 export const PUBLISH_TYPES = [
   { name: '找搭子', desc: '约见 / 组队', icon: 'users', titlePh: '给这次出发起个标题', bodyPh: '说说你想去哪里、想找什么样的同行伙伴', extraSub: '城市、出发日期、同行性别可填写' },
-  { name: '经验分享', desc: '换宿 / 兼职 / 全职', icon: 'book-open', titlePh: '分享你的真实经历', bodyPh: '说说这段经历里做了什么、学到了什么、给后来人的建议', extraSub: '城市、日期可填写' },
+  { name: '经验分享', desc: '换工 / 兼职 / 全职', icon: 'book-open', titlePh: '分享你的真实经历', bodyPh: '说说这段经历里做了什么、学到了什么、给后来人的建议', extraSub: '城市、日期可填写' },
   { name: '旅居日常', desc: '生活 / 灵感', icon: 'house', titlePh: '记录今天的旅居日常', bodyPh: '分享小院里的生活、路上的风景，或今天的小发现', extraSub: '城市、日期、伙伴说（推荐 / 避雷）可填写' }
 ]
 export const PUBLISH_KIND = { 找搭子: 'buddy', 旅居日常: 'daily', 经验分享: 'diary' }

@@ -284,7 +284,7 @@ test('工作台模板：入口写在快捷入口和发布区之间，能点的 v
   const d = sfc('pages/staff/index.vue')
   const t = d.template.content
   assert.match(t, /<view v-if="\(isKeeper \|\| cityLeadDaily\) && reimburseEntry" class="admin-task-entry" hover-class="k-press" @click="openReimburse">/)
-  assert.ok(t.indexOf('class="k-grid-4 quick"') < t.indexOf('reimburseEntry') && t.indexOf('reimburseEntry') < t.indexOf('<template v-if="canPublish">'))
+  assert.ok(t.indexOf('class="k-grid-4 quick"') < t.indexOf('reimburseEntry') && t.indexOf('reimburseEntry') < t.indexOf('<template v-if="canPublish && publishEntries.length">'))
   assert.doesNotMatch(d.scriptSetup.content, /label: '采购报销'/, '不加进 quick（luna-staff 钉着四格）')
   assert.match(d.scriptSetup.content, /from '\.\/reimburse-logic\.js'/)
 })

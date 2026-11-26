@@ -98,7 +98,7 @@ test('提醒类（未读、报错、名额紧张、危险操作）用 --k-alert�
 })
 
 test('卡片、按钮、胶囊换成新圆角和新颜色', () => {
-  assert.match(read('components/k-card/k-card.vue'), /radius: \{ type: \[Number, String\], default: 16 \}/)
+  assert.match(read('components/k-card/k-card.vue'), /radius: \{ type: \[Number, String\], default: 12 \}/)
   const btn = read('components/k-button/k-button.vue')
   assert.match(btn, /\.k-button \{[^}]*border-radius: var\(--k-radius\);/)
   assert.match(btn, /\.is-secondary \{ color: var\(--k-red\); background: var\(--k-paper\); border-color: var\(--k-red-line\); \}/)
@@ -175,7 +175,10 @@ test('回归复查：提醒类不跟主色变棕，浅底小号棕字用 --k-red
   const review = read('pages/profile/review.vue')
   assert.match(review, /tone: 'alert', title: '支付已超时'/)
   assert.match(review, /\.perm__icon\.is-alert \{ background: var\(--k-alert-soft\); \}/)
-  assert.match(read('pages/messages/reminders.vue'), /\.large-icon--purple\{background:#7E5E9C\}/, '商家端会话提醒的图标底色')
+  // 11-18 第三轮（r3msg 组）：商家端 / 员工端提醒的图标从「实心色块 + 白图标」改成和用户屏一样的「浅色方块 + 线性图标」，会话类（purple）用浅米底；只改了这一条写死的颜色值
+  // 11-18 返修（纯样式）：提醒图标方块统一浅棕底（和消息页同一套），不再分色调
+  // 11-19 第四轮（纯样式）：未读行整行改成浅棕底，图标方块换成白底才看得出来；仍是浅色方块 + 线性图标，不回到实心色块
+  assert.match(read('pages/messages/reminders.vue'), /\.reminder-icon,\.large-icon\{[^}]*background:var\(--k-(red-soft|paper)\)/, '商家端会话提醒的图标底色')
 })
 
 // 10-16 复验第二轮：趋势颜色（涨绿 ↑、跌提醒红 ↓、持平 / — / 0 灰色不画箭头）、危险操作提醒红、赭黄小字和 --k-light 写内容
@@ -243,7 +246,8 @@ test('复验二：危险操作（退出群聊、举报该群、撤回报名）�
   assert.match(progress, /<view v-if="!isOnline" class="withdraw danger"><k-button type="outline"/)
   assert.ok(!/<k-button block :disabled="blank \|\| !canWithdraw" @click="withdraw">/.test(progress), '撤回报名不用实心主色按钮')
   assert.match(progress, /\.danger :deep\(\.k-button\) \{ color: var\(--k-alert\);/)
-  assert.match(progress, /\.danger :deep\(\.k-button\.is-disabled\) \{ color: var\(--k-light\);/, '不能撤回时仍是禁用灰')
+  // 2026-11-18 第二轮：不能撤回时不再变灰，仍是提醒红、整体变淡（公共按钮的禁用色带 !important，这里也要 !important）
+  assert.match(progress, /\.danger :deep\(\.k-button\.is-disabled\) \{ color: var\(--k-alert\) !important;/, '不能撤回时仍是提醒红、整体变淡')
 })
 
 test('复验二：赭黄小字用 --k-ochre-deep，内容不用 --k-light，浅底小号棕字用 --k-red-deep', () => {
@@ -261,7 +265,7 @@ test('复验二：赭黄小字用 --k-ochre-deep，内容不用 --k-light，浅�
   assert.match(vlog, /\.period\.active\{color:var\(--k-red-deep\);/, '「近7天」')
   const act = read('pages/staff/activities.vue')
   assert.match(act, /\.audit--ochre \{ color: var\(--k-ochre-deep\);/, '「待审核」')
-  assert.match(act, /\.weather__btn \{[^}]*color: var\(--k-ochre-deep\);/)
+  assert.match(act, /\.weather__btn \{[^}]*color: var\(--k-red-deep\);/)
   const deliver = read('pages/jobs/deliver.vue')
   assert.match(deliver, /\n\.k-link \{ color: var\(--k-red-deep\); \}/, '交付页「复制」「复制链接」')
   assert.match(deliver, /\.flow__label \{[^}]*color: var\(--k-muted\);/, '交付步骤里还没到的步骤')

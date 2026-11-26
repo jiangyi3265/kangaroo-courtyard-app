@@ -9,6 +9,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile } from 'node:fs/promises'
+import { periodDisplay } from '../pages/stays/period-price.js'
 
 const read = async (p) => (await readFile(new URL(p, import.meta.url), 'utf8')).replace(/\r\n/g, '\n')
 const stayDetail = await read('../pages/stays/detail.vue')
@@ -38,13 +39,14 @@ test('房源详情：早鸟标签写出早鸟价；只有带 promoId 进来时�
   assert.doesNotMatch(stayDetail, /<k-chip v-if="d\.promo" tone="ochre" @click="openPromo"><text>早鸟价<\/text><\/k-chip>/)
   assert.match(stayDetail, /'早鸟 ¥' \+ promoPrice \+ '\/晚'/)
   const code = between(stayDetail, 'const promo = computed(', 'const showStory')
-  const run = (data, promoId) => new Function('computed', 'd', 'promoId', 'yuan', code + ';return { promo, promoPrice, rooms }')(
-    computed, ref(data), promoId, (fen) => String(Number(fen) / 100))
+  const run = (data, promoId, loadedRows) => new Function('computed', 'd', 'promoId', 'yuan', 'roomsLoaded', 'roomRows', 'periodDisplay', code + ';return { promo, promoPrice, rooms }')(
+    computed, ref(data), promoId, (fen) => String(Number(fen) / 100), ref(!!loadedRows), ref(loadedRows || []), periodDisplay)
   const data = { priceFromFen: 18000, roomTypes: [{ roomTypeId: 389, typeName: '早鸟大床房', priceFromFen: 20000 }, { roomTypeId: 390, typeName: '日常双床房', priceFromFen: 18000 }],
     promo: { promoId: 4, roomTypeId: 389, priceFen: 15000 }, promos: [{ promoId: 4, roomTypeId: 389, priceFen: 15000 }] }
   const fromBird = run(data, 4)
   assert.equal(fromBird.promoPrice.value, '150')
   assert.deepEqual(fromBird.rooms.value.map(r => r.promoPrice), ['150', ''])
+  assert.deepEqual(run(data, 4, [data.roomTypes[1]]).rooms.value.map(r => r.promoPrice), [''])
   const plain = run(data, 0)
   assert.equal(plain.promoPrice.value, '150')
   assert.deepEqual(plain.rooms.value.map(r => r.promoPrice), ['', ''], '没带 promoId 时预订页按日常价报价，不能在房型卡片上标早鸟价')
@@ -67,7 +69,7 @@ test('活动凭证：只有还有效的报名才盖章、显示集合提醒和�
     assert.equal(new Function('computed', 'ticket', code + 'return ticketLive')(computed, ticket).value, live, status)
   }
   const actions = between(activity, 'const successActions = computed(', '\n])')
-  assert.match(actions, /ticketLive\.value \? \{ title: '加入活动群'/)
+  assert.match(actions, /ticket\.value\.status === 'confirmed' && ticket\.value\.convId && groupChatEnabled\.value \? \{ title: '加入活动群'/)
   assert.match(actions, /title: '查看活动详情'/)
 })
 
@@ -98,8 +100,8 @@ test('报名页：不收报名的线上任务写出任务名和原因，不显�
   // 2026-10-18 报名页改成「用简历投递」的一屏：进度条只给到店岗位；不收报名时只写岗位名和原因，简历卡 / 到岗安排 / 底部按钮都不出
   assert.match(apply, /<view v-if="!closedReason && jobType && !isOnline" class="ap-card ap-flow">/)
   assert.match(apply, /<view v-else-if="closedReason" class="ap-card ap-state">[\s\S]*?<\/view>\n\n      <!-- 投递成功 -->/)
-  assert.match(apply, /<template v-else-if="jobReady">/)
-  assert.match(apply, /<k-bottom v-if="!closedReason && \(jobReady \|\| saved\)" flat>/)
+  assert.match(apply, /<view v-else-if="jobReady" class="ap-form">/)
+  assert.match(apply, /<k-bottom v-if="!closedReason && \(jobReady \|\| saved\)"\s/)
   const code = between(apply, 'const closedReason = ref(', '// ---------------- 我的简历')
   const run = async (data) => {
     const s = { jobId: ref(14424), jobReady: ref(false), jobTitleError: ref(''), jobTitle: ref(''), jobType: ref('') }

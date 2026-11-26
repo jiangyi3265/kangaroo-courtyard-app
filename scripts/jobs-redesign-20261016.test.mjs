@@ -1,6 +1,6 @@
 // 10-16 第二轮改版：岗位列表（效果图 23）、详情页角标 / 新字段、门店发布表单的新条件（node --test，不需要构建、不发请求）。
 // 守住这几件事：
-//   · 四类叫「换宿旅行 / 兼职旅行 / 全职旅行 / 线上任务」；
+//   · 四类叫「换工旅行 / 兼职旅行 / 全职旅行 / 线上任务」；
 //   · 筛选条件的参数名和取值和后端约定一致（cities / gender / restModes / roomTypes / skills / minStay / assured），
 //     性别只给换宿、线上任务不带城市和安心保障，城市最多 5 个、技能最多 8 个；
 //   · 选了的条件都能在胶囊行点掉；面板里改的是草稿，点「确定」才按条件重新拉；
@@ -46,10 +46,10 @@ function runSetup(rel, stubs) {
 
 // ---------------------------------------------------------------- 条件 → 参数
 
-test('四类岗位统一叫换宿旅行 / 兼职旅行 / 全职旅行 / 线上任务', () => {
-  assert.deepEqual(F.TYPE_NAMES, { volunteer: '换宿旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' })
+test('四类岗位统一叫换工旅行 / 兼职旅行 / 全职旅行 / 线上任务', () => {
+  assert.deepEqual(F.TYPE_NAMES, { volunteer: '换工旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' })
   assert.match(src('pages/jobs/list.vue'), /import \{ TYPES, TYPE_NAMES,[^\n]*\} from '\.\/job-filters\.js'/)
-  assert.match(src('pages/jobs/filter.vue'), /const JOB_TYPE_NAMES = \{ volunteer: '换宿旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' \}/)
+  assert.match(src('pages/jobs/filter.vue'), /const JOB_TYPE_NAMES = \{ volunteer: '换工旅行', parttime: '兼职旅行', fulltime: '全职旅行', online: '线上任务' \}/)
 })
 
 test('换宿：每个条件按约定的参数名和取值带给 /app/job/list', () => {
@@ -74,7 +74,7 @@ test('兼职 / 全职只有自己那几项（没有性别、技能、排班、�
 test('每个选了的条件都列成胶囊，点掉以后参数里也没有了', () => {
   const kinds = [{ value: 'photo', label: '摄影换工' }]
   for (const type of F.TYPES) {
-    const f = { ...F.blankFilter(), cities: ['大理', '丽江'], gender: 'M', skills: ['做饭', '开车'], restModes: ['1-1'], minStay: 7, roomTypes: ['multi'], assured: true, workKind: 'photo', board: 'all', payDay: 80, payMonth: 1, categories: ['bar', 'other'], task: '其他' }
+    const f = { ...F.blankFilter(), cities: ['大理', '丽江'], gender: 'M', skills: ['做饭', '开车'], restModes: ['1-1'], minStay: 7, roomTypes: ['multi'], bathroom: 'private', assured: true, workKind: 'photo', board: 'all', payDay: 80, payMonth: 1, categories: ['bar', 'other'], task: '其他' }
     const chips = F.filterChips(type, f, kinds)
     assert.ok(chips.length > 0, type)
     assert.equal(new Set(chips.map(c => c.key)).size, chips.length, type + ' 胶囊 key 不重复')
@@ -82,10 +82,10 @@ test('每个选了的条件都列成胶囊，点掉以后参数里也没有了',
     assert.deepEqual(F.filterParams(type, f), {}, type + ' 全部点掉后不再带条件')
     assert.deepEqual(F.filterChips(type, f, kinds), [])
   }
-  const texts = F.filterChips('volunteer', { ...F.blankFilter(), cities: ['平潭'], gender: 'F', skills: ['做饭', '摄影'], restModes: ['3-1'], minStay: 30, roomTypes: ['single'], assured: true, workKind: 'photo' }, kinds).map(c => c.text)
-  // 2026-10-19：主人那六组（性别偏好、技能需求、休息排班、可停留时长、住宿条件、安心保障）在前，换工类型最后，和面板顺序一致
-  assert.deepEqual(texts, ['平潭', '性别：女', '会做饭', '拍摄', '做三休一', '能待一个月', '单人间', '经袋鼠实地拍摄并含保险', '摄影换工'])
-  assert.deepEqual(F.panelGroups('volunteer', F.blankFilter(), kinds).map(g => g.title), ['性别偏好', '技能需求', '休息排班', '可停留时长', '住宿条件', '安心保障', '换工类型'])
+  const texts = F.filterChips('volunteer', { ...F.blankFilter(), cities: ['平潭'], gender: 'F', skills: ['做饭', '摄影'], restModes: ['3-1'], minStay: 30, roomTypes: ['single'], bathroom: 'private', assured: true, workKind: 'photo' }, kinds).map(c => c.text)
+  // 胶囊栏先展示城市和卫浴，换工类型在最后。
+  assert.deepEqual(texts, ['平潭', '独卫', '性别：女', '会做饭', '拍摄', '做三休一', '能待一个月', '单人间', '经袋鼠实地拍摄并含保险', '摄影换工'])
+  assert.deepEqual(F.panelGroups('volunteer', F.blankFilter(), kinds).map(g => g.title), ['性别偏好', '技能需求', '休息排班', '可停留时长', '住宿条件', '卫浴条件', '安心保障', '换工类型'])
   // 线上任务不列城市
   assert.deepEqual(F.filterChips('online', { ...F.blankFilter(), cities: ['平潭'], task: '图片设计' }).map(c => c.text), ['图片设计'])
 })
@@ -109,10 +109,10 @@ test('面板里点选项：多选组来回切换，单选组再点一次取消�
   assert.equal(f.skills.length, 7)
 })
 
-test('面板分组：换宿七组（性别、技能、排班、时长、住宿、保障、换工类型），兼职 = 食宿 / 日薪，全职 = 类型 / 食宿 / 月薪', () => {
+test('面板分组：换工八组（性别、技能、排班、时长、住宿、卫浴、保障、换工类型），兼职 = 食宿 / 日薪，全职 = 类型 / 食宿 / 月薪', () => {
   const kinds = [{ value: 'daily', label: '日常' }]
   // 2026-10-17：组名一律两个字（主人：筛选排得乱）
-  assert.deepEqual(F.panelGroups('volunteer', F.blankFilter(), kinds).map(g => g.title), ['性别偏好', '技能需求', '休息排班', '可停留时长', '住宿条件', '安心保障', '换工类型'])
+  assert.deepEqual(F.panelGroups('volunteer', F.blankFilter(), kinds).map(g => g.title), ['性别偏好', '技能需求', '休息排班', '可停留时长', '住宿条件', '卫浴条件', '安心保障', '换工类型'])
   // 换工类型字典没取到：这一组先不显示
   assert.ok(!F.panelGroups('volunteer', F.blankFilter(), []).some(g => g.key === 'workKind'))
   assert.deepEqual(F.panelGroups('parttime', F.blankFilter()).map(g => g.title), ['食宿条件', '日薪（元/天）'])
@@ -124,6 +124,7 @@ test('面板分组：换宿七组（性别、技能、排班、时长、住宿�
   const vol = F.panelGroups('volunteer', { ...F.blankFilter(), gender: 'F' }, kinds)
   assert.deepEqual(vol[0].options.map(o => [o.label, o.on]), [['男', false], ['女', true], ['男女不限', false]])
   assert.deepEqual(vol.find(g => g.key === 'restModes').options.map(o => o.label), ['做一休一', '做四休三', '做二休一', '做五休二', '做三休二', '做三休一', '做六休一'])
+  assert.deepEqual(vol.find(g => g.key === 'bathroom').options.map(o => o.label), ['不限', '独卫', '公卫'])
   assert.deepEqual(vol.find(g => g.key === 'assured').options.map(o => o.label), ['经袋鼠实地拍摄并含保险'])
   // 效果图里重复的「女」「做三休一」不照抄
   for (const g of vol) assert.equal(new Set(g.options.map(o => o.label)).size, g.options.length, g.title)
@@ -138,6 +139,14 @@ test('地址里带的城市：?cities= 覆盖 ?city= 并去重，最多 5 个，
 })
 
 // ---------------------------------------------------------------- 列表页
+
+function listLifecycle() {
+  const show = [], hide = []
+  return {
+    onShow: callback => show.push(callback), onHide: callback => hide.push(callback),
+    show: () => show.forEach(callback => callback()), hide: () => hide.forEach(callback => callback())
+  }
+}
 
 function listHarness(extra = {}) {
   const calls = []
@@ -275,8 +284,8 @@ test('列表页：面板开着时胶囊行改的是草稿，点「确定」后�
 })
 
 test('列表页：从首页入口带 ?type= 进到不是第一个的页签，列表只拉一次（onLoad 改页签 + onShow，不再两次）', async (t) => {
-  const hooks = {}
-  const h = listHarness({ onShow: (fn) => { hooks.show = fn }, onHide: (fn) => { hooks.hide = fn } })
+  const hooks = listLifecycle()
+  const h = listHarness({ onShow: hooks.onShow, onHide: hooks.onHide })
   t.after(h.stop)
   h.load({ type: 'parttime', city: '大理' })
   hooks.show()
@@ -299,9 +308,9 @@ test('列表页：从首页入口带 ?type= 进到不是第一个的页签，列
 })
 
 test('H5：筛选 / 选城市面板开着时锁住页面滚动，关掉、离开本页时还原（小程序仍用 page-meta）', async (t) => {
-  const hooks = {}
+  const hooks = listLifecycle()
   const doc = { documentElement: { style: { overflow: '' } }, body: { style: { overflow: 'scroll' } } }
-  const h = listHarness({ document: doc, onShow: (fn) => { hooks.show = fn }, onHide: (fn) => { hooks.hide = fn } })
+  const h = listHarness({ document: doc, onShow: hooks.onShow, onHide: hooks.onHide })
   t.after(h.stop)
   const body = () => doc.body.style.overflow
   h.load({ type: 'volunteer' })
@@ -380,14 +389,15 @@ test('列表页：去掉「只看X的岗位」那一行和「全部筛选」；�
   assert.match(list, /<view class="refresh" aria-live="off"><k-icon name="clock"/)
   assert.match(list, /autoRefreshing \? '更新中' : refreshSeconds \+ '秒更新'/)
   assert.match(list, /placeholder: '搜索城市、岗位或偏好'/)
-  assert.match(list, /countText: \(n\) => `\$\{n\} 个换宿岗位`/)
+  assert.match(list, /countText: \(n\) => `\$\{n\} 个换工岗位`/)
 })
 
 test('新组件都在 jobs 分包里（不进主包），角标用主包里已有的袋鼠贴纸 PNG', () => {
   for (const f of ['job-badge.vue', 'job-filter-panel.vue', 'job-city-panel.vue']) assert.ok(fs.existsSync(path.join(APP, 'pages/jobs/components', f)), f)
   assert.ok(!fs.existsSync(path.join(APP, 'components/job-badge')))
   const badge = src('pages/jobs/components/job-badge.vue')
-  assert.match(badge, /<image class="jb__icon" src="\/static\/media\/brand-kangaroo\.png" mode="aspectFit" \/>/)
+  assert.match(badge, /<image class="jb__icon" src="\/static\/user-icons\/roo-mark\.png" mode="aspectFit" \/>/)
+  assert.ok(fs.existsSync(path.join(APP, 'static/user-icons/roo-mark.png')))
   assert.match(badge, /<text class="jb__text">经袋鼠实地拍摄<\/text><text class="jb__text">并含保险<\/text>/)
   // 字号不小于 10px
   for (const m of badge.matchAll(/font-size: (\d+)px/g)) assert.ok(Number(m[1]) >= 10, m[0])
@@ -423,6 +433,8 @@ function staffHarness(extra = {}) {
   const h = runSetup('pages/staff/jobs.vue', {
     useScreen: () => vue.ref(2), onShareAppMessage() {}, ensureSession: async () => {}, hasStaffAccess: { value: true },
     currentStaffStoreId: () => 102, staffCan: () => true, absUrl: x => x,
+    currentStaffStore: vue.ref({ storeId: 102, roleCode: 'manager', identityKey: 'manager:102' }),
+    experience: { account: { id: 21 } }, merchantStaff: vue.ref(false),
     todayCn: () => '2026-10-16', shiftDate: () => '2026-10-23', isYmd: () => true,
     validateSalaryForm: () => '', salaryPayload: () => ({}), jobBenefits: salary.jobBenefits, parseSalaryAmount: salary.parseSalaryAmount,
     toast() {}, go() {}, back() {}, confirm: async () => true, errText: (e, d) => d,
@@ -430,7 +442,12 @@ function staffHarness(extra = {}) {
     apiStaffCreateJob: async (storeId, payload) => { created.push(plain(payload)); return { msg: '已提交平台审核' } },
     ...extra
   })
-  return { ...h, created }
+  const openPublish = async kind => {
+    assert.equal(await h.run('loadJobs()'), true)
+    h.run('startPublish(); choosePublish(' + JSON.stringify(kind) + ')')
+    assert.equal(h.run('formOpen.value'), true)
+  }
+  return { ...h, created, openPublish }
 }
 
 test('发布表单：性别偏好只有换宿有，住宿条件只有包住才有，最短在店 7 / 15 / 20 / 30 / 不限', (t) => {
@@ -458,18 +475,21 @@ test('发布表单：性别偏好只有换宿有，住宿条件只有包住才�
 test('发布表单：按约定的字段名提交，不适用的项传空（兼职不带性别，不包住不带房型）', async (t) => {
   const h = staffHarness()
   t.after(h.stop)
-  h.run(`storeAddress.value = '测试门店地址'; gen.value = { title: '标题', work: 'b', hope: 'c' }`)
+  await h.openPublish('volunteer')
+  h.run(`gen.value = { title: '标题', work: 'b', hope: 'c' }`)
   h.run(`Object.assign(form.value, { images: ['/profile/upload/test.jpg'], jobType: 'volunteer', genderPref: 'F', restMode: '5-2', roomType: 'double', minDays: 15 })`)
   await h.run('submitJob()')
   const v = h.created.at(-1)
   assert.ok(v, '完整照片、地址与内容应通过发布校验')
   assert.deepEqual([v.genderPref, v.restMode, v.roomType, v.minDays], ['F', '5-2', 'double', 15])
-  h.run(`form.value = newForm('parttime'); gen.value = { title: '标题', work: 'b', hope: 'c' }`)
+  await h.openPublish('parttime')
+  h.run(`gen.value = { title: '标题', work: 'b', hope: 'c' }`)
   h.run(`Object.assign(form.value, { images: ['/profile/upload/test.jpg'], genderPref: 'F', restMode: '6-1', roomType: 'double', minDays: null, salary: '120' }); setBoard('none')`)
   await h.run('submitJob()')
   const p = h.created.at(-1)
   assert.deepEqual([p.genderPref, p.restMode, p.roomType, p.minDays, p.boardType], ['', '6-1', '', null, 'none'])
-  h.run(`form.value = newForm('fulltime'); gen.value = { title: '标题', work: 'b', hope: 'c' }`)
+  await h.openPublish('fulltime')
+  h.run(`gen.value = { title: '标题', work: 'b', hope: 'c' }`)
   h.run(`Object.assign(form.value, { images: ['/profile/upload/test.jpg'], roomType: 'single', salary: '5000' })`)
   await h.run('submitJob()')
   assert.equal(h.created.at(-1).roomType, 'single')
@@ -478,7 +498,8 @@ test('发布表单：按约定的字段名提交，不适用的项传空（兼�
 
 test('发布表单：分别设置人数按真实同步校验拦截无效值，修正后合计并提交', async (t) => {
   const h = staffHarness(); t.after(h.stop)
-  h.run(`storeAddress.value = '测试门店地址'; formOpen.value = true; gen.value = { title: '测试岗位', work: '接待访客' }; form.value.images = ['/profile/upload/test.jpg']; chooseGenderMode('split'); setGenderCount('genderMaleCount', ''); setGenderCount('genderFemaleCount', '2')`)
+  await h.openPublish('volunteer')
+  h.run(`gen.value = { title: '测试岗位', work: '接待访客' }; form.value.images = ['/profile/upload/test.jpg']; chooseGenderMode('split'); setGenderCount('genderMaleCount', ''); setGenderCount('genderFemaleCount', '2')`)
   await h.run('submitJob()')
   assert.equal(h.created.length, 0, '空人数不能提交')
   assert.ok(h.run('err.value.genderCounts'))

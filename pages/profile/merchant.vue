@@ -1,39 +1,41 @@
 <template>
   <k-feature-gate feature="recruitment">
-  <view class="k-page merchant">
+  <view class="k-page merchant" :class="$userSurface">
     <k-topbar title="成为商家" back />
-    <k-subscribe scenes="account" label="订阅入驻审核提醒" />
     <view class="k-body k-pad-safe">
       <!-- 顶部暖色卡：袋鼠贴纸 + 一句话（2026-10-18 主人：「更多服务里增加成为商家」） -->
       <view class="hero">
         <view class="hero__copy">
           <text class="hero__eyebrow">袋鼠全球青年 · 商家招募</text>
-          <text class="hero__title">把你的小店，带给爱旅行的年轻人</text>
+          <view class="hero__title"><text class="hero__line">把你的小店，</text><text class="hero__line">带给爱旅行的年轻人</text></view>
           <text class="hero__sub">民宿、酒店、咖啡餐饮、酒吧都可以申请入驻，招换工、兼职、全职或发线上任务</text>
         </view>
         <image class="hero__kg" src="/pages/profile/static/merchant-courtyard.png" mode="aspectFit" />
       </view>
 
-      <!-- 合作介绍：只写平台真有的做法，不写数字和承诺；具体合作方式入驻沟通时再谈 -->
-      <text class="sec">和袋鼠合作</text>
-      <view class="perks">
-        <view v-for="perkItem in PERKS" :key="perkItem.title" class="perk">
-          <view class="perk__icon"><k-icon :name="perkItem.icon" :size="20" color="#9A6B3F" :stroke="1.8" /></view>
-          <text class="perk__title">{{ perkItem.title }}</text>
-          <text class="perk__text">{{ perkItem.text }}</text>
-        </view>
-      </view>
-
-      <!-- 交过就显示最近一份的进度。已是合作商家：给进商家端的按钮，不再给表；其他情况（老的待联系申请、暂不合作）再填一次就开通 -->
+      <!-- 11-18 第三轮返修（第 3 轮）：申请进度紧跟头图（回来看进度的人第一眼就看到），不再排在四张合作介绍后面。
+           审核中和已联系的申请只显示进度，通过后可进商家端，退回后可重新申请。 -->
       <view v-if="latest" class="status">
         <view class="status__head">
-          <view class="status__dot" :class="'is-' + latest.status" />
+          <view class="status__dot" :class="['is-' + latest.status, { 'is-nogrant': latest.status === 'settled' && !merchantGrant }]" />
           <text class="status__title">{{ latest.storeName }}</text>
           <text class="status__tag">{{ latest.storeTypeLabel }}</text>
         </view>
         <text class="status__text">{{ latest.statusText }}</text>
         <text class="status__meta">{{ statusMeta }}</text>
       </view>
+      <!-- 合作介绍：只写平台真有的做法，不写数字和承诺；具体合作方式入驻沟通时再谈 -->
+      <text class="sec">和袋鼠合作</text>
+      <view class="perks">
+        <view v-for="perkItem in PERKS" :key="perkItem.title" class="perk">
+          <view class="perk__icon"><k-icon :name="perkItem.icon" :size="22" color="red" /></view>
+          <text class="perk__title">{{ perkItem.title }}</text>
+          <text class="perk__text">{{ perkItem.text }}</text>
+        </view>
+      </view>
+
+      <!-- 11-18 返修（第 2 轮）：订阅提醒条从页面最上面挪到这里（申请进度下面、表单前面），不再抢头图的焦点；组件和显示条件不变 -->
+      <k-subscribe scenes="account" label="订阅入驻审核提醒" />
       <k-button v-if="loaded && merchantGrant" block class="enter" :disabled="entering" :label="entering ? '正在进入…' : '进入商家端'" @click="enterMerchant()" />
 
       <view v-if="loaded && !merchantGrant && !waiting" class="form">
@@ -44,8 +46,25 @@
           <view class="draft-actions"><button :disabled="submitting" @click="saveDraft(true)">保存草稿</button><button :disabled="submitting" @click="discardDraft">清空草稿</button></view>
         </view>
         <k-field v-model="form.contactName" row label="联系人" required placeholder="怎么称呼你" :maxlength="32" />
-        <view class="verify"><view class="verify__text"><text>{{ needVerify ? '请选择并验证用于门店联系的手机号' : '门店联系电话需与已验证的手机号一致' }}</text><text class="verify__hint">也可选择其他本人号码，验证后回到这里继续填写。</text></view><button class="verify__go" :disabled="submitting" @click="goVerify">{{ needVerify ? '选择手机号' : '更换手机号' }}</button></view>
-        <k-field v-model="form.phone" row label="手机号" required type="number" :placeholder="phonePlaceholder" :maxlength="11" />
+        <view class="verify">
+          <view class="verify__text">
+            <text>门店联系电话</text>
+            <text class="verify__number">{{ verifiedPhone ? verifiedPhone + '　已验证' : '尚未验证' }}</text>
+            <text class="verify__hint">{{ verifiedPhone ? '提交申请时会使用这个号码。' : '用微信验证本人手机号后，可继续提交申请。' }}</text>
+          </view>
+          <!-- #ifdef MP-WEIXIN -->
+          <view v-if="phoneConsentVersions && !alreadyConsented" class="verify__legal">
+            <text>请阅读</text>
+            <text v-for="item in phoneDocs" :key="item.key" class="k-link" @click="openPhoneDoc(item.key)">《{{ item.title }}》{{ phoneReads[item.key] ? '✓' : '' }}</text>
+          </view>
+          <button v-if="phoneConsentFailed" class="verify__go" @click="loadPhoneConsent">重新加载协议</button>
+          <button v-else class="verify__go" :disabled="submitting || phoneBusy" :open-type="canAuthorizePhone ? 'getPhoneNumber' : ''" @click="explainPhoneConsent" @getphonenumber="verifyMerchantPhone">{{ phoneBusy ? '正在验证…' : alreadyConsented ? (verifiedPhone ? '更换手机号' : '微信验证手机号') : (verifiedPhone ? '同意协议并更换手机号' : '同意协议并验证手机号') }}</button>
+          <!-- #endif -->
+          <!-- #ifndef MP-WEIXIN -->
+          <text class="verify__hint">请在微信小程序内验证或更换手机号。</text>
+          <!-- #endif -->
+          <text v-if="phoneError" class="verify__error" role="alert">{{ phoneError }}</text>
+        </view>
         <view class="pick pick--row">
           <view class="pick__label"><text>城市</text><text class="req">*</text></view>
           <view class="pick__box" hover-class="k-press" @click="pickCity"><text :class="{ 'k-placeholder': !form.city }">{{ form.city || '店在哪个城市' }}</text><k-icon name="chevron-right" :size="16" color="muted" /></view>
@@ -58,7 +77,7 @@
         </view>
         <k-field v-model="form.storeName" row label="店铺名称" required placeholder="例如：喜洲·云边小院" :maxlength="64" />
         <k-field v-model="form.intro" label="简单介绍" hint="（选填）" type="textarea" counter placeholder="店在哪、有几间房 / 几个座位、店里的氛围，想找什么样的人" :maxlength="500" />
-        <k-button block class="submit" :disabled="submitting" :label="submitting ? '提交中…' : '提交审核'" @click="submit" />
+        <k-button block class="submit" :disabled="submitting || phoneBusy" :label="submitting ? '提交中…' : '提交审核'" @click="submit" />
         <text class="foot">提交即表示同意平台审核这些资料，并用你验证过的手机号联系你。审核通过前不会开通商家身份。</text>
       </view>
       <view v-else-if="!loaded" class="state"><text class="k-meta">{{ loadError || '正在读取…' }}</text><k-button v-if="loadError" type="ghost" size="sm" label="重新加载" @click="load" /></view>
@@ -78,7 +97,10 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app'
 import { toast } from '@/common/screen.js'
-import { apiMerchantApply, apiSubmitMerchantApply } from '@/common/api.js'
+import { apiLegal, apiMeAuthorizations, apiMerchantApply, apiSubmitMerchantApply } from '@/common/api.js'
+import { bindWechatPhone } from '@/common/phone-binding.js'
+import { loadLegalVersions } from '@/common/legal-state.js'
+import { post } from '@/common/request.js'
 import { ensureSession, experience, refreshAccount, setStaffStore, staffStores, switchMode } from '@/common/experience.js'
 import { alert, confirm, errText } from '@/common/ui.js'
 import { emptyMerchantForm, readMerchantDraft, saveMerchantDraft, removeMerchantDraft } from './merchant-draft.js'
@@ -100,6 +122,13 @@ const latest = ref(null)
 const storeTypes = ref(STORE_TYPES)
 const form = reactive(emptyMerchantForm())
 const draftNotice = ref(''), draftError = ref('')
+const phoneBusy = ref(false), phoneError = ref('')
+const phoneDocs = [{ key: 'terms', title: '用户协议' }, { key: 'privacy', title: '隐私政策' }]
+const phoneConsentVersions = ref(null), phoneReads = ref({}), alreadyConsented = ref(false), phoneConsentFailed = ref(false)
+let consentRequest = 0
+let applicationRequest = 0
+const verifiedPhone = computed(() => experience.account?.phoneVerified === true && /^1\d{2}\*{4}\d{4}$/.test(experience.account.phone) ? experience.account.phone : '')
+const canAuthorizePhone = computed(() => !!phoneConsentVersions.value && phoneDocs.every(({ key }) => phoneReads.value[key] === phoneConsentVersions.value[key + 'Version']))
 let draftOwner = null, draftReady = false, initialized = false, submitted = false, alive = true
 function restoreDraft() {
   draftReady = false; submitted = false
@@ -123,7 +152,7 @@ function saveDraft(manual = false) {
     const saved = saveMerchantDraft(draftOwner, form)
     draftError.value = ''
     draftNotice.value = saved ? '草稿已保存在本机，返回本页可继续。' : '还没有需要保存的内容。'
-    if (manual) toast(saved ? '草稿已保存' : '请先填写申请内容')
+    if (manual) toast(saved ? '申请草稿已保存到本机' : '请先填写申请内容')
     return true
   } catch {
     draftError.value = '草稿未能保存，请留在本页，清理本机存储后重试。'
@@ -143,6 +172,8 @@ async function discardDraft() {
 watch(form, () => saveDraft(), { deep: true, flush: 'sync' })
 watch(() => experience.account?.id, () => {
   if (!initialized || !alive) return
+  consentRequest++
+  phoneConsentVersions.value = null; phoneReads.value = {}; alreadyConsented.value = false; phoneError.value = ''; phoneConsentFailed.value = false
   restoreDraft(); latest.value = null; loaded.value = false; waiting.value = false
   if (draftOwner) load()
 }, { flush: 'sync' })
@@ -150,15 +181,66 @@ onHide(() => saveDraft())
 onUnload(() => { saveDraft(); alive = false; draftReady = false })
 const submitting = ref(false)
 const entering = ref(false)
-// 交上去没有自动开通（approved = false）：只看进度，不再给表
+// 审核中或已联系时只显示进度。
 const waiting = ref(false)
 const merchantGrant = computed(() => staffStores.value.find(g => g.roleCode === 'merchant') || null)
-// 自动开通只认账号验证过的手机号（别人的号不能拿来开店）。账号信息里没有这个字段（老接口）时不拦，服务端照样校验
-const needVerify = computed(() => experience.account?.phoneVerified === false)
-const phonePlaceholder = computed(() => (experience.account?.phoneVerified && experience.account?.phone ? '填你验证过的手机号（' + experience.account.phone + '）' : '11 位手机号，要先验证过'))
-const goVerify = () => {
-  if (draftReady && !saveDraft()) return
-  uni.navigateTo({ url: R.login + '?s=4&mode=bind-phone&returnTo=merchant' })
+async function loadPhoneConsent() {
+  const owner = experience.account?.id
+  const request = ++consentRequest
+  const current = () => alive && owner === experience.account?.id && request === consentRequest
+  phoneConsentVersions.value = null; phoneReads.value = {}; alreadyConsented.value = false
+  phoneConsentFailed.value = false; phoneError.value = ''
+  if (!owner) return
+  try {
+    const [versions, auth] = await Promise.all([loadLegalVersions(apiLegal), apiMeAuthorizations()])
+    if (!current()) return
+    const reads = {}
+    for (const { key } of phoneDocs) {
+      const version = versions[key + 'Version']
+      if (auth.data?.consents?.some(c => c.doc === key && c.version === version)) reads[key] = version
+    }
+    phoneReads.value = reads
+    alreadyConsented.value = phoneDocs.every(({ key }) => !!reads[key])
+    phoneConsentVersions.value = versions
+  } catch (e) {
+    if (current()) { phoneConsentFailed.value = true; phoneError.value = errText(e, '协议加载失败，请重试') }
+  }
+}
+function openPhoneDoc(key) {
+  const versions = phoneConsentVersions.value
+  const owner = experience.account?.id
+  if (!versions || !owner) return
+  uni.navigateTo({ url: R.legal + '?key=' + key, events: { read: doc => {
+    if (!alive || owner !== experience.account?.id || versions !== phoneConsentVersions.value || doc?.key !== key) return
+    if (doc.version === versions[key + 'Version']) {
+      phoneReads.value = { ...phoneReads.value, [key]: doc.version }
+    } else {
+      loadPhoneConsent()
+    }
+  } } })
+}
+function explainPhoneConsent() {
+  if (!canAuthorizePhone.value) toast(phoneConsentVersions.value ? '请打开两份协议，读完后返回验证' : '正在读取协议，请稍候')
+}
+async function verifyMerchantPhone(event) {
+  if (submitting.value || phoneBusy.value || !canAuthorizePhone.value) return
+  const owner = experience.account?.id
+  const versions = phoneConsentVersions.value
+  if (!owner || owner !== draftOwner) return
+  const current = () => alive && owner === experience.account?.id && owner === draftOwner
+  phoneBusy.value = true; phoneError.value = ''
+  try {
+    const account = await bindWechatPhone(event, { agreed: true, isCurrent: current, beforeVerify: async () => {
+      try { await post('/app/me/consent/legal', versions) }
+      catch (error) { if (current() && error?.code === 409) await loadPhoneConsent(); throw error }
+    } })
+    if (!current()) return
+    if (account.phoneVerified !== true || !verifiedPhone.value) throw new Error('尚未确认手机号已验证，请重试')
+    alreadyConsented.value = true
+    toast('手机号已验证，可以继续填写')
+  } catch (error) {
+    if (current()) phoneError.value = errText(error, '验证失败，请再试一次')
+  } finally { phoneBusy.value = false }
 }
 
 const statusMeta = computed(() => {
@@ -168,18 +250,28 @@ const statusMeta = computed(() => {
 
 async function load() {
   const owner = experience.account?.id
+  const request = ++applicationRequest
+  const current = () => alive && owner === experience.account?.id && request === applicationRequest
   loadError.value = ''
   try {
     const d = (await apiMerchantApply()).data || {}
-    if (!alive || owner !== experience.account?.id) return
+    if (!current()) return
     latest.value = d.latest || null
+    const wasWaiting = waiting.value
+    waiting.value = d.latest?.canResubmit != null
+      ? !d.latest.canResubmit
+      : (d.latest?.open ?? ['new', 'contacted'].includes(d.latest?.status))
+    if (wasWaiting && !waiting.value) submitted = false
     if (Array.isArray(d.storeTypes) && d.storeTypes.length) storeTypes.value = d.storeTypes
     // 后台刚把申请改成「已入驻」并开通了商家身份，本机的账号还是旧的：先读一次账号，进商家端的按钮才出来，不再露出申请表
     if (d.latest && d.latest.merchantActive && !merchantGrant.value) await refreshAccount().catch(() => {})
-    if (!alive || owner !== experience.account?.id) return
+    if (!current()) return
     loaded.value = true
+    // #ifdef MP-WEIXIN
+    if (!merchantGrant.value && !waiting.value && !phoneConsentVersions.value && !phoneConsentFailed.value) loadPhoneConsent()
+    // #endif
   } catch (e) {
-    if (alive && owner === experience.account?.id) loadError.value = errText(e, '读取失败，请重试')
+    if (current()) loadError.value = errText(e, '读取失败，请重试')
   }
 }
 onLoad(async () => {
@@ -189,8 +281,11 @@ onLoad(async () => {
   initialized = true
   load()
 })
-// 从验证手机号回来：读一次账号，提示就消失了
-onShow(() => { if (needVerify.value) refreshAccount().catch(() => {}) })
+onShow(() => {
+  if (!initialized || !experience.account?.id) return
+  refreshAccount().catch(() => {})
+  if (loaded.value && !submitting.value) load()
+})
 
 async function pickCity() {
   const owner = experience.account?.id
@@ -199,46 +294,51 @@ async function pickCity() {
 }
 // 前端先挡一遍常见漏填（服务端照样每一项都校验）
 function check() {
-  if (needVerify.value) return '请先验证手机号'
+  if (!verifiedPhone.value) return '请先验证手机号'
   if (!form.contactName.trim()) return '请填写联系人'
-  if (!/^1[3-9]\d{9}$/.test(String(form.phone).trim())) return '请填写 11 位手机号'
   if (!form.city) return '请选择城市'
   if (!form.storeType) return '请选择店铺类型'
   if (!form.storeName.trim()) return '请填写店铺名称'
   return ''
 }
 // 进商家端：先把新授权读回来，当前门店切到开通的这家，再换成员工身份（商家端是员工身份下的三页）
-async function enterMerchant(storeId) {
+async function enterMerchant(storeId = latest.value?.merchantActive ? latest.value.storeId : null) {
   if (entering.value) return
+  const owner = experience.account?.id
+  const current = () => alive && owner === experience.account?.id
   entering.value = true
   try {
     await refreshAccount()
+    if (!current()) return
     const list = staffStores.value.filter(g => g.roleCode === 'merchant')
-    const grant = list.find(g => String(g.storeId) === String(storeId)) || list[0]
-    if (!grant) return toast('商家身份还没生效，请稍后再试')
+    const grant = storeId == null ? list[0] : list.find(g => String(g.storeId) === String(storeId))
+    if (!grant) return toast('这家门店的商家身份还没生效，请稍后再试')
     setStaffStore(grant.storeId)
     uni.reLaunch({ url: switchMode('staff') })
   } catch (e) {
-    toast(errText(e, '进入商家端失败，请重试'))
+    if (current()) toast(errText(e, '进入商家端失败，请重试'))
   } finally {
     entering.value = false
   }
 }
 async function submit() {
-  if (submitting.value) return
+  if (waiting.value || submitting.value || phoneBusy.value) return
   const bad = check()
   if (bad) return toast(bad)
   submitting.value = true
   const owner = experience.account?.id
   try {
-    const res = await apiSubmitMerchantApply({ ...form })
+    const { contactName, city, storeType, storeName, intro } = form
+    const res = await apiSubmitMerchantApply({ contactName, city, storeType, storeName, intro, useVerifiedPhone: true, expectedPhoneMask: verifiedPhone.value })
     if (!alive || owner !== experience.account?.id) return
+    applicationRequest++
     submitted = true
     try { removeMerchantDraft(owner) } catch { draftError.value = '申请已提交，本机旧草稿清理失败。' }
     const d = res.data || {}
     latest.value = d.latest || null
     if (d.approved) {
       await alert('已开通', d.message || '已通过，可以开始发布招募了')
+      if (!alive || owner !== experience.account?.id) return
       await enterMerchant(d.storeId)
       return
     }
@@ -246,6 +346,13 @@ async function submit() {
     toast(d.message || '已提交')
     uni.pageScrollTo({ scrollTop: 0, duration: 200 })
   } catch (e) {
+    if (!alive || owner !== experience.account?.id) return
+    if (e?.code === 428 || e?.code === 409) {
+      await refreshAccount().catch(() => {})
+      if (!alive || owner !== experience.account?.id) return
+      if (e.code === 409) await load()
+      if (!alive || owner !== experience.account?.id) return
+    }
     toast(errText(e, '提交失败，请重试'))
   } finally {
     submitting.value = false
@@ -310,6 +417,9 @@ async function submit() {
 .draft-actions button{margin:0;padding:8px 14px;min-height:40px;font-size:13px;line-height:1.6;border:1px solid var(--k-line2);border-radius:10px;background:var(--k-paper);color:var(--k-red-deep)}
 .draft-actions button::after,.verify__go::after{border:0}
 .verify__hint{display:block;margin-top:4px;font-size:12px;color:var(--k-muted)}
+.verify__number{display:block;margin-top:4px;color:var(--k-ink);font-weight:600}
+.verify__legal,.verify__error{width:100%;font-size:12px;line-height:1.6}
+.verify__legal{display:flex;flex-wrap:wrap;gap:4px}.verify__error{color:var(--k-alert)}
 .verify { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #FBF1E4; }
 .verify__text { flex: 1; min-width: 0; font-size: 13px; line-height: 1.5; color: #74502F; }
 .verify__go { flex: 0 0 auto; margin:0; padding:10px; min-height:44px; line-height:1.6; border:1px solid var(--k-red-line); border-radius:10px; background:var(--k-paper); font-size: 14px; font-weight: 600; color: var(--k-red-deep); }

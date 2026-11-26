@@ -1,7 +1,7 @@
 import { API_BASE } from '@/common/config.js'
 import { getToken } from '@/common/request.js'
 import { uploadTo } from '@/common/upload.js'
-import { roomCode } from './api.js'
+import { partyCode as roomCode } from '@/common/party-code.js'
 
 // #ifdef MP-WEIXIN
 let nativeRecorder = null
@@ -25,8 +25,11 @@ function getNativeRecorder() {
 }
 // #endif
 
+export const requestId = () => 'voice_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,12)
+const voiceGame = game => game === 'party' || game === 'undercover' ? game : 'werewolf'
+
 export const sendVoice = (code, filePath, data, game = 'werewolf') =>
-	uploadTo(`/app/${game === 'undercover' ? 'undercover' : 'werewolf'}/rooms/${roomCode(code)}/voice`, filePath, data)
+	uploadTo(`/app/${voiceGame(game)}/rooms/${roomCode(code)}/voice`, filePath, data)
 
 export function createVoicePlayer() {
 	// #ifdef H5
@@ -54,7 +57,7 @@ export async function loadVoice(code, id, game = 'werewolf') {
 	const token = getToken()
 	const response = await new Promise((resolve, reject) =>
 		uni.request({
-			url: API_BASE + `/app/${game === 'undercover' ? 'undercover' : 'werewolf'}/rooms/${roomCode(code)}/voice/${encodeURIComponent(id)}`,
+			url: API_BASE + `/app/${voiceGame(game)}/rooms/${roomCode(code)}/voice/${encodeURIComponent(id)}`,
 			responseType: 'arraybuffer',
 			header: { 'X-App-Token': token },
 			success: resolve,
@@ -101,6 +104,7 @@ export function recorder(onComplete, onError, onStarted = () => {}) {
 	let timeout
 	let cancelled = false
 	let maxSeconds = 60
+	let attempt = 0
 	const stopTracks = () => {
 		stream?.getTracks?.().forEach((track) => track.stop())
 		stream = null
@@ -142,6 +146,7 @@ export function recorder(onComplete, onError, onStarted = () => {}) {
 	// #endif
 	async function start(options = {}) {
 		if (pressed || recording) return
+		const current = ++attempt
 		maxSeconds = Math.max(1, Math.min(60, Number(options.maxSeconds) || 60))
 		pressed = true
 		cancelled = false
@@ -149,7 +154,12 @@ export function recorder(onComplete, onError, onStarted = () => {}) {
 			// #ifdef H5
 			if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')
 				throw new Error('当前浏览器无法录音，请使用微信小程序或文字发言')
-			stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+			const acquired = await navigator.mediaDevices.getUserMedia({ audio: true })
+			if (current !== attempt) {
+				acquired.getTracks().forEach(track => track.stop())
+				return
+			}
+			stream = acquired
 			if (!pressed || cancelled) {
 				stopTracks()
 				if (!cancelled) onError(new Error('麦克风已就绪，请再次按住录音'))
@@ -180,10 +190,12 @@ export function recorder(onComplete, onError, onStarted = () => {}) {
 			// #ifdef MP-WEIXIN
 			if (uni.getSetting && uni.authorize) {
 				const settings = await new Promise((resolve, reject) => uni.getSetting({ success: resolve, fail: reject }))
+				if (current !== attempt) return
 				if (!pressed || cancelled) { if (!cancelled) onError(new Error('请按住至少1秒后再松开发送')); return }
 				if (settings.authSetting?.['scope.record'] === false) throw new Error('请在麦克风设置中允许录音权限')
 				if (!settings.authSetting?.['scope.record']) {
 					await new Promise((resolve, reject) => uni.authorize({ scope: 'scope.record', success: resolve, fail: () => reject(new Error('请允许麦克风权限后再次按住录音')) }))
+					if (current !== attempt) return
 				}
 				if (!pressed || cancelled) { if (!cancelled) onError(new Error('麦克风已就绪，请再次按住录音')); return }
 			}
@@ -201,6 +213,7 @@ export function recorder(onComplete, onError, onStarted = () => {}) {
 			startedAt = Date.now()
 			timeout = setTimeout(stop, maxSeconds * 1000)
 		} catch (error) {
+			if (current !== attempt) return
 			// #ifdef MP-WEIXIN
 			if (nativeOwner === nativeCallbacks) nativeOwner = null
 			// #endif
@@ -222,6 +235,7 @@ export function recorder(onComplete, onError, onStarted = () => {}) {
 		if (recording && recording.state !== 'inactive') recording.stop()
 	}
 	function cancel() {
+		attempt++
 		cancelled = true
 		stop()
 		stopTracks()

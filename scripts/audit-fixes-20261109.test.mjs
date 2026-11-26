@@ -92,15 +92,16 @@ test('F3 合作商家能进 Vlog 页', async () => {
   assert.deepEqual(await runGuard({ route: 'pages/staff/vlog', current: 9, grants: [{ storeId: 9, roleCode: 'merchant' }] }), [])
 })
 
-test('F4 报名截止已过先提示，不提交', () => {
+test('F4 新建活动和同步攒局活动均拒绝已过的报名截止时间', async () => {
+  const { checkSchedule } = await import('../pages/community/buddy-schedule.js')
+  const { checkActivitySchedule } = await import('../pages/community/activity-schedule.js')
+  const now = Date.parse('2026-11-25T12:00:00+08:00')
+  const form = { date: '2026-11-26', time: '12:00', endDate: '2026-11-26', endTime: '16:00', deadlineDate: '2026-11-25', deadlineTime: '12:00' }
+  assert.match(checkSchedule(form, now).error, /报名截止/)
+  assert.match(checkActivitySchedule(form, {}, now).error, /报名截止/)
   const mine = src('pages/community/activity-mine.vue')
-  const confirmFn = mine.slice(mine.indexOf('function toConfirm()'), mine.indexOf('\n}\n', mine.indexOf('function toConfirm()')))
-  assert.match(confirmFn, /if \(deadlineAt\.value\.getTime\(\) <= Date\.now\(\)\) return toast\(/)
-  assert.ok(confirmFn.indexOf('deadlineAt.value.getTime()') < confirmFn.indexOf('s.value = 3'), '先查截止再进确认页')
-  const pub = src('pages/community/publish.vue')
-  const buddy = pub.slice(pub.indexOf('function publishBuddy()'), pub.indexOf('\n}\n', pub.indexOf('function publishBuddy()')))
-  assert.match(buddy, /if \(deadlineAt\.value\.getTime\(\) <= Date\.now\(\)\) return toast\(/)
-  assert.ok(buddy.indexOf('deadlineAt.value.getTime()') < buddy.indexOf('submit({'), '先查截止再提交')
+  assert.match(mine, /const scheduleResult = checkedSchedule\(\)\s+if \(scheduleResult\.error\) return toast\(scheduleResult\.error\)\s+s\.value = 3/)
+  assert.match(src('pages/community/publish.vue'), /const schedule = checkSchedule\(act\.value\)\s+if \(schedule\.error\) return toast\(schedule\.error\)\s+submit\(/)
 })
 
 test('F5 私信拉黑菜单看 iBlocked（服务端没给时退回 blocked）', () => {

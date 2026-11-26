@@ -10,18 +10,18 @@
     <!-- 1 房源列表 -->
     <view v-if="s === 1" class="k-body list-body">
       <view class="filters">
-        <view class="dd" @click="sourceTip"><text>{{ opLabel }}</text><k-icon name="chevron-down" :size="14" color="ink" :stroke="1.8" /></view>
-        <view class="dd" @click="pickStatus"><text>{{ statusText }}</text><k-icon name="chevron-down" :size="14" color="ink" :stroke="1.8" /></view>
+        <view class="dd" @click="sourceTip"><text>{{ opLabel }}</text><k-icon name="chevron-down" :size="12" color="muted" :stroke="1.8" /></view>
+        <view class="dd" @click="pickStatus"><text>{{ statusText }}</text><k-icon name="chevron-down" :size="12" color="muted" :stroke="1.8" /></view>
         <view class="k-flex1" />
         <view class="filters__icon" @click="askKeyword"><k-icon name="search" :size="18" color="ink" :stroke="1.8" /></view>
         <view class="filters__filter" @click="moreFilter"><k-icon name="filter" :size="16" color="ink" :stroke="1.8" /><text>筛选</text></view>
       </view>
       <view class="stats">
-        <view class="stats__item"><text class="stats__num k-red">{{ (data.stats || {}).stays || 0 }}</text><text class="stats__label">房源总数</text></view>
+        <view class="stats__item"><text class="stats__num">{{ (data.stats || {}).stays || 0 }}</text><text class="stats__label">房源总数</text></view>
         <view class="stats__line" />
-        <view class="stats__item"><text class="stats__num k-green">{{ ((data.stats || {}).occupancy || 0) + '%' }}</text><text class="stats__label">平均入住率</text></view>
+        <view class="stats__item"><text class="stats__num">{{ ((data.stats || {}).occupancy || 0) + '%' }}</text><text class="stats__label">平均入住率</text></view>
         <view class="stats__line" />
-        <view class="stats__item"><text class="stats__num k-indigo">{{ (data.stats || {}).todayOrders || 0 }}</text><text class="stats__label">今日订单</text></view>
+        <view class="stats__item"><text class="stats__num">{{ (data.stats || {}).todayOrders || 0 }}</text><text class="stats__label">今日订单</text></view>
       </view>
       <view class="tabs">
         <view v-for="t in tabs" :key="t" class="tabs__item" :class="{ active: tab === t }" @click="setTab(t)"><text>{{ t }}</text></view>
@@ -39,9 +39,9 @@
             </view>
             <text class="room__addr">{{ r.addr }}</text>
             <view v-if="r.rate" class="room__kpi">
-              <text class="room__kpi-label">入住率</text><text class="room__kpi-val k-green">{{ r.rate }}</text>
+              <text class="room__kpi-label">入住率</text><text class="room__kpi-val">{{ r.rate }}</text>
               <view class="room__kpi-line" />
-              <text class="room__kpi-label">今日订单</text><text class="room__kpi-val k-green">{{ r.orders }}</text>
+              <text class="room__kpi-label">今日订单</text><text class="room__kpi-val">{{ r.orders }}</text>
             </view>
             <text v-else class="room__addr room__note">{{ r.note }}</text>
           </view>
@@ -251,10 +251,10 @@
       <text class="trip-hint">顶部背景图、标题、介绍和每条照片 / 视频都在这里维护，仅展示在当前小院。</text>
       <image v-if="media.diary.bg || media.cover" class="diary-bg-preview" :src="mediaThumb(media.diary.bg || media.cover)" mode="aspectFill" @click="changeDiaryBg" />
       <view class="picks k-mt10">
-        <view class="pick" hover-class="k-press" @click="changeDiaryBg"><text class="pick__k">背景图</text><text class="pick__val k-flex1" :class="{ 'pick__val--empty': !media.diary.bg }">{{ media.diary.bg ? '已上传，点击更换' : '未上传，默认用房源封面' }}</text><k-icon name="chevron-right" :size="16" color="muted" :stroke="1.8" /></view>
-        <view class="pick" hover-class="k-press" @click="editDiaryTitle"><text class="pick__k">标题</text><text class="pick__val k-flex1" :class="{ 'pick__val--empty': !media.diary.title }">{{ media.diary.title || (media.diary.defaultTitle || '小院日记') + '（默认）' }}</text><k-icon name="chevron-right" :size="16" color="muted" :stroke="1.8" /></view>
-        <view class="pick" hover-class="k-press" @click="editDiarySubtitle"><text class="pick__k">副标题</text><text class="pick__val k-flex1" :class="{ 'pick__val--empty': !media.diary.subtitle }">{{ media.diary.subtitle || media.diary.defaultSubtitle || '把日子过成一段可以翻看的记忆（默认）' }}</text><k-icon name="chevron-right" :size="16" color="muted" :stroke="1.8" /></view>
-        <view class="pick" hover-class="k-press" @click="editDiaryIntro"><text class="pick__k">文案</text><text class="pick__val k-flex1" :class="{ 'pick__val--empty': !media.diary.intro }">{{ diaryIntroText || '未填写，默认一句「这里是小院的真实日常」' }}</text><k-icon name="chevron-right" :size="16" color="muted" :stroke="1.8" /></view>
+        <view class="pick" hover-class="k-press" @click="changeDiaryBg"><text class="pick__k">背景图</text><text class="pick__val k-flex1" :class="{ 'pick__val--empty': !media.diary.bg }">{{ media.diary.bg ? '已上传，点击更换' : '未上传，默认用房源封面' }}</text><k-icon name="chevron-right" :size="12" color="muted" :stroke="1.8" /></view>
+        <view class="pick" hover-class="k-press" @click="editDiaryTitle"><text class="pick__k">标题</text><text class="pick__val k-flex1" :class="{ 'pick__val--empty': !media.diary.title }">{{ media.diary.title || (media.diary.defaultTitle || '小院日记') + '（默认）' }}</text><k-icon name="chevron-right" :size="12" color="muted" :stroke="1.8" /></view>
+        <view class="pick" hover-class="k-press" @click="editDiarySubtitle"><text class="pick__k">副标题</text><text class="pick__val k-flex1" :class="{ 'pick__val--empty': !media.diary.subtitle }">{{ media.diary.subtitle || media.diary.defaultSubtitle || '把日子过成一段可以翻看的记忆（默认）' }}</text><k-icon name="chevron-right" :size="12" color="muted" :stroke="1.8" /></view>
+        <view class="pick" hover-class="k-press" @click="editDiaryIntro"><text class="pick__k">文案</text><text class="pick__val k-flex1" :class="{ 'pick__val--empty': !media.diary.intro }">{{ diaryIntroText || '未填写，默认一句「这里是小院的真实日常」' }}</text><k-icon name="chevron-right" :size="12" color="muted" :stroke="1.8" /></view>
       </view>
       <!-- 2026-11-03 主人：简化生活碎片。原来点「添加」要连着弹 3 个框（照片还是视频 / 写一句话 / 日期），点一条又弹 6 项菜单。
            现在：「添加照片」「添加视频」两个大钮，选完文件直接在列表顶部出一张卡，一句话和拍摄日期（默认今天）就在卡上填、点「保存」；
@@ -355,7 +355,7 @@ import {
   apiStaffStays, apiStaffStay, apiStaffCreateStay, apiStaffEditStay, apiStaffSubmitStay, apiStaffOfflineStay, apiStaffStayGroup,
   apiStaffCreateVlog, apiStaffQualExpire
 } from '@/common/api.js'
-import { experience, ensureSession, hasStaffAccess, currentStaffStoreId, merchantStaff } from '@/common/experience.js'
+import { experience, ensureSession, hasStaffAccess, currentStaffStoreId, selectStaffStore, merchantStaff } from '@/common/experience.js'
 import { errText, confirm, prompt, sheet, pickPaged, copy, isYmd, todayCn, shiftDate } from '@/common/ui.js'
 import { uploadTo, chooseImage, chooseDoc, absUrl, openFile } from '@/common/upload.js'
 import R from '@/common/routes.js'
@@ -377,7 +377,19 @@ let landing = 1
 // 「下一步」从基本信息进资质屏时，返回回基本信息（之前直接回列表）
 let backTo = 1
 const s = useScreen(5, {
-  onLoad: (q) => {
+  onLoad: async (q) => {
+    if (q?.action === 'groupQr' && Number(q.stayId) && Number(q.storeId)) {
+      try {
+        await ensureSession()
+        if (String(q.storeId) !== String(currentStaffStoreId())) await selectStaffStore(q.storeId)
+        await loadList()
+        if (await sheet(['更新住客群码']) === 0) {
+          await updateGroupQr(Number(q.stayId))
+          await loadList()
+        }
+      } catch (e) { toast(errText(e, '门店或房源已变更')) }
+      return
+    }
     const id = Number(q?.stayId) || 0
     loadList()
     // ?s=5&stayId= 直接打开「视频与生活碎片」（2026-10-17 R3），其余带 stayId 的照旧打开资质与审核屏
@@ -501,6 +513,16 @@ async function confirmOffline() {
   }
 }
 
+async function updateGroupQr(stayId) {
+  const path = await chooseImage()
+  if (!path) return
+  const up = await uploadTo('/app/upload/image', path)
+  // 微信群码 7 天有效
+  const exp = await pickDate({ title: '群码有效期至', value: shiftDate(todayCn(), 7), min: todayCn(), max: shiftDate(todayCn(), 7) })
+  await apiStaffStayGroup(stayId, { qr: up.data.url, expire: exp || '', name: '' })
+  toast('住客群码已更新')
+}
+
 async function moreActions(r) {
   // 2026-10-31：同事找不到换视频的入口，「视频与生活碎片」固定放第一项。下面按名字分派，不按序号，调顺序不影响
   // 2026-11-03 主人：简化「更多」——「提交审核 / 下架」做成卡片上的主按钮，「编辑商圈与位置」「更换封面」并进「编辑房源」表单，
@@ -515,13 +537,7 @@ async function moreActions(r) {
     } else if (a === '视频与生活碎片') {
       return openMedia(r.stayId)
     } else if (a === '住客群码') {
-      const path = await chooseImage()
-      if (!path) return
-      const up = await uploadTo('/app/upload/image', path)
-      // 微信群码 7 天有效
-      const exp = await pickDate({ title: '群码有效期至', value: shiftDate(todayCn(), 7), min: todayCn(), max: shiftDate(todayCn(), 7) })
-      await apiStaffStayGroup(r.stayId, { qr: up.data.url, expire: exp || '', name: '' })
-      toast('住客群码已更新')
+      await updateGroupQr(r.stayId)
     } else {
       return openStay(r.stayId, 4)
     }
@@ -1162,60 +1178,72 @@ const onBack = () => {
 /* 新增 / 编辑房源、资质、Vlog（s=2、3、4）的样式在 ./form-clean.scss，和招募、创建活动、线上任务发布共用 */
 @import './form-clean.scss';
 .submission-link { color: var(--k-red-deep); font-size: 15px; flex-shrink: 0; padding: 12px 0; }
-.submission-cover { width: 64px; height: 48px; border-radius: 6px; flex-shrink: 0; }
+.submission-cover { width: 64px; height: 48px; border-radius: 8px; flex-shrink: 0; }
 .submission-missing { display: block; }
 /* 配套设施点选（2026-11-03 主人：「增加一个对勾…能清楚的看到我选了那个」）：三列等宽，每格 48px 高；
    没选 = 浅底深字 + 空心圆圈；选中 = 暖棕底白字 + 白圆里一个棕色对勾（不只靠颜色区分，有没有对勾一眼看得出） */
 .fac-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.fac-chip { min-height: 48px; padding: 0 8px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper2); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 15px; color: var(--k-ink); box-sizing: border-box; }
+.fac-chip { min-height: 48px; padding: 0 8px; border-radius: 12px; background: var(--k-paper2); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 15px; color: var(--k-ink); box-sizing: border-box; }
 .fac-chip__mark { flex-shrink: 0; width: 20px; height: 20px; border: 1.5px solid var(--k-muted); border-radius: 50%; background: var(--k-paper); box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
-.fac-chip--on { border-color: var(--k-red-deep); background: var(--k-red-deep); color: var(--k-paper); font-weight: 600; }
+.fac-chip--on { background: var(--k-red-deep); color: var(--k-paper); font-weight: 600; }
 .fac-chip--on .fac-chip__mark { border-color: var(--k-paper); }
 .submission-cover + .submission-link { margin-left: 4px; }
-.list-body { padding-top: 8px; padding-bottom: calc(132px + var(--k-safe-bottom)); }
-.filters { display: flex; align-items: center; gap: 12px; }
-.dd { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper); font-size: 14px; }
-.filters__icon { width: 30px; height: 34px; display: flex; align-items: center; justify-content: center; }
-.filters__filter { display: flex; align-items: center; gap: 4px; font-size: 14px; }
-.stats { margin-top: 12px; display: flex; align-items: center; height: 66px; padding: 0 8px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); }
+/* 「房源封面必填」：嵌在标题里的「必填」和标题隔开一点，和别的行「营业执照 必填」一样（网页版嵌套 text 外面多一层 span，所以不用「>」） */
+.fc-row__k .fc-req { margin-left: 6px; }
+/* 2026-11-17 改版「小而精」（房源列表）：浅灰底、页边距 12；筛选是 28 高的白色胶囊，三个数字是一张白卡，页签选中用主色；
+   每个房源一张白卡（12 圆角、不描边），照片 84、名字 15 / 600，下面五个操作还是整行等分、56 高、字 14（2026-11-03 定的，没动），只是不再画框和竖线 */
+.rooms :deep(.k-button) { border-radius: 999px; }
+.list-body { padding: 8px 12px calc(132px + var(--k-safe-bottom)); }
+.filters { display: flex; align-items: center; gap: 8px; }
+.dd { display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--k-paper); font-size: 12px; color: var(--k-ink2); }
+.filters__icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+.filters__filter { display: flex; align-items: center; gap: 4px; min-height: 32px; font-size: 13px; color: var(--k-ink2); }
+.stats { margin-top: 8px; display: flex; align-items: center; height: 60px; padding: 0 8px; border-radius: 12px; background: var(--k-paper); }
 .stats__item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.stats__num { font-size: 22px; font-weight: 700; line-height: 1.2; font-family: var(--k-sans); }
-.stats__label { font-size: 12px; color: var(--k-muted); }
-.stats__line { width: 1px; height: 30px; background: var(--k-line); }
-.tabs { margin-top: 12px; display: flex; border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-paper); overflow: hidden; }
-.tabs__item { position: relative; flex: 1; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--k-muted); }
-.tabs__item.active { color: var(--k-green); font-weight: 600; }
-.tabs__item.active::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 2px; background: var(--k-green); }
-.room { padding: 14px 0; border-bottom: 1px solid var(--k-line); }
-.room.is-last { border-bottom: 0; }
-.room__main { display: flex; gap: 12px; }
-.room__img { width: 95px; height: 95px; border-radius: 8px; flex: 0 0 auto; }
-.room__name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--k-serif); font-weight: 700; font-size: 17px; line-height: 1.3; }
+/* 11-18 精修词典「数据格」：数字 18 / 700 / 墨色、等宽，不再分棕 / 绿 / 靛蓝三种颜色 */
+.stats__num { font-size: 18px; font-weight: 700; line-height: 1.2; font-family: var(--k-sans); color: var(--k-ink); font-variant-numeric: tabular-nums; }
+.stats__label { font-size: 11px; color: var(--k-muted); }
+.stats__line { width: 1px; height: 24px; background: var(--k-line); }
+/* 词典「页签」：14 号，未选灰、选中墨色 600，下面 16×3 的暖棕短条，行高 40 */
+.tabs { margin-top: 8px; display: flex; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.tabs__item { position: relative; flex: 1; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--k-muted); }
+.tabs__item.active { color: var(--k-ink); font-weight: 600; }
+.tabs__item.active::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 16px; height: 3px; margin-left: -8px; border-radius: 2px; background: var(--k-red); }
+.room { margin-top: 8px; padding: 12px 12px 0; border-radius: 12px; background: var(--k-paper); }
+.room__main { display: flex; gap: 10px; padding-bottom: 12px; }
+.room__img { width: 84px; height: 84px; border-radius: 8px; flex: 0 0 auto; background: var(--k-paper2); }
+.room__name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--k-sans); font-weight: 600; font-size: 15px; line-height: 22px; }
 .room__chip { flex-shrink: 0; margin-left: 8px; }
-.room__addr { display: block; margin-top: 5px; font-size: 13px; color: var(--k-muted); }
+.room__addr { display: block; margin-top: 3px; font-size: 12px; line-height: 17px; color: var(--k-muted); }
 .room__note { margin-top: 6px; }
-.room__kpi { display: flex; align-items: center; margin-top: 7px; font-size: 13px; }
+.room__kpi { display: flex; align-items: center; margin-top: 8px; font-size: 12px; }
 .room__kpi-label { color: var(--k-muted); margin-right: 6px; }
-.room__kpi-val { font-weight: 600; }
+.room__kpi-val { font-weight: 600; color: var(--k-ink); font-variant-numeric: tabular-nums; }
 .room__kpi-line { width: 1px; height: 14px; background: var(--k-line2); margin: 0 12px 0 22px; }
 /* 2026-11-03：五个操作整行等分，每个 56px 高、字 14px（年纪大的同事点得准、看得清） */
-.room__actions { display: flex; margin-top: 12px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.room__actions { position: relative; display: flex; margin: 0 -6px; }
+/* 操作区上面一条发丝线，左右和卡片内容对齐 */
+.room__actions::before { content: ''; position: absolute; left: 6px; right: 6px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
 .room__act { flex: 1; min-width: 0; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 14px; color: var(--k-ink); }
-.room__act + .room__act { border-left: 1px solid var(--k-line); }
 /* 2026-11-03：第四个按钮是主操作（提交审核 / 下架 / 审核中），棕字加粗，字可以缩到 13px 保证「提交审核」四个字一行放得下 */
 .room__act--main { color: var(--k-red-deep); font-weight: 600; font-size: 13px; }
+/* 窄屏（宽 360 以内）：五个四字的按钮不画竖线后会连成一片，字收到 13、往两边多放一点，留出空当 */
+@media (max-width: 360px) { .room__actions { margin: 0 -10px; } .room__act { font-size: 13px; } }
 /* 下架原因就在卡片下面填：一行说明、一个输入框、两个 48px 的钮 */
-.room__offline { margin-top: 10px; padding: 12px; border: 1px solid var(--k-red-line); border-radius: 12px; background: var(--k-red-soft); }
+.room__offline { margin: 4px 0 12px; padding: 12px; border-radius: 12px; background: var(--k-red-soft); }
 .room__offline-t { display: block; margin-bottom: 8px; font-size: 14px; line-height: 20px; color: var(--k-ink2); }
 .room__offline-btns { display: flex; gap: 10px; margin-top: 10px; }
 .room__obtn { flex: 1; min-width: 0; height: 48px; border-radius: 12px; background: var(--k-red-deep); color: var(--k-paper); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; }
 .room__obtn--ghost { background: var(--k-paper); color: var(--k-ink); border: 1px solid var(--k-line2); box-sizing: border-box; }
-.fab-bar { position: fixed; left: 0; right: 0; bottom: calc(56px + var(--k-safe-bottom)); z-index: 49; padding: 8px 16px 8px; background: var(--k-bg); }
+/* 底栏 2026-11-17 起是 50 高：「新增房源」这一条贴着它，中间不留缝；下边多留 10，让开底栏中间凸起来的「发布」圆钮（凸出 16） */
+/* 词典「底部操作条」：白底 + 顶上一条发丝线，卡片滑到下面时边界清楚 */
+.fab-bar { position: fixed; left: 0; right: 0; bottom: calc(50px + var(--k-safe-bottom)); z-index: 49; padding: 8px 12px 18px; background: var(--k-paper); }
+.fab-bar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
 
-.sec-title { display: block; font-family: var(--k-serif); font-weight: 700; font-size: 18px; margin-bottom: 8px; }
+.sec-title { display: block; font-family: var(--k-sans); font-weight: 700; font-size: 16px; line-height: 22px; margin-bottom: 8px; }
 
 /* 资质（s=3）：文件名长就省略，只占一行；审核进度字不小于 13px；进度只用一种强调色 */
-.notice { padding: 12px 14px; border: 1px solid #E3CFA6; border-radius: 10px; background: var(--k-ochre-soft); color: #7A5A26; font-size: 13px; line-height: 1.6; }
+.notice { margin-bottom: 12px; padding: 10px 12px; border-radius: 12px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 13px; line-height: 1.6; }
 .doc-name { max-width: 68%; }
 .doc-file { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .fc-row__v.doc-expired { color: var(--k-alert); }
@@ -1224,11 +1252,11 @@ const onBack = () => {
 .timeline { display: flex; padding: 4px 8px 16px; }
 .timeline__item { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
 .timeline__track { position: relative; width: 100%; height: 22px; display: flex; align-items: center; justify-content: center; }
-.timeline__line { position: absolute; top: 50%; height: 1.5px; background: var(--k-line2); }
+.timeline__line { position: absolute; top: 50%; height: 1px; background: var(--k-line2); }
 .timeline__line.done { background: var(--k-red-deep); }
 .timeline__line--l { left: 0; right: 50%; margin-right: 10px; }
 .timeline__line--r { left: 50%; right: 0; margin-left: 10px; }
-.timeline__dot { position: relative; z-index: 1; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--k-line2); background: var(--k-paper); display: flex; align-items: center; justify-content: center; }
+.timeline__dot { position: relative; z-index: 1; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--k-line2); background: var(--k-paper); display: flex; align-items: center; justify-content: center; }
 .timeline__dot.done { border-color: var(--k-red-deep); background: var(--k-red-deep); }
 .timeline__title { font-size: 14px; line-height: 20px; }
 .timeline__time { font-size: 13px; line-height: 18px; color: var(--k-muted); }
@@ -1236,24 +1264,27 @@ const onBack = () => {
 /* Vlog（s=4）：封面是竖版 */
 .fc-cover.vlog-cover { width: 75px; height: 100px; }
 /* 2026-10-17 R2 的点选行：现在只有视频与生活碎片（s=5）还在用 */
-.picks { display: flex; flex-direction: column; gap: 8px; }
-.pick { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper); box-sizing: border-box; }
-.pick__k { flex: 0 0 auto; font-size: 14px; font-weight: 600; color: var(--k-ink2); }
+/* 11-18：四行收进一张白卡（词典「列表行」），行间发丝线左缩进 12；字号 14 / 15 不缩（这屏有输入框，按填写页处理） */
+.picks { display: flex; flex-direction: column; gap: 0; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.pick { position: relative; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 0; background: transparent; box-sizing: border-box; }
+.pick + .pick::before { content: ''; position: absolute; left: 12px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.pick__k { flex: 0 0 auto; font-size: 14px; font-weight: 500; color: var(--k-ink); }
 .pick__val { min-width: 0; font-size: 15px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.pick__val--empty { color: var(--k-light); }
+.pick__val--empty { color: var(--k-muted); }
 /* 2026-10-17 R3：视频与生活碎片（s=5） */
-.diary-bg-preview { display: block; width: 100%; height: 140px; margin-top: 12px; border-radius: 16px; }
-.media-body { padding-top: 8px; padding-bottom: calc(96px + var(--k-safe-bottom)); }
-.mcard { padding: 10px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); }
-.mcard__cover { position: relative; width: 100%; height: 0; padding-bottom: 56.25%; border-radius: 10px; overflow: hidden; background: var(--k-paper2); }
+/* 2026-11-17 改版「小而精」（视频与生活碎片）：卡片、行都是白底 12 圆角、不描边，照片 8 圆角，按钮收成胶囊；点击高度（44 / 52）没动 */
+.diary-bg-preview { display: block; width: 100%; height: 140px; margin-top: 10px; border-radius: 12px; }
+.media-body { padding: 8px 12px calc(96px + var(--k-safe-bottom)); }
+.mcard { padding: 10px; border-radius: 12px; background: var(--k-paper); }
+.mcard__cover { position: relative; width: 100%; height: 0; padding-bottom: 56.25%; border-radius: 8px; overflow: hidden; background: #F7F5F2; }
 .mcard__img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.mcard__play { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: rgba(36,27,23,.45); border: 1.5px solid rgba(255,255,255,.85); box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+.mcard__play { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: rgba(36,27,23,.45); border: 1px solid rgba(255,255,255,.85); box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
 .mcard__play--sm { width: 26px; height: 26px; margin: -13px 0 0 -13px; }
 .mcard__empty { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--k-muted); font-size: 13px; }
 .mcard__acts { margin-top: 10px; display: flex; gap: 8px; }
-.mact { flex: 0 0 auto; height: 32px; padding: 0 14px; border: 1px solid var(--k-red-line); border-radius: 999px; color: var(--k-red-deep); font-size: 13px; display: flex; align-items: center; }
+.mact { flex: 0 0 auto; height: 32px; padding: 0 14px; border: 1px solid var(--k-red-line); border-radius: 999px; background: var(--k-paper); color: var(--k-red-deep); font-size: 13px; display: flex; align-items: center; }
 .mact--del { border-color: var(--k-line2); color: var(--k-muted); }
-.mrow { margin-top: 8px; padding: 8px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); display: flex; align-items: center; gap: 10px; }
+.mrow { margin-top: 8px; padding: 8px; border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; gap: 10px; }
 .mrow__thumb { position: relative; width: 72px; height: 54px; border-radius: 8px; overflow: hidden; flex: 0 0 auto; background: var(--k-paper2); }
 .mrow__copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .mrow__name { font-size: 15px; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -1263,21 +1294,22 @@ const onBack = () => {
 :global(.d-ph) { color: var(--k-muted); font-size: 15px; }
 .dadd { margin-top: 10px; display: flex; gap: 8px; }
 .dadd__btn { flex: 1; min-width: 0; min-height: 52px; padding: 0 8px; border: 1px dashed var(--k-red-line); border-radius: 12px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--k-red-deep); box-sizing: border-box; text-align: center; }
-.dcard { margin-top: 10px; padding: 10px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); }
-.dcard--new { border: 1.5px dashed var(--k-red-deep); background: var(--k-red-soft); }
+.dcard { margin-top: 8px; padding: 10px; border: 1px solid transparent; border-radius: 12px; background: var(--k-paper); }
+.dcard--new { border: 1px dashed var(--k-red-line); background: var(--k-red-soft); }
 .dcard__top { display: flex; gap: 10px; }
-.dcard__thumb { position: relative; flex: 0 0 auto; width: 88px; height: 88px; border-radius: 10px; overflow: hidden; background: var(--k-paper2); }
+.dcard__thumb { position: relative; flex: 0 0 auto; width: 88px; height: 88px; border-radius: 8px; overflow: hidden; background: var(--k-paper2); }
 .dcard__ph { background: #3A322B; }
 .dcard__fields { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .dcard__tag { font-size: 12px; font-weight: 600; color: var(--k-red-deep); }
-.dcard__hidden { align-self: flex-start; height: 18px; padding: 0 6px; border-radius: 9px; background: var(--k-alert); color: #fff; font-size: 10px; line-height: 18px; }
-.dcard__input { box-sizing: border-box; width: 100%; height: 44px; padding: 0 10px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); font-size: 15px; color: var(--k-ink); }
+.dcard__hidden { align-self: flex-start; height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-alert-soft); color: var(--k-alert); font-size: 10px; font-weight: 500; line-height: 17px; }
+.dcard__input { box-sizing: border-box; width: 100%; height: 44px; padding: 0 10px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); font-size: 15px; color: var(--k-ink); }
 .dcard__date { display: flex; align-items: center; gap: 4px; min-height: 44px; font-size: 14px; color: var(--k-ink2); } /* 2026-11-03 复查：能点的行不矮于 44px */
 .dcard__btns { display: flex; gap: 6px; margin-top: 10px; }
-.dbtn { flex: 1; min-width: 0; min-height: 44px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 14px; color: var(--k-ink); box-sizing: border-box; }
+.dbtn { flex: 1; min-width: 0; min-height: 44px; border: 1px solid var(--k-line2); border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 14px; color: var(--k-ink); box-sizing: border-box; }
 .dbtn--off { opacity: .4; }
 .dbtn--del { color: var(--k-muted); }
 .dbtn--ghost { color: var(--k-muted); }
 .dbtn--main { border-color: var(--k-red-deep); background: var(--k-red-deep); color: var(--k-paper); font-weight: 600; }
-.trip-hint { display: block; font-size: 12px; color: var(--k-muted); }
+.trip-hint { display: block; font-size: 12px; line-height: 1.6; color: var(--k-muted); }
+.mcard .trip-hint { margin-top: 8px; }
 </style>

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { parse, compileScript, compileTemplate } from '@vue/compiler-sfc'
 import { stayPayEntry } from '../pages/stays/stays-pay-entry.js'
 
@@ -39,7 +39,10 @@ function loadFlow(overrides = {}, platform = 'MP-WEIXIN') {
 function loadPage(overrides = {}) {
   const calls = { show: [], unmount: [], toasts: [], pay: 0, create: 0, query: 0, detail: 0, back: 0 }
   const deps = {
-    ref, computed, stayPayEntry, todayCn: () => '2026-11-06', stayState: {}, saveStayState: () => {},
+    ref, computed, nextTick, watchStayGate: watch, stayPayEntry,
+    stayBookingEnabled: ref(true), groupChatEnabled: ref(true),
+    refreshFeatures: async () => ({ stayBookingEnabled: true }),
+    todayCn: () => '2026-11-06', stayState: {}, saveStayState: () => {},
     onShow: fn => calls.show.push(fn), onUnmounted: fn => calls.unmount.push(fn),
     useScreen: (_count, extra) => { calls.load = extra.onLoad; return ref(1) },
     absUrl: value => value, go: () => {}, back: () => { calls.back++ }, toast: message => calls.toasts.push(message),
@@ -63,10 +66,14 @@ function loadPage(overrides = {}) {
     setInterval: () => 1, clearInterval: () => {}, ...overrides
   }
   const source = descriptor.scriptSetup.content.replace(/^import .*\r?\n/gm, '')
-  const exposed = 's,q,order,activeOrderNo,orderLoading,orderError,payMode,agreed,noticeOpen,now,paying,refreshing,toPay,loadOrder,refreshOrderStatus,pay,syncStatus,init,clock,expired,timeElapsed,payBtnText,closedText,paymentDeadlineText,resultTitle,resultSub,bookingActive,nextActions,onBack'
-  const page = new Function(...Object.keys(deps), `${source}; return { ${exposed}, params }`)(...Object.values(deps))
+  const exposed = 's,q,order,activeOrderNo,orderLoading,orderError,payMode,paymentBlocked,quoteReady,chooseMember,requote,agreed,noticeRead,onNoticeRead,onAgreeTap,now,paying,refreshing,toPay,loadOrder,refreshOrderStatus,pay,syncStatus,init,clock,expired,timeElapsed,payBtnText,closedText,paymentDeadlineText,resultTitle,resultSub,bookingActive,nextActions,onBack'
+  const page = new Function(...Object.keys(deps), `${source}; return { ${exposed}, params, form, cancelOrder, recoveredOrder }`)(...Object.values(deps))
   Object.assign(page.params, { stayId:1, roomTypeId:1, checkIn:'2026-11-07', checkOut:'2026-11-14', guests:1 })
-  return { ...page, calls }
+  async function acceptNotice() {
+    page.onNoticeRead(true)
+    await page.onAgreeTap()
+  }
+  return { ...page, calls, acceptNotice }
 }
 
 test('payment SFC compiles with recovery and refund states', () => {
@@ -167,7 +174,7 @@ test('created order survives detail failure and retry never creates a second ord
   let online = false
   const page = loadPage({ apiStayOrder: async () => { if (!online) throw new Error('offline'); return { data: pendingOrder() } } })
   await page.init()
-  page.agreed.value = true
+  await page.acceptNotice()
   await page.toPay()
   assert.equal(page.activeOrderNo.value, 'STAY-1')
   assert.equal(page.order.value, null)
@@ -180,6 +187,56 @@ test('created order survives detail failure and retry never creates a second ord
   assert.equal(page.calls.create, 1)
   assert.equal(page.order.value.orderNo, 'STAY-1')
   assert.equal(page.orderError.value, '')
+})
+
+test('retry after a lost booking response recovers the original guest and amount', async () => {
+  const requests = [], saved = []
+  const page = loadPage({
+    apiStayCreateOrder: async body => {
+      requests.push(body)
+      if (requests.length === 1) throw Error('回包丢失')
+      return { data: {orderNo: 'STAY-1', recoveredOrder: true} }
+    },
+    apiStayOrder: async () => ({data: {...pendingOrder(), guestName: '原入住人'}}),
+    uni: {getStorageSync: () => ({}), setStorageSync: (_key, value) => saved.push(value)}
+  })
+  await page.init()
+  await page.acceptNotice()
+  page.form.value.guestName = '原入住人'
+  await page.toPay()
+  page.form.value.guestName = '后填的人'
+  await page.toPay()
+  assert.equal(requests[1].idemKey, requests[0].idemKey)
+  assert.equal(page.recoveredOrder.value, true)
+  assert.equal(page.order.value.guestName, '原入住人')
+  assert.equal(page.order.value.payFen, 12800)
+  assert.deepEqual(saved, [])
+  assert.equal(page.calls.pay, 0)
+})
+
+test('two taps open one cancellation prompt and a dismissed page cannot submit it', async () => {
+  const dialog = deferred()
+  let dialogs = 0, cancels = 0
+  const page = loadPage({
+    modal: () => { dialogs++; return dialog.promise },
+    apiStayCancelOrder: async () => { cancels++ }
+  })
+  page.order.value = pendingOrder()
+  page.activeOrderNo.value = 'STAY-1'
+  const first = page.cancelOrder(), second = page.cancelOrder()
+  page.calls.unmount[0]()
+  dialog.resolve({confirm: true})
+  await Promise.all([first, second])
+  assert.equal(dialogs, 1)
+  assert.equal(cancels, 0)
+})
+
+test('a failed detail refresh after cancellation only reports the failed refresh', async () => {
+  const page = loadPage({apiStayOrder: async () => { throw Error('查单断网') }})
+  page.order.value = pendingOrder()
+  page.activeOrderNo.value = 'STAY-1'
+  await page.cancelOrder()
+  assert.deepEqual(page.calls.toasts, ['查单断网'])
 })
 
 test('returning to foreground reconciles the existing order without starting payment', async () => {
@@ -307,7 +364,7 @@ test('unknown config remains unknown and preserves server-order recovery', async
 test('back after successful create and failed detail does not reopen create form', async () => {
   const page = loadPage({ apiStayOrder: async () => { throw new Error('offline') } })
   await page.init()
-  page.agreed.value = true
+  await page.acceptNotice()
   await page.toPay()
   page.onBack()
   assert.equal(page.s.value, 3)
@@ -321,7 +378,7 @@ test('create sends the exact cancellation policy key the user agreed to', async 
     apiStayQuote: async () => ({ data: { stay: {}, policy: { key }, agreement: { version: '2026-10' }, bookable: true, payFen: 12800 } }),
     apiStayCreateOrder: async body => { payload = body; return { data: { orderNo: 'STAY-1' } } }
   })
-  await page.init(); page.agreed.value = true; await page.toPay()
+  await page.init(); await page.acceptNotice(); await page.toPay()
   assert.equal(payload.expectedPolicyKey, key)
 })
 
@@ -331,7 +388,7 @@ test('policy change requires new agreement and never silently retries creating',
     apiStayQuote: async () => ({ data: { stay: {}, policy: { key: ++quotes === 1 ? 'old' : 'new' }, agreement: {}, bookable: true, payFen: 12800 } }),
     apiStayCreateOrder: async () => { creates++; throw { code: 409, message: '取消退款规则已更新' } }
   })
-  await page.init(); page.agreed.value = true; await page.toPay()
+  await page.init(); await page.acceptNotice(); await page.toPay()
   assert.equal(page.q.value.policy.key, 'new')
   assert.equal(page.agreed.value, false)
   await page.toPay()
@@ -345,12 +402,77 @@ test('booking notice edits refresh title and full text and require new consent',
     apiStayQuote: async () => ({ data: { stay: {}, policy: {}, agreement: ++quotes === 1 ? { title: '原须知', summary: '原正文', version: 'notice-old' } : { title: '新须知', summary: '新正文\n第二条', version: 'notice-new' }, bookable: true, payFen: 12800 } }),
     apiStayCreateOrder: async body => { payload = body; throw { code: 409, message: '预订须知已更新，请重新阅读并同意' } }
   })
-  await page.init(); page.agreed.value = true; page.noticeOpen.value = true
+  await page.init(); await page.acceptNotice()
   await page.toPay()
   assert.equal(payload.agreementVersion, 'notice-old')
   assert.deepEqual(page.q.value.agreement, { title: '新须知', summary: '新正文\n第二条', version: 'notice-new' })
   assert.equal(page.agreed.value, false)
-  assert.equal(page.noticeOpen.value, false)
+  assert.equal(page.noticeRead.value, false)
   await page.toPay()
   assert.equal(page.calls.toasts.at(-1), '请先阅读并同意《新须知》')
+})
+
+
+test('an unpaid stay at a store without collection is stopped before creating any order', async () => {
+  let enabled = false
+  const page = loadPage({
+    apiStayQuote: async () => ({ data: { bookable: true, payFen: 12800, onlinePaymentAvailable: enabled } })
+  })
+  await page.init()
+  assert.equal(page.paymentBlocked.value, true)
+  assert.equal(page.q.value.payFen, 12800)
+  await page.acceptNotice()
+  await page.toPay()
+  assert.equal(page.calls.create, 0)
+  enabled = true
+  await page.calls.show[0]()
+  assert.equal(page.paymentBlocked.value, false)
+  await page.acceptNotice()
+  await page.toPay()
+  assert.equal(page.calls.create, 1)
+})
+
+test('only a server-quoted zero balance on selected free-night vouchers bypasses store collection', async () => {
+  const page = loadPage({
+    apiStayQuote: async ({ memberWalletIds }) => ({ data: {
+      bookable: true, payFen: memberWalletIds.length === 2 ? 0 : 2500,
+      onlinePaymentAvailable: false, memberMode: memberWalletIds.length ? 'nights' : null
+    } })
+  })
+  await page.init()
+  await page.chooseMember(8)
+  await page.acceptNotice()
+  await page.toPay()
+  assert.equal(page.calls.create, 0)
+  await page.chooseMember(9)
+  assert.equal(page.paymentBlocked.value, false)
+  await page.acceptNotice()
+  await page.toPay()
+  assert.equal(page.calls.create, 1)
+})
+
+test('a stale enabled quote and a failed retry cannot open a checkout for a different room', async () => {
+  const old = deferred()
+  let n = 0
+  const page = loadPage({
+    apiStayQuote: async () => {
+      if (++n === 1) return old.promise
+      if (n === 3) throw new Error('网络暂不可用')
+      return { data: { bookable: true, payFen: 9900, onlinePaymentAvailable: false } }
+    }
+  })
+  const init = page.init()
+  while (!n) await new Promise(r => setImmediate(r))
+  page.params.roomTypeId = 2
+  await page.requote()
+  old.resolve({ data: { bookable: true, payFen: 10000, onlinePaymentAvailable: true } })
+  await init
+  assert.equal(page.paymentBlocked.value, true)
+  await page.requote()
+  assert.equal(page.quoteReady.value, false)
+  await page.acceptNotice()
+  await page.toPay()
+  assert.equal(page.calls.create, 0)
+  await page.requote()
+  assert.equal(page.paymentBlocked.value, true)
 })

@@ -1,5 +1,5 @@
 <template>
-	<view v-if="existingCaseId || eligible || reason" class="order-mediation"><k-button v-if="existingCaseId || eligible" type="secondary" block round icon="scale" :label="existingCaseId ? '查看调解进度' : '纠纷调解'" @click="open" /><text v-if="existingCaseId" class="order-mediation__note">{{ existingCaseStatus === 'closed' ? '调解已结束，可查看处理记录与结果' : '已提交调解，可查看进度或补充材料' }}</text><text v-else-if="reason" class="order-mediation__note">{{ reason }}</text></view>
+	<view v-if="existingCaseId || eligible || reason" class="order-mediation"><k-button v-if="existingCaseId || eligible" type="secondary" block round icon="scale" :label="existingCaseId ? '查看调解进度' : '纠纷调解'" @click="open" /><text v-if="existingCaseId" class="order-mediation__note">{{ existingCaseStatus === 'closed' ? '调解已结束，可查看处理记录与结果' : '已提交调解，可查看进度或补充材料' }}</text><text v-else-if="eligible && volunteerDispute" class="order-mediation__note">如果对店家处理结果不满意，可以提交让大众来参与评审。</text><text v-else-if="reason" class="order-mediation__note">{{ reason }}</text></view>
 </template>
 <script setup>
 import { ref, watch } from 'vue'
@@ -9,7 +9,8 @@ import { go } from '@/common/screen.js'
 const props = defineProps({
 	orderType: { type: String, required: true },
 	orderId: { type: [String, Number], default: null },
-	merchant: { type: Boolean, default: false }
+	merchant: { type: Boolean, default: false },
+	volunteerDispute: { type: Boolean, default: false }
 })
 const eligible = ref(false)
 const existingCaseId = ref(0), existingCaseStatus = ref('')

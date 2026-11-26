@@ -19,7 +19,6 @@
   .mi-hero__num { font-family: var(--k-sans); font-size: 32px; font-weight: 600; line-height: 1.2; color: #3A322B; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
   .mi-hero__rules { margin: 0; padding: 0; min-height: 48px; display: flex; align-items: center; }
   .mi-hero__rules-pill { height: 40px; border-radius: 12px; border-color: #CBB79D; background: transparent; padding: 0 12px; font-size: 13px; font-weight: 400; }
-  .mi-hero__rules-pill::before { display: none; }
   .mi-card { margin-top: -2px; padding: 14px 18px; background: #FFFEFB; border-radius:0 0 16px 16px; }
   .mi-head { margin: -4px 0 10px; min-height: 44px; }
   .mi-title, .mi-rules__title, .k-title { font-family: var(--k-sans); font-size: 18px; font-weight: 600; color: #3A322B; }
@@ -93,7 +92,6 @@
 /* 会员原稿：身份牌与升级区作为同一张会员卡，权益为三张白色纸卡。 */
 .profile--membership {
   --k-bg:#FBF6ED;
-  --k-paper:#FFFEFB;
   background:linear-gradient(135deg,#FFF9F1,#FBF6ED 56%,#F8F7F2);
   .mi { padding-top:16px; }
   .mi-hero { padding:20px 18px 14px;border:1px solid #E5D7BE;border-radius:21px;background:linear-gradient(120deg,#FEFCF4,#FAEDDD);box-shadow:0 3px 3px rgba(136,100,52,.13),inset 0 0 0 2px rgba(255,255,255,.65);position:relative;z-index:1; }
@@ -160,4 +158,245 @@
   .mi-benefit-detail__line text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
   .mi-benefit-detail__shops { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding: 12px 0 0; margin-top: 8px; border-radius: 0; border-top: 1px solid #E9E0D4; background: transparent; color: #8A6035; font-size: 14px; text-align: left; }
   .mi-benefit-detail__shops::after { border: 0; }
+}
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：会员信息屏跟「我的」首屏同一套 —— 浅灰底、白卡 12 圆角、不用阴影和描边，字和控件收小一档。
+   功能和文字不变：积分规则、查看等级、六个等级可点、积分商城、我的权益、合作店权益、去完成 / 已完成、更多记录、规则逐条都在；能点的地方仍 ≥ 44 高。
+   顶部会员卡和首屏会员条用同一组暖色（#FAEBD0 → #F0D8AC），下面接白色的升级进度，合成一张卡；纸纹、胶带、虚线框这些装饰去掉。 */
+.profile--membership {
+  --k-bg: var(--k-page);
+  background: var(--k-page);
+  .mi { padding-top: 8px; }
+  .card { border: 0; border-radius: 12px; box-shadow: none; }
+  .mi-hero { padding: 14px 12px 12px; border: 0; border-radius: 12px 12px 0 0; background: linear-gradient(105deg, #FAEBD0, #F0D8AC); box-shadow: none; }
+  .mi-hero__identity { gap: 12px; }
+  .mi-hero__body { gap: 2px; }
+  .mi-hero__level-row { gap: 6px; }
+  .mi-hero__level { font-size: 18px; font-weight: 700; line-height: 25px; color: #6B4A1F; }
+  .mi-hero__tag { height: 17px; padding: 0 5px; border-radius: 4px; background: rgba(255, 255, 255, .6); color: #7A5A22; font-size: 10px; font-weight: 500; line-height: 17px; }
+  .mi-hero__nick { margin: 0; font-size: 13px; font-weight: 400; line-height: 19px; color: #7A5A22; }
+  .mi-hero__row { margin-top: 10px; gap: 8px; }
+  .mi-hero__pts { gap: 6px; font-size: 12px; font-weight: 400; color: #7A5A22; }
+  .mi-hero__num { font-size: 24px; font-weight: 700; line-height: 30px; color: #5E3D1F; }
+  /* 「积分规则」看着是 26 高的小胶囊，外面这层仍是 44 高的点按区（上下各缩回 7，不把这一行撑高） */
+  .mi-hero__rules { min-height: 44px; margin: -7px 0; }
+  .mi-hero__rules-pill { height: 26px; padding: 0 10px; border-color: rgba(122, 90, 34, .32); background: rgba(255, 255, 255, .5); color: #7A5A22; font-size: 12px; }
+  .mi-card { margin-top: 0; padding: 0 12px 12px; border-radius: 0 0 12px 12px; box-shadow: none; background: var(--k-paper); }
+  .mi-head { min-height: 44px; margin: 0; }
+  .mi-title, .mi-rules__title, .k-title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; color: var(--k-ink); }
+  .mi-link { min-height: 44px; font-size: 12px; color: var(--k-muted); }
+  .mi-bar { height: 6px; background: #F1EBE2; }
+  .mi-bar__fill { background: linear-gradient(90deg, #D9A865, #B5814D); }
+  .mi-prog { margin-top: 8px; gap: 2px; }
+  .mi-prog__count { font-size: 14px; font-weight: 600; color: var(--k-red-deep); }
+  .mi-prog__tip { font-size: 12px; line-height: 1.5; color: var(--k-muted); }
+  .mi-ledger { margin-top: 6px; }
+  .mi-sec { min-height: 40px; margin-top: 8px; padding: 0 2px; }
+  /* 等级阶梯放进一张白卡：每格仍是 88 宽（模板按 88 算总宽）、可左右滑，选中的那一格底下一道暖棕线 */
+  .mi-level-scroll { margin-top: 0; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+  .levels { padding: 12px 0 2px; }
+  .levels__track { top: 36px; background: var(--k-line); }
+  .levels__fill { background: var(--k-red); }
+  .levels__item { gap: 4px; padding-bottom: 8px; }
+  .levels__item.selected { border-bottom-color: var(--k-red); }
+  .levels__ring { background: var(--k-paper); }
+  .levels__label { padding: 1px 6px; border-radius: 4px; font-size: 12px; line-height: 1.5; }
+  .levels__label.cur { padding: 1px 6px; background: var(--k-red-soft); box-shadow: none; color: var(--k-red-deep); font-weight: 600; }
+  .levels__pts { font-size: 11px; line-height: 1.4; color: var(--k-muted); }
+  /* 「积分商城」「我的权益」两个入口：各一条白色细行（等级权益卡里的「查看 N 项合作店权益」仍是卡内带细线的一行） */
+  .mi > .mi-benefit-detail__shops { min-height: 48px; margin-top: 8px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--k-paper); color: var(--k-ink); font-size: 14px; }
+  /* 11-18 第二轮：这两条紧挨着（同一个显示条件），看起来合成一张卡 —— 上圆下圆、中间一道发丝线（左缩进 12；button 的 ::after 是微信的边框，线画在 ::before） */
+  .mi > .mi-benefit-detail__shops { position: relative; border-radius: 12px 12px 0 0; }
+  .mi > .mi-benefit-detail__shops + .mi-benefit-detail__shops { margin-top: 0; border-radius: 0 0 12px 12px; }
+  .mi > .mi-benefit-detail__shops + .mi-benefit-detail__shops::before { content: ""; position: absolute; left: 12px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+  .mi-level-hint { margin: -4px 2px 8px; color: var(--k-muted); font-size: 11px; line-height: 1.5; }
+  .mi-benefit-detail { padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); }
+  .mi-benefit-detail .mi-level-hint { margin: 4px 0 0; }
+  .mi-benefit-detail__head { gap: 10px; margin-bottom: 6px; }
+  .mi-benefit-detail__identity { gap: 2px; }
+  .mi-benefit-detail__title { font-size: 15px; font-weight: 600; line-height: 21px; color: var(--k-ink); }
+  .mi-benefit-detail__status { font-size: 11px; line-height: 16px; color: var(--k-muted); }
+  .mi-benefit-detail__line { gap: 8px; padding: 5px 0; font-size: 13px; line-height: 1.65; color: var(--k-ink2); }
+  .mi-benefit-detail__line .k-icon { margin-top: 3px; }
+  .mi-benefit-detail .mi-benefit-detail__shops { border-top-color: var(--k-line); color: var(--k-red-deep); font-size: 13px; }
+  /* 赚取积分：两项一张白卡、中间一道细线；按钮看着 28 高，外面那层上下各留 8，点按区 44 */
+  .mi-tasks { margin-top: 8px; padding: 12px 0 4px; border-radius: 12px; box-shadow: none; background: var(--k-paper); }
+  .mi-sec + .mi-tasks { margin-top: 0; }
+  .mi-task { min-height: 0; padding: 0 12px; gap: 2px 8px; }
+  .mi-task + .mi-task { border-left-color: var(--k-line); }
+  .mi-task__icon { height: 22px; }
+  .mi-task__top { gap: 1px; }
+  .mi-task__title { font-size: 13px; font-weight: 600; line-height: 1.6; }
+  .mi-task__pts { font-size: 12px; font-weight: 500; color: var(--k-ochre-deep); }
+  .mi-task__sub { margin-top: 2px; font-size: 11px; line-height: 1.5; }
+  .mi-task__go { padding: 8px 0; }
+  /* 11-18 第二轮：每个任务一颗的「去完成」改成浅底小按钮（一屏不再排着 5–8 颗实心棕钮） */
+  .mi-task__btn { height: 28px; padding: 0 12px; border-radius: 14px; font-size: 12px; font-weight: 500; background: var(--k-red-soft); color: var(--k-red-deep); box-shadow: none; }
+  .mi-task__btn.done { background: var(--k-fill); color: var(--k-muted); }
+  /* 积分明细 */
+  .mi .k-mt12 { margin-top: 8px; }
+  .mi > .card.k-mt12 { padding: 0 12px 8px; }
+  .mi > .card.k-mt12 > .k-between { min-height: 44px; }
+  .member-link { font-size: 12px; }
+  .member-note { font-size: 12px; line-height: 1.6; }
+  .record { padding: 9px 0; }
+  .record { position: relative; }
+  .record + .record { border-top: 0; }
+  .record + .record::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+  .record .k-text { font-size: 13px; }
+  .record .k-meta { font-size: 11px; }
+  .record__pts { color: var(--k-red-deep); font-size: 14px; font-variant-numeric: tabular-nums; }
+  /* 积分规则：普通白卡，编号是浅棕小方块 */
+  .mi-rules { margin-top: 8px; padding: 12px 12px 4px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .mi-rules::before, .mi-rules::after { display: none; }
+  .mi-rules__title { margin-bottom: 2px; text-align: left; }
+  .mi-rule { gap: 10px; padding: 9px 0; }
+  .mi-rule + .mi-rule { border-top-color: var(--k-line); }
+  .mi-rule__no { width: 20px; height: 20px; margin-top: 1px; border: 0; border-radius: 4px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 10px; font-weight: 600; }
+  .mi-rule__body { font-size: 13px; line-height: 1.65; }
+  .mi-rule__name { font-weight: 600; }
+  /* 2026-11-18 评审修正：选中等级的那道暖棕线原来是整格宽、紧贴白卡底边，最左一格的线头被卡片圆角切掉一块；
+     改成等级名下方居中的一小段（16×3，离卡底 4），和别处页签的下划线一个样子 */
+  .levels { padding-bottom: 4px; }
+  .levels__item.selected { border-bottom-color: transparent; }
+  .levels__item.selected::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 16px; height: 3px; margin-left: -8px; border-radius: 2px; background: var(--k-red); }
+  /* 11-18 第二轮：卡外的区块标题（会员等级 / 等级权益 / 赚取积分）16 / 700、行高 22，上 16 下 8；「合作店权益」链接仍 44 高可点，上下各缩回 11 不撑高标题行。
+     卡里的标题（升级进度、积分明细、积分规则）是卡内小标题 14 / 600 */
+  .mi-sec { min-height: 22px; margin: 16px 0 8px; }
+  .mi-sec .mi-title { font-size: 16px; font-weight: 700; line-height: 22px; }
+  .mi-sec .mi-link { margin-top: -11px; margin-bottom: -11px; }
+  .mi-head .mi-title, .mi-rules__title, .mi .k-title { font-size: 14px; font-weight: 600; }
+  /* 11-18 返修：同一屏的分隔线统一成发丝线（积分明细已是）—— 积分规则逐条之间的横线、赚取积分两项之间的竖线 */
+  .mi-rule + .mi-rule { border-top: 0; }
+  .mi-rule + .mi-rule::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+  .mi-task { position: relative; }
+  .mi-task + .mi-task { border-left: 0; }
+  .mi-task + .mi-task::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: var(--k-line); transform: scaleX(.5); transform-origin: 0 0; }
+}
+
+/* 2026-11-18 第三轮：页边距 16（和「我的」各屏一条线）；
+   「积分商城」「我的权益」两行左名字 14 / 400 墨色、右边说明 12 灰字 + 12 号箭头（和设置页的行一个写法，之前主字和说明用圆点拼成一句同字号）；
+   会员等级当前那一级不再同时用浅棕底块和下面的短条两种标记：去掉底块，只留 600 墨色字（选中那格底下 16×3 的暖棕短条是上面已有的规则） */
+.profile--membership {
+  .mi > .mi-benefit-detail__shops { gap: 12px; justify-content: flex-start; }
+  .mi-row__label { flex: 0 0 auto; font-size: 14px; color: var(--k-ink); }
+  .mi-row__hint { flex: 1; min-width: 0; text-align: right; font-size: 12px; color: var(--k-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mi > .mi-benefit-detail__shops > .mi-row__label:nth-last-child(2) { flex: 1; }
+  .levels__label.cur { padding: 1px 6px; background: transparent; color: var(--k-ink); font-weight: 600; }
+  .mi-sec { margin-top: 12px; }
+}
+
+/* 11-18 第三轮返修：
+   · 赚取积分：一张白卡、一项一行 —— 图标 18（不再占一列）、名字 14 / 600、积分跟在名字后面，说明 12 号在下面一行，从图标那条线开始占满；右边 28 高浅棕小胶囊。行间发丝线。
+   · 会员等级：格子按卡宽平分（每格至少 64），5 级在 390 宽一屏放下；放不下时（320 宽、6 级）最后一格露半格，看得出能横着滑。
+   · 积分明细：支出（负数）用二级墨 400，收入保持暖棕 600。 */
+.profile--membership {
+  .mi-tasks-card { margin-top: 0; padding: 0 12px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+  .mi-tasks-card .mi-tasks { display: block; margin: 0; padding: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .mi-tasks-card .mi-task { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; grid-template-areas: "icon top go" "sub sub go"; align-items: center; column-gap: 8px; row-gap: 2px; min-height: 0; padding: 14px 0; }
+  .mi-tasks-card .mi-task::before { display: none; }
+  .mi-tasks-card .mi-task + .mi-task::before, .mi-tasks-card .mi-tasks + .mi-tasks .mi-task:first-child::before { content: ""; display: block; position: absolute; left: 0; right: 0; top: 0; bottom: auto; width: auto; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
+  .mi-tasks-card .mi-task__icon { grid-area: icon; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+  .mi-tasks-card .mi-task__main { display: contents; }
+  .mi-tasks-card .mi-task__top { grid-area: top; flex-direction: row; align-items: baseline; gap: 6px; min-width: 0; }
+  .mi-tasks-card .mi-task__title { font-size: 14px; font-weight: 600; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mi-tasks-card .mi-task__pts { flex: 0 0 auto; font-size: 12px; font-weight: 600; color: var(--k-red); font-variant-numeric: tabular-nums; }
+  .mi-tasks-card .mi-task__sub { grid-area: sub; margin: 0; font-size: 12px; line-height: 17px; color: var(--k-muted); }
+  .mi-tasks-card .mi-task__go { grid-area: go; grid-column: auto; align-self: center; margin: -8px 0; padding: 8px 0 8px 4px; }
+  .mi-tasks-card .mi-task__btn { height: 28px; padding: 0 12px; border-radius: 14px; font-size: 12px; }
+  .mi-tasks-card .mi-task__btn.done { background: var(--k-paper2); }
+  .levels { width: auto !important; min-width: 100%; }
+  // 11-18 返修（第 2 轮）：每格至少 72 宽、名字不折行 —— 「袋鼠合伙人」5 个字 + 左右 6 内边距是 72，之前 64 宽放不下折成两行，下面的积分被挤低一行
+  .levels__item { flex: 1 0 72px; width: auto; }
+  .levels__track { left: 36px; right: 36px; }
+  .levels__label { max-width: none; white-space: nowrap; }
+  // 积分明细空状态：和本组其他页一样，56 浅棕方块 + 32 号图标，下面 12 号灰字居中
+  .mi-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 8px; }
+  .mi-empty__icon { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 14px; background: var(--k-red-soft); }
+  .mi-empty .member-note { max-width: 264px; font-size: 12px; line-height: 1.6; color: var(--k-muted); text-align: center; }
+  .record__pts--out { color: var(--k-ink2); font-weight: 400; }
+}
+@media (max-width: 359px) {
+  .profile--membership .mi-tasks-card .mi-task__btn { padding: 0 10px; }
+}
+
+/* 11-18 第三轮返修（第 3 轮）：
+   · 区块之间一律 20、区块标题到内容 12；「积分明细」「积分规则」的标题也放在卡外（16 / 700，和「赚取积分」一样），卡里只留记录 / 规则（模板被检查钉着，只改样式）；
+   · 赚取积分：说明从名字那条线开始（左边让出图标 18 + 间距 8），不再顶在图标下面；
+   · 「已完成」不再是和「去完成」一样的胶囊：去掉底色，前面一个 12 号的对勾（细线画的），12 号灰字，一看就是做完了、不能点；
+   · 积分明细右边的数字离卡边 12，悬浮「客服」不再压住。 */
+.profile--membership {
+  .mi-sec { min-height: 22px; margin: 20px 0 12px; }
+  .mi-benefit-detail__shops + .mi-sec, .mi-level-scroll + .mi-benefit-detail__shops { margin-top: 20px; }
+  .mi-tasks-card .mi-task { grid-template-areas: "icon top go" ". sub go"; }
+  .mi-tasks-card .mi-task__btn.done { position: relative; gap: 4px; padding: 0 0 0 16px; background: transparent; color: var(--k-muted); font-weight: 400; }
+  .mi-tasks-card .mi-task__btn.done::before { content: ""; position: absolute; left: 3px; top: 50%; width: 4px; height: 8px; margin-top: -6px; border: solid var(--k-green); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+  .mi > .card.k-mt12 { margin-top: 20px; padding: 0; background: transparent; }
+  .mi > .card.k-mt12 > .k-between { min-height: 22px; margin-bottom: 12px; padding: 0 2px; }
+  .mi > .card.k-mt12 > .k-between .k-title { font-size: 16px; font-weight: 700; line-height: 22px; }
+  .mi > .card.k-mt12 > .k-between .member-link { margin: -11px 0; }
+  .mi > .card.k-mt12 > .record { padding: 10px 12px; background: var(--k-paper); }
+  .mi > .card.k-mt12 > .k-between + .record { padding-top: 12px; border-radius: 12px 12px 0 0; }
+  .mi > .card.k-mt12 > .record:last-child { padding-bottom: 12px; border-radius: 0 0 12px 12px; }
+  .mi > .card.k-mt12 > .k-between + .record:last-child { border-radius: 12px; }
+  .mi > .card.k-mt12 > .record + .record::before { left: 12px; right: 12px; }
+  .mi > .card.k-mt12 > .mi-empty { border-radius: 12px; background: var(--k-paper); }
+  .mi-rules { margin-top: 20px; padding: 0; background: transparent; }
+  .mi-rules .mi-rules__title { margin: 0 0 12px; padding: 0 2px; font-size: 16px; font-weight: 700; line-height: 22px; text-align: left; }
+  .mi-rules .mi-rule { padding: 10px 12px; background: var(--k-paper); }
+  .mi-rules .mi-rules__title + .mi-rule { padding-top: 12px; border-radius: 12px 12px 0 0; }
+  .mi-rules .mi-rule:last-child { padding-bottom: 12px; border-radius: 0 0 12px 12px; }
+  .mi-rules .mi-rules__title + .mi-rule:last-child { border-radius: 12px; }
+  .mi-rules .mi-rule + .mi-rule::before { left: 12px; right: 12px; }
+}
+
+/* 11-18 第三轮返修（第 4 轮）：
+   · 「袋鼠会员」标签、积分规则编号、等级权益「当前」小角标都不小于 11 号（标签 18 高、左右 6）；编号方块 20 不变；
+   · 区块标题（会员等级 / 等级权益 / 赚取积分 / 积分明细 / 积分规则）去掉 2px 左内边距，和卡片左边同一条线（页边 16）；
+   · 第一张卡离顶栏 12，和本组其它页一样。 */
+.profile--membership {
+  .mi { padding-top: 12px; }
+  .mi-hero__tag { height: 18px; padding: 0 6px; font-size: 11px; font-weight: 500; line-height: 18px; }
+  .mi-rule__no { font-size: 11px; font-weight: 500; }
+  .mi-perk__now { font-size: 11px; }
+  .mi-sec, .mi > .card.k-mt12 > .k-between, .mi-rules .mi-rules__title { padding-left: 0; padding-right: 0; }
+}
+/* 等级权益每一条折行时两行差不多长，窄屏不再只剩一两个字掉到第二行 */
+.profile--membership .mi-perk__line, .profile--membership .mi-benefit-detail__line > text { text-wrap: balance; }
+
+/* 11-18 第三轮返修（第 5 轮）：
+   · 等级权益每一条只在空格、标点处折行（keep-all，整段太长才在字中间断）：「每年 1 晚免费间夜（限本人入住，」/「法定节假日不可用）」，
+     不再像 balance 那样在 320 宽第一行右边空一大块、375 宽把「限本人 / 入住」拆开；
+   · 赚取积分「已完成」和任务名在同一行、上下对齐（之前在两行中间居中，比名字低 3）。 */
+.profile--membership .mi-perk__line, .profile--membership .mi-benefit-detail__line > text { text-wrap: wrap; word-break: keep-all; overflow-wrap: anywhere; }
+.profile--membership .mi-tasks-card .mi-task__go--done { align-self: start; margin: 0; padding: 0 0 0 4px; }
+.profile--membership .mi-tasks-card .mi-task__go--done .mi-task__btn.done { height: 20px; }
+
+/* 11-18 第四轮（高级感）：
+   · 会员卡做成完整的一张：上半吉祥物 + 等级 + 积分，下半「升级进度」4px 细进度条 + 说明，同一块暖色（横向渐变，上下两段颜色接得上），中间一道发丝线，不再「渐变卡下面硬接白区」；
+   · 等级横条末尾让出 48，最后一级能滑到客服竖条左边，不再钻到下面；
+   · 「0 积分」数字和字之间留 2；当前等级默认选中时不再多画一道短条（彩色图 + 600 名字已经说明是当前等级），选别的等级时短条才出现。 */
+.profile--membership {
+  .mi-hero { border-radius: 12px 12px 0 0; background: linear-gradient(90deg, var(--k-ochre-soft), var(--k-paper2)); }
+  .mi-card { position: relative; margin-top: 0; padding: 0 12px 14px; border-radius: 0 0 12px 12px; background: linear-gradient(90deg, var(--k-ochre-soft), var(--k-paper2)); }
+  .mi-card::before { content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--k-red-line); opacity: .4; transform: scaleY(.5); transform-origin: 0 0; }
+  .mi-bar { height: 4px; border-radius: 2px; background: var(--k-paper); }
+  .mi-bar__fill { border-radius: 2px; }
+  .levels { padding-right: 48px; }
+  .levels__track { right: 84px; }
+  .levels__ji { margin-left: 2px; }
+  .levels__item.selected.is-cur::after { display: none; }
+}
+
+/* 11-18 第四轮返修：
+   · 等级横条末尾让出的 48 改成一个 48 宽的空占位（flex 子项），iOS 微信里 flex 容器末尾的 padding 不一定算进横滑范围，占位一定算；
+   · 暖卡最后一行「累计获得 … 已用掉 …（等级按累计获得算，用掉积分不降级）」只在空格、标点处折行，「积分」不再被拆开；
+   · 赚取积分的「去完成」改成 28 高白底细棕线小胶囊（一列不再是三块浅棕色块）。 */
+.profile--membership {
+  .levels { padding-right: 0; }
+  .levels::after { content: ""; flex: 0 0 48px; width: 48px; height: 1px; }
+  // 11-19 微信实拍返修：横条宽度按内容算（6 格 + 48 占位），连线右端 84 = 半格 36 + 占位 48，从第一级中心一直画到最后一级中心（之前宽度被限成卡宽，连线只到第 4 级）
+  .levels { width: max-content !important; min-width: 100%; }
+  .mi-ledger { word-break: keep-all; overflow-wrap: anywhere; }
+  .mi-tasks-card .mi-task__btn:not(.done) { background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-weight: 500; }
 }

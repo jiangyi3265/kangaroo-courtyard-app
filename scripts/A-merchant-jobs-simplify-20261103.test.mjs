@@ -4,7 +4,7 @@
 //       待上架的写「袋鼠工作人员正在完善，上架后通知你」；分享页只留链接 + 海报，不取追踪表。员工端照旧弹菜单、有「调整名额 / 紧急招募」；
 //   M5  底栏已经写着「还差什么 / 可以提交」：点提交不再弹「确认提交？」，直接交、落到成功页；
 //   M6  「帮我起草」不再要求先选到岗日期，没日期就不带；
-//   M7  合作商家在「更多设置」里看不到「保险管理」和「安心商家认证」；
+//   M7  合作商家可从「更多设置」办理本店保险；认证只对员工显示；
 //   M10 商家看到的「换工主理人 / 商家服务人 / 城市负责人」一律叫「袋鼠工作人员」，进度条三步；
 //   M12 商家被送回首页时有一句提示，toast 报错也不挡跳转。
 import fs from 'node:fs'
@@ -80,11 +80,59 @@ function jobsHarness({ merchant = false, rows = ROWS, missing = 3 } = {}) {
     get: async () => ({ data: {} }), put: async () => ({}), post: async () => ({}),
     uni: { pageScrollTo() {}, showLoading() {}, hideLoading() {}, previewImage() {}, reLaunch() {} }
   })
-  h.run('merchantAgreement.value = { confirm: async () => true }')
+  h.run('merchantAgreement.value = { confirm: async () => true }; volunteerNotice.value = { confirm: async () => true }')
   return { ...h, s, log, load: async (q = {}) => { onLoad && onLoad(q); await flush(); await flush() } }
 }
 
 // ---------------------------------------------------------------- M1 列表
+test('本店已关闭岗位可确认删除，其他状态没有删除入口',async(t)=>{
+  const h=jobsHarness({merchant:true,rows:ROWS.map(r=>({...r,canArchive:r.status==='closed'}))})
+  t.after(h.stop)
+  await h.load()
+  assert.deepEqual(plain(h.run("merchantActs(jobList.value.find(j=>j.rawStatus==='closed'))")),['删除'])
+  await h.run("merchantAct(jobList.value.find(j=>j.rawStatus==='closed'),'删除')")
+  assert.equal(h.log.confirms,1)
+  assert.equal(h.log.batches[0][1],'archive')
+  assert.equal(h.run("merchantActs(jobList.value.find(j=>j.rawStatus==='published')).includes('删除')"),false)
+})
+test('分享岗位后再打开另一个岗位，迟到的分享码和复制操作不会套用到新岗位', async t => {
+  const h = jobsHarness({ merchant: true })
+  t.after(h.stop)
+  await h.load()
+  const earlier = [], copied = []
+  h.sandbox.copy = value => copied.push(value)
+  h.sandbox.apiStaffShareJob = async (id, channel) => {
+    if (id === 1) await new Promise(done => earlier.push(done))
+    return {data: {link: 'job-' + id, shareCode: id + '-' + channel}}
+  }
+  const a = h.run('openShare(jobList.value[0])')
+  const copyA = h.run('copyLink()')
+  h.run('backFromShare()')
+  await h.run('openShare(jobList.value[1])')
+  earlier.forEach(done => done())
+  await Promise.all([a, copyA])
+  assert.equal(h.run('share.value.link'), 'job-2')
+  assert.equal(h.run('shareCodes.value.friend'), '2-friend')
+  assert.deepEqual(copied, [])
+})
+
+test('追踪维度快速切换只显示最后所选的统计', async t => {
+  const h = jobsHarness()
+  t.after(h.stop)
+  await h.load()
+  await h.run('openShare(jobList.value[0])')
+  let done
+  h.sandbox.apiStaffShareStats = async ({dim}) => {
+    if (dim === 'manager') await new Promise(resolve => { done = resolve })
+    return {data: {rows: [{name: dim}]}}
+  }
+  h.run("setDim('manager'); setDim('staff')")
+  await flush()
+  done()
+  await flush()
+  assert.deepEqual(plain(h.run('channelRows.value')), [{name:'staff'}])
+})
+
 test('M1 商家列表：四个指标、批量管理、匹配率 / 分享访问都不出；卡片上按状态摆 分享 / 暂停 / 恢复；补条件提示不出', async (t) => {
   const h = jobsHarness({ merchant: true })
   t.after(h.stop)
@@ -193,9 +241,43 @@ test('商家取消协议确认时不提交，表单保留且可重试', async t 
   await h.run('submitJob()')
   assert.equal(h.log.created.length, 0)
   assert.equal(h.run('gen.value.title'), '前台换工')
-  h.run('merchantAgreement.value = { confirm: async () => true }')
+  h.run('merchantAgreement.value = { confirm: async () => true }; volunteerNotice.value = { confirm: async () => false }')
+  await h.run('submitJob()')
+  assert.equal(h.log.created.length, 0, '未确认换工告知书时仍保留表单')
+  h.run('volunteerNotice.value = { confirm: async () => true }')
   await h.run('submitJob()')
   assert.equal(h.log.created.length, 1)
+})
+
+test('发布复查：读协议期间门店切换，原表不能提交到另一家门店', async t => {
+  const h = await openForm(t, true)
+  let storeId = h.sandbox.currentStaffStoreId(), confirm
+  h.sandbox.currentStaffStoreId = () => storeId
+  h.sandbox.agreement = { confirm: () => new Promise(resolve => { confirm = resolve }) }
+  h.run(`form.value.images = ['${PHOTO}']; setGen('title', '本店换工'); setGen('work', '接待客人'); merchantAgreement.value = agreement`)
+  const sending = h.run('submitJob()')
+  await flush()
+  storeId = 999
+  confirm(true)
+  await sending
+  assert.equal(h.log.created.length, 0)
+  await h.run('submitJob()')
+  assert.equal(h.log.created.length, 0)
+})
+
+test('发布复查：提交后离开又开了新表，旧成功提示不能清空新岗位', async t => {
+  const h = await openForm(t, false)
+  let reply
+  h.sandbox.apiStaffCreateJob = () => new Promise(resolve => { reply = resolve })
+  h.run(`form.value.images = ['${PHOTO}']; setGen('title', '第一份'); setGen('work', '接待客人')`)
+  const sending = h.run('submitJob()')
+  await flush()
+  await h.run('backFromPublish()')
+  h.run("choosePublish('parttime'); setGen('title', '第二份')")
+  reply({ data:{ jobId: 33 } })
+  await sending
+  assert.equal(h.run('gen.value.title'), '第二份')
+  assert.equal(h.run('submitted.value'), null)
 })
 
 test('M5 成功页：商家看到的去向是「袋鼠工作人员」；进度条「已提交 → 袋鼠核实中 → 已上架」，员工的还是平台审核', async (t) => {
@@ -229,9 +311,9 @@ test('M6 帮我起草：不再要求先选到岗日期；没日期就不带（�
   assert.ok(h.run('todoKeys.value').includes('startDate'))
 })
 
-test('M7 更多设置：商家看不到「保险管理」链接和「安心商家认证」那行，项数少一项；员工照旧', async (t) => {
+test('M7 更多设置：启用保险时商家和员工均可进入保险管理；认证只对员工显示', async (t) => {
   const tpl = sfc('pages/staff/jobs.vue').template.content
-  assert.match(tpl, /<view v-if="!merchantStaff" class="fc-act" hover-class="k-press" @click="goInsurance"><text>保险管理<\/text><\/view>/)
+  assert.match(tpl, /<view v-if="form\.insuranceFlag === '0'" class="fc-sub">[^\n]*?<view class="fc-act" hover-class="k-press" @click="goInsurance"><text>保险管理<\/text>/)
   assert.match(tpl, /<view v-if="!merchantStaff" class="fc-row" hover-class="k-press" @click="showCertification"><text class="fc-row__k">安心商家认证<\/text>/)
   const m = await openForm(t, true)
   const e = await openForm(t, false)
@@ -298,11 +380,38 @@ function runGuard({ route, current, grants, toastThrows = false }) {
 test('M12 商家白名单兜底：被送回首页时提示「商家身份没有这个页面」；白名单里的页不提示；toast 报错也照样送回', async () => {
   const merchant = [{ storeId: 9, roleCode: 'merchant' }]
   assert.deepEqual(await runGuard({ route: 'pages/staff/dispatch', current: 9, grants: merchant }), { redirects: ['/pages/staff/index'], toasts: ['商家身份没有这个页面'] })
-  assert.deepEqual(await runGuard({ route: 'pages/staff/insurance', current: 9, grants: merchant }), { redirects: ['/pages/staff/index'], toasts: ['商家身份没有这个页面'] })
-  for (const route of ['pages/staff/index', 'pages/staff/jobs', 'pages/staff/merchant-request', 'pages/staff/activities']) {
+  for (const route of ['pages/staff/index', 'pages/staff/jobs', 'pages/staff/merchant-request', 'pages/staff/activities', 'pages/staff/insurance']) {
     assert.deepEqual(await runGuard({ route, current: 9, grants: merchant }), { redirects: [], toasts: [] }, route)
   }
   assert.deepEqual((await runGuard({ route: 'pages/staff/dispatch', current: 9, grants: merchant, toastThrows: true })).redirects, ['/pages/staff/index'])
   // 别的角色没有这句（他们各有各的提示或直接送回）
   assert.deepEqual((await runGuard({ route: 'pages/staff/dispatch', current: 3, grants: [{ storeId: 3, roleCode: 'merchant_service' }] })).toasts, [])
+})
+
+test('商家从保险入口访问未授权门店时不读取名单，也不能发起投保', async t => {
+  const grants = [{ storeId: 9, roleCode: 'merchant', active: true }]
+  const calls = [], notices = []
+  let enter
+  const page = runSetup('pages/staff/insurance.vue', {
+    useScreen: (_default, options) => { enter = options.onLoad; return vue.ref(1) },
+    experience: { account: { id: 1 }, mode: 'staff' }, staffStores: { value: grants },
+    currentStaffStore: { value: grants[0] }, currentStaffStoreId: () => 9,
+    hasStaffAccess: { value: true }, getSessionRevision: () => 1, getToken: () => 'test',
+    ensureSession: async () => {}, errText: error => error.message, toast: text => notices.push(text),
+    apiStaffInsuranceToBuy: async store => { calls.push(store); return { data: { rows: [] } } },
+    loadStaffPerms: async () => ({ insurance: ['yes', 'yes'] })
+  })
+  t.after(page.stop)
+  enter({ storeId: 9 }); await flush()
+  assert.deepEqual(calls, [9])
+  assert.equal(page.run('canBuy.value'), true)
+  enter({ storeId: 99 }); await flush()
+  assert.deepEqual(calls, [9])
+  assert.equal(page.run('canBuy.value'), false)
+  assert.match(notices.at(-1), /暂无员工授权/)
+  page.run('openInsuranceFinance()')
+  assert.match(notices.at(-1), /请从本店工作台进入/)
+  enter({}); await flush()
+  assert.deepEqual(calls, [9, 9])
+  assert.equal(page.run('canBuy.value'), true)
 })

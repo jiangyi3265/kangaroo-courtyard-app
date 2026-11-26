@@ -156,36 +156,46 @@ onLoad(async (q) => {
 </script>
 
 <style scoped lang="scss">
-.ae-page { background: var(--k-bg); }
-.ae-body { padding: 8px 16px 110px; }
-.ae-lead { display: block; padding: 10px 12px; border-radius: 10px; background: var(--k-paper2); color: var(--k-muted); font-size: 13px; line-height: 1.6; }
-.ae-section { margin: 16px 2px 8px; display: flex; align-items: baseline; justify-content: space-between; font-size: 16px; font-weight: 700; color: var(--k-ink); }
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边），时间和范围收成胶囊，人数加粗；选项、按钮、文字不变。共用写法在 ./work-lite.scss */
+@import './work-lite.scss';
+.ae-page { @include lite-page; }
+.ae-body { padding: 8px 12px 110px; }
+.ae-lead { display: block; padding: 10px 12px; border-radius: 12px; background: var(--k-paper); color: var(--k-muted); font-size: 12px; line-height: 1.6; }
+.ae-section { margin: 16px 0 8px; display: flex; align-items: baseline; justify-content: space-between; font-family: var(--k-sans); font-size: 16px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
 .ae-meta { font-size: 12px; font-weight: 400; color: var(--k-muted); }
-.ae-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.ae-chip { min-width: 64px; height: 34px; padding: 0 14px; box-sizing: border-box; border: 1px solid var(--k-line2); border-radius: 17px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--k-ink); }
-.ae-chip.on { border-color: var(--k-red); background: var(--k-red); color: #fff; font-weight: 600; }
-.ae-custom { margin-top: 10px; display: flex; gap: 10px; }
-.ae-date { flex: 1; min-width: 0; height: 42px; padding: 0 10px; box-sizing: border-box; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.ae-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+/* 筛选胶囊（11-18）：28 高、12 号字，选中不描边、字重 500（全站一个样子） */
+.ae-chip { min-width: 56px; height: 28px; padding: 0 12px; box-sizing: border-box; border: 0; border-radius: 999px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--k-ink2); }
+.ae-chip.on { background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 500; box-shadow: none; }
+/* 胶囊看着 28 高，上下各多出一圈看不见的可点范围（仍是 36），手指好点 */
+.ae-chip { position: relative; }
+.ae-chip::after { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+.ae-custom { margin-top: 8px; display: flex; gap: 8px; }
+.ae-date { flex: 1; min-width: 0; height: 40px; padding: 0 10px; box-sizing: border-box; border: 0; border-radius: 10px; background: var(--k-paper); display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .ae-date>text:first-child { color: var(--k-muted); }
 .ae-date>text:nth-child(2) { flex: 1; min-width: 0; font-weight: 600; }
-.ae-range { display: block; margin-top: 8px; color: var(--k-red-deep); font-size: 14px; font-weight: 600; }
-.ae-store { margin-top: 10px; height: 42px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.ae-range { display: block; margin: 8px 0 0; color: var(--k-red-deep); font-size: 13px; font-weight: 600; }
+.ae-store { margin-top: 8px; height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--k-paper); display: flex; align-items: center; gap: 10px; font-size: 13px; }
 .ae-store>text:first-child { color: var(--k-muted); }
 .ae-store>text:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
-.ae-card { margin-top: 16px; padding: 12px; border: 1px solid var(--k-line2); border-radius: 12px; background: var(--k-paper); }
-.ae-empty { padding: 18px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--k-muted); font-size: 13px; text-align: center; }
-.ae-total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; padding-bottom: 8px; border-bottom: 1px solid var(--k-line); font-size: 14px; }
-.ae-total__num { font-size: 26px; font-weight: 700; color: var(--k-ink); }
-.ae-missing { width: 100%; color: var(--k-red-deep); font-size: 12px; }
+.ae-card { margin-top: 12px; padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); }
+/* 空状态（11-18）：卡里居中，14 / 500 二级墨；「重新统计」是 32 高的次按钮小胶囊 */
+.ae-empty { padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 1.6; text-align: center; }
+.ae-empty :deep(.k-button.is-md) { height:32px; padding:0 14px; font-size:13px; border-color:var(--k-red-line); color:var(--k-red-deep); }
+.ae-total { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; padding-bottom: 8px; font-size: 13px; }
+.ae-total::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 100%; }
+.ae-total__num { font-size: 18px; font-weight: 700; color: var(--k-ink); font-variant-numeric: tabular-nums; }
+.ae-missing { width: 100%; color: var(--k-ochre-deep); font-size: 12px; }
 .ae-ok { width: 100%; color: var(--k-green); font-size: 12px; }
-.ae-warn { display: block; margin-top: 8px; color: var(--k-red-deep); font-size: 13px; }
-.ae-row { padding: 9px 0; border-bottom: 1px solid var(--k-line); display: flex; flex-direction: column; gap: 3px; }
-.ae-row:last-of-type { border-bottom: 0; }
+.ae-warn { display: block; margin-top: 8px; color: var(--k-alert); font-size: 12px; }
+.ae-row { position: relative; padding: 9px 0; display: flex; flex-direction: column; gap: 2px; }
+/* 11-18 第二轮精修：行间发丝线，最后一行没有线 */
+.ae-row + .ae-row::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); transform-origin: 0 0; }
 .ae-row__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.ae-row__name { font-size: 15px; font-weight: 700; color: var(--k-ink); }
-.ae-row__id { font-size: 13px; color: var(--k-ink); letter-spacing: .5px; }
-.ae-row__id.miss { color: var(--k-red-deep); letter-spacing: 0; }
+.ae-row__name { font-size: 14px; font-weight: 600; color: var(--k-ink); }
+.ae-row__id { font-size: 12px; color: var(--k-ink2); letter-spacing: .5px; }
+.ae-row__id.miss { color: var(--k-ochre-deep); letter-spacing: 0; }
 .ae-row__line { color: var(--k-muted); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .ae-more { display: block; margin-top: 8px; color: var(--k-muted); font-size: 12px; text-align: center; }
-.ae-note { margin-top: 12px; display: flex; align-items: flex-start; gap: 6px; color: var(--k-muted); font-size: 12px; line-height: 1.6; }
+.ae-note { margin: 10px 0 0; display: flex; align-items: flex-start; gap: 6px; color: var(--k-muted); font-size: 11px; line-height: 1.6; }
 </style>

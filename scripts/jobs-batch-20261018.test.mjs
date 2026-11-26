@@ -11,6 +11,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import * as F from '../pages/jobs/apply-flow.js'
 import * as T from '../pages/jobs/team-page.js'
+import { API_BASE } from '../common/config.js'
 import * as J from '../pages/jobs/job-filters.js'
 import * as SP from '../pages/jobs/store-page.js'
 import * as CAL from '../common/calendar.js'
@@ -24,10 +25,11 @@ const css = (rel) => sfc(rel).styles.map(s => s.content).join('\n')
 
 // ---------------------------------------------------------------- 7 步进度
 
-test('7 步进度：名字、两行写法和报名状态对应的当前步（已结束的整条不亮，订票 / 进群不假装做过）', () => {
-  assert.deepEqual(F.FLOW_STEPS, ['提交资料', '确认信息', '约定视频时间', '签署安全协议', '订票确认', '进入地区群', '到店确认'])
+test('8 步进度：名字、两行写法和报名状态对应的当前步（已结束的整条不亮，订票 / 进群不假装做过）', () => {
+  assert.deepEqual(F.FLOW_STEPS, ['提交资料', '确认信息', '约定视频时间', '签署安全协议', '订票确认', '到店准备', '到店确认', '工作结束'])
   assert.deepEqual(F.FLOW_LINES.map(l => l.join('')), F.FLOW_STEPS)
-  assert.equal(F.FLOW_DONE, 8)
+  assert.equal(F.FLOW_DONE, 9)
+  assert.equal(F.flowStepOf('onboarded', '2026-11-20'), 9)
   const cases = {
     submitted: 2, review_rejected: 2, review_passed: 3, interview_booked: 3,
     interview_done: 4, user_confirmed: 4, store_confirmed: 4, contract_signed: 5, onboarded: 8,
@@ -36,16 +38,16 @@ test('7 步进度：名字、两行写法和报名状态对应的当前步（已
   for (const [status, step] of Object.entries(cases)) assert.equal(F.flowStepOf(status), step, status)
   // 签了协议以后停在「订票确认」：系统里没有订票、进群的记录，一句话说清楚是和主理人确认
   assert.match(F.flowHint('contract_signed'), /填写车票和到店信息/)
-  assert.match(F.flowHint('contract_signed'), /“保险与地区群”查看群码/)
+  assert.match(F.flowHint('contract_signed'), /“到店准备”核对出行安排/)
   assert.equal(F.flowHint('nope'), '')
   for (const s of ['submitted', 'review_passed', 'interview_booked', 'store_confirmed', 'onboarded']) assert.ok(F.flowHint(s), s)
 })
 
-test('进度页（到店岗位）用同一套 7 步，按状态换算；线上任务照旧是交付六步', () => {
+test('进度页（到店岗位）用同一套 8 步，按状态换算；线上任务照旧是交付六步', () => {
   const p = src('pages/jobs/progress.vue')
-  assert.match(p, /<view v-if="\(detail \|\| designMode\) && !isOnline" class="steps steps--flow"><job-flow-steps :current="current" :arrival-enabled="canOpenArrival" @arrival="openArrival" \/><text v-if="flowTip" class="steps__tip">\{\{ flowTip \}\}<\/text><\/view>/)
+  assert.match(p, /<view v-if="\(detail \|\| designMode\) && !isOnline" class="steps steps--flow"><job-flow-steps :current="current" :arrival-enabled="canOpenArrival" @arrival="openArrival"[^>]*@end="[^"]+" \/><text v-if="flowTip" class="steps__tip">\{\{ flowTip \}\}<\/text><\/view>/)
   assert.match(p, /<view v-else-if="detail \|\| designMode" class="steps"><k-steps :steps="stepNames" :current="current" \/><\/view>/)
-  assert.match(p, /if \(detail\.value\) return flowStepOf\(detail\.value\.status\)/)
+  assert.match(p, /if \(detail\.value\) return flowStepOf\(detail\.value\.status, detail\.value\.workEndTime, detail\.value\?\.arrivalStep\)/)
   assert.match(p, /import JobFlowSteps from '\.\/components\/job-flow-steps\.vue'/)
   // 报名页：第 1 步（投递成功后第 2 步亮起来）；线上任务不出
   const a = src('pages/jobs/apply.vue')
@@ -73,7 +75,7 @@ test('到岗时间：默认 = 岗位开始日期（只取年月日，不按时�
   // 之前的原生日期滚轮在网页版从 1876 年起都能滚，小程序里也看不出灰色。确定后再挡一次（草稿里的旧日期）
   const a = src('pages/jobs/apply.vue')
   assert.doesNotMatch(a, /<picker mode="date"/)
-  assert.match(a, /<view class="ap-row" hover-class="k-press-s" @click="arrivalOpen = true">/)
+  assert.match(a, /<view class="ap-row" hover-class="k-press-s" @click="openArrival">/)
   assert.match(a, /<k-date-picker v-if="arrivalOpen" title="选择到岗时间" :value="arrival" :min-date="minArrival" @cancel="arrivalOpen = false" @confirm="onArrival" \/>/)
   assert.match(a, /if \(v < minArrival\.value\) \{ toast\(/)
   // 月历：开始日（10-25）之前的格子 disabled（置灰），开始日和之后的能点
@@ -143,9 +145,9 @@ test('报名页：不再单独填姓名 / 年龄 / 手机 / 技能，用简历�
   assert.match(tpl, /<text class="ap-empty__text">只填一次，以后报名直接确认投递<\/text>/)
   assert.match(tpl, /<text>修改简历<\/text>/)
   assert.match(a, /const openResume = \(\) => \{ resumeOpened = true; go\(R\.resume\) \}/)
-  assert.match(a, /if \(resumeOpened \|\| \(resumeState\.value === 'guest' && experience\.account\)\) \{ resumeOpened = false; loadResume\(\) \}/)
-  // 提交：线下只带到岗日期和天数，线上只带接单说明（姓名 / 手机由服务端从简历取）
-  assert.match(a, /\.\.\.\(!isOnline\.value \? \{ arrival: arrival\.value, days: days\.value \} : \{ note: note\.value \}\),/)
+  assert.match(a, /if \(resumeOpened \|\| loggedIn\) \{ resumeOpened = false; loadResume\(\) \}/)
+  // 线下读取本人简历，线上申请使用本次填写的联系人和说明。
+  assert.match(a, /\.\.\.\(!isOnline\.value \? \{ arrival: arrival\.value, days: days\.value \} : \{ note: note\.value, name: contactName\.value\.trim\(\), phone: contactPhone\.value\.trim\(\) \}\),/)
   assert.match(tpl, /:label="saved \? '查看审核进度' : submitting \? '提交中…' : \(isOnline \? '确认提交申请' : '确认投递'\)"/)
 })
 
@@ -165,9 +167,11 @@ test('寻伴同行：标题按类型（做换工 / 做兼职 / 去工作）；�
   for (const w of T.SHARE_WAYS) assert.ok(icons.includes('"' + w.icon + '":'), w.icon)
   assert.equal(T.jobPath(15), '/pages/jobs/detail?jobId=15')
   assert.equal(T.shareCopyText({ title: '南舍庄园', city: '平潭', jobId: 15, href: 'https://h5.test/#/pages/jobs/team?jobId=15' }), '【袋鼠全球青年】南舍庄园｜平潭 https://h5.test/#/pages/jobs/detail?jobId=15')
+  assert.equal(T.shareCopyText({ title: '南舍庄园', city: '平潭', jobId: 15, href: 'https://h5.test/travel/?source=test#/pages/jobs/team?jobId=15' }),
+    '【袋鼠全球青年】南舍庄园｜平潭 https://h5.test/travel/#/pages/jobs/detail?jobId=15')
   const copied = T.shareCopyText({ title: '南舍庄园', city: '平潭', jobId: 15 })
   const target = new URL(copied.slice(copied.indexOf('https://')))
-  assert.equal(target.origin, 'https://daishu.oksja.cn')
+  assert.equal(target.origin, new URL(API_BASE).origin)
   assert.equal(target.hash, '#/pages/jobs/detail?jobId=15', '小程序复制的公开链接准确指向当前岗位')
   assert.equal(T.buddyPublishQuery({ jobId: 15, title: '南舍庄园', city: '平潭' }), 'kind=buddy&linkType=job&linkId=15&linkTitle=' + encodeURIComponent('南舍庄园') + '&linkCity=' + encodeURIComponent('平潭'))
 })
@@ -176,9 +180,10 @@ test('寻伴同行页：保留岗位分享方式，伙伴入口统一打开独�
   const d = sfc('pages/jobs/team.vue')
   const t = d.template.content
   assert.match(t, /\{\{ head\.line1 \}\}\{\{ head\.line2 \}\}/)
-  assert.match(t, /src="\/static\/media\/brand-kangaroo\.png"/)
+  const scene = t.match(/<image class="tm-hero__scene" src="(\/pages\/jobs\/static\/[^"]+)"/)
+  assert.ok(scene && fs.existsSync(path.join(APP, scene[1])), '同行头图必须引用已打包的分包资源')
   assert.match(t, /<button class="tm-job__share" :open-type="jobReady \? 'share' : ''" :disabled="!jobReady"/)
-  assert.match(t, /<button v-for="way in SHARE_WAYS" :key="way\.key" class="tm-way" :open-type="jobReady && isMp && way\.key === 'wechat' \? 'share' : ''" :disabled="!jobReady" hover-class="k-press-s" @click="tapWay\(way\.key\)">/)
+  assert.match(t, /<button v-for="way in SHARE_WAYS\.filter\(item => communityEnabled \|\| item\.key !== 'community'\)" :key="way\.key" class="tm-way" :open-type="jobReady && isMp && way\.key === 'wechat' \? 'share' : ''" :disabled="!jobReady" hover-class="k-press-s" @click="tapWay\(way\.key\)">/)
   assert.match(t, /<view v-if="teamLoaded" class="tm-cta"[^>]*@click="openCompanions"/)
   assert.match(t, /<view v-if="badgeText" class="tm-job__chip">/)
   const s = d.scriptSetup.content
@@ -251,8 +256,9 @@ test('岗位卡片：真实标签与待遇分区；长文本可换行、宽度�
   assert.equal(style('.title', '.card .title')['overflow-wrap'], 'anywhere')
   assert.match(t, /<job-badge size="ribbon" \/>/)
   const b = sfc('pages/jobs/components/job-badge.vue')
+  assert.ok(fs.existsSync(path.join(APP, 'static/user-icons/roo-mark.png')))
   assert.match(b.template.content, /<view v-if="size === 'card'" class="jb__fold" \/>/)
-  assert.match(b.template.content, /<view v-if="size !== 'detail' && size !== 'ribbon'" class="jb__seal"><image class="jb__icon" src="\/static\/media\/brand-kangaroo\.png" mode="aspectFit" \/><\/view>/)
+  assert.match(b.template.content, /<view v-if="size !== 'detail' && size !== 'ribbon'" class="jb__seal"><image class="jb__icon" src="\/static\/user-icons\/roo-mark\.png" mode="aspectFit" \/><\/view>/)
   assert.match(css('pages/jobs/components/job-badge.vue'), /\.jb--ribbon \{[^}]*transform: rotate\(-45deg\)/)
 })
 

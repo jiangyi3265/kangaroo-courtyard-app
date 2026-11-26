@@ -1,8 +1,10 @@
-.detail-training { margin-top: 14px; display: flex; min-height: 142px; overflow: hidden; background: var(--k-paper2); border-radius: 16px; }
-.detail-training__image { flex: 0 0 100px; width: 100px; min-height: 142px; height: auto; }
-.detail-training__body { flex: 1; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 5px; }
-.detail-training__label { font-size: 12px; color: var(--k-red-deep); }
-.detail-training__title { font-size: 17px; line-height: 1.5; font-weight: 600; color: var(--k-ink); }
-.detail-training__meta { font-size: 12px; color: var(--k-muted); }
-.detail-training__link { display: flex; align-items: center; gap: 8px; margin-top: 5px; min-height: 32px; font-size: 14px; color: var(--k-red-deep); font-weight: 600; }
-@media(max-width:359px) { .detail-training__image { flex-basis: 80px; width: 80px; } .detail-training__body { padding: 12px; } }
+/* 全职岗位底下的「袋鼠成长课堂」培训入口：浅色底小卡，左图右文（2026-11-17 改版收小） */
+.detail-training { margin-top: 16px; display: flex; min-height: 96px; overflow: hidden; background: #F7F5F2; border-radius: 12px; }
+.detail-training__image { flex: 0 0 96px; width: 96px; min-height: 96px; height: auto; }
+.detail-training__body { flex: 1; min-width: 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.detail-training__label { font-size: 11px; line-height: 16px; color: var(--k-red-deep); }
+.detail-training__title { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--k-ink); }
+.detail-training__meta { font-size: 11px; line-height: 16px; color: var(--k-muted); }
+.detail-training__link { display: flex; align-items: center; gap: 4px; margin-top: 2px; min-height: 32px; font-size: 12px; color: var(--k-red-deep); font-weight: 600; }
+
+@media(max-width:359px) { .detail-training__image { flex-basis: 80px; width: 80px; } }

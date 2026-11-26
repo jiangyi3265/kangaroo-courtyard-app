@@ -117,12 +117,12 @@ test('concurrent account refreshes share one request', async () => {
   assert.deepEqual(calls, ['/app/auth/account'])
 })
 
-test('staff mode profile card opens the identity chooser, which never auto-enters work there', async () => {
+test('staff profile returns to the user home and explicit identity selection waits for a choice', async () => {
   const fs = await import('node:fs')
   const read = path => fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8')
   const profile = read('pages/profile/index.vue')
   const identity = read('pages/auth/identity.vue')
-  assert.match(profile, /if \(staffMode\.value\) return go\(R\.identity \+ '\?choose=1'\)/)
+  assert.match(profile, /if \(staffMode\.value\) return relaunch\(switchMode\('user'\)\)/)
   assert.match(profile, /acceptAuthenticatedAccount\(res\.data, \{ preserveMode: true \}\)/)
   assert.match(identity, /choosing = q\?\.choose === '1'/)
   assert.match(identity, /onShow\(\(\) => \(choosing \? refreshGrants\(\) : enterStaff\(\)\)\)/)

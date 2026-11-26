@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 const source = readFileSync(new URL('../pages/staff/insurance-finance.js', import.meta.url), 'utf8')
-const { createInsuranceFinance, initialFinanceState, parseFen, validPolicy, paymentLabel, refundLabel } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'))
+const { createInsuranceFinance, initialFinanceState, parseFen, validPolicy, departureQuote, paymentLabel, refundLabel } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'))
 const deferred = () => { let resolve, reject; const promise=new Promise((a,b)=>{resolve=a;reject=b}); return {promise,resolve,reject} }
 const tick = () => new Promise(r=>setImmediate(r))
 function fixture() {
@@ -30,6 +30,16 @@ test('legacy and refund status never claim successful receipt from queued/closed
   assert.match(refundLabel({status:'success',destination:'balance'}),/余额/)
   assert.match(refundLabel({status:'processing',destination:'balance'}),/处理中/)
   assert.match(refundLabel({status:'closed'}),/未完成/)
+  assert.equal(refundLabel({status:'rejected',verifiedDepartureDate:'2026-11-20'}),'可退为零，已结案')
+  assert.equal(refundLabel({status:'rejected'}),'未通过审核')
+  assert.equal(refundLabel({status:'pending',departureDate:'2026-11-20',verifiedDepartureDate:'2026-11-20',amountFen:0}),'可退为零，待城市负责人确认')
+  assert.equal(refundLabel({status:'pending',departureDate:'2026-11-20',verifiedDepartureDate:'2026-11-20',amountFen:600}),'待城市负责人退款')
+})
+test('payment label uses settled refund totals even when the premium receipt remains paid',()=>{
+  const receipt={paymentStatus:'paid',amountFen:9000}
+  assert.equal(paymentLabel({...receipt,refundedFen:6000}),'已部分退费')
+  assert.equal(paymentLabel({...receipt,refundedFen:'9000'}),'已退费')
+  assert.equal(paymentLabel({...receipt,refundedFen:0,refund:{status:'processing',amountFen:6000}}),'已付款')
 })
 test('merchant creation uses server plan and stores no client-calculated amount',async()=>{
   const h=fixture();await h.ready();await h.ctl.create()
@@ -97,6 +107,19 @@ test('registration submits actual policy dates, not plan-derived dates',async()=
   const h=fixture();await h.ready();h.s.rows[0].canRegister=true;h.s.policyForm={policyNo:' policy-real ',startDate:'2026-11-17',endDate:'2026-12-12'};await h.ctl.register()
   assert.deepEqual(h.calls[0],['policy',7,{policyNo:'policy-real',startDate:'2026-11-17',endDate:'2026-12-12'}])
 })
+test('entering only a policy number cannot register the estimated dates as actual coverage',async()=>{
+  const h=fixture()
+  Object.assign(h.r,{canRegister:true,startDate:'2026-11-17',endDate:'2026-12-16'})
+  await h.ready()
+  h.s.policyForm.policyNo='real-policy'
+  await h.ctl.register()
+  assert.deepEqual(h.calls,[])
+  assert.equal(h.s.policyForm.startDate,'')
+  assert.equal(h.s.policyForm.endDate,'')
+  Object.assign(h.s.policyForm,{startDate:'2026-11-18',endDate:'2026-12-17'})
+  await h.ctl.register()
+  assert.deepEqual(h.calls[0],['policy',7,{policyNo:'real-policy',startDate:'2026-11-18',endDate:'2026-12-17'}])
+})
 test('invalid policy or missing permission does not reach API',async()=>{
   const h=fixture();await h.ready();h.s.policyForm={policyNo:'x',startDate:'2026-11-17',endDate:'2026-11-16'};h.s.rows[0].canRegister=true;await h.ctl.register();assert.equal(h.calls.length,0)
 })
@@ -116,6 +139,32 @@ test('older linked ledger record is loaded by authorized detail and stale detail
   assert.deepEqual(h.s.rows,[]);assert.equal(h.s.selectedId,'')
 })
 
+test('refund on an older ledger policy keeps its refreshed progress outside the recent list',async()=>{
+  const h=fixture();await h.ready()
+  const policy={...h.r,applyId:900,policyNo:'older',startDate:'2026-11-18',endDate:'2026-12-17'}
+  h.api.detail=async id=>{assert.equal(Number(id),900);return {data:{...policy}}}
+  await h.ctl.openRecord(900)
+  h.api.refund=async()=>{policy.refund={refundId:80,status:'pending',departureDate:'2026-11-27'};policy.canRefund=false;return {data:policy}}
+  h.s.refundForm.departureDate='2026-11-27';await h.ctl.refund()
+  assert.equal(h.ctl.row()?.refund?.status,'pending')
+  policy.refund={...policy.refund,status:'success',amountFen:6000}
+  await h.ctl.load();assert.equal(h.ctl.row()?.refund?.amountFen,6000)
+  h.ctl.choose('');assert.deepEqual(h.s.rows.map(r=>r.applyId),[7])
+})
+test('retry after linked policy lookup failure reopens it with its own form values',async()=>{
+  const h=fixture();await h.ready()
+  h.api.detail=async()=>{throw Error('网络异常')}
+  await h.ctl.openRecord(900);assert.equal(h.s.error,'网络异常')
+  h.api.detail=async()=>({data:{...h.r,applyId:900,paymentMethod:'balance',refund:{status:'pending',departureDate:'2026-11-27'}}})
+  await h.ctl.load()
+  assert.equal(h.ctl.row()?.applyId,900);assert.equal(h.s.refundForm.departureDate,'2026-11-27');assert.equal(h.s.refundForm.destination,'balance')
+})
+test('late lookup failure cannot replace a more recently opened cached policy',async()=>{
+  const h=fixture();await h.ready()
+  const d=deferred();h.api.detail=()=>d.promise
+  const old=h.ctl.openRecord(900);await h.ctl.openRecord(7);d.reject(Error('旧请求失败'));await old
+  assert.equal(h.ctl.row()?.applyId,7);assert.equal(h.s.error,'');assert.equal(h.s.loading,false)
+})
 test('policy number over server limit is rejected before mutation',async()=>{
   const h=fixture();await h.ready();h.s.rows[0].canRegister=true;h.s.policyForm={policyNo:'A'.repeat(65),startDate:'2026-11-17',endDate:'2026-12-15'}
   await h.ctl.register();assert.equal(h.calls.length,0)
@@ -149,4 +198,62 @@ test('pending response launches shared payFlow with live identity guard',async()
 for(const outcome of ['cancel','unknown']) test('payment '+outcome+' is recoverable and not reported paid',async()=>{
   const h=fixture();h.deps.payFlow=async()=>({status:outcome});h.ctl=createInsuranceFinance(h.deps);await h.ready();h.api.create=async()=>({data:{applyId:7,paymentStatus:'pending',payNo:'test-payment'}});await h.ctl.create()
   assert.match(h.s.notice,outcome==='cancel'?/取消付款/:/确认中/);assert.equal(h.s.busy,false)
+})
+
+test('issued refund uses the departure date and prorates paid premium to cents', async () => {
+  const h = fixture()
+  Object.assign(h.r, {policyNo:'T',startDate:'2025-11-18',endDate:'2025-12-17'})
+  await h.ready()
+  h.s.refundForm = {amount:'89.99',departureDate:'2025-11-27',reason:'提前离店',destination:'original'}
+  assert.equal(departureQuote(h.r, '2025-11-27'), 6000)
+  assert.equal(departureQuote({...h.r,amountFen:1000}, '2025-11-27'), 667)
+  await h.ctl.refund()
+  const request = h.calls.find(call => call[0] === 'refund')[2]
+  assert.equal(request.departureDate, '2025-11-27')
+  assert.equal(request.amountFen, undefined)
+})
+
+test('changing identities cancels the pending city refund confirmation', async () => {
+  const h = fixture(), dialog = deferred()
+  Object.assign(h.r, {policyNo:'T',startDate:'2025-11-18',endDate:'2025-12-17',canPayDeparture:true,
+    refund:{refundId:17,amountFen:6000,verifiedDepartureDate:'2025-11-27'}})
+  h.deps.confirm = () => dialog.promise
+  h.api.departure = (...args) => h.calls.push(args)
+  h.ctl = createInsuranceFinance(h.deps)
+  await h.ready()
+  const action = h.ctl.departure('pay')
+  h.switch()
+  dialog.resolve(true)
+  await action
+  assert.deepEqual(h.calls, [])
+})
+
+test('verification completed by another reviewer refreshes the payable amount without refunding', async () => {
+  const h = fixture()
+  Object.assign(h.r, {policyNo:'T', startDate:'2025-11-18', endDate:'2025-12-17', canVerifyDeparture:true,
+    refund:{refundId:17, amountFen:9000, departureDate:'2025-11-17'}})
+  h.api.departure = async (applyId, refundId, step) => {
+    h.calls.push(step)
+    h.r.canVerifyDeparture = false
+    h.r.canPayDeparture = true
+    h.r.refund = {...h.r.refund, verifiedDepartureDate:'2025-11-27', amountFen:6000}
+    throw Object.assign(new Error('该笔退费已核实'), {code:409})
+  }
+  await h.ready()
+  await h.ctl.departure('verify')
+  assert.deepEqual(h.calls, ['verify'])
+  assert.equal(h.ctl.row().canVerifyDeparture, false)
+  assert.equal(h.ctl.row().canPayDeparture, true)
+  assert.equal(h.ctl.row().refund.amountFen, 6000)
+  assert.equal(h.s.error, '该笔退费已核实')
+})
+
+test('merchant can send a zero-value departure date on an existing pending refund for verification', async () => {
+  const h = fixture()
+  Object.assign(h.r, {policyNo:'T',startDate:'2025-11-18',endDate:'2025-12-17',canAddDeparture:true,refund:{refundId:17}})
+  h.api.departure = async (...args) => { h.calls.push(args) }
+  await h.ready()
+  h.s.refundForm.departureDate = '2025-12-17'
+  await h.ctl.departure('add')
+  assert.deepEqual(h.calls, [[7,17,'add',{departureDate:'2025-12-17'}]])
 })

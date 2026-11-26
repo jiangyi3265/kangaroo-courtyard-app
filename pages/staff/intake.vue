@@ -38,7 +38,7 @@
         </template>
       </view>
       <view v-if="actions.length" class="req-bar">
-        <view class="req-bar__btn"><k-button block type="secondary" label="退回商家" @click="returnToMerchant" /></view>
+        <view v-if="actions.includes('return')" class="req-bar__btn"><k-button block type="secondary" label="退回商家" @click="returnToMerchant" /></view>
         <view class="req-bar__btn"><k-button block :label="working ? '处理中…' : '确认并转发'" @click="forward" /></view>
       </view>
       <k-tabbar v-else mode="staff" active="business" />
@@ -196,6 +196,7 @@ const noteDirty = computed(() => noteDraft.value.trim() !== noteSaved.value.trim
 let detailSeq = 0, openId = null
 async function reloadDetail() {
   const id = ++detailSeq
+  noteSaving.value = false
   detailError.value = ''
   try {
     const d = (await get(INTAKE_API + '/' + openId, storeParams())).data || {}
@@ -224,15 +225,20 @@ function endNote(e) {
 }
 async function saveNote() {
   if (noteSaving.value || !noteDirty.value) return
+  const sequence = detailSeq
+  const submitted = noteDraft.value.trim()
   noteSaving.value = true
   try {
-    const res = await put(INTAKE_API + '/' + openId + '/note?storeId=' + currentStaffStoreId(), { verifyNote: noteDraft.value.trim() })
-    noteSaved.value = noteDraft.value.trim()
+    const res = await put(INTAKE_API + '/' + openId + '/note?storeId=' + currentStaffStoreId(), { verifyNote: submitted })
+    if (sequence !== detailSeq || s.value !== 2) return
+    noteSaved.value = submitted
     toast(res.msg || '备注已保存')
   } catch (e) {
+    if (sequence !== detailSeq || s.value !== 2) return
     toast(errText(e, '备注保存失败'))
+    if (e && e.code === 409) await reloadDetail()
   } finally {
-    noteSaving.value = false
+    if (sequence === detailSeq) noteSaving.value = false
   }
 }
 // 转发、退回：弹框期间和请求途中再点都只处理一次
@@ -253,22 +259,20 @@ async function actOnDetail(path, body) {
 }
 async function forward() {
   if (working.value) return
-  let staff
+  const requestId = detail.value?.requestId
+  if (!requestId) return
+  let options
   try {
-    staff = (await get(INTAKE_API + '/options', storeParams())).data?.serviceStaff || []
+    options = (await get(INTAKE_API + '/options', { ...storeParams(), requestId })).data || {}
   } catch (e) {
     return toast(errText(e, '商家服务人名单读取失败'))
   }
-  const choices = forwardChoices(staff)
-  let serviceUserId = null
-  if (!choices.length) {
-    if (!(await confirm('本城还没有商家服务人', '确认后这条需求转给平台安排，核实备注会保留。'))) return
-  } else {
-    const i = await pickPaged(choices.map(c => c.label), '转给谁')
-    if (i < 0) return
-    serviceUserId = choices[i].userId
-    if (!(await confirm('确认转发', `已和商家核实好了？确认后提醒${serviceUserId == null ? '本城全部商家服务人' : choices[i].label}接手，商家也会收到进度。`))) return
-  }
+  const choices = forwardChoices(options.serviceStaff)
+  const i = choices.length === 1 ? 0 : await pickPaged(choices.map(c => c.label), '转给谁')
+  if (i < 0 || detail.value?.requestId !== requestId) return
+  const serviceUserId = choices[i].userId
+  const destination = serviceUserId == null ? options.destination || '系统安排的办理人' : choices[i].label
+  if (!(await confirm('确认转发', `确认后转给${destination}处理，并保留核实备注。`)) || detail.value?.requestId !== requestId) return
   if (working.value) return
   const verifyNote = noteDraft.value.trim()
   await actOnDetail('forward', verifyNote ? { serviceUserId, verifyNote } : { serviceUserId })
@@ -385,6 +389,13 @@ async function submit() {
 /* 代提交表单和发布表单同一套样式（./publish-form.scss），列表与详情在 ./request-pages.scss */
 @import './publish-form.scss';
 @import './request-pages.scss';
+/* 2026-11-17 改版「小而精」：列表和详情换成浅灰底 + 白卡（12 圆角、去阴影）、页边距 12（共用写法在 ./work-lite.scss；.req-* 在 ./request-pages.scss）；代提交表单的字号不动 */
+@import './work-lite.scss';
+.intake{@include lite-page}
+/* 11-18 第二轮精修：右边「＋ 代商家提交」只给标题让位，说明可以用满一整行（原来被挤成两行，第二行只剩一个「人」字） */
+.intake .req-head{position:relative}
+.intake .req-head__act{position:absolute;right:0;top:-2px}
+.intake .req-head__title{padding-right:120px}
 .pub-area--idle{overflow-y:auto;white-space:pre-wrap;word-break:break-all}
 .store-input{margin-top:9px}
 .muted{color:var(--k-muted)}

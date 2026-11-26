@@ -184,7 +184,7 @@ test('(d) 订单页没有群码：只写一句话 + 大号「联系门店」，�
 test('(e) 房源详情：地址打开目的地地图，复制按钮独立阻止冒泡，不把用户当前位置当目的地', () => {
   const tpl = tplOf(stayDetail)
   assert.match(tpl, /class="location" @click="openMap">/)
-  assert.match(tpl, /class="location-action" @click.stop="copyAddress"/)
+  assert.match(tpl, /class="location-action"[^>]* @click\.stop="copyAddress"/)
   assert.match(tpl, /<text>复制地址<\/text>/)
   assert.match(stayDetail, /const mapPoint = computed\(\(\) => coordinates\(d.value\)\)/)
   assert.match(stayDetail, /return city && !locationText\.value\.includes/)

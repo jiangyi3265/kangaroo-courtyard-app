@@ -28,7 +28,10 @@ const plain = (v) => JSON.parse(JSON.stringify(v))
 /** 在沙箱里跑页面的 script setup：导入一律先给永远不返回的函数，再用 stubs 覆盖用得到的那几个（条件编译注释在这里不生效，两边的代码都会跑） */
 function runSetup(rel, stubs) {
   const d = sfc(rel)
-  const source = d.scriptSetup.content
+  // 首页定位用微信分支，网页端只在选城页主动定位。
+  const source = rel === 'pages/home/index.vue'
+    ? d.scriptSetup.content.replace(/^\s*\/\/ #ifndef MP-WEIXIN\b[\s\S]*?\/\/ #endif/gm, '')
+    : d.scriptSetup.content
   const ast = compiler.babelParse(source, { sourceType: 'module' })
   const body = ast.program.body.filter(n => n.type !== 'ImportDeclaration').map(n => source.slice(n.start, n.end)).join('\n')
   const sandbox = { console, setTimeout, clearTimeout }
@@ -52,7 +55,7 @@ test('筛选保留完整条件标题、草稿城市入口和长选项，线上�
   assert.doesNotMatch(t, /@click="emit\('city'\)"/)
   assert.doesNotMatch(t, /'不限城市'/)
   assert.match(t, /@click="emit\('close'\)"/)
-  assert.deepEqual(F.panelGroups('volunteer', F.blankFilter()).slice(0,6).map(g=>g.title), ['性别偏好','技能需求','休息排班','可停留时长','住宿条件','安心保障'])
+  assert.deepEqual(F.panelGroups('volunteer', F.blankFilter()).map(g=>g.title), ['性别偏好','技能需求','休息排班','可停留时长','住宿条件','卫浴条件','安心保障'])
   const style = panel.styles.map(s => s.content).join('\n')
   assert.match(rule(style, '.fp-opt__text'), /white-space: normal;/)
   assert.match(rule(style, '.fp-opt--wide'), /grid-column: 1 \/ -1;/)
@@ -135,7 +138,7 @@ test('打开筛选时使用窗口可用高度，页面滚动位置不影响面�
   }
 })
 
-test('不自动带定位城市：首页第一次定位到丽江后点「换宿旅行」，岗位列表是全部城市（不带城市、没有城市胶囊）', async (t) => {
+test('不自动带定位城市：首页第一次定位到丽江后点「换工旅行」，岗位列表是全部城市（不带城市、没有城市胶囊）', async (t) => {
   // 首页：首次自动定位把丽江存成首页城市（城市胶囊显示丽江），但岗位入口不带它
   const gone = []
   const storage = {}
@@ -144,16 +147,17 @@ test('不自动带定位城市：首页第一次定位到丽江后点「换宿�
     useScreen: () => vue.ref(1), experience, go: (u) => gone.push(u), toast() {}, errText: (e, f) => f, absUrl: (u) => u,
     apiHomeFeed: async () => ({ data: { activities: [], stays: [] } }), checkNoticePopup() {},
     locateCity: async () => ({ name: '丽江' }),
+    recruitmentEnabled: vue.ref(true), stayBookingEnabled: vue.ref(true), askOnVisit() {},
     savePreferences: (c) => { experience.cities = [...c] }, saveAllCities: (on) => { experience.allCities = !!on },
     todayCn: () => '2026-10-17', shiftDate: (d) => d,
-    uni: { getStorageSync: (k) => storage[k], setStorageSync: (k, v) => { storage[k] = v }, pageScrollTo() {} },
+    uni: { getSetting: ({success}) => success({ authSetting: { 'scope.userLocation': true } }), getStorageSync: (k) => storage[k], setStorageSync: (k, v) => { storage[k] = v }, pageScrollTo() {} },
     R: { jobsList: '/pages/jobs/list', staysList: '/pages/stays/list', city: '/pages/home/city', activity: '/pages/community/activity' }
   })
   t.after(home.stop)
   home.run('autoLocateOnce()')
   await flush()
   assert.equal(home.run('city.value'), '丽江', '首页城市胶囊照旧显示定位城市')
-  home.run('entries.forEach(openEntry)')
+  home.run('entries.value.forEach(openEntry)')
   assert.deepEqual(gone, ['/pages/jobs/list?type=volunteer', '/pages/jobs/list?type=parttime', '/pages/jobs/list?type=fulltime', '/pages/jobs/list?type=online', '/pages/stays/list?city=' + encodeURIComponent('丽江')])
   // 岗位列表按首页给的地址打开：不带城市拉、胶囊行没有城市（露出「全部城市」），筛选面板里「已选城市」也是空的
   const q = Object.fromEntries(new URLSearchParams(gone[0].split('?')[1]))
@@ -183,7 +187,7 @@ test('城市页岗位入口也默认全国，显式筛选链接仍可传入城�
   assert.match(city, /route: R\.jobsList \}/)
   assert.doesNotMatch(city, /route: R\.jobsList \+/)
   // 首页只有旅居订房入口标了 withCity
-  assert.match(src('pages/home/index.vue'), /const openEntry = \(item\) => go\(item\.route \+ \(item\.withCity && selectedCity\.value \?/)
+  assert.match(src('pages/home/index.vue'), /go\(item\.route \+ \(item\.withCity && selectedCity\.value \?/)
 })
 
 test('「筛选条件」页、订阅页默认不选城市（之前默认塞首页城市）；带了 ?city= / ?cities= 照旧按带来的选；没选城市时写明「不选就是全部城市」', () => {

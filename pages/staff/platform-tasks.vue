@@ -9,7 +9,7 @@
         <view v-if="error" class="state"><text>{{ error }}</text><button @click="loadList(false)">重新加载</button></view>
         <view v-else-if="loading&&!rows.length" class="state">正在读取任务…</view>
         <view v-else-if="!rows.length" class="state">{{ status==='todo' ? '暂时没有待办任务' : '暂无这一状态的任务' }}</view>
-        <button v-for="row in rows" :key="row.taskId" class="task-row" @click="openTask(row.taskId)"><view class="row-heading"><text class="task-title">{{ row.title }}</text><text class="status" :class="row.status">{{ label(row) }}</text></view><text class="meta">{{ row.storeName }}{{ row.roleLabel ? ' · ' + row.roleLabel : '' }}</text><view class="row-heading"><text class="meta">{{ row.dueDate ? '截止 '+row.dueDate : '未设置截止日期' }}{{ row.requestedDueDate ? '（已申请延到 '+row.requestedDueDate+'）' : '' }}</text><text class="task-link">{{ nextStep(row.status) }} ›</text></view></button>
+        <button v-for="row in rows" :key="row.taskId" class="task-row" @click="openTask(row.taskId)"><view class="row-heading"><text class="task-title">{{ row.title }}</text><text class="status" :class="row.status">{{ label(row) }}</text></view><text class="meta">{{ row.storeName }}{{ row.roleLabel ? ' · ' + row.roleLabel : '' }}</text><view class="row-heading"><text class="meta">{{ row.dueDate ? '截止 '+row.dueDate : '未设置截止日期' }}{{ row.requestedDueDate ? '（已申请延到 '+row.requestedDueDate+'）' : '' }}</text><view class="task-link"><text>{{ nextStep(row.status) }}</text><k-icon name="chevron-right" :size="12" color="#8A5E36" /></view></view></button>
         <button v-if="hasMore" class="more" :disabled="loading" @click="loadList(true)">{{ loading ? '正在读取…' : '加载更多' }}</button>
       </template>
       <template v-else>
@@ -31,7 +31,7 @@
           <view v-if="actions.length" class="act-buttons"><button v-for="a in actions" :key="a.key" :class="{active:actKey===a.key}" :disabled="acting" @click="toggleAct(a.key)">{{ a.label }}</button></view>
           <view v-if="actKey" class="task-panel act-form">
             <text class="section-title">{{ form.title }}</text>
-            <picker v-if="form.date" mode="date" :start="today" :value="actDue" @change="onDue"><view class="date-field"><text>{{ actDue || '选择希望延到的日期' }}</text><text class="meta">›</text></view></picker>
+            <picker v-if="form.date" mode="date" :start="today" :value="actDue" @change="onDue"><view class="date-field"><text>{{ actDue || '选择希望延到的日期' }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></picker>
             <textarea v-model="actText" :disabled="acting" :maxlength="1000" :placeholder="form.placeholder" class="feedback small" :auto-height="true"/>
             <text class="counter">{{ actText.length }}/1000</text>
             <view v-if="form.images" class="images"><view v-for="(img,i) in actImages" :key="img.fileId" class="image-item"><image :src="absUrl(img.url)" mode="aspectFill" @click="preview(actImages,i)"/><button :disabled="uploading||acting" class="remove" @click="actImages.splice(i,1)" aria-label="移除图片">×</button></view><button v-if="actImages.length<9" class="add-image" :disabled="uploading||acting" @click="addImages(actImages)">{{ uploading ? '上传中…' : '＋ 图片（可选）' }}</button></view>
@@ -134,4 +134,54 @@ onHide(()=>clearInterval(timer));onBeforeUnmount(()=>{sequence++;clearInterval(t
 </script>
 <style scoped lang="scss">
 .task-body{padding:16px 14px 40px}.intro{display:block;color:var(--k-muted);font-size:14px;line-height:1.7;margin-bottom:18px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tabs button{margin:0;padding:6px 15px;border-radius:30px;font-size:14px;color:var(--k-ink);background:var(--k-paper)}.tabs button.active{background:var(--k-ochre);color:#fffaf2}.task-row,.task-panel{display:block;text-align:left;padding:18px 16px;border:1px solid var(--k-line);border-radius:14px;background:var(--k-paper);margin:0 0 14px;line-height:1.6}.row-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.task-title{font-size:18px;font-weight:700;flex:1;min-width:0;overflow-wrap:anywhere}.status{font-size:12px;padding:3px 8px;border-radius:6px;background:#f2ede4;color:#726451;white-space:nowrap;line-height:1.5}.status.rejected,.status.declined{background:#fcece5;color:#a64632}.status.submitted,.status.pending{background:#fff1d7;color:#916224}.status.approved{background:#e8f0e3;color:#456544}.meta{display:block;color:var(--k-muted);font-size:13px;line-height:1.7;margin-top:8px}.meta.warn{color:#916224}.task-link{font-size:13px;color:var(--k-ochre-deep);margin-top:8px;white-space:nowrap}.section-title{display:block;font-size:17px;font-weight:700;margin:16px 0 10px}.task-panel>.section-title:first-child{margin-top:0}.row-heading .section-title{margin:0}.pre{display:block;white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.8}.rejection{background:#fcf0e8;border:1px solid #dfb5a5;padding:0 16px 16px;border-radius:12px;margin-bottom:14px;color:#984d36}.field-label{display:block;font-size:15px;margin:18px 0 8px}.required{color:#ac4635}.feedback{width:100%;box-sizing:border-box;min-height:130px;border:1px solid var(--k-line);border-radius:8px;background:#fffdf8;padding:12px;font-size:15px;line-height:1.7}.feedback.small{min-height:90px}.counter{display:block;text-align:right;font-size:12px;color:var(--k-muted);margin-top:6px}.images{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.images image,.image-item,.add-image{width:84px;height:84px;border-radius:8px}.image-item{position:relative}.remove{position:absolute;right:-5px;top:-5px;width:26px;height:26px;padding:0;border-radius:50%;font-size:20px;line-height:24px;background:#76573e;color:#fffaf2}.add-image{padding:0;display:flex;align-items:center;justify-content:center;background:#f1e9dc;border:1px dashed var(--k-ochre);font-size:12px;color:var(--k-ochre-deep);margin:0}.submit{margin:22px 0 0;border-radius:30px;background:var(--k-ochre);color:#fffaf2;font-size:16px;font-weight:700;padding:12px;line-height:1.5}.accept .submit{margin-top:14px}.submit[disabled]{background:#e7e1d9;color:#908477}.state{padding:40px 16px;text-align:center;color:var(--k-muted);line-height:1.8}.state button,.more{font-size:14px;margin-top:16px}.result-note{padding:16px;line-height:1.8;color:var(--k-muted)}.act-buttons{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.act-buttons button{margin:0;padding:6px 15px;border-radius:30px;font-size:14px;color:var(--k-ink);background:var(--k-paper);border:1px solid var(--k-line)}.act-buttons button.active{background:var(--k-ochre);color:#fffaf2;border-color:var(--k-ochre)}.date-field{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--k-line);border-radius:8px;background:#fffdf8;font-size:15px;margin-bottom:10px}.date-field .meta{margin:0}.event{padding:12px 0;border-top:1px solid var(--k-line)}.event:first-of-type{border-top:0;padding-top:0}.event-head{display:block;font-size:15px;font-weight:700}.event.admin .event-head{color:var(--k-ochre-deep)}button::after{border:0}
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边）；任务行标题 15、说明 12，状态换成统一的小标签（绿 = 通过、琥珀 = 待处理、红 = 驳回 / 做不了）；
+   主按钮收成暖棕渐变胶囊。填写框（完成说明、提问）的字号不动。按钮、文字一个不少。 */
+.platform-tasks{--k-bg:#F7F5F2;background:#F7F5F2}
+.platform-tasks :deep(.k-navbar__title){font-family:var(--k-sans);font-size:16px;font-weight:600}
+.platform-tasks :deep(.subscribe-entry){padding:4px 12px 0}
+.platform-tasks :deep(.subscribe-entry button){min-height:36px;border:0;border-radius:12px;background:var(--k-paper);color:var(--k-ochre-deep);font-size:12px}
+.task-body{padding:10px 12px 40px}
+.intro{font-size:12px;line-height:1.7;margin:0 0 10px}
+.tabs{gap:6px;margin-bottom:10px}
+.tabs button{height:28px;padding:0 12px;border-radius:999px;font-size:12px;line-height:28px;color:var(--k-ink2)}
+/* 11-18 第二轮精修：筛选胶囊选中不描边、字重 500（全站一个样子） */
+.tabs button.active{background:var(--k-red-soft);color:var(--k-red-deep);font-weight:500;box-shadow:none}
+.task-row,.task-panel{padding:12px;border:0;border-radius:12px;margin:0 0 8px}
+.task-title{font-size:14px;font-weight:600;line-height:1.45}
+.task-panel .task-title{font-size:17px;font-weight:700}
+.status{height:17px;padding:0 5px;border-radius:4px;background:#F5F1EB;color:var(--k-ink2);font-size:10px;font-weight:500;line-height:17px}
+.status.rejected,.status.declined{background:var(--k-alert-soft);color:var(--k-alert)}
+.status.submitted,.status.pending{background:var(--k-ochre-soft);color:var(--k-ochre-deep)}
+.status.approved{background:var(--k-green-soft);color:var(--k-green)}
+.meta{font-size:12px;line-height:1.6;margin-top:4px}
+.meta.warn{color:var(--k-ochre-deep)}
+.task-link{font-size:12px;margin-top:4px;color:var(--k-red-deep)}
+/* 「去接收」后面的箭头换成 12 号线性图标，和字排一行 */
+.task-link{flex-shrink:0;display:flex;align-items:center;gap:2px}
+.section-title{font-size:15px;font-weight:700;margin:14px 0 8px}
+.pre{font-size:14px;line-height:1.75}
+.rejection{background:var(--k-alert-soft);border:0;padding:0 12px 12px;border-radius:12px;margin-bottom:8px;color:var(--k-alert)}
+.required{color:var(--k-alert)}
+.feedback{border-color:var(--k-line2);border-radius:10px;background:var(--k-paper)}
+.remove{background:rgba(58,50,43,.72);color:#fff}
+.add-image{background:#F7F5F2;border:1px dashed var(--k-line2);color:var(--k-ink2)}
+.submit{height:44px;margin:16px 0 0;padding:0;border-radius:999px;background:linear-gradient(135deg,#B5814D,#8E5E33);color:#fff;font-size:15px;font-weight:600;line-height:44px}
+.accept .submit{margin-top:12px}
+/* 不可点：原配色整体变淡 .45，不用冷灰底；!important 盖住微信 button[disabled] 自带的灰色（写法同 k-button） */
+.submit[disabled]{background:linear-gradient(135deg,#B5814D,#8E5E33)!important;color:#fff!important;opacity:.45}
+.state button,.more{font-size:13px;color:var(--k-red-deep)}
+/* 空状态 / 读取中：白卡里居中，14 / 500 二级墨；「重新加载」是 32 高的次按钮小胶囊 */
+.state{display:flex;flex-direction:column;align-items:center;gap:12px;margin:0 0 8px;padding:28px 16px;border-radius:12px;background:var(--k-paper);font-size:14px;font-weight:500;line-height:1.6;color:var(--k-ink2)}
+.state button{height:32px;margin:0;padding:0 14px;border:1px solid var(--k-red-line);border-radius:999px;background:var(--k-paper);line-height:30px}
+.result-note{padding:12px;font-size:13px}
+.act-buttons{gap:6px;margin:0 0 8px}
+.act-buttons button{height:30px;padding:0 12px;border:1px solid var(--k-red-line);border-radius:999px;font-size:13px;line-height:28px;color:var(--k-red-deep)}
+.act-buttons button.active{background:var(--k-red-soft);color:var(--k-red-deep);border-color:var(--k-red);font-weight:600}
+/* 页签和「回复 / 延期 / 做不了」这几个胶囊看着 28–30 高，上下各多出一圈看不见的可点范围，手指好点 */
+.tabs button,.act-buttons button{position:relative;overflow:visible}
+.tabs button::before,.act-buttons button::before{content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px}
+.date-field{border-color:var(--k-line2);border-radius:10px;background:var(--k-paper)}
+.event{position:relative;padding:10px 0;border-top:0}
+.event + .event::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 0}
+.event-head{font-size:14px;font-weight:600}
 </style>

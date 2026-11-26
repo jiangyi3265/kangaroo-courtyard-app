@@ -146,5 +146,5 @@ test('日历组件：标题栏「共 N 晚」、底部「确定（共N晚）」�
   assert.ok(!fs.existsSync(path.join(APP, 'components/stay-range-picker')), '不放进根 components/（easycom 会打进主包）')
   // 预订页的房态日历（带每晚价格 / 满房）保持原样：仍是第一次点入住、第二次点离店，最多 30 晚
   const b = read('pages/stays/booking.vue')
-  assert.match(b, /if \(n > 30\) return toast\('最多连住 30 晚'\)/)
+  assert.match(b, /if \(n > MAX_NIGHTS\) return toast\('最多连住 30 晚'\)/)
 })

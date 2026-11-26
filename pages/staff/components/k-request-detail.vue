@@ -12,7 +12,7 @@
     <view v-if="images.length" class="req-card"><text class="req-card__label">商家附图</text><view class="req-images"><image v-for="(url, i) in images" :key="url" class="req-images__item" :src="url" mode="aspectFill" @click="preview(i)" /></view></view>
     <view v-if="detail.contactName || detail.contactPhone" class="req-card">
       <text class="req-card__label">商家联系方式</text>
-      <view class="req-contact"><view class="req-contact__copy"><text class="req-contact__name">{{ detail.contactName || '联系人' }}</text><text class="req-contact__phone">{{ detail.contactPhone }}</text></view><template v-if="callable && detail.contactPhone"><view class="req-contact__btn" hover-class="k-press-s" @click="copy(detail.contactPhone, '手机号已复制')"><text>复制</text></view><view class="req-contact__btn req-contact__btn--main" hover-class="k-press-s" @click="call"><k-icon name="phone" :size="15" color="white" /><text>打电话</text></view></template></view>
+      <view class="req-contact"><view class="req-contact__copy"><text class="req-contact__name">{{ detail.contactName || '联系人' }}</text><text class="req-contact__phone">{{ detail.contactPhone }}</text></view><template v-if="callable && detail.contactPhone"><view class="req-contact__btn" hover-class="k-press-s" @click="copy(detail.contactPhone, '手机号已复制')"><text>复制</text></view><view class="req-contact__btn req-contact__btn--main" hover-class="k-press-s" @click="call"><k-icon name="phone" :size="14" color="#8A5E36" /><text>打电话</text></view></template></view>
     </view>
     <view v-if="showNote && detail.verifyNote" class="req-card"><text class="req-card__label">换工主理人核实备注</text><text class="req-card__body">{{ detail.verifyNote }}</text></view>
   </view>
@@ -38,22 +38,27 @@ const call = () => uni.makePhoneCall({ phoneNumber: String(props.detail.contactP
 </script>
 
 <style scoped>
-.req-card{margin-bottom:12px;padding:14px;border-radius:14px;background:var(--k-paper);box-shadow:0 6px 20px rgba(58,50,43,.08);display:flex;flex-direction:column;gap:8px}
-.req-card--alert{background:#FBEFEC}
+/* 2026-11-17 改版「小而精」：白卡 12 圆角、不加阴影，卡片之间 8；标题 16 / 700，小节名 14 / 600，正文 13；电话按钮收成 28 高的胶囊 */
+.req-card{margin-bottom:8px;padding:12px;border-radius:12px;background:var(--k-paper);display:flex;flex-direction:column;gap:8px}
+.req-card--alert{background:var(--k-alert-soft)}
 .req-card__chips{display:flex;flex-wrap:wrap;gap:6px}
-.req-card__title{font-size:18px;font-weight:700;line-height:1.4;color:var(--k-ink);overflow-wrap:anywhere}
+.req-card__title{font-size:16px;font-weight:700;line-height:1.4;color:var(--k-ink);overflow-wrap:anywhere}
 .req-card__meta{font-size:12px;line-height:1.5;color:var(--k-muted)}
-.req-card__label{font-size:13px;font-weight:600;color:var(--k-ink2)}
-.req-card__body{font-size:14px;line-height:1.7;color:var(--k-ink);white-space:pre-wrap;overflow-wrap:anywhere}
-.req-fact{display:flex;gap:12px;padding:8px 0;border-top:1px solid var(--k-line);font-size:13px;line-height:1.6}
+.req-card__label{font-size:14px;font-weight:600;color:var(--k-ink)}
+.req-card__body{font-size:13px;line-height:1.7;color:var(--k-ink2);white-space:pre-wrap;overflow-wrap:anywhere}
+.req-fact{position:relative;display:flex;gap:12px;padding:8px 0;font-size:13px;line-height:1.6}
+/* 11-18 第二轮精修：分隔换成发丝线 */
+.req-fact::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5);transform-origin:0 0}
 .req-fact__label{flex-shrink:0;width:64px;color:var(--k-muted)}
 .req-fact__value{min-width:0;flex:1;color:var(--k-ink);white-space:pre-wrap;overflow-wrap:anywhere}
 .req-images{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.req-images__item{width:100%;height:92px;border-radius:8px;background:var(--k-paper2)}
+/* 三列附图接近 4:3（390 宽约 108×81） */
+.req-images__item{width:100%;height:81px;border-radius:8px;background:var(--k-paper2)}
 .req-contact{display:flex;align-items:center;gap:8px}
 .req-contact__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
-.req-contact__name{font-size:15px;font-weight:600;color:var(--k-ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.req-contact__phone{font-size:13px;color:var(--k-muted)}
-.req-contact__btn{flex-shrink:0;height:34px;padding:0 12px;border:1px solid var(--k-line2);border-radius:17px;display:flex;align-items:center;gap:4px;font-size:13px;color:var(--k-ink2)}
-.req-contact__btn--main{border-color:var(--k-red);background:var(--k-red);color:#fff}
+.req-contact__name{font-size:14px;font-weight:600;color:var(--k-ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.req-contact__phone{font-size:12px;color:var(--k-muted)}
+.req-contact__btn{flex-shrink:0;height:28px;padding:0 12px;border:1px solid var(--k-red-line);border-radius:999px;background:var(--k-paper);display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--k-red-deep)}
+/* 「打电话」和底部操作条的主按钮同屏：不用实心渐变，浅底暖棕字（图标颜色在模板里一起换成暖棕） */
+.req-contact__btn--main{border-color:transparent;background:var(--k-red-soft);color:var(--k-red-deep)}
 </style>

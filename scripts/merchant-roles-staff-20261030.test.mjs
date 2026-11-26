@@ -76,12 +76,12 @@ test('任务要点：佣金按分换算，空的不写；招募岗位写招募�
   assert.deepEqual(v.jobFacts(null), [])
 })
 
-test('转发选人：一位直接列他；多位第一项是全部（不指定人）；没有人返回空', () => {
-  assert.deepEqual(v.forwardChoices([{ userId: 5, name: '阿强' }]), [{ label: '阿强', userId: 5 }])
+test('转发选人：任意候选人数均保留系统安排', () => {
+  assert.deepEqual(v.forwardChoices([{ userId: 5, name: '阿强' }]), [{ label: '由系统安排', userId: null }, { label: '阿强', userId: 5 }])
   const many = v.forwardChoices([{ userId: 5, name: '阿强' }, { userId: 6, name: '小美' }])
   assert.equal(many.length, 3)
   assert.equal(many[0].userId, null)
-  assert.deepEqual(v.forwardChoices([]), [])
+  assert.deepEqual(v.forwardChoices([]), [{ label: '由系统安排', userId: null }])
 })
 
 test('换工主理人的按钮：只有待核实能转发、退回', () => {
@@ -184,7 +184,7 @@ test('列表：换页签时晚到的旧结果不覆盖新的；翻页接在后�
 
 // ---------------------------------------------------------------- 线上任务审核
 
-function intakeHarness({ staff = [{ userId: 5, name: '阿强' }], stores = [{ storeId: 201, storeName: '海边咖啡' }], currentStore = 102, pick = () => 0, confirmOk = true, reason = '佣金没写清楚', page = 1 } = {}) {
+function intakeHarness({ staff = [{ userId: 5, name: '阿强' }], destination, stores = [{ storeId: 201, storeName: '海边咖啡' }], currentStore = 102, pick = () => 0, confirmOk = true, reason = '佣金没写清楚', page = 1 } = {}) {
   const log = { gets: [], posts: [], puts: [], toasts: [], gone: [], selected: [], confirms: [], backs: 0 }
   let boot = null, store = currentStore
   const s = vue.ref(page)
@@ -195,7 +195,7 @@ function intakeHarness({ staff = [{ userId: 5, name: '阿强' }], stores = [{ st
     selectStaffStore: async (id) => { log.selected.push(id); store = id },
     get: async (url, params) => {
       log.gets.push([url, plain(params || {})])
-      if (url.endsWith('/options')) return { data: { serviceStaff: staff, merchantStores: stores } }
+      if (url.endsWith('/options')) return { data: { serviceStaff: staff, destination: destination || (staff.length ? '本城商家服务人' : '平台'), merchantStores: stores } }
       if (/\/intake\/\d+$/.test(url)) return { data: { ...DETAIL, verifyNote: '已电话核实' } }
       return { data: { rows: [ROW], total: 1, hasMore: false, city: '平潭' } }
     },
@@ -229,15 +229,15 @@ test('线上任务审核：默认取当前门店本城的待核实；消息带�
   assert.equal(link.run('noteDraft.value'), '已电话核实')
 })
 
-test('确认转发：一位直接转给他并带上备注；服务端用门店校验城市；转完回列表', async (t) => {
-  const h = intakeHarness()
+test('确认转发：一位也可选系统安排或点名转发；服务端用门店校验城市；转完回列表', async (t) => {
+  const h = intakeHarness({ pick: () => 1 })
   t.after(h.stop)
   await h.boot({ requestId: '7' })
   h.run("noteDraft.value = ' 已确认佣金 '")
   await h.run('forward()')
   await flush()
   assert.deepEqual(h.log.posts, [['/app/staff/intake/7/forward?storeId=102', { serviceUserId: 5, verifyNote: '已确认佣金' }]])
-  assert.match(h.log.confirms[0][1], /提醒阿强接手/)
+  assert.match(h.log.confirms[0][1], /转给阿强处理/)
   assert.equal(h.log.toasts.at(-1), '已转给本城商家服务人')
   assert.equal(h.s.value, 1)
 })
@@ -248,7 +248,7 @@ test('确认转发：多位选「全部」不指定人；取消选择不发请�
   await many.boot({ requestId: '7' })
   await many.run('forward()')
   assert.deepEqual(many.log.posts[0][1], { serviceUserId: null, verifyNote: '已电话核实' })
-  assert.match(many.log.confirms[0][1], /本城全部商家服务人/)
+  assert.match(many.log.confirms[0][1], /本城商家服务人/)
 
   const cancel = intakeHarness({ pick: () => -1 })
   t.after(cancel.stop)
@@ -260,8 +260,19 @@ test('确认转发：多位选「全部」不指定人；取消选择不发请�
   t.after(none.stop)
   await none.boot({ requestId: '7' })
   await none.run('forward()')
-  assert.equal(none.log.confirms[0][0], '本城还没有商家服务人')
+  assert.match(none.log.confirms[0][1], /转给平台/)
   assert.equal(none.log.posts[0][1].serviceUserId, null)
+})
+
+test('系统安排按本条需求展示负责人去向，提交时由服务端重新选人', async (t) => {
+  const h = intakeHarness({ staff: [{ userId: 8, name: '负责人甲' }], destination: '城市负责人' })
+  t.after(h.stop)
+  await h.boot({ requestId: '7' })
+  await h.run('forward()')
+  const options = h.log.gets.find(([url]) => url.endsWith('/options'))
+  assert.equal(String(options[1].requestId), '7')
+  assert.match(h.log.confirms[0][1], /转给城市负责人/)
+  assert.equal(h.log.posts[0][1].serviceUserId, null)
 })
 
 test('退回商家：没写原因不发请求；写了原因走退回接口', async (t) => {
@@ -458,11 +469,81 @@ test('线上任务页：地址带了门店时，切换任务也看那家店（�
 
 // ---------------------------------------------------------------- 城市负责人
 
-test('城市负责人：页面里只有读接口，详情不给拨打；工作台也是', () => {
+function expiryOverviewHarness(departures) {
+  const hooks = {}, opened = []
+  const store = vue.ref('101')
+  const h = runSetup('pages/staff/volunteers.vue', {
+    onLoad: fn => { hooks.load = fn }, onShow: fn => { hooks.show = fn }, onHide: fn => { hooks.hide = fn },
+    ensureSession: async () => {}, hasStaffAccess: vue.ref(true), currentStaffStoreId: () => store.value,
+    selectStaffStore: async id => { store.value = id }, getMessageScopeKey: () => store.value,
+    R: { staffApplications: '/pages/staff/applications' }, go: url => opened.push(url),
+    errText: e => e.message,
+    get: async () => ({ data: { shops: [{ storeId: 500, shortfall: 2, departures }] } })
+  })
+  return { ...h, hooks, opened }
+}
+
+test('合约到期历史提醒只打开指定报名，使用详情授权门店，返回和刷新不再次跳转', async t => {
+  const h = expiryOverviewHarness([
+    { appId: 31, canManage: true, publisherStoreId: 400 },
+    { appId: 32, canManage: true, publisherStoreId: 400, detailStoreId: 500 }
+  ])
+  t.after(h.stop)
+  h.hooks.show()
+  await h.hooks.load({ storeId: '102', focusAppId: '32' })
+  assert.deepEqual(h.opened, ['/pages/staff/applications?appId=32&storeId=500'])
+  assert.equal(h.run('tab.value'), 'leaving')
+  h.hooks.hide()
+  h.hooks.show()
+  await flush()
+  assert.equal(h.opened.length, 1)
+})
+
+test('同城只读提醒只显示对应人，已离开名单时说明原因，普通入口仍看招募', async t => {
+  const records = [{ appId: 31, canManage: true, publisherStoreId: 400 }, { appId: 32, canManage: false }]
+  const h = expiryOverviewHarness(records)
+  t.after(h.stop)
+  await h.hooks.load({ focusAppId: '32' })
+  assert.deepEqual(plain(h.run('rows(visibleShops.value[0]).map(p => p.appId)')), [32])
+  assert.deepEqual(h.opened, [])
+  records.pop()
+  await h.run('load()')
+  assert.equal(h.run('visibleShops.value.length'), 0)
+  assert.match(h.run('emptyText.value'), /已不在当前到期名单/)
+  h.run("selectTab('leaving')")
+  assert.deepEqual(plain(h.run('rows(visibleShops.value[0]).map(p => p.appId)')), [31])
+  const regular = expiryOverviewHarness(records)
+  t.after(regular.stop)
+  await regular.hooks.load({})
+  assert.equal(regular.run('tab.value'), 'shortfall')
+  assert.deepEqual(regular.opened, [])
+})
+
+test('合约提醒等待门店核验期间可重试，离开页面后迟到的响应不能拉起报名', async t => {
+  const h = expiryOverviewHarness([])
+  t.after(h.stop)
+  h.sandbox.selectStaffStore = async () => { throw new Error('门店身份未核实') }
+  await h.hooks.load({ storeId: '102', focusAppId: '32' })
+  assert.equal(h.run('error.value'), '门店身份未核实')
+  let finish
+  h.sandbox.selectStaffStore = async () => { h.sandbox.currentStaffStoreId = () => '102' }
+  h.sandbox.get = () => new Promise(resolve => { finish = resolve })
+  const retry = h.run('load()')
+  await flush()
+  h.hooks.hide()
+  finish({ data: { shops: [{ departures: [{ appId: 32, canManage: true, detailStoreId: 102 }] }] } })
+  await retry
+  assert.equal(h.run('loaded.value'), true)
+  assert.deepEqual(h.opened, [])
+})
+
+test('本城详情仅在服务端允许时接办等待记录，工作台保持只读，详情不公开电话', () => {
   for (const rel of ['pages/staff/city.vue', 'pages/staff/components/k-city-work.vue']) {
     const s = src(rel)
-    assert.doesNotMatch(s, /\b(post|put|del)\(/, rel)
-    assert.match(s, /import \{ get \} from '@\/common\/request\.js'/, rel)
+    if (rel.endsWith('/city.vue')) {
+      assert.match(s, /v-if="detail.canResume"[^>]*@click="resumeRequest"/)
+      assert.deepEqual([...s.matchAll(/\b(post|put|del)\(([^\n]+)/g)].map(hit => hit[2].split('?')[0]), ["CITY_API + '/' + openId + '/resume"])
+    } else assert.doesNotMatch(s, /\b(post|put|del)\(/, rel)
     assert.doesNotMatch(s, /callable/, rel)
   }
 })
@@ -517,7 +598,7 @@ test('业务页入口：换工主理人「线上任务审核 / 商家岗位 / �
   assert.deepEqual(entries(), [['商家需求审核', 3], ['商家岗位', 2], ['换工审核', 0]])
   m.run('reviewEntries.value[0].open(); reviewEntries.value[1].open()')
   assert.deepEqual(m.log.gone, ['/pages/staff/intake?storeId=102', '/pages/staff/intake?kind=jobs&storeId=102'])
-  assert.deepEqual(plain(m.run('daily.value.map(x => x.label)'))[0], '招募周报')
+  assert.equal(m.run("daily.value.find(x => x.to === R.weekly)?.label"), '招募周报')
 
   const k = businessHarness('keeper')
   t.after(k.stop)
@@ -525,7 +606,7 @@ test('业务页入口：换工主理人「线上任务审核 / 商家岗位 / �
   assert.deepEqual(plain(k.run('reviewEntries.value.map(e => e.label)')), ['线上任务报名审核'])
   k.run('reviewEntries.value[0].open()')
   assert.deepEqual(k.log.gone, ['/pages/staff/applications?jobType=online&storeId=102'])
-  assert.equal(plain(k.run('daily.value.map(x => x.label)'))[0], '周报管理')
+  assert.equal(k.run("daily.value.find(x => x.to === R.weekly)?.label"), '周报管理')
 
   const st = businessHarness('staff')
   t.after(st.stop)

@@ -148,13 +148,10 @@ export function jobFacts(job, summary = '') {
 /** 换工主理人在详情页能做什么：只有待核实的能转发、退回（服务端同样按状态拒绝）；只填店名代提交的没有商家账号，退回去没人能接着改，不给退回 */
 export const intakeActions = (d) => (d && d.status === 'pending_verify' ? (d.canReturn === false ? ['forward'] : ['forward', 'return']) : [])
 
-/**
- * 转发时选谁：只有一位直接列他；多位时第一项是「全部」（userId = null，服务端给本城每位都补这家店的授权，谁先接手谁处理）。
- * 没有人时返回空，页面改问要不要转平台。
- */
+/** 系统安排始终可选，点名名单由服务端按本条需求计算。 */
 export function forwardChoices(staff) {
   const list = (staff || []).map(p => ({ label: p.name, userId: p.userId }))
-  return list.length > 1 ? [{ label: '本城全部商家服务人（谁先接手谁处理）', userId: null }].concat(list) : list
+  return [{ label: '由系统安排', userId: null }, ...list]
 }
 
 const isOnline = (d) => d.requestType === 'online_task' && d.jobId != null

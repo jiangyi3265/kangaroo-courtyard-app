@@ -79,7 +79,7 @@ test('页面注册在 pages/stays 分包里，不在主包', () => {
   assert.ok(fs.existsSync(path.join(APP, 'pages/stays/reviews.vue')))
   // 只引用主包里已有的模块，不往主包加东西
   // 2026-10-17 R3：多了同一分包里的 stays-media.js 和全屏播放组件 stay-video-player.vue
-  for (const m of pageJs.matchAll(/from '([^']+)'/g)) assert.ok(/^(vue|@dcloudio\/uni-app|@\/common\/(screen|request|ui|upload)\.js|\.\/stays-(reviews|media|ai-summary|art)\.js|\.\/stay-video-player\.vue)$/.test(m[1]), m[1])
+  for (const m of pageJs.matchAll(/from '([^']+)'/g)) assert.ok(/^(vue|@dcloudio\/uni-app|@\/common\/(features|screen|request|ui|upload)\.js|\.\/stays-(reviews|media|ai-summary|art)\.js|\.\/stay-video-player\.vue)$/.test(m[1]), m[1])
 })
 
 test('页面结构：汇总卡、大家提到、页签、筛选面板、评价卡、空态', () => {
@@ -125,6 +125,7 @@ function runPage({ summary, rowsFor = () => ({ rows: [], total: 0, hasMore: fals
   let reach = null
   const sandbox = {
     console, setTimeout, clearTimeout, ...h, ...media,
+    watchStayGate: vue.watch, stayBookingEnabled: vue.ref(true), refreshFeatures: async () => ({ stayBookingEnabled: true }),
     ref: vue.ref, computed: vue.computed,
     onReachBottom: (fn) => { reach = fn },
     useScreen: (max, extra) => { screen.extra = extra; return vue.ref(1) },

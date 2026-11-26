@@ -1,16 +1,16 @@
 <template>
   <!-- 2026-11-03 主人：「订票以后让他提交这个身份证号」。录用后的到店岗位：没交时是一张填写卡（不弹窗、可以先不填，但每次进来都在），
        交了以后缩成一行「出行证件已提交 · 脱敏号码」，点「修改」能改。完整号码只有本店换工主理人 / 城市负责人导出名单时看得到。 -->
-  <view v-if="state === 'failed'" class="tid-retry" role="button" hover-class="k-press-s" @click="load"><k-icon name="refresh-cw" :size="16" color="red" :stroke="2" /><text>出行证件状态暂时读不到，点这里重试</text></view>
+  <view v-if="state === 'failed'" class="tid-retry" role="button" hover-class="k-press-s" @click="load"><k-icon name="refresh-cw" :size="16" color="red" /><text>出行证件状态暂时读不到，点这里重试</text></view>
   <view v-else-if="shown" class="tid" :class="{ 'tid--done': done }">
     <view v-if="done" class="tid-row">
-      <view class="tid-face"><k-icon name="id-card" :size="20" color="#506E3C" :stroke="1.8" /></view>
+      <view class="tid-face"><k-icon name="id-card" :size="18" color="green" /></view>
       <view class="tid-main"><text class="tid-label">出行证件已提交</text><text class="tid-name">{{ info.name }} · {{ info.idMasked }}</text><text class="tid-tip">订票、投保共用，无需重复提交</text></view>
       <view class="tid-act" role="button" aria-label="修改出行证件" hover-class="k-press-s" @click="startEdit"><text>修改</text></view>
     </view>
     <template v-else>
       <view class="tid-row tid-row--head">
-        <view class="tid-face tid-face--todo"><k-icon name="id-card" :size="20" color="#8A5E36" :stroke="1.8" /></view>
+        <view class="tid-face tid-face--todo"><k-icon name="id-card" :size="18" color="red" /></view>
         <view class="tid-main"><text class="tid-title">{{ editing ? '修改出行证件' : '出行证件，只需提交一次' }}</text><text class="tid-tip">{{ tip }}</text></view>
       </view>
       <view class="tid-field"><text>证件姓名</text><input v-model="name" class="tid-input" maxlength="16" placeholder="身份证上的姓名" placeholder-class="k-placeholder" /></view>
@@ -130,4 +130,23 @@ defineExpose({ load })
 .tid-submit { flex: 1; min-width: 0; }
 .tid-foot { display: block; margin-top: 8px; font-size: 11px; line-height: 16px; color: #8A7865; text-align: center; }
 .tid-retry { margin-top: 12px; min-height: 44px; padding: 0 14px; border: 1px dashed #E6D6BF; border-radius: 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--k-red-deep); }
+/* 2026-11-17 改版「小而精」：白卡 12 圆角、不描边、不加阴影；图标放在 36 的浅色圆角方块里；已提交是浅豆绿底的一行。
+   要本人填写：两个输入框的高度和输入字号不动。 */
+.tid { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+.tid--done { padding: 4px 12px; background: var(--k-green-soft); }
+.tid-row { gap: 10px; }
+.tid-face { width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 255, 255, .7); }
+.tid-face--todo { background: linear-gradient(160deg, #FFF6EA, #FFE7CC); }
+
+.tid-label { font-size: 11px; line-height: 16px; color: var(--k-green); }
+.tid-name { font-size: 14px; line-height: 20px; }
+.tid-title { font-size: 15px; }
+.tid-tip { font-size: 11px; line-height: 16px; color: var(--k-muted); }
+/* 「修改」：看上去 28 高的白色小胶囊，透明边把可点范围撑到 36（原来 32） */
+.tid-act { height: 36px; min-width: 60px; border: 4px solid transparent; border-radius: 18px; background: #fff padding-box; font-size: 12px; color: var(--k-green); }
+.tid-field { border: 0; background: #F5F1EB; }
+.tid-field > text { font-size: 13px; color: var(--k-ink2); }
+.tid-error { color: var(--k-alert); }
+.tid-foot { color: var(--k-muted); }
+.tid-retry { margin-top: 8px; padding: 0 12px; border: 0; background: var(--k-paper); }
 </style>

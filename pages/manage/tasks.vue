@@ -19,18 +19,18 @@
       <!-- 之前列表里没有发布入口：从业务中心「查看任务」进来、或发布完一条回到列表后，想再发一条只能退出去重进 -->
       <view v-if="!volunteerView" class="k-between"><text class="section-title">员工任务</text><view v-if="list.canPublish" class="publish-link" @click="openPublish"><k-icon name="plus" :size="14" color="red" /><text>发布任务</text></view></view>
       <view v-if="!volunteerView" class="task-card">
-        <view v-for="item in employeeTasks" :key="item.taskId + item.title" class="task-row" @click="openTask(item)">
+        <view v-for="item in employeeTasks" :key="item.taskId + item.title" class="task-row" :class="{ 'task-row--empty': !item.taskId }" @click="openTask(item)">
           <image class="task-row__avatar" :src="item.avatar" mode="aspectFill" /><view class="task-row__check" />
           <view class="task-row__main"><text v-if="item.owner" class="task-row__owner">{{ item.owner }}</text><text class="task-row__title" :class="{ 'task-row__title--solo': !item.owner }">{{ item.title }}</text><view class="task-row__meta"><text>{{ item.date }} 截止</text><k-icon name="map-pin" :size="14" color="muted" /><text class="task-row__place">{{ item.place }}</text></view><text v-if="item.mine" class="mine-line">{{ item.mine }}</text></view>
           <view class="priority" :class="'priority--' + item.tone"><text>{{ item.priority }}</text></view>
         </view>
-        <view class="task-more" @click.stop="openAllStaffTasks"><text>{{ moreText }}</text><k-icon name="chevron-right" :size="16" color="ink" /></view>
+        <view class="task-more" @click.stop="openAllStaffTasks"><text>{{ moreText }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
       </view>
       <text class="section-title" :class="{ 'duty-title': !volunteerView }">换工任务</text>
       <!-- 没有员工授权的在店换工从「我的 → 门店任务」或任务消息进来：只看换工任务，并说明谁能认领、怎么得积分 -->
       <text v-if="volunteerView" class="vol-tip">近 90 天在门店入职的换工可以认领这里的换工任务，验收后按实际工时得积分（1 小时 10 积分）。</text>
       <view class="task-card">
-        <view v-for="item in volunteerTasks" :key="item.taskId + item.title" class="task-row task-row--volunteer" @click="openTask(item)">
+        <view v-for="item in volunteerTasks" :key="item.taskId + item.title" class="task-row task-row--volunteer" :class="{ 'task-row--empty': !item.taskId }" @click="openTask(item)">
           <image class="task-row__avatar" :src="item.avatar" mode="aspectFill" /><view class="task-row__check" />
           <view class="task-row__main"><text class="task-row__title">{{ item.title }}</text><view class="task-row__meta"><text>{{ item.date }} 截止</text><k-icon name="map-pin" :size="14" color="muted" /><text class="task-row__place">{{ item.place }}</text></view><text class="claimed"><text class="claimed__num">{{ item.claimed }}</text> 人已认领<text v-if="item.mine" class="mine-tag">{{ item.mine }}</text></text></view>
           <view class="priority" :class="'priority--' + item.tone"><text>{{ item.priority }}</text></view>
@@ -124,11 +124,12 @@
       <text class="section-title claim-section">任务信息</text>
       <view class="info-card"><view class="k-between"><text class="info-card__title">{{ t ? t.title : '' }}</text><view v-if="t && t.modeLabel" class="info-card__chip"><k-chip tone="ochre"><text>{{ t.modeLabel }}</text></k-chip></view></view><text class="info-card__line">{{ t ? t.timeText : '' }}</text><text class="info-card__line">{{ t ? t.place : '' }}</text></view>
       <text class="section-title claim-section">任务身份</text>
-      <view class="role-card"><view class="role-shield"><k-icon name="shield-check" :size="25" color="white" /></view><view><text class="role-card__title">{{ t ? t.roleName : '' }}</text><text class="role-card__desc">仅限本次任务，不含系统权限</text></view></view>
+      <view class="role-card"><view class="role-shield"><k-icon name="shield-check" :size="25" color="green" /></view><view><text class="role-card__title">{{ t ? t.roleName : '' }}</text><text class="role-card__desc">仅限本次任务，不含系统权限</text></view></view>
       <text class="section-title claim-section">任务职责范围</text>
       <view class="permission-card"><view v-for="p in permissions" :key="p.text" class="permission-row"><k-icon :name="p.icon" :size="18" color="muted" /><text>{{ p.text }}</text><k-icon name="check" :size="18" color="green" :stroke="2.5" /></view></view>
       <text class="section-title claim-section">有效期</text><text class="valid-time">{{ t ? t.validText : '' }}</text>
       <view class="covenant"><text>{{ t ? t.note : '' }}</text></view>
+      <k-button v-if="claimed" block :disabled="mine.submitted" :label="mine.submitted ? '已提交，等待验收' : '已完成，提交验收'" @click="submitCompleted" />
       <view class="action-row claim-actions"><k-button size="md" type="secondary" class="action-row__minor" @click="unclaim" :label="claimed ? '取消认领' : (t && t.canDecline ? '无法参加' : '返回列表')" /><k-button size="md" class="action-row__major" @click="claim" :label="claimed ? '查看我的任务' : '确认并认领'" /></view>
     </view>
 
@@ -141,7 +142,7 @@
       <text class="section-title done-section">工时记录</text>
       <view class="hours"><view class="hours__card"><text>实际工时</text><view><text class="hours__num">{{ mine ? mine.actualHours : '—' }}</text><text> 小时</text></view></view><view class="hours__card"><text>折算积分</text><view><text class="hours__num">{{ mine ? mine.points : 0 }}</text><text> 积分</text></view></view></view>
       <text v-if="mine && mine.expWritten" class="section-title done-section">经历沉淀</text>
-      <view v-if="mine && mine.expWritten" class="resume-row" @click="openResume"><view class="resume-row__icon"><k-icon name="clipboard-list" :size="18" color="white" /></view><text>已写入你的经验档案</text><view class="k-flex1" /><text>查看我的经历</text><k-icon name="chevron-right" :size="17" color="ink" /></view>
+      <view v-if="mine && mine.expWritten" class="resume-row" @click="openResume"><view class="resume-row__icon"><k-icon name="clipboard-list" :size="16" color="red" /></view><text>已写入你的经验档案</text><view class="k-flex1" /><text>查看我的经历</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
       <view class="action-row done-actions"><k-button size="md" type="secondary" class="k-flex1" @click="viewProofs" label="查看凭证" /><k-button size="md" type="secondary" class="k-flex1" @click="appeal" label="申诉" /></view>
     </view>
 
@@ -470,6 +471,14 @@ const permissions = computed(() => {
 const mine = computed(() => (t.value && t.value.mine) || null)
 const claimed = computed(() => !!(mine.value && mine.value.status === 'accepted'))
 const bannerTitle = computed(() => (mine.value && mine.value.source === 'assigned' ? '已接受任务！' : '认领成功！'))
+async function submitCompleted() {
+  if (busy || !(await confirm('提交验收', '确认已经按验收标准完成任务？')) || busy) return
+  busy = true
+  try {
+    t.value = (await post('/app/manage/tasks/' + t.value.taskId + '/complete', {})).data
+    toast('已提交验收')
+  } catch (e) { toast(errText(e, '提交失败')) } finally { busy = false }
+}
 async function claim() {
   if (!t.value) return (s.value = 1)
   if (claimed.value) return (s.value = 1)
@@ -729,4 +738,145 @@ async function save(publish) {
 .chip-pop__foot { display: flex; gap: 12px; }
 .chip-pop__btn { flex: 1; min-width: 0; }
 .chip-pop__btn--main { flex: 2; }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：任务列表、认领、完成三屏改成浅灰底 + 白卡 12 圆角、不描边不加阴影；
+   任务标题 14 / 600，时间地点 11 灰字，优先级是 4 圆角小标签，状态页签是白底里的浅棕选中块。
+   只改样子：选周、三个状态、发布任务、查看全部、认领 / 取消 / 无法参加、凭证、申诉都在。
+   发布任务和验收面板是填写页（pages/staff/form-clean.scss 那一套，照顾年纪大的人），字和点击高度都不动，只跟着换了底色。
+   下面每条都带 .tasks，盖住上面的旧值。 */
+@import './manage-refine.scss';
+.tasks .section-title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 22px; }
+.tasks .week-nav { gap: 14px; margin-bottom: 10px; }
+.tasks .week-arrow :deep(.k-icon) { width: 18px !important; height: 18px !important; }
+.tasks .week-box { flex: 0 1 230px; min-width: 0; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.tasks .status-tabs { height: 42px; margin-bottom: 14px; padding: 3px; border: 0; border-radius: 12px; }
+.tasks .status-tabs__item { gap: 6px; border-left: 0; border-radius: 9px; font-size: 13px; color: var(--k-ink2); }
+.tasks .status-tabs__item.active { color: var(--k-red-deep); background: var(--k-red-soft); font-weight: 600; }
+.tasks .publish-link { gap: 2px; color: var(--k-red-deep); font-size: 13px; }
+.tasks .task-card { border: 0; border-radius: 12px; }
+.tasks .task-row { padding: 12px 12px 12px 52px; gap: 8px; }
+.tasks .task-row__avatar { left: 12px; top: 12px; width: 32px; height: 32px; }
+.tasks .task-row__check { left: 21px; top: 50px; width: 14px; height: 14px; border-width: 1px; }
+.tasks .task-row__main { padding-right: 56px; }
+.tasks .task-row__owner { font-size: 11px; line-height: 16px; }
+.tasks .task-row__title { margin-top: 2px; font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; }
+.tasks .task-row__title--solo, .tasks .task-row--volunteer .task-row__title { margin-top: 0; }
+.tasks .task-row__meta { gap: 5px; margin-top: 4px; font-size: 11px; }
+.tasks .task-row__meta :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+.tasks .priority { right: 12px; top: 12px; height: 18px; padding: 0 6px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+.tasks .priority--high { color: var(--k-red-deep); }
+.tasks .priority--medium { color: var(--k-ochre-deep); }
+.tasks .task-more { height: 40px; gap: 4px; font-size: 12px; color: var(--k-ink2); }
+.tasks .task-more :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+.tasks .claimed { margin-top: 4px; font-size: 11px; }
+.tasks .claimed__num { color: var(--k-red-deep); }
+.tasks .mine-tag, .tasks .mine-line { font-weight: 600; }
+.tasks .mine-line { margin-top: 4px; font-size: 11px; }
+/* 认领 */
+/* 右边渐到白、袋鼠小图提亮一点：小图自带的米灰底就并进横幅了，不再露出一块方框 */
+.tasks .success-banner { gap: 10px; height: auto; min-height: 60px; padding: 8px 12px; border: 0; border-radius: 12px; background: linear-gradient(90deg, var(--k-green-soft), var(--k-paper) 72%); }
+.tasks .success-banner__title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; }
+.tasks .success-banner__desc { margin-top: 2px; font-size: 12px; }
+.tasks .success-banner__kangaroo { width: 66px; height: 44px; filter: brightness(1.05); }
+.tasks .claim-section, .tasks .done-section { margin-top: 16px; }
+.tasks .info-card { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; }
+.tasks .info-card__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.tasks .info-card__line { margin-top: 4px; font-size: 12px; }
+.tasks .role-card { gap: 10px; height: auto; min-height: 56px; margin-top: 8px; padding: 10px 12px; border: 0; border-radius: 12px; }
+.tasks .role-shield { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(145deg, #8FBA78, #527D42); }
+.tasks .role-shield :deep(.k-icon) { width: 20px !important; height: 20px !important; }
+.tasks .role-card__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.tasks .role-card__desc { margin-top: 2px; font-size: 11px; }
+.tasks .permission-card { margin-top: 8px; border: 0; border-radius: 12px; }
+.tasks .permission-row { height: auto; min-height: 40px; padding: 8px 12px; font-size: 13px; color: var(--k-ink2); }
+.tasks .permission-row :deep(.k-icon) { width: 15px !important; height: 15px !important; }
+.tasks .valid-time { color: var(--k-ink2); }
+.tasks .covenant { margin-top: 10px; padding: 10px 12px; border: 0; border-radius: 10px; background: #FFF8EE; color: var(--k-ink2); line-height: 18px; }
+/* 完成 */
+.tasks .done-banner { gap: 10px; height: auto; min-height: 60px; padding: 10px 12px; border: 0; border-radius: 12px; background: linear-gradient(90deg, #FFF1D6, #FFF8EE); }
+.tasks .done-banner :deep(.k-icon) { width: 28px !important; height: 28px !important; }
+.tasks .done-banner__title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; color: var(--k-ochre-deep); }
+.tasks .done-banner__desc { margin-top: 2px; }
+.tasks .review-card { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; }
+.tasks .review-person__avatar { width: 36px; height: 36px; }
+.tasks .review-person__name { font-family: var(--k-sans); font-size: 14px; font-weight: 600; }
+.tasks .review-person__time { margin-top: 2px; font-size: 11px; }
+.tasks .stars { gap: 3px; margin-top: 10px; color: var(--k-ochre-deep); }
+.tasks .stars :deep(.k-icon) { width: 18px !important; height: 18px !important; }
+.tasks .stars text { margin-left: 6px; font-size: 15px; }
+.tasks .review-card__text { color: var(--k-ink2); line-height: 20px; }
+.tasks .hours { gap: 8px; margin-top: 8px; }
+.tasks .hours__card { height: auto; padding: 12px; border: 0; border-radius: 12px; font-size: 12px; color: var(--k-muted); }
+.tasks .hours__num { margin-top: 2px; font-size: 22px; font-weight: 700; line-height: 28px; color: var(--k-ink); }
+.tasks .resume-row { height: 48px; margin-top: 8px; border: 0; border-radius: 12px; }
+.tasks .resume-row__icon { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(145deg, #8DB4D6, #4F7EA8); }
+.tasks .resume-row :deep(.k-icon) { width: 14px !important; height: 14px !important; }
+.tasks .chip-pop__panel { border-radius: 16px 16px 0 0; }
+/* 验收面板底部：「还差什么」本该单独一行、下面两个按钮平分。上面 .check-pop__foot 的 display:block 被排在后面的 .chip-pop__foot（flex）盖掉了，
+   三样挤成一排、「先不验收」折成两行；这里把它扶正（样式上的修正，字号和点击高度没动） */
+.tasks .check-pop__foot { display: block; }
+/* 2026-11-18 复查 */
+/* 1) 「发布任务」文字链看着小，四周补一圈透明的可点区 */
+.tasks .publish-link { position: relative; }
+.tasks .publish-link::after { content: ""; position: absolute; left: -8px; right: -4px; top: -9px; bottom: -7px; }
+/* 2) 优先级小标签和别处的小标签一个尺寸（高 17、左右 5） */
+.tasks .priority { height: 17px; padding: 0 5px; }
+/* 3) 验收面板的评分：窄屏（320）「5 星 · 非常好」被挤成「非常 / 好」两行。放不下时整段换到星星下面，不从中间断（字号、星星大小都不动） */
+.tasks .check-pop__stars { flex-wrap: wrap; }
+.tasks .check-pop__star-label { white-space: nowrap; }
+/* 4) 两个底部面板（指定员工、验收接单人）的标题还是旧的标题字体，和全页统一成系统黑体（字号不动） */
+.tasks .chip-pop__title { font-family: var(--k-sans); }
+/* 2026-11-18 评审修正（只动样子） */
+/* 1) 这一周没有任务时，那一行是脚本给的占位（标题写着「这一周还没有…任务」，日期、地点、人数、优先级全是「—」/ 0）。
+      之前照正式任务卡画，像数据没加载出来；现在画成普通的空状态：袋鼠小图 + 那一句话，居中。占位用的「—」、空心圆、0/0 不显示；有任务时一切照旧 */
+.tasks .task-row--empty { flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 0; padding: 20px 12px; }
+.tasks .task-row--empty .task-row__avatar { position: static; width: 36px; height: 36px; }
+.tasks .task-row--empty .task-row__main { flex: 0 0 auto; align-items: center; padding-right: 0; }
+.tasks .task-row--empty .task-row__title { margin-top: 0; font-size: 13px; font-weight: 400; color: var(--k-muted); }
+.tasks .task-row--empty .task-row__check, .tasks .task-row--empty .task-row__meta, .tasks .task-row--empty .claimed, .tasks .task-row--empty .priority { display: none; }
+/* 2) 状态页签和别的页面的分段条一个写法：灰米色轨道 + 白色选中块 + 棕色粗字（之前是白轨道 + 米色选中块，正好反着） */
+.tasks .status-tabs { background: #EFEBE5; }
+.tasks .status-tabs__item.active { background: var(--k-paper); }
+/* 3) 「任务身份」的盾牌：浓绿渐变方块换成很浅的绿底 + 绿色线条图标（图标颜色在模板里从白改成绿） */
+.tasks .role-shield { background: var(--k-green-soft); }
+/* 4) 验收评分：没有星星（0 分）时数字不再多缩进 6，和上面的头像、下面的评语左边对齐 */
+.tasks .stars text:first-child { margin-left: 0; }
+/* 2026-11-18 第二轮精修（精修词典：同一种东西全站一个样子；只改样子，选周、状态、发布、查看全部、认领、凭证、申诉都在） */
+/* 1) 区块标题统一 16 / 700 */
+.tasks .section-title { font-size: 16px; font-weight: 700; line-height: 22px; color: var(--k-ink); }
+/* 2) 状态页签按分段控件：灰米色轨道 32 高、白色选中块、选中字用墨色；视觉 28 高，上下各补 4 的透明可点区，点击高度仍有 36 */
+.tasks .status-tabs { height: 32px; padding: 2px; border-radius: 16px; background: #F0EBE4; overflow: visible; }
+.tasks .status-tabs__item { position: relative; border-radius: 14px; font-size: 13px; }
+.tasks .status-tabs__item.active { color: var(--k-ink); background: var(--k-paper); font-weight: 600; }
+.tasks .status-tabs__item::after { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+.tasks .status-tabs__item text + text { font-variant-numeric: tabular-nums; }
+/* 3) 头像下面那个空心小圆没绑数据、点了也没反应，却像一个没勾的复选框：纯装饰，去掉；行高跟着内容走 */
+.tasks .task-row__check { display: none; }
+.tasks .task-row { min-height: 0; border-top: 0; }
+/* 4) 行与行之间、「查看全部」上面改成发丝线；行线从标题的左边缘画起 */
+.tasks .task-row + .task-row::before { content: ""; position: absolute; left: 52px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.tasks .task-more { position: relative; border-top: 0; }
+.tasks .task-more::before { content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+/* 5) 优先级小标签按语义上色：高 = 提醒红（紧急），中 = 品牌棕，低 = 中性灰（绿色留给安心 / 保险）；万一来了别的值，也按中性灰画，不会只剩一行字 */
+.tasks .priority { color: var(--k-ink2); background: #F5F1EB; }
+.tasks .priority--high { color: var(--k-alert); background: var(--k-alert-soft); }
+.tasks .priority--medium { color: var(--k-red-deep); background: var(--k-red-soft); }
+.tasks .priority--low { color: var(--k-ink2); background: #F5F1EB; }
+/* 6) 认领页「有效期」和上面三段一样放进白卡 */
+.tasks .valid-time { margin-top: 8px; padding: 12px; border-radius: 12px; background: var(--k-paper); line-height: 20px; }
+.tasks .covenant { margin-top: 8px; }
+/* 7) 完成页「经历沉淀」：蓝色实心方块换成浅米色图标块 + 棕色线条图标（和分佣规则的图标块一样）；右边说明退成灰色小字，箭头 12 号灰色 */
+.tasks .resume-row { gap: 10px; }
+.tasks .resume-row__icon { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(145deg, #FCF4E8, #F4E4CC); }
+.tasks .resume-row :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+.tasks .resume-row .resume-row__icon :deep(.k-icon) { width: 16px !important; height: 16px !important; }
+.tasks .resume-row .k-flex1 + text { font-size: 12px; color: var(--k-muted); }
+/* 8) 工时记录：两张小卡合成一张白卡、中间一条发丝竖线（同看板的合计卡）；数字 20 / 700 等宽，单位 12 号灰字 */
+.tasks .hours { gap: 0; border-radius: 12px; background: var(--k-paper); }
+.tasks .hours__card { position: relative; border-radius: 0; background: transparent; }
+.tasks .hours__card + .hours__card::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 1px; background: var(--k-line); transform: scaleX(.5); }
+.tasks .hours__num { font-size: 20px; line-height: 26px; font-variant-numeric: tabular-nums; }
+/* 9) 这一周没有任务时的那一行按词典的空状态：上下留白 28，标题 14 / 500 / ink2 */
+.tasks .task-row--empty { padding: 28px 12px; }
+.tasks .task-row--empty .task-row__title { font-size: 14px; font-weight: 500; color: var(--k-ink2); }
 </style>

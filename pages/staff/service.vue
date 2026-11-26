@@ -9,7 +9,7 @@
         <template v-else>
           <view class="req-kinds"><view v-for="k in REQUEST_KINDS" :key="k.type" class="req-kind" :class="{ active: kind === k.type }" hover-class="k-press-s" @click="setKind(k.type)"><text>{{ k.label }}</text><text v-if="kindBadge(kindCounts, k.type)" class="req-kind__badge">{{ kindBadge(kindCounts, k.type) }}</text></view></view>
           <view class="req-head"><view class="req-head__copy"><text class="req-head__title">{{ list.city.value ? list.city.value + ' · ' : '' }}{{ kindInfo(kind).name }}</text><text class="req-head__sub">{{ KIND_SUB[kind] }}</text></view></view>
-          <view v-if="kind === 'online_task'" class="req-links req-links--top"><view class="req-link" hover-class="k-press-s" @click="openManage"><k-icon name="clipboard-check" :size="21" color="red" /><view class="req-link__copy"><text class="req-link__title">线上任务管理</text><text class="req-link__sub">上架后的接单、验收、付款登记</text></view><k-icon name="chevron-right" :size="15" color="light" /></view></view>
+          <view v-if="kind === 'online_task'" class="req-links req-links--top"><view class="req-link" hover-class="k-press-s" @click="openManage"><k-icon name="clipboard-check" :size="18" color="ink2" /><view class="req-link__copy"><text class="req-link__title">线上任务管理</text><text class="req-link__sub">上架后的接单、验收、付款登记</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
         </template>
         <scroll-view scroll-x class="req-tabs" :show-scrollbar="false"><view class="req-tabs__row"><view v-for="t in tabs" :key="t.label" class="req-tab" :class="{ active: status === t.status }" hover-class="k-press" @click="setStatus(t.status)"><text>{{ t.label }}</text></view></view></scroll-view>
         <view v-if="list.error.value" class="req-state"><text>{{ list.error.value }}</text><k-button label="重新加载" size="md" type="outline" @click="reloadList" /></view>
@@ -309,6 +309,9 @@ const applicationsRow = (r) => openApps(r.storeId)
 
 <style scoped lang="scss">
 @import './request-pages.scss';
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、去阴影）、页边距 12（共用写法在 ./work-lite.scss；.req-* 在 ./request-pages.scss） */
+@import './work-lite.scss';
+.service-page{@include lite-page}
 /* 2026-11-03 主人：简化——「接手并上架」是主按钮，比旁边的「接手」宽一些 */
 .req-bar__btn--wide{flex:1.6}
 </style>

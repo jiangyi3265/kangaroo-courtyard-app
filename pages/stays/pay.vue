@@ -1,10 +1,14 @@
 <template>
   <k-feature-gate feature="stay-booking">
-  <view class="k-page pay" :class="'pay--' + s">
+  <view class="k-page pay" :class="[$userSurface, 'pay--' + s]">
     <k-topbar :title="entryError ? '完善预订信息' : titles[s - 1]" back custom-back @back="onBack" />
+    <view v-if="recoveredOrder && s >= 3" class="notice" role="status">
+      <text class="notice__title">已找回上次提交的订单</text>
+      <text class="notice__text">此次重试沿用原订单的入住信息和金额。{{ o.guestName ? '原入住人：' + o.guestName : '' }}{{ o.guestPhone ? '（手机尾号 ' + String(o.guestPhone).slice(-4) + '）' : '' }}</text>
+    </view>
 
     <view v-if="entryError" class="entry-empty">
-      <view class="entry-empty__icon"><k-icon name="calendar-check" :size="32" color="red" /></view>
+      <view class="entry-empty__icon"><k-icon name="house" :size="28" color="red" /></view>
       <text class="entry-empty__title">{{ entry.title }}</text>
       <text class="entry-empty__copy">{{ entry.message }}</text>
       <view class="entry-empty__action"><k-button block @click="recoverSelection">{{ entry.stayId ? '选择房型与日期' : '重新选择小院' }}</k-button></view>
@@ -15,6 +19,7 @@
       <view v-if="quoteLoading || quoteError" class="quote-state" role="status">
         <text>{{ quoteLoading ? '正在查询所选人数的最新报价…' : quoteError }}</text>
         <button v-if="quoteError && (memberWalletIds.length||memberFloor)" @click="clearMember">清除会员权益，重新报价</button>
+        <button v-if="quoteError && memberWalletIds.length" @click="clearMember">清除免费间夜，重新报价</button>
         <view v-if="quoteError && params.roomTypeId" class="quote-state__retry" role="button" @click="requote">重新查询报价</view>
       </view>
       <k-card :pad="14">
@@ -29,6 +34,16 @@
         </view>
       </k-card>
 
+      <k-card v-if="q.onlinePaymentAvailable === false" class="k-mt12" pad="14px 14px 12px">
+        <text class="card-title">本店暂未开通在线收款</text>
+        <view class="member-choices">
+          <text class="k-meta">{{ paymentBlocked ? '使用免费间夜抵清全款后可填写入住信息。' : '免费间夜已抵清本单房费。' }}</text>
+          <button v-for="v in q.memberVouchers || []" :key="v.walletId" :class="{selected: memberWalletIds.includes(v.walletId)}" @click="chooseMember(v.walletId)">免费间夜 #{{ v.walletId }}</button>
+          <button v-if="!experience.account" @click="go(R.login)">登录查看免费间夜</button>
+          <text v-else-if="!q.memberVouchers?.length" class="k-meta">当前账号没有可用于此房型的免费间夜。</text>
+          <button @click="requote">刷新收款状态</button>
+        </view>
+      </k-card>
       <k-card class="k-mt12" pad="14px 14px 12px">
         <text class="card-title">入住信息</text>
         <view class="stay-dates">
@@ -37,29 +52,32 @@
           <view class="stay-dates__day"><text class="stay-dates__label">离店日期</text><text class="stay-dates__date">{{ dayText(q.checkOut) }}</text><text class="stay-dates__week">{{ weekText(q.checkOut) }}</text></view>
         </view>
         <!-- 2026-11-03 主人：简化 —— 人数用加减号（原来弹菜单选）；入住人姓名 / 手机号是页面里的输入框（记住上次的照旧自动带出，能改）；到店时间是按钮组。整屏不再弹任何系统输入框 / 菜单 -->
-        <view class="kv"><text class="kv__label">入住人数</text><view class="stepper"><view class="stepper__btn" :class="{ off: guests <= 1 }" hover-class="k-press" @click="changeGuests(-1)"><k-icon name="minus" :size="18" color="ink" :stroke="2" /></view><text class="stepper__num">{{ guests }}人</text><view class="stepper__btn" :class="{ off: guests >= guestMax }" hover-class="k-press" @click="changeGuests(1)"><k-icon name="plus" :size="18" color="ink" :stroke="2" /></view></view></view>
+        <view class="kv"><text class="kv__label">入住人数</text><view class="stepper"><view class="stepper__btn" :class="{ off: guests <= 1 }" hover-class="k-press" @click="changeGuests(-1)"><k-icon name="minus" :size="18" color="ink" /></view><text class="stepper__num">{{ guests }}人</text><view class="stepper__btn" :class="{ off: guests >= guestMax }" hover-class="k-press" @click="changeGuests(1)"><k-icon name="plus" :size="18" color="ink" /></view></view></view>
         <view class="dash" />
-        <view class="kv kv--field"><text class="kv__label">入住人</text><input v-model="form.guestName" class="kv__field" maxlength="20" placeholder="与证件一致，前台办理入住用" placeholder-class="k-placeholder" @blur="rememberGuest" /></view>
-        <view class="kv kv--field"><text class="kv__label">手机号</text><input v-model="form.guestPhone" class="kv__field" type="number" maxlength="11" placeholder="11 位手机号" placeholder-class="k-placeholder" @blur="rememberGuest" /></view>
-        <view class="kv kv--col"><text class="kv__label">到店时间</text><view class="arrive-pills"><view v-for="opt in arriveOptions" :key="opt.value" class="arrive-pill" :class="{ on: form.arriveTime === opt.value }" hover-class="k-press-s" @click="form.arriveTime = opt.value"><text>{{ opt.label }}</text></view></view></view>
-        <view class="dash" />
-        <view class="kv"><text class="kv__label">特殊需求（选填）</text></view>
-        <view class="kv kv--input">
-          <input v-model="remark" class="kv__input" maxlength="200" placeholder="如：安静房间、晚到店等" placeholder-class="k-placeholder" />
-          <k-icon name="pen-line" :size="16" color="muted" :stroke="1.6" />
-        </view>
+        <template v-if="quoteReady && !paymentBlocked">
+          <view class="kv kv--field"><text class="kv__label">入住人</text><input v-model="form.guestName" class="kv__field" maxlength="20" placeholder="与证件一致，前台办理入住用" placeholder-class="k-placeholder" @blur="rememberGuest" /></view>
+          <view class="kv kv--field"><text class="kv__label">手机号</text><input v-model="form.guestPhone" class="kv__field" type="number" maxlength="11" placeholder="11 位手机号" placeholder-class="k-placeholder" @blur="rememberGuest" /></view>
+          <view class="kv kv--col"><text class="kv__label">到店时间</text><view class="arrive-pills"><view v-for="opt in arriveOptions" :key="opt.value" class="arrive-pill" :class="{ on: form.arriveTime === opt.value }" hover-class="k-press-s" @click="form.arriveTime = opt.value"><text>{{ opt.label }}</text></view></view></view>
+          <view class="dash" />
+          <view class="kv"><text class="kv__label">特殊需求（选填）</text></view>
+          <view class="kv kv--input">
+            <input v-model="remark" class="kv__input" maxlength="200" placeholder="如：安静房间、晚到店等" placeholder-class="k-placeholder" />
+            <k-icon name="pen-line" :size="16" color="muted" />
+          </view>
+        </template>
       </k-card>
 
       <view class="note">
-        <view class="ic-shield"><k-icon name="shield" :size="18" color="green" fill :stroke="0.5" /><k-icon class="ic-shield__check" name="check" :size="9" color="white" :stroke="3.2" /></view>
+        <view class="ic-shield"><k-icon name="shield-check" :size="16" color="green" /></view>
         <text class="note__text">我们将严格保护您的个人信息，仅用于本次预订联系及入住服务</text>
       </view>
 
-      <k-bottom><k-button block :disabled="!quoteReady || advancing" @click="next">{{ quoteLoading ? '正在查询报价' : (advancing ? '正在确认…' : '确认并下一步') }}</k-button></k-bottom>
+      <k-bottom v-if="!paymentBlocked"><k-button block :disabled="!quoteReady || advancing" @click="next">{{ quoteLoading ? '正在查询报价' : (advancing ? '正在确认…' : '确认并下一步') }}</k-button></k-bottom>
     </view>
 
     <!-- 2 确认订单 -->
     <view v-else-if="s === 2" class="k-body k-pad-bottom">
+      <view v-if="paymentBlocked" class="quote-state" role="status"><text>本店暂未开通在线收款。请重新选择免费间夜，直至应付为零。</text><button @click="requote">刷新收款状态</button></view>
       <view v-if="quoteLoading || quoteError" class="quote-state" role="status">
         <text>{{ quoteLoading ? '正在查询所选人数的最新报价…' : quoteError }}</text>
         <button v-if="quoteError && (memberWalletIds.length||memberFloor)" @click="clearMember">清除会员权益，重新报价</button>
@@ -67,7 +85,7 @@
       </view>
       <!-- 2026-10-18 主人：确认页加醒目一条「请带好身份证，小院现场登记」（实名登记由小院前台按当地规定现场办理，平台不收身份证） -->
       <view class="idcard">
-        <view class="idcard__icon"><k-icon name="id-card" :size="30" color="red" :stroke="1.8" /></view>
+        <view class="idcard__icon"><k-icon name="id-card" :size="24" color="red" /></view>
         <view class="idcard__copy"><text class="idcard__title">请带好身份证，小院现场登记</text><text class="idcard__sub">入住人本人身份证原件，到店后由小院前台按当地规定办理实名登记</text></view>
       </view>
       <k-card v-if="quoteReady" class="k-mt12" pad="14px 14px 12px">
@@ -79,14 +97,12 @@
         <view v-if="q.serviceFeeFen" class="fee"><text>平台服务费</text><text>¥{{ yuan(q.serviceFeeFen) }}</text></view>
         <view class="dash dash--wide" />
         <view class="fee fee--total"><text class="card-title">合计</text><text class="fee__total">¥{{ yuan(subtotal) }}</text></view>
-      </k-card>
-
-      <k-card v-if="quoteReady" class="k-mt12" pad="14px 14px 12px">
-        <text class="card-title">优惠与活动</text>
+        <view class="fee-split" />
+        <text class="card-title card-title--sub">优惠与活动</text>
         <view v-if="q.memberFloorAvailable || q.memberVouchers?.length || memberWalletIds.length || memberFloor" class="member-choices">
           <text class="k-meta">会员底价与免费间夜二选一，不与其他折扣叠加</text>
           <button v-if="q.memberFloorAvailable" :class="{selected:memberFloor}" :disabled="quoteLoading" @click="chooseFloor">{{ memberFloor?'已选择':'使用' }}会员底价</button>
-          <button v-for="v in q.memberVouchers||[]" :key="v.walletId" :class="{selected:memberWalletIds.includes(v.walletId)}" :disabled="quoteLoading" @click="chooseMember(v.walletId)">{{ memberWalletIds.includes(v.walletId)?'✓ 已选':'选择' }}免费间夜 #{{ v.walletId }}</button>
+          <button v-for="v in q.memberVouchers||[]" :key="v.walletId" :class="{selected:memberWalletIds.includes(v.walletId)}" :disabled="quoteLoading" @click="chooseMember(v.walletId)"><k-icon v-if="memberWalletIds.includes(v.walletId)" name="check" :size="12" color="red" />{{ memberWalletIds.includes(v.walletId)?'已选':'选择' }}免费间夜 #{{ v.walletId }}</button>
           <button v-if="memberWalletIds.length||memberFloor" @click="clearMember">不使用会员权益</button>
         </view>
         <view class="fee"><text>{{ q.discountLabel || '暂无可用优惠' }}</text><text class="fee__off">{{ q.discountFen ? '- ¥' + yuan(q.discountFen) : '—' }}</text></view>
@@ -98,7 +114,7 @@
         <text class="policy__title">{{ (q.policy || {}).title || '' }}</text>
         <text class="policy__copy">{{ (q.policy || {}).copy || '' }}</text>
         <view v-if="(q.stay || {}).safeCert" class="k-row k-gap6 k-mt8">
-          <view class="ic-shield"><k-icon name="shield" :size="18" color="green" fill :stroke="0.5" /><k-icon class="ic-shield__check" name="check" :size="9" color="white" :stroke="3.2" /></view>
+          <view class="ic-shield"><k-icon name="shield-check" :size="16" color="green" /></view>
           <text class="policy__tag">安心商家</text>
         </view>
       </k-card>
@@ -106,10 +122,10 @@
       <!-- 预订须知全文必须阅读到底，再主动勾选，才允许支付。 -->
       <view v-if="(q.agreement || {}).summary" class="notice">
         <text class="notice__title">{{ q.agreement.title || '预订须知' }}</text>
-        <k-agreement-reader :content-key="q.agreement.version" :text="q.agreement.summary" @read="onNoticeRead" />
+        <k-agreement-reader :content-key="q.agreement.version" :text="q.agreement.summary" :height="noticeHeight" @read="onNoticeRead" />
       </view>
       <view class="agree" @click="onAgreeTap">
-        <view class="k-check" :class="{ checked: agreed }"><k-icon v-if="agreed" name="check" :size="12" color="white" :stroke="3" /></view>
+        <view class="k-check" :class="{ checked: agreed }"><k-icon v-if="agreed" name="check" :size="12" color="white" /></view>
         <text class="agree__text">我已阅读并同意《{{ q.agreement.title || '预订须知' }}》</text>
       </view>
 
@@ -119,7 +135,7 @@
           <text class="paybar__amount">¥{{ quoteReady ? yuan(q.payFen) : '--' }}</text>
         </view>
         <!-- k-button 是虚拟节点组件，宽度放在外层 view 上才稳定生效 -->
-        <view class="paybar__btn"><k-button block :disabled="submitting || !quoteReady || !noticeRead || !agreed" :label="submitting ? '提交中…' : (quoteLoading ? '正在查询报价' : (q.payFen===0 && memberWalletIds.length ? '确认免费预订' : '去支付'))" @click="toPay" /></view>
+        <view class="paybar__btn"><k-button block :disabled="submitting || !quoteReady || paymentBlocked || !noticeRead || !agreed" :label="submitting ? '提交中…' : (quoteLoading ? '正在查询报价' : (q.payFen===0 && memberWalletIds.length ? '确认免费预订' : '去支付'))" @click="toPay" /></view>
       </k-bottom>
     </view>
 
@@ -144,21 +160,21 @@
         <view class="k-divider amount__hr" />
         <text class="card-title card-title--lg">支付方式</text>
         <view class="method">
-          <k-icon name="wechat" :size="26" color="green" fill :stroke="0.5" />
+          <k-icon name="wechat" :size="22" color="green" fill />
           <text class="method__name">{{ channelLabel }}</text>
+          <k-icon name="circle-check" :size="22" color="green" />
           <!-- 只有一种支付方式、点了也没有可选的：去掉像"可切换"的右箭头 -->
         </view>
       </k-card>
 
-      <k-card class="k-mt12" pad="18px 14px 16px">
-        <text class="card-title card-title--lg">支付倒计时</text>
-        <text class="countdown">{{ clock }}</text>
+      <k-card class="k-mt12 countdown-card" pad="12px">
+        <view class="countdown-row"><text class="card-title card-title--lg">支付倒计时</text><text class="countdown">{{ clock }}</text></view>
         <text class="countdown__tip">{{ paymentDeadlineText }}</text>
       </k-card>
 
       <k-card class="k-mt12" :pad="14">
         <view class="k-row-start k-gap10">
-          <k-icon name="shield-check" :size="26" color="green" :stroke="1.5" />
+          <k-icon name="shield-check" :size="24" color="green" />
           <view class="k-col">
             <text class="k-subtitle">支付说明</text>
             <text class="safe__line">{{ paymentExplanation }}</text>
@@ -176,14 +192,14 @@
     <!-- 4 支付结果 -->
     <view v-else class="k-body k-pad-safe">
       <k-card pad="16px 14px 4px">
-        <view v-if="bookingActive" class="k-center-box"><view class="stamp result-mark"><k-icon name="circle-check" :size="48" color="green" :stroke="1.5" /></view></view>
+        <view v-if="bookingActive" class="k-center-box"><view class="stamp result-mark"><k-icon name="circle-check" :size="40" color="green" /></view></view>
         <text class="success__title">{{ resultTitle }}</text>
         <text class="success__sub">{{ resultSub }}</text>
         <view class="k-divider k-mt16" />
-        <view class="info">
+        <view class="info info--copy">
           <text class="info__label">订单号</text>
-          <text class="info__value info__value--center">{{ o.orderNo || '' }}</text>
-          <view class="copy" @click="copyNo"><text>复制</text></view>
+          <view class="info__copyline"><text class="info__value info__value--center">{{ o.orderNo || '' }}</text>
+          <view class="copy" @click="copyNo"><text>复制</text></view></view>
         </view>
         <view class="info"><text class="info__label">支付金额</text><text class="info__value">¥{{ yuan(o.payFen || 0) }}</text></view>
         <view class="info info--last"><text class="info__label">支付时间</text><text class="info__value">{{ paidTimeText }}</text></view>
@@ -194,7 +210,7 @@
         <view class="k-between synced">
           <text class="synced__store">{{ oStay.storeName || oStay.stayName || '—' }}</text>
           <view class="k-row k-gap4">
-            <view v-if="paid" class="k-circle k-circle--green synced__ok"><k-icon name="check" :size="10" color="white" :stroke="3.2" /></view>
+            <view v-if="paid" class="k-circle k-circle--green synced__ok"><k-icon name="check" :size="12" color="white" /></view>
             <text class="synced__state">{{ paid ? '已通知' : '待通知' }}</text>
           </view>
         </view>
@@ -203,14 +219,14 @@
       <k-card class="k-mt12" pad="14px 14px 14px">
         <text class="next__title">接下来您可以</text>
         <view class="k-grid-3 k-mt10">
-          <view v-for="a in nextActions" :key="a.label" class="next" @click="a.go()">
-            <k-icon :name="a.icon" :size="30" color="ink" :stroke="1.5" />
+          <view v-for="a in nextActions" :key="a.label" class="next" hover-class="k-press-s" @click="a.go()">
+            <view class="next__ic"><k-icon :name="a.icon" :size="22" color="red" /></view>
             <text class="next__label">{{ a.label }}</text>
           </view>
         </view>
       </k-card>
 
-      <k-card class="k-mt12" tone="flax" pad="12px 14px">
+      <k-card class="k-mt12 retry-card" pad="12px">
         <view class="k-between k-gap12">
           <view class="k-col k-flex1">
             <text class="retry__line">如未显示支付结果，可重新查询</text>
@@ -262,6 +278,7 @@ const entryError = computed(() => !!entry.value && !entry.value.valid)
 const q = ref({ stay: {}, policy: {}, agreement: {}, addons: [], roomFen: 0, addonFen: 0, serviceFeeFen: 0, discountFen: 0, payFen: 0 })
 const order = ref(null)
 const activeOrderNo = ref('')
+const recoveredOrder = ref(false)
 const orderLoading = ref(false)
 const orderError = ref('')
 const refreshing = ref(false)
@@ -280,6 +297,8 @@ const memberWalletIds=ref([]),memberFloor=ref(false)
 async function chooseMember(id){memberFloor.value=false;memberWalletIds.value=memberWalletIds.value.includes(id)?memberWalletIds.value.filter(x=>x!==id):memberWalletIds.value.concat(id);await requote()}
 async function chooseFloor(){memberWalletIds.value=[];memberFloor.value=!memberFloor.value;await requote()}
 async function clearMember(){memberWalletIds.value=[];memberFloor.value=false;await requote()}
+const paymentBlocked = computed(() => q.value.onlinePaymentAvailable === false &&
+  !(q.value.payFen === 0 && q.value.memberMode === 'nights' && memberWalletIds.value.length > 0))
 const quoteParams = () => ({
   roomTypeId: Number(params.roomTypeId), checkIn: params.checkIn, checkOut: params.checkOut, guests: guests.value,
   promoId: params.promoId ? Number(params.promoId) : undefined, memberWalletIds:memberWalletIds.value,memberFloor:memberFloor.value
@@ -376,6 +395,7 @@ function changeGuests(delta) {
   requote()
 }
 async function next() {
+  if (paymentBlocked.value) return toast('本店暂未开通在线收款')
   if (advancing.value) return
   if (!quoteReady.value) return toast(quoteError.value || '请等待最新报价')
   form.value.guestName = String(form.value.guestName || '').trim()
@@ -391,7 +411,7 @@ async function next() {
     await ensureSession()
     if (!experience.account) { toast('请先登录'); return go(R.login) }
     if (key !== JSON.stringify(quoteParams())) return
-    if (!await requote() || !quoteReady.value || key !== quotedKey.value) return
+    if (!await requote() || !quoteReady.value || paymentBlocked.value || key !== quotedKey.value) return
     s.value = 2
     // 小屏填写到表单底部后，确认页从身份证提示开始展示。
     await nextTick()
@@ -413,6 +433,7 @@ const submitting = ref(false)
 const paying = ref(false)
 const cancelling = ref(false)
 async function toPay() {
+  if (paymentBlocked.value) return toast('本店暂未开通在线收款')
   if (!quoteReady.value) return toast(quoteError.value || '请等待最新报价')
   if (!noticeRead.value || !agreed.value) return toast(`请先阅读并同意《${q.value.agreement.title || '预订须知'}》`)
   if (submitting.value) return
@@ -433,8 +454,9 @@ async function toPay() {
       memberWalletIds:memberWalletIds.value,memberFloor:memberFloor.value,
       selectedActivityIds: String(params.acts || '').split(',').map(Number).filter(Boolean)
     })
-    rememberGuest()
     if (!res.data?.orderNo) throw new Error('未取得订单号，请到我的行程核对订单')
+    recoveredOrder.value = res.data.recoveredOrder === true
+    if (!recoveredOrder.value) rememberGuest()
     activeOrderNo.value = res.data.orderNo
     s.value = 3
     await loadOrder(activeOrderNo.value, true)
@@ -459,7 +481,10 @@ let refreshTask = null
 let disposed = false
 onUnmounted(() => { disposed = true; loadSequence++; if (timer) clearInterval(timer) })
 // 微信收银台切回小程序时，重新从服务端同步。这里只查单，不会自动拉起支付。
-onShow(() => activeOrderNo.value ? refreshOrderStatus(true, true) : undefined)
+onShow(() => {
+  if (activeOrderNo.value) return refreshOrderStatus(true, true)
+  if (s.value === 1 && q.value.onlinePaymentAvailable === false && !quoteLoading.value) return requote()
+})
 async function loadOrder(orderNo, routeByStatus, silent = false) {
   if (!orderNo || disposed) return false
   activeOrderNo.value = orderNo
@@ -514,6 +539,15 @@ const timeElapsed = computed(() => o.value.status === 'pending_payment' && !!ser
 const closedText = computed(() => (o.value.closeReason === '用户取消' ? '订单已取消' : '订单已关闭'))
 const canCancel = computed(() => o.value.status === 'pending_payment')
 const channelLabel = computed(() => labelOf(payMode.value))
+// 11-18 返修：预订须知阅读框按正文估算高度，最多 240px（正文短时不留一大块空灰）；只改显示高度，「读到末尾才能勾选」的判断不变
+const noticeHeight = computed(() => {
+  const t = String((q.value.agreement || {}).summary || '')
+  let w = 375
+  try { w = (uni.getWindowInfo ? uni.getWindowInfo() : uni.getSystemInfoSync()).windowWidth || 375 } catch (e) { /* 取不到屏宽按 375 估 */ }
+  const per = Math.max(8, Math.floor((w - 24 - 24 - 34) / 14))
+  const lines = t.split('\n').reduce((n, row) => n + Math.max(1, Math.ceil(row.length / per)), 0)
+  return Math.min(240, Math.ceil(lines * 24) + 24) + 'px'
+})
 const paymentDeadlineText = computed(() => expired.value ? closedText.value + '，如需预订请重新下单' : timeElapsed.value ? '付款时间已到，请查询订单最终状态；如已扣款请勿重复支付' : '请在倒计时结束前完成支付，订单状态以服务器为准')
 const paymentExplanation = computed(() => payMode.value === 'wechat' ? '点击支付按钮后将拉起微信官方支付界面' : payMode.value === 'mock' ? '当前为联调模拟支付，不会真实扣款' : '支付方式由服务器确认后显示，真实微信支付需在微信小程序内完成')
 const payBtnText = computed(() => expired.value || timeElapsed.value || orderError.value ? '查询订单状态' : `${payMode.value === 'wechat' ? '微信支付' : payMode.value === 'mock' ? '模拟支付' : '确认支付方式'} ¥${yuan(o.value.payFen || 0)}`)
@@ -555,17 +589,23 @@ async function pay() {
 
 // 待支付时用户主动取消：后端关单、关闭支付单、释放房量与早鸟名额；成功后按服务端状态刷新本屏
 async function cancelOrder() {
-  if (!o.value.orderNo || cancelling.value || paying.value || refreshing.value || orderLoading.value) return
-  const r = await modal('取消订单', '取消后房间会释放给其他人，如需入住请重新下单。确认取消？', { confirmText: '取消订单', cancelText: '再想想' })
-  if (!r.confirm || cancelling.value || paying.value || refreshing.value || orderLoading.value) return
+  if (!canCancel.value || !o.value.orderNo || cancelling.value || paying.value || refreshing.value || orderLoading.value) return
+  const orderNo = o.value.orderNo
+  const accountId = experience.account?.id
+  const current = () => !disposed && o.value.orderNo === orderNo && experience.account?.id === accountId
   cancelling.value = true
   try {
-    await apiStayCancelOrder(o.value.orderNo)
-    await loadOrder(o.value.orderNo, false)
-    toast(o.value.status === 'closed' ? '订单已取消' : '订单状态已变化，请查看')
+    const r = await modal('取消订单', '取消后房间会释放给其他人，如需入住请重新下单。确认取消？', { confirmText: '取消订单', cancelText: '再想想' })
+    if (!r.confirm || !current() || !canCancel.value) return
+    await apiStayCancelOrder(orderNo)
+    if (current() && await loadOrder(orderNo, false) && current()) {
+      toast(o.value.status === 'closed' ? '订单已取消' : '订单状态已变化，请查看')
+    }
   } catch (e) {
-    toast(errText(e, '取消失败'))
-    loadOrder(o.value.orderNo, false)
+    if (current()) {
+      toast(errText(e, '取消失败'))
+      await loadOrder(orderNo, false, true)
+    }
   } finally {
     cancelling.value = false
   }
@@ -683,10 +723,10 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) init() })
 .policy__title { display: block; font-family: var(--k-serif); font-weight: 700; font-size: 17px; line-height: 24px; color: var(--k-green); }
 .policy__copy { display: block; margin-top: 6px; font-size: 13px; line-height: 23px; color: var(--k-muted); white-space: pre-line; }
 /* 2026-10-18：身份证提醒（暖棕渐变底、白字，确认页最上面一眼能看到）+ 预订须知一条一行 */
-.idcard { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; background: linear-gradient(120deg, #8A5E36 0%, #A8743F 100%); box-shadow: 0 6px 18px rgba(138, 94, 54, .22); }
+.idcard { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; background: linear-gradient(120deg, var(--k-red-deep) 0%, #A8743F 100%); box-shadow: 0 6px 18px rgba(138, 94, 54, .22); }
 .idcard__icon { width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, .18); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .idcard__copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.idcard__title { color: #fff; font-size: 16px; font-weight: 700; letter-spacing: .5px; }
+.idcard__title { color: var(--k-paper); font-size: 16px; font-weight: 700; letter-spacing: .5px; }
 .idcard__sub { color: rgba(255, 255, 255, .86); font-size: 12px; line-height: 1.5; }
 /* 10-19 复查：320 宽时标题一行放不下，「记」一个字掉到第二行；字收一号、去掉字距，一行放下 */
 @media (max-width: 359px) { .idcard { gap: 10px; padding: 14px 12px; } .idcard__title { font-size: 15px; letter-spacing: 0; } }
@@ -758,14 +798,14 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) init() })
 .kv__value { text-align: right; }
 .kv>.k-row { min-width: 0; flex-shrink: 0; }
 .kv__label { color: #4B3425; }
-.kv--input { min-height: 40px; margin-top: 0; padding: 0 10px; border: 1px solid #E9E1D8; border-radius: 9px; background: #FAF8F5; }
+.kv--input { min-height: 40px; margin-top: 0; padding: 0 10px; border: 1px solid #E9E1D8; border-radius: 9px; background: var(--k-page); }
 .kv__input { font-size: 13px; }
 /* 2026-11-03 主人：简化 —— 入住人信息屏改成页面内填写：输入框一行、到店时间按钮组、人数加减号（按钮都 ≥32px 高、加减号 36px，老年人好点） */
 .kv--field { gap: 10px; }
-.kv__field { flex: 1; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid #E9E1D8; border-radius: 9px; background: #FAF8F5; font-size: 15px; text-align: left; }
+.kv__field { flex: 1; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid #E9E1D8; border-radius: 9px; background: var(--k-page); font-size: 15px; text-align: left; }
 .kv--col { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 0; }
 .arrive-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.arrive-pill { min-height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: 18px; background: #F4F1EC; color: #3A322B; font-size: 14px; display: flex; align-items: center; }
+.arrive-pill { min-height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: 18px; background: #F4F1EC; color: var(--k-ink); font-size: 14px; display: flex; align-items: center; }
 .arrive-pill.on { border-color: #E0A86E; background: #FCEBD7; color: #A0632E; font-weight: 700; }
 .stepper { display: flex; align-items: center; gap: 4px; }
 .stepper__btn { width: 44px; height: 44px; border: 1px solid #E9E1D8; border-radius: 50%; background: #FFFEFC; display: flex; align-items: center; justify-content: center; }
@@ -813,6 +853,203 @@ watchStayGate(stayBookingEnabled, enabled => { if(enabled) init() })
  .kv { font-size: 12px; } .kv>.k-row { gap: 5px; } .idcard { padding: 10px; gap: 7px; } .idcard__title { font-size: 13px; }
  .paybar__btn { width: 128px; } .paybar__amount { font-size: 27px; } .next__label { font-size: 11px; }
 }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底 + 纯白卡（12 圆角），卡片不加阴影、不描边；标题和金额的字收小一档，
+   底部主按钮统一成 44 高的暖棕胶囊。输入框、人数加减号、到店时间按钮仍是 44 高、14–15 号字（年纪大的人好点）。
+   只改样子：金额、时限、政策、须知这些文字和所有操作都没动。上面几轮的规则保留不动，这里统一用 .pay 开头的规则盖过去。 */
+.pay { @include stays-fine; }
+.pay>.k-body { padding-left: 12px; padding-right: 12px; }
+.pay :deep(.k-card) { border: 0; border-radius: 12px !important; box-shadow: none; }
+.pay :deep(.k-card.k-mt12) { margin-top: 8px; }
+.pay :deep(.k-card.is-green) { border: 0; background: var(--k-paper); }
+.pay :deep(.k-button.is-lg) { height: 44px; box-shadow: none; font-size: 15px; }
+.pay :deep(.k-button.is-primary) { background: linear-gradient(135deg,#B5814D,#8E5E33); }
+.pay :deep(.k-bottom) { background: var(--k-paper); border-top-color: var(--k-line); }
+.pay :deep(.k-bottom__inner) { padding: 8px 12px !important; }
+.pay--1 :deep(.k-bottom .k-button), .pay--2 :deep(.k-bottom .k-button) { background: linear-gradient(135deg,#B5814D,#8E5E33); color: var(--k-paper); }
+.pay .entry-empty__icon { width: 56px; height: 56px; margin-bottom: 14px; }
+.pay .entry-empty__title { font-size: 16px; font-weight: 600; }
+.pay .entry-empty__copy { margin-top: 6px; font-size: 13px; line-height: 20px; }
+.pay .quote-state { margin-bottom: 8px; padding: 12px; border: 0; border-radius: 12px; font-size: 13px; }
+.pay .quote-state__retry { min-height: 36px; border-radius: 18px; font-size: 13px; }
+.pay .card-title, .pay .card-title--lg { color: var(--k-ink); font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 21px; }
+/* 入住人信息 */
+.pay .room { gap: 10px; }
+.pay .room__img { width: 88px; height: 88px; border-radius: 8px; }
+.pay .room__name { font-family: var(--k-sans); font-size: 15px; font-weight: 600; line-height: 21px; }
+.pay .room__type { margin-top: 3px; color: var(--k-ink2); font-size: 13px; font-weight: 500; line-height: 19px; }
+.pay .room__desc { margin-top: 2px; font-size: 11px; line-height: 16px; }
+.pay .room__price .k-price { color: var(--k-red-deep); font-size: 18px; line-height: 24px; }
+.pay .stay-dates { gap: 8px; margin: 10px 0 8px; }
+.pay .stay-dates__day { padding: 8px 10px; gap: 1px; border: 0; border-radius: 8px; background: var(--k-page); }
+.pay .stay-dates__label, .pay .stay-dates__week { color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.pay .stay-dates__date { color: var(--k-ink); font-size: 16px; font-weight: 600; line-height: 22px; }
+.pay .stay-dates__nights { padding: 2px 8px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 11px; line-height: 16px; }
+.pay .kv { min-height: 44px; border-top-color: var(--k-line); }
+/* 复查：姓名、手机号两个输入框上下贴在一起，加减号也顶着分隔线 —— 各留 6px 的空，输入框和按钮本身仍是 44 高 */
+.pay .kv--field { padding: 6px 0; }
+.pay .stepper { margin: 6px 0; }
+.pay .kv__label { color: var(--k-ink2); }
+.pay .kv__field { border-color: var(--k-line2); border-radius: 8px; background: var(--k-paper); }
+.pay .kv--input { min-height: 44px; border-color: var(--k-line2); border-radius: 8px; background: var(--k-paper); }
+.pay .kv__input { height: 42px; font-size: 14px; }
+.pay .arrive-pill { border-radius: 22px; background: var(--k-fill); color: var(--k-ink2); }
+.pay .arrive-pill.on { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; }
+.pay .stepper__btn { border-color: var(--k-line2); background: var(--k-paper); }
+.pay .stepper__num { color: var(--k-ink); font-size: 15px; font-weight: 600; }
+/* 确认订单 */
+.pay .idcard { padding: 10px 14px; border: 0; border-radius: 12px; background: #FFF8EE; box-shadow: none; }
+.pay .idcard__icon { width: 28px; height: 28px; }
+
+.pay .idcard__title { color: var(--k-ink); font-size: 14px; font-weight: 600; line-height: 20px; }
+.pay .idcard__sub { color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.pay .fee { min-height: 32px; font-size: 13px; }
+.pay .fee--sum>text { margin-left: 0; }
+.pay .dash--wide { border-top-color: var(--k-line); }
+.pay .fee__total { color: var(--k-red-deep); font-size: 20px; }
+.pay .fee__off { color: var(--k-green); font-size: 14px; }
+.pay .policy__title { color: var(--k-green); font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; }
+.pay .policy__copy { margin-top: 4px; font-size: 12px; line-height: 19px; }
+.pay .policy__tag { color: var(--k-green); font-size: 12px; font-weight: 500; }
+.pay .notice { margin-top: 8px; padding: 14px; border: 0; border-radius: 12px; box-shadow: none; }
+.pay .notice__title { color: var(--k-ink); font-size: 15px; font-weight: 700; line-height: 21px; }
+.pay .notice__text { margin-top: 6px; font-size: 12px; line-height: 19px; }
+.pay .member-choices button, .pay .member-recover button { border-color: transparent; border-radius: 8px; background: var(--k-fill); color: var(--k-ink2); }
+.pay .member-choices button.selected { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); }
+.pay .paybar { gap: 0; }
+.pay .paybar__amount { color: var(--k-red-deep); font-size: 22px; line-height: 28px; }
+.pay .paybar__btn { width: 132px; }
+/* 支付 / 结果 */
+.pay .amount { margin-top: 6px; color: var(--k-red-deep); font-size: 30px; }
+.pay .amount__name { margin-top: 10px; color: var(--k-ink); font-size: 14px; }
+.pay .amount__date { margin-top: 4px; font-size: 12px; }
+.pay .amount__hr { margin: 12px 0; }
+.pay .method { height: 48px; margin-top: 8px; border: 0; border-radius: 8px; background: var(--k-page); }
+
+.pay .method__name { font-size: 14px; }
+.pay .countdown { margin-top: 6px; font-size: 30px; letter-spacing: 2px; }
+.pay .countdown__tip { margin-top: 6px; }
+.pay .safe__line { margin-top: 4px; font-size: 12px; }
+.pay .result-mark { width: 64px; height: 64px; }
+
+.pay .success__title { font-family: var(--k-sans); font-size: 17px; font-weight: 700; line-height: 24px; }
+.pay .success__sub { margin-top: 4px; font-size: 12px; }
+.pay .info { border-bottom-color: var(--k-line); }
+.pay .copy { height: 26px; padding: 0 10px; border-color: var(--k-red-line); border-radius: 13px; color: var(--k-red-deep); font-size: 11px; }
+.pay .synced__store { font-size: 14px; }
+.pay .synced__state { font-size: 13px; }
+.pay .next__title { color: var(--k-ink2); font-size: 13px; }
+.pay .next { height: 64px; gap: 6px; border: 0; border-radius: 8px; background: var(--k-page); }
+.pay .retry__line { font-size: 13px; }
+.pay .retry__sub { margin-top: 2px; font-size: 11px; }
+/* 2026-11-18 第二轮精修：没选好房型 / 日期时的提示放进白卡（图标 36 暖灰、标题 14 / 500），按钮收成 32 高的次按钮小胶囊；
+   退改政策卡改白底（绿色只留在标题字和小盾牌上）；卡内边距统一 12；金额、倒计时数字等宽，倒计时跳秒时不再左右抖；
+   「取消订单」「重新查询」这类描边钮用暖棕细边 + 深棕字（和全站次按钮一致）。 */
+.pay :deep(.k-card) { padding: 12px !important; }
+.pay--4 :deep(.k-card:first-child) { padding-bottom: 4px !important; } /* 复查：支付结果卡最后一行「支付时间」行高 40、字下面本来就有空，模板写的底边距是 4，这里照旧，不然卡片下面多出一截空白 */
+.pay .entry-empty { min-height: 0; margin: 8px 12px; padding: 28px 12px; border-radius: 12px; background: var(--k-paper); }
+.pay .entry-empty__icon { width: 40px; height: 40px; margin-bottom: 8px; background: transparent; }
+.pay .entry-empty__title { color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 20px; }
+.pay .entry-empty__copy { margin-top: 4px; font-size: 12px; line-height: 1.6; }
+.pay .entry-empty__action { width: auto; margin-top: 12px; }
+/* 复查：按钮看上去 32 高，四周 6px 透明边把可点范围撑回原来的 44（负边距抵掉，位置不变）；细棕边改由内阴影画 */
+.pay .entry-empty__action :deep(.k-button.is-primary) { width: auto; height: 44px; margin: -6px 0; padding: 0 14px; border: 6px solid transparent; border-radius: 22px; background: var(--k-paper); background-clip: padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-size: 12px; font-weight: 500; }
+.pay .countdown, .pay .amount, .pay .paybar__amount, .pay .fee__total { font-variant-numeric: tabular-nums; }
+.pay :deep(.k-button.is-outline) { border-color: var(--k-red-line); color: var(--k-red-deep); }
+@media (max-width: 359px) {
+  .pay .room__img { width: 80px; height: 80px; }
+  .pay .stay-dates__date { font-size: 15px; }
+  .pay .kv { font-size: 13px; }
+  .pay .idcard__title { font-size: 13px; }
+  .pay .paybar__btn { width: 120px; }
+  .pay .paybar__amount { font-size: 20px; }
+}
+/* 2026-11-18 第三轮逐页精修：
+   · 卡片标题统一 16 / 700；卡片内边距 16；卡与卡 12；
+   · 「接下来您可以」三个入口：40 浅棕圆角方块 + 22 号暖棕线稿，下面 12 号字，不再是灰底大块；
+   · 缺房源信息的空状态：图标放进 56 浅棕方块，说明限宽 248 居中，两行长度均衡（不再剩一个字）；会员券「已选」前的对勾换成图标。 */
+.pay .card-title, .pay .card-title--lg { font-size: 16px; line-height: 22px; }
+.pay .next__title { color: var(--k-ink); font-size: 16px; font-weight: 700; line-height: 22px; }
+.pay .next { height: auto; padding: 12px 0 10px; gap: 8px; border: 0; border-radius: 12px; background: transparent; }
+.pay .next__ic { width: 40px; height: 40px; border-radius: 12px; background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+.pay .next__label { color: var(--k-ink2); font-size: 12px; line-height: 16px; }
+.pay .entry-empty__icon { width: 56px; height: 56px; margin-bottom: 10px; border-radius: 16px; background: var(--k-red-soft); }
+.pay .entry-empty__copy { max-width: 248px; margin-left: auto; margin-right: auto; }
+.pay .member-choices button { display: inline-flex; align-items: center; gap: 4px; }
+.pay .amount { font-size: 28px; line-height: 36px; color: var(--k-red); }
+.pay .amount__name { margin-top: 4px; }
+/* 2026-11-18 第三轮返修（独立评审第 1 轮）：
+   · 到店时间：三列网格，没选的白底 + 发丝框，选中浅棕底 + 细棕框（和筛选页的选项一个样）；
+   · 隐私说明 / 安心商家前的盾牌换成线性 shield-check 16；
+   · 确认订单：房费明细「合计」降成 15 / 600 墨色，全页只有底部「待支付」是暖棕大字；预订须知卡内边距 12、标题 16 / 700，阅读框去掉描边；
+   · 订单支付：倒计时 24 / 700 提醒色、整卡左对齐，金额仍是唯一大字；
+   · 支付结果：订单号右对齐贴着「复制」；底部「如未显示支付结果」改成白卡；缺房源空状态换成房子图标。 */
+.pay .arrive-pills { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.pay .arrive-pill { min-width: 0; min-height: 36px; padding: 0 4px; justify-content: center; border: 0; border-radius: 8px; background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-line2); color: var(--k-ink2); font-size: 13px; font-weight: 400; white-space: nowrap; }
+.pay .arrive-pill.on { background: var(--k-red-soft); box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-weight: 500; }
+.pay .ic-shield { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; }
+.pay .fee--total .card-title { color: var(--k-ink); font-size: 14px; font-weight: 500; }
+.pay .fee__total { color: var(--k-ink); font-size: 15px; font-weight: 600; line-height: 22px; }
+.pay .idcard { padding: 12px; }
+.pay .notice { padding: 12px; }
+.pay .notice__title { font-size: 16px; font-weight: 700; line-height: 22px; }
+.pay .notice :deep(.ar-scroll) { border: 0; }
+.pay .countdown-card .card-title { text-align: left; }
+.pay .countdown { margin-top: 6px; color: var(--k-alert); font-size: 24px; font-weight: 700; line-height: 30px; letter-spacing: 0; text-align: left; }
+.pay .countdown__tip { text-align: left; }
+.pay .info__value--center { flex: 1 1 auto; margin-right: 8px; text-align: right; font-size: 14px; }
+.pay .retry-card { background: var(--k-paper); }
+/* 11-18 第三轮返修（独立评审第 2 轮）：
+   · 订单支付：倒计时不再和金额抢焦点 —— 「支付倒计时」和时间排一行，时间 15 / 600 提醒色等宽，说明 12 灰；
+   · 支付方式行白底发丝框，右边绿色勾表示已选；
+   · 支付结果：订单号一行的「复制」挪到值下面右对齐（12 号文字链），三行的值右边对齐到同一条线；
+   · 步进器圆钮和输入框同为 44；小屏房源卡设施一行省略。 */
+.pay .countdown-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pay .countdown-row .card-title { margin: 0; color: var(--k-ink2); font-size: 14px; font-weight: 500; line-height: 20px; }
+.pay .countdown-row .countdown { display: block; margin: 0; color: var(--k-alert); font-size: 15px; font-weight: 600; line-height: 20px; letter-spacing: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.pay .countdown-card .countdown__tip { margin-top: 4px; color: var(--k-muted); font-size: 12px; line-height: 18px; text-align: left; }
+.pay .method { gap: 8px; padding: 0 12px; border: 1px solid var(--k-line); background: var(--k-paper); }
+.pay .method__name { flex: 1; }
+.pay .info--copy { flex-wrap: wrap; padding: 8px 0 6px; }
+.pay .info--copy .info__value--center { flex: 1 1 auto; margin-right: 0; }
+.pay .info--copy .copy { flex: 0 0 100%; height: 18px; margin: 2px 0 0; padding: 0; border: 0; border-radius: 0; background: transparent; justify-content: flex-end; color: var(--k-red-deep); font-size: 12px; line-height: 18px; }
+.pay .stepper__btn { width: 44px; height: 44px; }
+@media (max-width: 359px) { .pay .room__desc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
 </style>
 
-<style scoped>.member-choices{padding:12px 0;display:flex;flex-wrap:wrap;gap:8px}.member-choices>.k-meta{width:100%;font-size:12px}.member-choices button,.member-recover button{font-size:12px;line-height:1.5;padding:9px 12px;background:#f6eee2;color:#86603a;border-radius:10px;margin:0;border:1px solid #e4d4bd}.member-choices button.selected{border-color:#9c713c;background:#eee0c9}.member-choices button::after{border:0}.member-recover{padding:12px 16px}</style>
+<style scoped>.member-choices{padding:12px 0;display:flex;flex-wrap:wrap;gap:8px}.member-choices>.k-meta{width:100%;font-size:12px}.member-choices button,.member-recover button{font-size:12px;line-height:1.5;padding:9px 12px;background:#f6eee2;color:#86603a;border-radius:10px;margin:0;border:1px solid #e4d4bd}.member-choices button.selected{border-color:#9c713c;background:#eee0c9}.member-choices button::after{border:0}.member-recover{padding:12px 16px}
+/* 11-18 第四轮返修：房费明细和优惠合成一张「费用」卡（中间发丝线）；支付结果订单号和「复制」同一行；320 宽房源名不在词中间断开、倒计时说明一行放下；缺房源说明两行等长。 */
+.pay .fee-split{height:1px;margin:12px 0;background:var(--k-line);transform:scaleY(.5)}
+.pay .card-title--sub{display:block}
+.pay .info--copy{flex-wrap:nowrap}
+.pay .info__copyline{flex:1 1 auto;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.pay .info--copy .info__copyline .info__value--center{flex:0 1 auto;min-width:0;margin:0}
+.pay .info--copy .info__copyline .copy{flex:0 0 auto;width:auto;height:20px;margin:0;line-height:20px}
+.pay .amount__name{word-break:keep-all;overflow-wrap:anywhere}
+.pay .entry-empty__copy{max-width:230px}
+@media (max-width:340px){.pay .countdown-card .countdown__tip{font-size:11px;line-height:16px}}
+/* <<R6-BEGIN>> */
+/* 11-18 第四轮：缺参数整页空态不套白卡，放在页面底上往下挪约四分之一屏；说明限宽 13em，在逗号后断行，两行长短平衡；按钮 32 高次按钮。 */
+.pay .entry-empty { margin: 84px 0 0; padding: 0 16px; border-radius: 0; background: transparent; box-shadow: none; }
+.pay .entry-empty__copy { max-width: 13em; }
+.pay .entry-empty__action { margin-top: 16px; }
+.pay .entry-empty__action :deep(.k-button.is-primary) { height: 32px; margin: 0; padding: 0 16px; border: 1px solid var(--k-red-line); border-radius: 16px; background: var(--k-paper); box-shadow: none; color: var(--k-red-deep); font-size: 13px; }
+/* 11-19 独立复评返修：320 宽房型说明（「6人 · 公共卫浴 · 空调 · 独卫…」）改成完整换行，不再被省略号吃掉。 */
+@media (max-width: 359px) {
+  .pay .room__desc { white-space: normal; overflow: visible; text-overflow: clip; }
+}
+/* 11-19 微信实拍返修：缺参数页唯一出路做成主角 —— 「重新选择小院 / 选择房型与日期」40 高实心暖棕、左右 24、14/600；标题 16/600 墨色，说明 13 灰、行高 20。 */
+.pay .entry-empty__title { color: var(--k-ink); font-size: 16px; font-weight: 600; line-height: 22px; }
+.pay .entry-empty__copy { margin-top: 4px; color: var(--k-muted); font-size: 13px; line-height: 20px; }
+.pay .entry-empty__action :deep(.k-button.is-primary) { height: 40px; min-height: 40px; padding: 0 24px; border: 0; border-radius: 20px; background: var(--k-grad-brown); box-shadow: none; color: var(--k-paper); font-size: 14px; font-weight: 600; }
+/* <<R6-END>> */
+</style>
+
+<style scoped lang="scss">
+.pay.user-surface {
+  .stay-dates { border-radius: 10px; background-color: var(--k-red-soft); }
+  .stay-dates__date, .fee__total, .paybar__amount { font-variant-numeric: tabular-nums; }
+  .kv--field:focus-within, .kv--input:focus-within { box-shadow: inset 0 -1px var(--k-red-line); }
+  .paybar__btn { min-height: 44px; border-radius: 11px; }
+}
+</style>

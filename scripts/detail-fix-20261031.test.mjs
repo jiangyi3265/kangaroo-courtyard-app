@@ -64,13 +64,14 @@ function runScript(rel, stubs, libs = {}) {
 
 /** 岗位详情的脚本：页面生命周期都能手动触发 */
 function jobPage({ detail = () => ({ data: plain(JOB) }), session = async () => {}, account = { id: 11 } } = {}) {
-  const hooks = {}, log = { reads: 0, toasts: [], backs: 0, gone: [], sessions: 0 }
+  const showHooks = []
+  const hooks = { show: () => showHooks.forEach(fn => fn()) }, log = { reads: 0, toasts: [], backs: 0, gone: [], sessions: 0 }
   const timers = fakeTimers()
   let revision = 0
   const h = runScript('pages/jobs/detail.vue', {
     setTimeout: timers.setTimeout, clearTimeout: timers.clearTimeout,
     useScreen: (_, opts) => { hooks.load = opts.onLoad; return vue.ref(1) },
-    onShow: fn => { hooks.show = fn }, onHide: fn => { hooks.hide = fn }, onUnmounted: fn => { hooks.unmounted = fn },
+    onShow: fn => { showHooks.push(fn) }, onHide: fn => { hooks.hide = fn }, onUnmounted: fn => { hooks.unmounted = fn },
     onJobFavoriteChange: () => () => {},
     experience: vue.reactive({ account }), getSessionRevision: () => revision,
     ensureSession: () => { log.sessions++; return session() },
@@ -168,7 +169,7 @@ test('账号恢复慢时：提示从进页面就开始计时，详情请求等�
 test('底部两个按钮没加载完时不可点；k-button 禁用时不发 click', async t => {
   const tpl = noComments(sfc('pages/jobs/detail.vue').template.content)
   assert.match(tpl, /<k-button block round type="outline" icon="user-round" :disabled="!detail" label="找人一起去" @click="openTeam" \/>/)
-  assert.match(tpl, /<k-button block round :disabled="!detail \|\| !!applyBlockedText" :label="applyBlockedText \? blockedShort : isOnline \? '报名申请' : '立即报名'" @click="openApply" \/>/)
+  assert.match(tpl, /<k-button block round :disabled="!detail \|\| \(!myApplication && !!applyBlockedText\)" :label="myApplication \? myApplication.label : applyBlockedText \? blockedShort : isOnline \? '报名申请' : '立即报名'" @click="openApply" \/>/)
   assert.match(sfc('components/k-button/k-button.vue').scriptSetup.content, /const onClick = \(e\) => \{ if \(!props\.disabled\) emit\('click', e\) \}/)
 })
 
@@ -402,10 +403,13 @@ test('读取在路上时账号变了又回到本页：等旧响应回来判作�
 test('详情没到时「立即报名」的禁用样式不被棕底盖掉', () => {
   const premium = read('pages/jobs/detail-premium.scss')
   const brown = premium.indexOf('.detail-page .k-bottom :deep(.k-button.is-primary) {')
-  const grey = premium.indexOf('.detail-page .k-bottom :deep(.k-button.is-primary.is-disabled) { background: #ECE5DC; color: #A39A92; box-shadow: none; }')
-  assert.ok(brown >= 0 && grey > brown, '灰底规则要在棕底规则之后，选择器也更具体')
-  // 版式自己的禁用色在 premium 之后，优先级也不低于它：换宿、兼职、全职的已满、已暂停不受影响
-  assert.ok(premium.indexOf('.k-bottom :deep(.k-button.is-primary.is-disabled) { color: #A9A6A1;') > grey)
+  // 2026-11-18 第二轮：点不了的按钮不再盖冷灰底，按公共按钮的「原配色整体变淡」；页面里只留去阴影的禁用规则
+  const grey = premium.indexOf('.detail-page .k-bottom :deep(.k-button.is-primary.is-disabled) { box-shadow: none; }')
+  assert.ok(brown >= 0 && grey > brown, '禁用规则要在棕底规则之后，选择器也更具体')
+  assert.ok(!/#ECE5DC|#EFEEEC/.test(premium), '不再用冷灰底')
+  // 版式自己的禁用规则在 premium 之后，优先级也不低于它：换宿、兼职、全职的已满、已暂停不受影响
+  const parttime = premium.indexOf('.detail-page--parttime {')
+  assert.ok(parttime > grey && premium.indexOf('.k-bottom :deep(.k-button.is-primary.is-disabled) { box-shadow: none; }', parttime) > parttime)
   const vue = read('pages/jobs/detail.vue')
   assert.ok(vue.indexOf('@import "detail-premium.scss"') < vue.indexOf('@import "detail-volunteer-reference.scss"'))
 })
@@ -491,6 +495,8 @@ function stayPage({ detail = async () => ({ data: { stayId: 6, stayName: '平潭
     onShow: fn => hooks.show.push(fn), onHide() {}, onPageScroll() {}, onShareAppMessage() {}, onShareTimeline() {},
     uni: { getSystemInfoSync: () => ({ statusBarHeight: 20 }) },
     apiStayDetail: (...args) => { log.reads++; return detail(...args, log.reads) },
+    refreshFeatures: async () => ({ stayBookingEnabled: true }),
+    stayBookingEnabled: vue.ref(true),
     apiStayVlogs: async () => ({ data: [] }), apiStayRoomTypes: async () => ({ data: [] }),
     toast: m => log.toasts.push(m), errText: (e, dft) => (e && e.message) || dft, yuan: x => String(x), absUrl: x => String(x || ''),
     stayState: vue.reactive({ checkIn: '2026-11-01', checkOut: '2026-11-02', guests: 1 }), normalizeDates() { log.normalized++ }, todayCn: () => '2026-10-31', shiftDate: x => x,
@@ -583,6 +589,7 @@ test('房源详情：房源真没了不给重试；已有内容时刷新失败�
   await flush()
   page.hooks.show.forEach(fn => fn())
   page.hooks.show.forEach(fn => fn())
+  await flush()
   reads[2].resolve({ data: { stayId: 6, stayName: '第三次' } })
   await flush()
   reads[1].reject(NETWORK())
@@ -590,6 +597,7 @@ test('房源详情：房源真没了不给重试；已有内容时刷新失败�
   assert.equal(page.val('d.value.stayName'), '第三次')
   assert.equal(page.val('loadError.value'), '')
   page.hooks.show.forEach(fn => fn())
+  await flush()
   reads[3].reject(NETWORK())
   await flush()
   assert.equal(page.val('d.value.stayName'), '第三次', '内容留着')
@@ -606,7 +614,8 @@ function moreActions(picked) {
   const spy = name => async (...args) => { log.calls.push([name, ...args]); return { msg: 'ok', data: { url: 'u' } } }
   const names = ['setStayLocation', 'apiStaffSubmitStay', 'manageRoomTypes', 'openMedia', 'apiStaffOfflineStay', 'chooseImage', 'uploadTo', 'apiStaffEditStay', 'apiStaffStayGroup', 'pickDate', 'openStay', 'prompt', 'load', 'loadList', 'loadRows', 'reloadList', 'refresh', 'errText']
   // 2026-11-03 简化：只剩 4 项，一个系统菜单（sheet）放得下，不再翻页（pickPaged）
-  const fn = new Function(...names, 'toast', 'sheet', 'shiftDate', 'todayCn', 'return ' + source.slice(start, end + 2))(
+  const updateGroupQr = source.slice(source.indexOf('async function updateGroupQr(stayId) {'), start)
+  const fn = new Function(...names, 'toast', 'sheet', 'shiftDate', 'todayCn', updateGroupQr + '\nreturn ' + source.slice(start, end + 2))(
     ...names.map(spy), () => {}, async labels => { log.labels = [...labels]; return picked(labels) }, x => x, () => '2026-10-31')
   return { fn, log }
 }

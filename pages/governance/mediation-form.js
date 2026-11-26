@@ -45,3 +45,5 @@ export function mediationFormErrors({ draft, selectedOrder, claims, files, categ
   if (!/^[+0-9 -]{7,24}$/.test(String(draft.phone || '').trim())) add('phone', '请填写有效联系电话，7～24 位，可包含数字、+、空格或短横线。')
   return errors
 }
+// 2026-11-19 纯展示常量：原生 switch 的 color 只认颜色值、不认 CSS 变量；这里的值就是 --k-green（主人定过开关全站绿色），本目录的开关都用它，不再各处手写。
+export const SWITCH_GREEN = '#4A6E3A'

@@ -14,6 +14,7 @@ const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(APP, 'package.json'))
 const compiler = require('@vue/compiler-sfc'), vue = require('vue')
 const FORM = await import(pathToFileURL(path.join(APP, 'common/activity-form.js')).href)
+const ACTIVITY_TEXT = await import(pathToFileURL(path.join(APP, 'common/activity-text.js')).href)
 const src = (rel) => fs.readFileSync(path.join(APP, rel), 'utf8').replace(/\r\n/g, '\n')
 const plain = (v) => JSON.parse(JSON.stringify(v))
 const flush = () => new Promise(resolve => setImmediate(resolve))
@@ -50,10 +51,84 @@ function activities(stubs = {}) {
     apiStaffEditActivity: async (id, p) => { log.edited.push([id, plain(p)]); return { data: { activityId: id, message: '已保存' } } },
     apiStaffActivities: async () => ({ data: { rows: [], counts: {} } }),
     uni: { getSystemInfoSync: () => ({ windowWidth: 375 }), getStorageSync: () => '', setStorageSync() {}, removeStorageSync() {} },
-    ...FORM, ...stubs
+    ...FORM, ...ACTIVITY_TEXT, ...stubs
   })
   return { ...h, log, s, merchant }
 }
+
+test('#238 商家从发布活动进入，粘贴后先预览，只回填本表单支持的字段', async () => {
+  const screen = vue.ref(2)
+  let open
+  const h = activities({ useScreen: (_, options) => { open = options.onLoad; return screen } })
+  h.merchant.value = true
+  await open({ s: 2, create: 1 })
+  assert.equal(h.run('canFillActivityText.value'), true)
+  assert.ok(h.template.indexOf('粘贴活动文案') < h.template.indexOf('基本信息'))
+  assert.match(h.template, /v-if="canFillActivityText"[\s\S]*?@click="fillActivityText"/)
+  h.run("meet.value = {latitude:25,longitude:119}; intro.value = '已填介绍'; activityText.value = '海岛徒步，12月6日09:00到12:00，在码头集合，限12人，每人30元，城市：平潭，报名截止12月1日'")
+  await h.run('fillActivityText()')
+  assert.match(h.log.confirms[0][1], /地点：码头/)
+  assert.doesNotMatch(h.log.confirms[0][1], /城市|截止/)
+  assert.deepEqual(plain(h.run('[title.value, place.value, people.value, feeKind.value, fee.value, start.value, end.value, intro.value, meet.value]')),
+    ['海岛徒步', '码头', '12', 'paid', '30', {date:'2026-12-06',time:'09:00'}, {date:'2026-12-06',time:'12:00'}, '已填介绍', null])
+  assert.equal(h.log.created.length, 0)
+  await h.run('submit()')
+  assert.equal(h.log.created[0][1].capacity, 12)
+  assert.equal(h.log.created[0][1].startTime, '2026-12-06 09:00')
+  assert.equal(h.log.created[0][1].endTime, '2026-12-06 12:00')
+  assert.equal(h.log.created[0][1].feeYuan, '30')
+  h.stop()
+})
+
+test('#238 取消识别、修改旧活动、切换旅游产品或失去员工身份均不改动表单', async () => {
+  const access = vue.ref(true)
+  let prompts = 0
+  const h = activities({ hasStaffAccess: access, confirm: async () => { prompts++; return false } })
+  await h.run('newActivity()')
+  h.run("activityText.value = '海岛徒步，明天16:00，在码头集合'")
+  await h.run('fillActivityText()')
+  assert.equal(h.run('title.value'), '')
+  assert.equal(h.run('place.value'), '平潭袋鼠小院')
+  for (const mode of ["editId.value=123", "editId.value=null; productKind.value='travel'"]) {
+    h.run(mode)
+    assert.equal(h.run('canFillActivityText.value'), false)
+    await h.run('fillActivityText()')
+  }
+  access.value = false
+  h.run("productKind.value='activity'")
+  await h.run('fillActivityText()')
+  assert.equal(prompts, 1)
+  assert.equal(h.log.created.length, 0)
+  h.stop()
+})
+
+test('#238 预览期间换店或在同店切换账号，旧文案不会写入', async t => {
+  const session = {account:{id:7}}
+  let store = 102, respond
+  const h = activities({ experience:session, currentStaffStoreId:() => store, confirm:() => new Promise(resolve => {respond = resolve}) })
+  t.after(h.stop)
+  await h.run('newActivity()')
+  h.run("activityText.value = '活动标题：海岛徒步'")
+  for (const switchContext of [() => {store++}, () => {session.account.id++}]) {
+    const paste = h.run('fillActivityText()')
+    switchContext()
+    respond(true)
+    await paste
+    assert.equal(h.run('title.value'), '')
+  }
+})
+
+test('#238 只粘贴开始时间沿用默认三小时，已手选且有效的结束时间得以保留', async () => {
+  const h = activities()
+  await h.run('newActivity()')
+  h.run("activityText.value = '开始时间：12月6日23:00'")
+  await h.run('fillActivityText()')
+  assert.deepEqual(plain(h.run('end.value')), {date:'2026-12-07',time:'02:00'})
+  h.run("end.value = {date:'2026-12-08',time:'10:00'}; endTouched = true; activityText.value='开始时间：12月7日09:00'")
+  await h.run('fillActivityText()')
+  assert.deepEqual(plain(h.run('end.value')), {date:'2026-12-08',time:'10:00'})
+  h.stop()
+})
 
 // ---------------------------------------------------------------- M9 列表
 

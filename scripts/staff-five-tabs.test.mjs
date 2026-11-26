@@ -8,6 +8,7 @@ const script = source.split('<script setup>')[1].split('</script>')[0].replace(/
 function tabbar(three = false, online = false, storeId = 1, service = false) {
   const calls = []
   const ctx = { computed: fn => ({ get value() { return fn() } }), defineOptions() {}, defineProps: () => ({ mode: 'staff', active: 'business' }),
+    useUserIcons: () => ({ value: false }), askOnVisit() {},
     unreadCount: { value: 2 }, onlineStaff: { value: online }, merchantService: { value: service }, threeTabStaff: { value: three }, currentStaffStore: { value: { storeId } },
     getCurrentPages: () => [{ route: 'pages/staff/business' }], uni: { navigateTo: x => calls.push(['navigate', x.url]), reLaunch: x => calls.push(['relaunch', x.url]), showToast: x => calls.push(['toast', x.title]) } }
   vm.createContext(ctx)

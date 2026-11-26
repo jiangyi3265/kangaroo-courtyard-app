@@ -13,7 +13,7 @@ const deferred = () => {
 function fixture(get) {
   const props = { storeId: 10 }
   let changed
-  const context = vm.createContext({ defineProps: () => props, ref: value => ({ value }), watch: (_, callback) => { changed = callback }, get })
+  const context = vm.createContext({ defineProps: () => props, ref: value => ({ value }), watch: (_, callback) => { changed = callback }, ensureSession: async () => {}, get })
   vm.runInContext(script + '\nglobalThis.api = { load, rows, selected, hasMore, error, updateRecord }', context)
   return { props, changed: () => changed(), ...context.api }
 }
@@ -22,6 +22,7 @@ test('switching the store cannot display the previous store slow response', asyn
   const first = deferred(), second = deferred()
   const f = fixture((url, query) => query.storeId === 10 ? first.promise : second.promise)
   const old = f.load(false)
+  await new Promise(done => setImmediate(done))
   f.props.storeId = 20
   f.changed()
   const current = f.load(false)

@@ -2,7 +2,7 @@
   <view class="task-entry" hover-class="k-press" @click="go(STAFF_TASK_PAGE)">
     <view class="task-entry__copy"><text class="task-entry__title">管理员任务</text><text class="task-entry__sub">接收任务、回复提问、提交完成情况</text></view>
     <text v-if="staffTaskTodoCount" class="task-entry__count">{{ staffTaskTodoCount }} 项待办</text>
-    <k-icon name="chevron-right" :size="18" color="muted" />
+    <k-icon name="chevron-right" :size="12" color="muted" />
   </view>
 </template>
 
@@ -16,9 +16,10 @@ defineOptions({ options: { virtualHost: true, styleIsolation: 'apply-shared' } }
 </script>
 
 <style scoped>
-.task-entry{display:flex;align-items:center;gap:10px;padding:14px;margin:14px 0 4px;border:1px solid var(--k-line);border-radius:12px;background:var(--k-paper)}
-.task-entry__copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.task-entry__title{font-size:15px;font-weight:700;color:var(--k-ink)}
+/* 2026-11-17 改版「小而精」：白卡 12 圆角、不描边；标题 14、说明 12，待办数加粗 */
+.task-entry{display:flex;align-items:center;gap:10px;min-height:60px;padding:10px 12px;margin:8px 0 0;border:0;border-radius:12px;background:var(--k-paper)}
+.task-entry__copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.task-entry__title{font-size:14px;font-weight:600;line-height:20px;color:var(--k-ink)}
 .task-entry__sub{font-size:12px;color:var(--k-muted)}
-.task-entry__count{color:var(--k-red);font-size:13px;white-space:nowrap}
+.task-entry__count{color:var(--k-red-deep);font-size:12px;font-weight:600;white-space:nowrap}
 </style>

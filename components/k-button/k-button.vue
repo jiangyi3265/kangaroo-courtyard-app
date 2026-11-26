@@ -1,6 +1,6 @@
 <template>
   <button class="k-button" :class="[`is-${type}`, `is-${size}`, { 'is-block': block, 'is-disabled': disabled, 'is-round': round }]" :hover-class="disabled ? 'none' : 'k-press-s'" :disabled="disabled" :open-type="openType || undefined" @click="onClick" @getphonenumber="(e) => emit('getphonenumber', e)">
-    <k-icon v-if="icon" :name="icon" :size="iconSize" :color="iconColor" :stroke="iconFill ? 0.5 : 1.8" :fill="iconFill" />
+    <k-icon v-if="icon" :name="icon" :size="iconSize" :color="iconColor" :stroke="iconFill ? 0.5 : ''" :fill="iconFill" />
     <text v-if="label" class="k-button__label">{{ label }}</text><view v-else class="k-button__label"><slot /></view>
   </button>
 </template>
@@ -27,7 +27,7 @@ const emit = defineEmits(['click', 'getphonenumber'])
 const onClick = (e) => { if (!props.disabled) emit('click', e) }
 const iconSize = computed(() => ({ lg: 18, md: 16, sm: 14, xs: 12 })[props.size] || 18)
 const iconColor = computed(() => {
-  if (props.disabled) return 'light' // 禁用是浅灰字配浅底，白色图标会看不见
+  // 11-18 起禁用也是原配色整体变淡（见样式 .is-disabled），图标跟着原配色走，不再单独变浅灰
   if (['primary', 'green', 'indigo', 'ochre', 'dark'].includes(props.type)) return 'white'
   if (['secondary', 'ghost'].includes(props.type)) return 'red'
   return 'ink'
@@ -44,7 +44,7 @@ const iconColor = computed(() => {
 .is-block { width: 100%; display: flex; }
 .is-round { border-radius: 999px; }
 .is-primary { color: #fff; background: var(--k-grad-brown); }
-.is-primary.is-lg { border-radius: 999px; box-shadow: 0 4px 12px rgba(138,90,48,.10); }
+.is-primary.is-lg { border-radius: 999px; }
 .is-secondary { color: var(--k-red); background: var(--k-paper); border-color: var(--k-red-line); }
 .is-outline { color: var(--k-ink); background: var(--k-paper); border-color: var(--k-line2); }
 .is-ghost { color: var(--k-red); background: transparent; }
@@ -53,7 +53,14 @@ const iconColor = computed(() => {
 .is-ochre { color: #fff; background: var(--k-ochre); }
 .is-dark { color: #fff; background: var(--k-ink); }
 .is-soft { color: var(--k-ink); background: var(--k-paper2); }
-/* 禁用：浅灰字配浅底（之前白字配灰底，像是坏了）；按下效果走模板上的 hover-class="k-press-s" */
-.is-disabled { color: var(--k-light); background: var(--k-paper2); border-color: transparent; box-shadow: none; }
-.is-primary.is-lg.is-disabled { box-shadow: none; }
+/* 不可点（11-18 精修词典）：原配色整体变淡 .45，不要冷灰底；按下效果走模板上的 hover-class。
+   微信 button[disabled] 自带冷灰底灰字、比一个类名优先，第一轮各页又各写了一套暖灰底，所以颜色用 !important 统一盖回原配色（页面里那些禁用灰底规则可删） */
+.k-button.is-disabled { opacity: .45; }
+/* 实心按钮上常写着「已截止」「已报满」这类状态字，淡到 .6 就够看出不能点，白字也还读得清 */
+.k-button.is-disabled.is-primary, .k-button.is-disabled.is-green { opacity: .6; }
+.is-disabled.is-primary { color: #fff !important; background: var(--k-grad-brown) !important; }
+.is-disabled.is-secondary { color: var(--k-red) !important; background: var(--k-paper) !important; border-color: var(--k-red-line) !important; }
+.is-disabled.is-outline { color: var(--k-ink) !important; background: var(--k-paper) !important; border-color: var(--k-line2) !important; }
+.is-disabled.is-ghost { color: var(--k-red) !important; background: transparent !important; }
+.is-disabled.is-green { color: #fff !important; background: var(--k-green) !important; }
 </style>

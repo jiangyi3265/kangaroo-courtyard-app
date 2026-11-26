@@ -60,10 +60,15 @@ export const apiApplicationDetail = (appId) => get('/app/application/' + appId)
 export const apiApplicationMessages = (appId, params = {}) => get('/app/application/' + appId + '/messages', params)
 export const apiApplicationDates = (appId, merchant = false) => get((merchant ? '/app/staff/applications/' : '/app/application/') + appId + '/dates')
 export const apiProposeApplicationDates = (appId, data) => post('/app/staff/applications/' + appId + '/dates', data)
-export const apiConfirmApplicationDates = (appId, revision) => post('/app/application/' + appId + '/dates/confirm', { revision })
+export const apiConfirmApplicationDates = (appId, revision, kind) => post('/app/application/' + appId + '/dates/confirm', kind === 'renewal' ? { revision, kind } : { revision })
 
 export const apiWithdrawApplication = (appId) => post('/app/application/' + appId + '/withdraw')
 
+const interviewOfferUrl = (appId, staff) => (staff ? '/app/staff/applications/' : '/app/application/') + appId + '/interview-offers'
+export const apiInterviewOffers = (appId, staff) => get(interviewOfferUrl(appId, staff))
+export const apiAddInterviewOffer = (appId, staff, data) => post(interviewOfferUrl(appId, staff), data)
+export const apiRemoveInterviewOffer = (appId, staff, id) => post(interviewOfferUrl(appId, staff) + '/' + id + '/remove')
+export const apiChooseInterviewOffer = (appId, id, capacity) => post(interviewOfferUrl(appId, true) + '/' + id + '/choose', { capacity })
 export const apiInterviewSlots = (appId) => get('/app/application/' + appId + '/slots')
 
 export const apiBookInterview = (appId, slotId) =>
@@ -78,8 +83,27 @@ export const apiConfirmIntent = (appId, intent) =>
 
 // ---------------- 消息 ----------------
 
+function withExpiryRoute(message, mode) {
+  if (mode !== 'staff' || !message || (message.mode && message.mode !== 'staff')) return message
+  const route = String(message.route || '')
+  const overview = '/pages/staff/volunteers'
+  const path = route.split('?')[0]
+  // 老版微信订阅详情只返回标题和链接，没有业务类型和报名编号。
+  const legacy = !message.bizType && path === overview && /^(换工|义工)合约即将到期$/.test(message.title)
+  if (message.bizType !== 'volunteer_expiry' && !legacy) return message
+  const storeId = /[?&]storeId=([1-9]\d*)(?:&|$)/.exec(route)?.[1]
+  const appId = /[?&]appId=([1-9]\d*)(?:&|$)/.exec(route)?.[1]
+  const bizId = message.bizType === 'volunteer_expiry' && /^[1-9]\d*$/.test(message.bizId) ? String(message.bizId) : ''
+  if (path === '/pages/staff/applications' && appId && storeId && (!bizId || appId === bizId)) return message
+  // 老概况链接的门店是收件人的授权门店，可能和报名归属不同，由概况页核实后再打开报名。
+  const focus = bizId || (path === overview && /[?&]focusAppId=([1-9]\d*)(?:&|$)/.exec(route)?.[1])
+  const query = [storeId && 'storeId=' + storeId, 'tab=leaving', focus && 'focusAppId=' + focus].filter(Boolean)
+  return { ...message, route: overview + '?' + query.join('&') }
+}
+
 // more（可选）：{ bucket, page, size }。带 bucket 时服务端只回这一组的一页，并回 hasMore（10-15 起；老接口忽略这几个参数）
 export const apiMessages = (mode, category, more) => get('/app/message/list', { mode, category, ...more })
+  .then(res => mode === 'staff' && Array.isArray(res.rows) ? { ...res, rows: res.rows.map(m => withExpiryRoute(m, mode)) } : res)
 
 export const apiMessageSummary = (mode) => get('/app/message/summary', { mode })
 
@@ -234,7 +258,6 @@ export const apiStayRoomTypes = (stayId, params) => get('/app/stay/' + stayId + 
 
 export const apiStayCalendar = (roomTypeId, month, promoId) => get('/app/stay/room-types/' + roomTypeId + '/calendar', { month, promoId })
 
-export const apiStayRecommend = (roomTypeId, params) => get('/app/stay/room-types/' + roomTypeId + '/recommend', params)
 
 export const apiStayVlogs = (stayId) => get('/app/stay/' + stayId + '/vlogs')
 
@@ -397,7 +420,8 @@ export const apiPhoneVerify = (code) => post('/app/auth/phone-verify', { code })
 export const apiFeed = (params) => get('/app/community/feed', params)
 export const apiBuddies = (params) => get('/app/community/buddies', params)
 export const apiPost = (id) => get('/app/community/posts/' + id)
-export const apiPostComments = (id, sort) => get('/app/community/posts/' + id + '/comments', { sort })
+export const apiPostComments = (id, sort, paging) => get('/app/community/posts/' + id + '/comments', { sort, ...paging })
+export const apiCommentReplies = (id, parent, after) => get('/app/community/posts/' + id + '/comments/' + parent + '/replies', { after })
 export const apiPostComment = (id, content, parentId, images = []) => post('/app/community/posts/' + id + '/comments', { content, parentId, images })
 export const apiCommentLike = (id) => post('/app/community/comments/' + id + '/like')
 export const apiCommentDelete = (id) => request({ url: '/app/community/comments/' + id, method: 'DELETE' })
@@ -411,7 +435,9 @@ export const apiReport = (targetType, targetId, reason, detail) => post('/app/co
 export const apiPublishPost = (payload) => post('/app/community/posts', payload)
 export const apiPostEditView = (id) => get('/app/community/posts/' + id + '/edit')
 export const apiEditPost = (id, data) => request({ url: '/app/community/posts/' + id, method: 'PUT', data })
-export const apiMyPosts = (page) => get('/app/community/posts/mine', page ? { page } : {})
+export const apiMyPosts = (page, kind, beforePostId) => get('/app/community/posts/mine', {
+  ...(page ? { page } : {}), ...(kind ? { kind } : {}), ...(beforePostId ? { beforePostId } : {})
+})
 // 发布页「关联帖子」选择页（2026-10-17）：type = place 小院和门店 / job 岗位 / activity 活动，keyword、city、page。
 // 原来的 apiPostRefs（/refs：自己的报名 / 住宿订单）新版发布页不用了，删掉；服务端接口留着给老版本小程序
 export const apiPostLinkables = (params) => get('/app/community/linkables', params)
@@ -492,6 +518,7 @@ export const apiSupportAsk = (payload) => post('/app/support/ask', payload)
 export const apiSupportQuick = (context) => get('/app/support/quick', { context })
 export const apiSupportFeedback = (logId, helpful) => post('/app/support/feedback', { logId, helpful })
 export const apiSupportTicket = (payload) => post('/app/support/tickets', payload)
+export const apiSupportTicketDetail = id => get('/app/support/tickets/' + id)
 export const apiSupportTickets = () => get('/app/support/tickets')
 export const apiSupportRate = (id, score) => post('/app/support/tickets/' + id + '/rate', { score })
 export const apiResume = () => get('/app/resume')
@@ -642,8 +669,8 @@ export const apiWorkbenchAssign = (key, ownerId, storeId) => post('/app/staff/wo
 export const apiWorkbenchNote = (key, note, storeId) => post('/app/staff/workbench/note', { key, note, storeId })
 export const apiWorkbenchDigest = (storeId) => post('/app/staff/workbench/digest', { storeId })
 export const apiResumeForwards = (appId, storeId) => get('/app/staff/workbench/forwards', { appId, storeId })
-export const apiResumeForwardStores = (storeId, q) => get('/app/staff/workbench/forward-stores', { storeId, q })
 export const apiSharedResume = (id) => get('/app/staff/workbench/shared-resume/' + id)
+export const apiNotifyRecruitManager = (storeId, appId) => post('/app/staff/workbench/notify-recruit-manager', { storeId, appId })
 export const apiResumeForward = (payload) => post('/app/staff/workbench/forward', payload)
 export const apiResumePoster = (appId, storeId) => get('/app/staff/workbench/resume-poster', { appId, storeId })
 export const apiSupportContact = () => get('/app/support/contact')
@@ -652,6 +679,7 @@ export const apiSupportContact = () => get('/app/support/contact')
 export const apiSubscribeStatus = () => get('/app/subscribe/status')
 export const apiSubscribePrepare = () => post('/app/subscribe/prepare', {})
 export const apiSubscriptionMessage = (id, mode) => get('/app/message/subscription/' + id, { mode })
+  .then(res => mode === 'staff' && res.data ? { ...res, data: withExpiryRoute(res.data, mode) } : res)
 export const apiSubscribeAccept = (results) => post('/app/subscribe/accept', results)
 export const apiSubscribeRevoke = (bizKey) => post('/app/subscribe/revoke', { bizKey })
 

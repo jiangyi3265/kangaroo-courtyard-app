@@ -1,11 +1,11 @@
 // 2026-11-03 主人：「简化」用户端这一组（G-user-side）的回归，node --test 直接跑，不构建、不发请求：
 //   U1 旅居下单 booking.vue：房型 ≤5 个不出筛选条；换月只用左右箭头（月份菜单去掉）；房态日历移除低价日标识与推荐提示
-//      pay.vue：入住人 / 手机号是页面输入框、到店时间按钮组、人数加减号；预订须知页面内可展开，点勾选框任何情况都不弹窗
+//      pay.vue：入住人 / 手机号是页面输入框、到店时间按钮组、人数加减号；预订须知读完后由本人勾选，新须知要重新确认
 //   U2 resume.vue：添加 / 修改经历在底部一块小表单里一次填完；删除是右侧「×」+ 一次确认；没有 4 连弹和「修改 / 删除」菜单
 //   U3 contract.vue：签署姓名、证件后四位、交通方式、车次、备注全在页面里填 / 选
 //   U4 profile/index.vue：昵称、自我介绍在「账号资料」区输入 + 保存；实名认证是页面内折叠区（两个输入框 + 一个按钮）；注销多重确认不动
-//   U5 community/publish.vue：找搭子的分类 / 天数 / 性别、旅居日常的伙伴说改成页面内按钮组
-//   U6 jobs/interview.vue：改期时段是页面内胶囊 + 底部「确认改到 …」；没时段写明并给「联系当地主理人」
+//   U5 community/publish.vue：找搭子分类可手填或选择；同行性别、伙伴说使用按钮组
+//   U6 jobs/interview.vue：改期时段是页面内胶囊 + 底部「确认改到 …」；没时段写明并给「联系商家」
 //   U7 jobs/apply.vue：天数选「其他」在胶囊下出数字框
 // 页面跑的是真实的 script setup，接口按用例换成桩（导入的名字默认都是挂起不返回的函数）
 import fs from 'node:fs'
@@ -16,6 +16,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import * as F from '../pages/jobs/apply-flow.js'
+import { readingClock, AGREEMENT_READ_SECONDS } from '../common/agreement-progress.js'
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(APP, 'package.json'))
@@ -140,13 +141,26 @@ test('U1 确认订单：入住人 / 手机号是页面输入框、到店时间�
   assert.equal(h.run('form.value.guestName'), '张三', '姓名去掉首尾空格')
 })
 
-test('U1 预订须知：页面内可展开（默认只露前几行），点勾选框任何情况都只是勾上 / 取消，不弹窗', () => {
+test('U1 预订须知：读完才能勾选，勾选可取消，须知更新后重新确认', async t => {
   const d = sfc('pages/stays/pay.vue')
-  const js = d.scriptSetup.content
-  assert.match(js, /const noticeOpen = ref\(false\)/)
-  assert.match(js, /async function onAgreeTap\(\) \{\n  agreed\.value = !agreed\.value\n\}/)
-  assert.match(css(d), /\.notice__text--clamp \{[^}]*-webkit-line-clamp: 4;/)
-  assert.match(css(d), /\.notice__toggle \{[^}]*min-height: 44px;/)
+  assert.match(d.template.content, /<k-agreement-reader[^>]+@read="onNoticeRead"/)
+  assert.match(d.template.content, /class="agree" @click="onAgreeTap"/)
+  const messages = []
+  const h = runSetup('pages/stays/pay.vue', {
+    useScreen: () => vue.ref(2), toast: msg => messages.push(msg), todayCn: () => '2026-11-03'
+  })
+  t.after(h.stop)
+  await h.run('onAgreeTap()')
+  assert.equal(h.run('agreed.value'), false)
+  assert.equal(messages.length, 1)
+  h.run('onNoticeRead(true)')
+  await h.run('onAgreeTap()')
+  assert.equal(h.run('agreed.value'), true)
+  await h.run('onAgreeTap()')
+  assert.equal(h.run('agreed.value'), false)
+  await h.run('onAgreeTap()')
+  h.run('onNoticeRead(false)')
+  assert.equal(h.run('agreed.value'), false)
 })
 
 // ---------------------------------------------------------------- U2 resume.vue
@@ -212,12 +226,13 @@ test('U3 签署 / 到店：姓名、后四位、交通方式、车次、备注�
   assert.match(css(d), /\.arrival>\.arrival-row:last-child \{ border-bottom: 0; \}/)
   const calls = { sign: [], save: [], toast: [] }
   const h = runSetup('pages/jobs/contract.vue', {
+    readingClock, AGREEMENT_READ_SECONDS, experience: { account: { id: 7 } },
     useScreen: () => vue.ref(2), toast: (m) => calls.toast.push(m), errText: (e, d) => d, todayCn: () => '2026-11-03', shiftDate: (v) => v, releaseArrivalImages() {}, R: {},
     apiContractSign: async (id, b) => { calls.sign.push(b); return { data: { terms: [], arrival: {}, sign: { signerName: b.name, idLast4: b.idLast4 } } } },
     apiSaveArrival: async (id, b) => { calls.save.push(b); return { data: { terms: [], arrival: {} }, msg: '已保存' } }
   })
   t.after(h.stop)
-  h.run("c.value = { terms: [], arrival: {}, sign: null, canSign: true, hash: 'h' }; appId.value = 7")
+  h.run("appId.value = 7; c.value = { terms: [{ text: '条款' }], arrival: {}, sign: null, canSign: true, hash: 'h' }; readMax.value = 100; remaining.value = 0")
   h.run("name.value = ''; agreed.value = true")
   await h.run('doSign()')
   assert.deepEqual(calls.toast, ['请先在上面填写签署姓名'], '没填名字：页面提示，不再弹输入框')
@@ -228,16 +243,60 @@ test('U3 签署 / 到店：姓名、后四位、交通方式、车次、备注�
   assert.equal(h.run('s.value'), 3)
   h.run("arr.value = { arriveDate: '2026-11-20', arriveTime: '15:30', transport: '火车', transportNo: ' g1234 ', tickets: [], note: '  行李多  ' }")
   await h.run('saveArrival()')
+  assert.deepEqual(calls.save, [])
+  assert.equal(calls.toast.at(-1), '请至少上传一张交通凭证图片')
+  h.run("arr.value.tickets = ['proof']")
+  await h.run('saveArrival()')
   await flush()
-  assert.deepEqual(plain(calls.save), [{ arriveDate: '2026-11-20', arriveTime: '15:30', transport: '火车', transportNo: 'g1234', tickets: [], note: '行李多' }])
+  assert.deepEqual(plain(calls.save), [{ arriveDate: '2026-11-20', arriveTime: '15:30', transport: '火车', transportNo: 'g1234', tickets: ['proof'], note: '行李多' }])
 })
 
 // ---------------------------------------------------------------- U4 profile/index.vue
+test('昵称保存中再改回原名，仍保留可再次保存的输入', async t => {
+  let finish
+  const h=runSetup('pages/profile/index.vue',{
+    useScreen:()=>vue.ref(2),experience:vue.reactive({account:{id:7,nickname:'原名'},mode:'user'}),
+    apiSaveMeProfile:()=>new Promise(resolve=>{finish=resolve}),apiAccount:async()=>({data:null}),
+    toast(){},absUrl:v=>v,profileIcon:k=>k,R:{}
+  })
+  t.after(h.stop)
+  h.run("me.value={nickname:'原名',intro:''}");await flush()
+  h.run("draft.nickname='改名'");const pending=h.run('saveDraft()')
+  h.run("draft.nickname='原名'");finish({data:{nickname:'改名',intro:''}})
+  await pending;await flush()
+  assert.equal(h.run('draft.nickname'),'原名');assert.equal(h.run('draftChanged.value'),true)
+})
+test('资料页切换账号或已退出页面，保存与昵称刷新回包不会写入新页面', async (t) => {
+  let saveReturn, accountReturn, unload
+  const accepted=[],toasts=[]
+  const experience=vue.reactive({account:{id:7,nickname:'甲'},mode:'user'})
+  const h=runSetup('pages/profile/index.vue',{
+    useScreen:()=>vue.ref(2), experience, getCurrentPages:()=>[{}], onUnload:fn=>{unload=fn},
+    apiSaveMeProfile:()=>new Promise(resolve=>{saveReturn=resolve}),
+    apiAccount:()=>new Promise(resolve=>{accountReturn=resolve}),
+    acceptAuthenticatedAccount:account=>accepted.push(account.id),
+    toast:m=>toasts.push(m), absUrl:v=>v, profileIcon:k=>k, R:{}
+  })
+  t.after(h.stop)
+  const first=h.run("save({nickname:'甲的昵称'})")
+  experience.account={id:8,nickname:'乙'}
+  h.run("me.value={nickname:'乙'}")
+  saveReturn({data:{nickname:'甲的昵称'}})
+  await flush()
+  accountReturn?.({data:{id:7}})
+  await first
+  assert.equal(h.run('me.value.nickname'),'乙')
+  const second=h.run("save({nickname:'乙的新昵称'})")
+  saveReturn({data:{nickname:'乙的新昵称'}})
+  await flush();unload();accountReturn({data:{id:8}});await second
+  assert.deepEqual(accepted,[]);assert.deepEqual(toasts,[])
+})
 test('U4 编辑资料：昵称 / 自我介绍在「账号资料」区输入 + 保存；实名认证是页面内折叠区；注销的多重确认不动', async (t) => {
   const d = sfc('pages/profile/index.vue')
   const tpl = d.template.content, js = d.scriptSetup.content
   const s2 = tpl.slice(tpl.indexOf('<!-- 2 个人资料 -->'), tpl.indexOf('<!-- 3 会员信息与成长积分 -->'))
-  assert.match(s2, /<view class="acct">[\s\S]*?<input v-model="draft\.nickname" maxlength="16"[\s\S]*?@click="saveDraft"/)
+  assert.match(s2, /<form class="acct" @submit="saveDraft">[\s\S]*?<input [^>]*type="nickname" name="nickname"[^>]*maxlength="16"/)
+  assert.match(s2, /<button [^>]*form-type="submit"[^>]*:disabled="busy"/)
   assert.match(s2, /<view class="frow" hover-class="k-press" @click="toggleReal">/)
   assert.match(s2, /<view v-if="realOpen" class="real">[\s\S]*?<input v-model="realForm\.name" maxlength="20"[\s\S]*?<input v-model="realForm\.idNo" type="idcard" maxlength="18"[\s\S]*?@click="submitRealName"/)
   assert.ok(!/editIntro|prompt\('昵称'|prompt\('自我介绍'|prompt\('实名认证'/.test(js), '昵称 / 自我介绍 / 实名的系统输入框去掉')
@@ -259,9 +318,7 @@ test('U4 编辑资料：昵称 / 自我介绍在「账号资料」区输入 + �
   h.run("draft.nickname = ''")
   await h.run('saveDraft()')
   assert.deepEqual(calls.toast, ['昵称为 1–16 个字'])
-  h.run("draft.nickname = ' 星辰 '; draft.intro = '爱爬山'")
-  assert.equal(h.run('draftChanged.value'), true)
-  await h.run('saveDraft()')
+  await h.run("saveDraft({detail:{value:{nickname:' 星辰 '}}})")
   await flush()
   assert.deepEqual(plain(calls.save), [{ nickname: '星辰' }], '只传改了的项')
   // 实名认证：页面内两个输入框 + 一个按钮，先在页面校验
@@ -281,26 +338,28 @@ test('U4 编辑资料：昵称 / 自我介绍在「账号资料」区输入 + �
 })
 
 // ---------------------------------------------------------------- U5 community/publish.vue
-test('U5 发布页：保留同行性别、伙伴说按钮组，移除分类与同行天数选择', () => {
+test('U5 发布页：找搭子可选或自填分类，补充信息保留性别和伙伴说，移除同行天数', () => {
   const d = sfc('pages/community/publish.vue')
   const tpl = d.template.content, js = d.scriptSetup.content
   const extra = tpl.slice(tpl.indexOf('<view class="fold extra">'), tpl.indexOf('<view class="publish-history">'))
   assert.equal((extra.match(/class="publish-opt"/g) || []).length, 2)
   assert.doesNotMatch(tpl, /wish-publish-link|发布心愿互助|<text>分类<\/text>|<text>同行天数<\/text>/)
-  assert.doesNotMatch(js, /buddyCat|buddyDays|BUDDY_CATS|BUDDY_DAY/)
+  assert.match(tpl, /v-if="type === '找搭子'" class="fold category-input">[\s\S]*?<input v-model="categoryText" maxlength="12"/)
+  assert.match(tpl, /v-for="label in BUDDY_CATS\.slice\(1\)"[^>]*@click="categoryText = categoryText === label \? '' : label"/)
+  assert.doesNotMatch(js, /buddyDays|BUDDY_DAY/)
   assert.ok(!/pickBuddyCat|pickBuddyDays|pickGenderLimit|pickTone/.test(js), '四个弹菜单的函数去掉')
-  assert.match(js, /const i = await sheet\(hs\.map/, '同步活动板的时长菜单不在这一条里，照旧')
+  assert.match(js, /label: '结束时间', date: 'endDate', time: 'endTime'/)
   assert.match(css(d), /\.opt-pill \{[^}]*min-height: 44px;/)
 })
 
 // ---------------------------------------------------------------- U6 jobs/interview.vue
-test('U6 改期：时段是页面内胶囊，点一个底部出「确认改到 …」；没时段写明并给「联系当地主理人」（原来弹菜单 + 时段菜单 + 确认框）', async (t) => {
+test('U6 改期：时段是页面内胶囊，点一个底部出「确认改到 …」；没时段写明并给「联系商家」（原来弹菜单 + 时段菜单 + 确认框）', async (t) => {
   const d = sfc('pages/jobs/interview.vue')
   const tpl = d.template.content, js = d.scriptSetup.content
   assert.match(tpl, /<view v-if="slotPanel" class="card slot-panel">/)
   assert.match(tpl, /v-for="x in slots" :key="x\.slotId" class="slot-pill" :class="\{ on: slotPick === x\.slotId \}"[^>]*@click="slotPick = x\.slotId"/)
   assert.match(tpl, /<view v-if="slotPick" class="slot-panel__confirm">[^\n]*:label="rescheduling \? '提交中…' : '确认改到 ' \+ fmtSlot\(pickedSlot\.startTime\)" @click="confirmReschedule"/)
-  assert.match(tpl, /门店还没有放出其他面试时段[\s\S]*?<k-button block type="outline" label="联系当地主理人" @click="contactStore" \/>/)
+  assert.match(tpl, /门店还没有放出其他面试时段[\s\S]*?<k-button block type="outline" label="联系商家" @click="contactStore" \/>/)
   assert.match(tpl, /<view v-if="canWithdraw" class="withdraw-link" hover-class="k-press" @click="withdraw">/)
   assert.ok(!/sheet\(\['申请改期', '撤回报名'\]\)|title: '暂无可选时段'|title: '申请改期'/.test(js), '改期这条线上的弹窗都去掉')
   assert.equal((js.match(/uni\.showModal\(/g) || []).length, 1, '只剩撤回报名那一次确认（危险操作）')
@@ -368,8 +427,8 @@ test('U7 预计时长：点「其他天数」在胶囊下出数字框 + 确定�
   assert.deepEqual(h.json('[days.value, otherOpen.value]'), [60, false], '点常用胶囊也收起数字框')
 })
 
-// 复查（2026-11-03）：老年用户多，新加的页面内按钮 / 输入框都不小于 44px（胶囊、加减号、展开钮、输入框）
-test('复查：U1–U7 新加的页面内按钮、胶囊、输入框都 ≥44px（老年用户好点）', () => {
+// 常规表单与改期入口采用 44px 热区，紧凑版选项的视觉尺寸另按页面检查。
+test('复查：常规控件和原生资料保存按钮保留 44px 热区', () => {
   const heightOf = (d, sel) => {
     const all = '\n' + css(d)
     const at = all.indexOf('\n' + sel + ' {')
@@ -380,12 +439,10 @@ test('复查：U1–U7 新加的页面内按钮、胶囊、输入框都 ≥44px�
     return Number(h[1])
   }
   const checks = [
-    ['pages/stays/pay.vue', ['.stepper__btn', '.arrive-pill', '.kv__field', '.notice__toggle']],
+    ['pages/stays/pay.vue', ['.stepper__btn', '.kv__field']],
     ['pages/stays/booking.vue', ['.month-arrow']],
     ['pages/profile/resume.vue', ['.exp-form__pill', '.exp-form__pick', '.exp__x']],
     ['pages/jobs/contract.vue', ['.identity__input', '.arrival-pill', '.arrival-input', '.note__input']],
-    ['pages/profile/index.vue', ['.acct__label']],
-    ['pages/community/publish.vue', ['.opt-pill']],
     ['pages/jobs/interview.vue', ['.slot-pill', '.slot-panel__close', '.withdraw-link']],
     ['pages/jobs/apply.vue', ['.ap-other-box']]
   ]
@@ -393,9 +450,15 @@ test('复查：U1–U7 新加的页面内按钮、胶囊、输入框都 ≥44px�
     const d = sfc(file)
     for (const sel of sels) assert.ok(heightOf(d, sel) >= 44, file + ' ' + sel + ' 高度要 ≥44px')
   }
-  // 编辑资料屏的两个保存钮用默认大号（48px），不再是 40px 的 md
+  // 两个紧凑选项按页面设计显示为 36px，操作绑定在整枚可见胶囊上。
+  assert.match(css(sfc('pages/stays/pay.vue')), /\.pay \.arrive-pill \{[^}]*min-height: 36px;/)
+  assert.match(css(sfc('pages/community/publish.vue')), /\.opt-pill \{[^}]*min-height: 36px;/)
   const profile = sfc('pages/profile/index.vue').template.content
-  const acct = profile.slice(profile.indexOf('class="acct"'), profile.indexOf('class="real"'))
-  assert.doesNotMatch(acct, /size="md"/)
-  assert.match(acct, /class="acct__save"><k-button block :disabled="busy/)
+  assert.match(profile, /<button class="profile-save" form-type="submit"/)
+  const rules = [...read('pages/profile/profile-screens.scss').matchAll(/\.prof \.profile-save \{([^}]+)\}/g)]
+  const save = rules.at(-1)[1]
+  assert.match(save, /min-height: 44px/)
+  assert.match(save, /border-width: 4px 0/)
+  assert.match(save, /padding-box/)
+  assert.match(save, /line-height: 36px/)
 })

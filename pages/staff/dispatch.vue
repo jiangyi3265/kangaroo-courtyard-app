@@ -3,7 +3,7 @@
     <template v-if="s===1">
       <k-topbar title="需求看板" back custom-back @back="backScreen" />
       <view class="board-tabs"><text :class="{active:dim==='city'}" @click="setDim('city')">按城市</text><text :class="{active:dim==='store'}" @click="setDim('store')">按门店</text></view>
-      <view class="board-filters"><button @click="pickCity"><k-icon name="map-pin" :size="18" color="muted" /><text>{{ board.city || '城市' }}</text><k-icon name="chevron-down" :size="16" color="ink" /></button><button @click="pickDate"><text>{{ board.date || '日期' }}</text><k-icon name="calendar-days" :size="18" color="ink" /></button><button class="filter" @click="pickType"><text>{{ typeLabel }}</text><k-icon name="list-filter" :size="20" color="ink" /></button></view>
+      <view class="board-filters"><button @click="pickCity"><k-icon name="map-pin" :size="14" color="muted" /><text>{{ board.city || '城市' }}</text><k-icon name="chevron-down" :size="12" color="muted" /></button><button @click="pickDate"><text>{{ board.date || '日期' }}</text><k-icon name="calendar-days" :size="14" color="muted" /></button><button class="filter" @click="pickType"><text>{{ typeLabel }}</text><k-icon name="list-filter" :size="16" color="ink2" /></button></view>
       <view class="board k-pad-tab"><text class="board-title">需求总览</text><view class="legend"><view class="legend-item"><view class="swatch green" /><text>换工</text></view><view class="legend-item"><view class="swatch amber" /><text>兼职</text></view><view class="legend-item"><view class="swatch blue" /><text>全职</text></view></view>
         <view class="board-grid"><view class="city-column"><view v-for="c in cities" :key="c.name" class="city-card" @click="cardActions(c)"><view class="city-head"><text>{{c.name}}</text><text>急缺 {{c.urgent}}</text></view><view class="city-labels"><text></text><text>换工</text><text>兼职</text><text>全职</text></view><view><text>总需求</text><text>{{c.need[0]}}</text><text>{{c.need[1]}}</text><text>{{c.need[2]}}</text></view><view><text>已安排</text><text>{{c.arranged[0]}}</text><text>{{c.arranged[1]}}</text><text>{{c.arranged[2]}}</text></view><view class="gap-row"><text>缺口</text><text>{{c.gap[0]}}</text><text>{{c.gap[1]}}</text><text>{{c.gap[2]}}</text></view></view></view>
           <view class="heat-column"><view class="heat-card"><text>{{ heat.title || '需求热力日历' }}</text><view class="month"><text @click="shiftMonth(-1)">〈　{{ heat.month || '' }}</text><text @click="shiftMonth(1)">〉</text></view><view class="week"><text v-for="w in weeks" :key="w">{{w}}</text></view><view class="days"><text v-for="(d,i) in heatCells" :key="i" :class="d.c">{{ d.d || '' }}</text></view><view class="heat-legend"><view class="heat-legend-item"><view class="swatch low" /><text>低（0-5）</text></view><view class="heat-legend-item"><view class="swatch mid" /><text>中（6-15）</text></view><view class="heat-legend-item"><view class="swatch high" /><text>高（16-30）</text></view><view class="heat-legend-item"><view class="swatch urgent" /><text>紧急（30+）</text></view></view></view><text class="top-title">今日急缺门店 TOP5</text><view class="top-list"><view v-for="(t,i) in topStores" :key="t.name" @click="cardActions(t)"><text>{{i+1}}　{{t.name}}</text><text>缺口 <text>{{t.gap}}</text></text></view></view></view>
@@ -12,20 +12,20 @@
     </template>
     <template v-else-if="s===2">
       <k-topbar title="调整数目" back custom-back @back="backScreen" />
-      <view class="adjust k-pad-tab"><text class="section-title">门店与岗位</text><view class="store-card"><view @click="pickStore"><image :src="absUrl(adj.store.cover) || '/static/media/cover-empty.png'" mode="aspectFill" /><view><text>{{ adj.store.storeName || '' }}</text><text>{{ adj.store.sub || '' }}</text></view><k-icon name="chevron-right" :size="23" color="ink" /></view><view @click="pickJob"><text>岗位</text><text>{{ jobLabel }}</text><k-icon name="chevron-right" :size="23" color="ink" /></view></view>
+      <view class="adjust k-pad-tab"><text class="section-title">门店与岗位</text><view class="store-card"><view @click="pickStore"><image :src="absUrl(adj.store.cover) || '/static/media/cover-empty.png'" mode="aspectFill" /><view><text>{{ adj.store.storeName || '' }}</text><text>{{ adj.store.sub || '' }}</text></view><k-icon name="chevron-right" :size="14" color="muted" /></view><view @click="pickJob"><text>岗位</text><text>{{ jobLabel }}</text><k-icon name="chevron-right" :size="14" color="muted" /></view></view>
         <text class="section-title">人员需求调整</text><view class="demand-table"><view class="demand-head"><text></text><text>当前需求</text><text>建议人数</text><text>调整</text></view><view v-for="r in demands" :key="r.name"><text>{{r.name}}</text><text>{{r.current}}</text><text>{{r.suggest}}</text><view class="mini-counter"><text @click="stepDelta(r, -1)">−</text><text>{{r.add}}</text><text @click="stepDelta(r, 1)">＋</text></view></view></view>
-        <text class="section-title">有效日期</text><view class="date-range"><text @click="askFrom">{{ validFrom }}</text><text>→</text><text @click="askTo">{{ validTo }}</text><k-icon name="calendar-days" :size="20" color="ink" /></view>
+        <text class="section-title">有效日期</text><view class="date-range"><text @click="askFrom">{{ validFrom }}</text><text>→</text><text @click="askTo">{{ validTo }}</text><k-icon name="calendar-days" :size="16" color="muted" /></view>
         <text class="section-title">调整原因 <text>（必填）</text></text><view class="reason" @click="askReason"><text>{{ reason || '点击填写调整原因' }}</text><text>{{ reason.length }}/100</text></view><button class="save" @click="saveAdjust"><text>保存调整</text></button>
       </view><k-tabbar mode="staff" active="work" />
     </template>
     <template v-else-if="s===3">
       <k-topbar title="紧急标记" back custom-back @back="backScreen" />
-      <view class="urgent-page k-pad-tab"><text class="section-title">选择紧急等级</text><view class="urgent-levels"><view v-for="(u,i) in urgencies" :key="u.name" :class="{selected:i===level-1}" @click="level=i+1"><k-icon name="flag" :size="32" :color="u.color" fill="currentColor" /><text :style="{color:u.color}">{{u.name}}</text><text>{{u.desc}}</text><view v-if="i===level-1" class="level-check"><k-icon name="check" :size="12" color="white" /></view></view></view>
+      <view class="urgent-page k-pad-tab"><text class="section-title">选择紧急等级</text><view class="urgent-levels"><view v-for="(u,i) in urgencies" :key="u.name" :class="{selected:i===level-1}" @click="level=i+1"><k-icon name="flag" :size="24" :color="u.color" fill="currentColor" /><text :style="{color:u.color}">{{u.name}}</text><text>{{u.desc}}</text><view v-if="i===level-1" class="level-check"><k-icon name="check" :size="10" color="white" :stroke="3" /></view></view></view>
         <text class="urgent-order-help">标记后，招募列表和岗位详情会显示醒目标记；有效期内按紧急等级优先展示，同等级按后台展示顺序排列。截止或暂停后取消紧急优先。</text>
         <view v-if="pushResult" class="urgent-result" aria-live="polite"><text class="urgent-result__title">{{ pushResult.title }}</text><text>{{ pushResult.summary }}</text><text v-for="reason in pushResult.reasons" :key="reason" class="urgent-result__reason">{{ reason }}</text><button @click="go('/pages/jobs/detail?jobId=' + adjJobId)">查看招募页 <k-icon name="chevron-right" :size="15" color="red" /></button></view>
         <text class="section-title">缺口情况</text><view class="gap-cards"><view><text>当前缺口</text><text>{{ urg.gap || 0 }} <text class="unit">人</text></text></view><view><text>预计影响场次</text><text>{{ sessions }} <text class="unit">场</text></text></view></view>
-        <text class="section-title">截止时间</text><view class="deadline"><view @click="askDeadlineDate"><text>{{ dlDate }}</text><k-icon name="calendar-days" :size="20" color="ink" /></view><view @click="pickDeadlineTime"><text>{{ dlTime }}</text><k-icon name="clock-3" :size="20" color="muted" /></view></view>
-        <view class="targets-title"><text class="section-title">触达对象</text><text>已选 {{ selTargets.length }} 项</text></view><view class="targets"><view v-for="(t,i) in targets" :key="t.key" @click="toggleTarget(t.key)"><view class="checkbox" :class="{checked:selTargets.includes(t.key)}"><k-icon v-if="selTargets.includes(t.key)" name="check" :size="13" color="white" /></view><text>{{t.label}}</text></view></view>
+        <text class="section-title">截止时间</text><view class="deadline"><view @click="askDeadlineDate"><text>{{ dlDate }}</text><k-icon name="calendar-days" :size="16" color="muted" /></view><view @click="pickDeadlineTime"><text>{{ dlTime }}</text><k-icon name="clock-3" :size="16" color="muted" /></view></view>
+        <text v-if="urg.staffFallbackCount" class="vd-meta">所选员工均无人接收时，通知本店城市负责人（{{ urg.staffFallbackCount }} 人）。</text><view class="targets-title"><text class="section-title">触达对象</text><text>已选 {{ selTargets.length }} 项</text></view><view class="targets"><view v-for="(t,i) in targets" :key="t.key" @click="toggleTarget(t.key)"><view class="checkbox" :class="{checked:selTargets.includes(t.key)}"><k-icon v-if="selTargets.includes(t.key)" name="check" :size="13" color="white" /></view><text>{{t.label}}</text></view></view>
         <view class="push-row" role="switch" :aria-checked="push" @click="push=!push"><view><text>通知关注与收藏用户</text><text>{{ pushHint }}</text></view><view class="switch" :style="push ? '' : 'background:#D9D3C7'"><view :style="push ? '' : 'margin-left:0'" /></view></view>
         <text class="urgent-order-help">通知按用户的提醒设置发送，每个岗位24小时内最多通知用户一次。微信提醒还需用户授权，站内发送人数不代表微信已送达。关闭通知不影响公开招募标记。</text>
         <view class="preview"><text>预览提示</text><text>{{ previewText }}</text></view><button class="save" @click="saveUrgent"><text>确认标记并推送</text></button>
@@ -33,7 +33,7 @@
     </template>
     <template v-else>
       <k-topbar title="调度日志" back custom-back @back="backScreen" />
-      <view class="logs-page k-pad-tab"><view class="log-filters"><button @click="pickLogStore"><text>{{ logStoreLabel }}⌄</text></button><button @click="pickLogRange"><text>{{ logQuery.from }}　→　{{ logQuery.to }}⌄</text></button><button @click="pickLogType"><text>{{ logTypeLabel }}</text><k-icon name="list-filter" :size="18" color="ink" /></button></view>
+      <view class="logs-page k-pad-tab"><view class="log-filters"><button @click="pickLogStore"><text>{{ logStoreLabel }}</text><k-icon name="chevron-down" :size="12" color="muted" /></button><button @click="pickLogRange"><text>{{ logQuery.from }}　→　{{ logQuery.to }}</text><k-icon name="chevron-down" :size="12" color="muted" /></button><button @click="pickLogType"><text>{{ logTypeLabel }}</text><k-icon name="list-filter" :size="16" color="ink2" /></button></view>
         <view v-for="(l,i) in logRows" :key="l.logId" class="log-card" @click="logAction(l)"><view class="log-head"><image :src="absUrl(l.avatar) || logAvatar(l)" mode="aspectFill" /><view><text>{{l.user}}</text><text>{{l.time}}</text></view><text :class="l.tone">{{l.type}}</text></view><text class="log-job">{{l.job}}</text><view class="log-change"><text>{{l.change}}</text><text>{{l.source}}{{ l.canUndo ? ' · 点卡片可撤销' : '' }}</text></view></view>
         <view class="log-note"><view><text>撤销条件说明</text><text>仅支持撤销本人在 1 小时内的调整操作；\n超过时间请联系上级主管处理。</text></view><button @click="exportLogs"><text>导出日志</text></button></view>
       </view><k-tabbar mode="staff" active="work" />
@@ -63,12 +63,21 @@ import {
   apiDispatchBoard, apiDispatchAdjustInfo, apiDispatchAdjust, apiDispatchUrgentInfo, apiDispatchUrgent,
   apiDispatchLogs, apiDispatchUndo, apiDispatchExport
 } from '@/common/api.js'
-import { ensureSession, hasStaffAccess, currentStaffStoreId } from '@/common/experience.js'
+import { ensureSession, hasStaffAccess, currentStaffStoreId, selectStaffStore } from '@/common/experience.js'
 import { errText, confirm, alert, prompt, sheet, pickPaged, copy, isYmd, shiftDate, todayCn, serverTs, askTime } from '@/common/ui.js'
 
 const DEFAULT_AVATAR = '/static/media/profile-avatar.jpg'
 let deepJobId = 0
-const s = useScreen(4, { onLoad: (q) => { deepJobId = Number(q?.jobId) || 0; loadScreen(s.value) } })
+const s = useScreen(4, { onLoad: async (q) => {
+  if (q?.storeId) {
+    try {
+      await ensureSession()
+      if (String(q.storeId) !== String(currentStaffStoreId())) await selectStaffStore(q.storeId)
+    } catch (e) { toast(errText(e, '切换门店失败')); return }
+  }
+  deepJobId = Number(q?.jobId) || 0
+  loadScreen(s.value)
+} })
 watch(s, (v) => loadScreen(v))
 // 页内各屏的来路：返回按来路一层层退，退到直接打开的那一屏就回来源页
 // （之前看板没有返回键；从岗位页「调整名额」直接进第 2 屏，返回会落到没有返回键的看板上）
@@ -485,4 +494,80 @@ async function exportLogs() {
    筛选栏两个按钮写死 112 + 124 宽，320 宽时日期被挤成「2026-09-…」、「筛选」成了「筛…」：城市按钮可以缩，日期和筛选按内容宽 */
 .month{gap:10px}.month>text{white-space:nowrap}
 .board-filters button:first-child{width:auto;flex:0 1 112px;min-width:0}.board-filters button:nth-child(2){width:auto;flex:0 0 auto;min-width:112px}.board-filters .filter{flex:0 0 auto;padding:0 4px}
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边），标题用系统黑体；筛选收成胶囊，日志类型用统一的小标签，主按钮收成暖棕渐变胶囊。
+   数字、热力色阶、按钮、文字都不动。共用写法在 ./work-lite.scss。 */
+@import './work-lite.scss';
+.dispatch-page{@include lite-page}
+.board-tabs{height:40px;padding:0 16px;gap:28px;font-family:var(--k-sans);font-size:14px;font-weight:500;color:var(--k-ink2)}.board-tabs .active{color:var(--k-red-deep);font-weight:600}
+.board-filters{height:52px;padding:0 12px}.board-filters button{height:32px;border:0;border-radius:999px;gap:5px}
+.board{padding:0 12px calc(88px + var(--k-safe-bottom))}.board-title{font-family:var(--k-sans)}.board-grid{gap:8px}
+.city-card{margin-bottom:8px;padding:10px;border:0;border-radius:12px}.city-head{font-family:var(--k-sans);font-weight:600}
+.city-head text:last-child{height:17px;padding:0 5px;border-radius:4px;font-weight:500;line-height:17px}.city-labels{font-family:var(--k-sans);font-weight:600}
+.heat-card{padding:10px;border:0;border-radius:12px}.heat-card>text:first-child{font-family:var(--k-sans);font-weight:600}
+.week text{font-size:10px}.days text{background:#F5F1EB;font-size:10px}.days text.urgent{background:var(--k-alert)}.swatch.urgent{background:var(--k-alert)}.heat-legend{font-size:9px}
+@media (max-width:359px){.heat-legend{gap:6px 4px;font-size:8px}}
+.top-title{font-family:var(--k-sans);font-weight:600}.top-list>view{font-size:11px}.top-list>view>text:last-child text{font-weight:700}
+.adjust,.urgent-page,.logs-page{padding:0 12px calc(88px + var(--k-safe-bottom))}
+.section-title{margin:16px 2px 8px;font-family:var(--k-sans);font-size:15px}
+.store-card,.demand-table,.date-range,.reason{border:0;border-radius:12px}.store-card image{border-radius:8px}
+.store-card>view>view text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}.store-card>view:last-child>text:nth-child(2){font-weight:600}
+.mini-counter{border-radius:8px}
+.save{height:44px;border-radius:999px;background:linear-gradient(135deg,#B5814D,#8E5E33);font-family:var(--k-sans);font-size:15px;font-weight:600}
+.urgent-result{border:0;border-radius:12px;background:var(--k-green-soft)}.urgent-result__title{font-size:14px;font-weight:600;color:var(--k-green)}
+.urgent-levels>view{border:0;border-radius:12px}.urgent-levels>view.selected{border:0;background:var(--k-red-soft);box-shadow:inset 0 0 0 1px var(--k-red)}
+/* 选中的小勾挪到右上角：原来在右下角，窄屏会压到「严重缺口」这行字 */
+.level-check{top:4px;right:4px;bottom:auto;width:15px;height:15px}
+.urgent-levels>view text:nth-child(2){font-family:var(--k-sans);font-weight:600}.urgent-levels>view text:nth-child(3){font-size:11px}.urgent-page .urgent-levels>view{height:84px}
+.gap-cards>view,.deadline>view{height:40px;border:0;border-radius:10px}
+.push-row>view:first-child{gap:4px}.push-row>view:first-child text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}
+.preview{border:0;border-radius:12px}.preview text:first-child{font-family:var(--k-sans);font-weight:600}
+.urgent-page>.save{left:12px;right:12px}
+.log-filters button{height:32px;border:0;border-radius:999px}
+.log-card{padding:12px;border:0;border-radius:12px}.log-head>view text:first-child{font-family:var(--k-sans);font-weight:600}
+.log-head>text{height:17px;padding:0 5px;border-radius:4px;font-weight:500;line-height:17px}.log-head>text.blue{background:var(--k-indigo-soft)}
+.log-job{font-family:var(--k-sans);font-weight:600}
+.log-note{margin-top:8px;padding:12px;border:0;border-radius:12px}.log-note>view{gap:4px}.log-note>view text:first-child{font-family:var(--k-sans);font-weight:600}.log-note>view text:last-child{font-size:11px}
+.log-note button{width:92px;height:36px;border-radius:999px;font-family:var(--k-sans);font-size:13px;font-weight:600;color:var(--k-red-deep)}
+/* 2026-11-18 第二轮精修（需求看板、调整数目、紧急标记、调度日志），按精修词典统一：
+   看板页签是下划线式（未选 400 muted，选中 600 ink + 16×3 暖棕短条），底线换发丝线；筛选是 28 高的白胶囊、图标 12–16；
+   城市卡城市名靠左、数字等宽，表头三色保留（和图例对应）；急缺门店排行放进白卡、发丝线分行；表格、分隔线换发丝线；开关打开是暖棕；
+   日志筛选的「⌄」换成下拉箭头图标。数字、热力色阶、按钮、文字都不动 */
+.board-tabs{position:relative;padding:0 12px;gap:24px;border-bottom:0}
+.board-tabs::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.board-tabs text{position:relative;font-weight:400;color:var(--k-muted)}
+.board-tabs .active{border-bottom:0;color:var(--k-ink);font-weight:600}
+.board-tabs .active::after{content:'';position:absolute;left:50%;bottom:4px;width:16px;height:3px;margin-left:-8px;border-radius:2px;background:var(--k-red)}
+.board-filters button{height:28px;padding:0 12px;border-radius:14px;gap:4px;line-height:1.2;color:var(--k-ink2)}
+.board-filters :deep(.k-icon),.log-filters :deep(.k-icon){flex-shrink:0}
+.board-title{font-size:16px}
+.city-head text:first-child{text-align:left}
+.city-card>view:nth-child(n+3) text:nth-child(n+2){color:var(--k-ink2);font-variant-numeric:tabular-nums}
+.gap-row text{color:var(--k-ink)!important;font-weight:600}
+.heat-card>text:first-child{font-size:14px;font-weight:600}
+@media (min-width:360px){.heat-legend{font-size:10px}}
+.top-title{font-size:14px;font-weight:600}
+.top-list{padding:2px 12px;border-radius:12px;background:var(--k-paper)}
+.top-list>view{position:relative;height:32px;font-size:12px}
+.top-list>view+view::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.section-title{font-size:16px;line-height:22px}
+.store-card>view{position:relative;border-bottom:0}
+.store-card>view+view::before{content:'';position:absolute;left:11px;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.demand-table>view{position:relative;border-bottom:0}
+.demand-table>view::after{content:'';position:absolute;left:11px;right:0;bottom:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.demand-table>view:last-child::after{content:none}
+.demand-table>view>text:first-child{text-align:left;font-weight:500}
+.urgent-levels>view.selected{box-shadow:inset 0 0 0 1px var(--k-red-line)}
+.level-check{top:6px;right:6px;width:16px;height:16px}
+.switch{background:var(--k-red-deep)}
+.push-row{position:relative;border-top:0}
+.push-row::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.log-filters button{height:28px;padding:0 12px;border-radius:14px;gap:4px;line-height:1.2;color:var(--k-ink2)}
+.log-filters button>text{min-width:0}
+.log-head>view text:first-child{font-size:13px;font-weight:500}
+/* 看板、日志的筛选胶囊看着 28 高：上下各多 8 的看不见的可点范围（共 44，不超出筛选条）。
+   小程序按钮自带的 ::after 是 200% 大小、缩一半的描边，这里整个改成透明点击区；按钮自带 overflow:hidden 会把多出来的范围裁掉，所以放开 */
+.board-filters button,.log-filters button{position:relative;overflow:visible}
+/* 放开之后，日期范围太长时字自己收成一行省略号（原来是被按钮直接裁掉） */
+.log-filters button>text{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.board-filters button::after,.log-filters button::after{content:'';position:absolute;left:0;right:0;top:-8px;bottom:-8px;width:auto;height:auto;border:0;border-radius:0;transform:none}
 </style>

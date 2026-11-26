@@ -3,7 +3,7 @@
 		<image class="ww-table__background" :src="courtyard" mode="aspectFill" />
 		<view class="ww-table__floor" />
 		<view class="ww-table__wood"><ww-sprite v-if="playerCount <= 6" :index="11" /></view>
-		<view v-if="centerLabel" class="ww-table__center">
+		<view v-if="centerLabel" class="ww-table__center" :class="{ 'ww-table__center--solo': !countdown }">
 			<text>{{ centerLabel }}</text>
 			<text
 				v-if="countdown"
@@ -47,21 +47,27 @@
 				/>
 			</view>
 			<view v-if="!seat.player" class="ww-seat__plus">
-				<k-icon name="plus" :size="20" color="green" />
+				<k-icon name="plus" :size="18" color="green" />
 			</view>
 			<view v-if="seat.player?.userId === meId" class="ww-seat__me">我</view>
-			<view v-if="selected === seat.number" class="ww-seat__selected">✓</view>
+			<view v-if="selected === seat.number" class="ww-seat__selected"><k-icon name="check" :size="14" color="white" /></view>
 			<text v-if="seat.player && !seat.player.alive && phase !== 'waiting'" class="ww-out-stamp">OUT</text>
 			<view class="ww-seat__label">
 				<text class="ww-seat__name">
 					{{ seat.number }} {{ seat.player ? seat.player.name : '号位' }}
 				</text>
-				<text
+				<view
 					class="ww-seat__state"
-					:class="{ 'ww-seat__state--ready': seat.player?.ready }"
+					:class="'ww-seat__state--' + stateTone(seat.player)"
 				>
-					{{ state(seat.player) }}
-				</text>
+					<k-icon
+						v-if="phase === 'waiting' && seat.player?.ready && seat.player.online && seat.player.userId !== hostId"
+						name="check"
+						:size="12"
+						color="green"
+					/>
+					<text>{{ stateLabel(seat.player) }}</text>
+				</view>
 				<text v-if="phase === 'waiting' && seat.player" class="ww-seat__voice">{{
 					voiceState(seat.player)
 				}}</text>
@@ -106,6 +112,19 @@ function state(player) {
 	if (props.phase !== 'waiting') return '在场'
 	if (player.userId === props.hostId) return '房主 · 已准备'
 	return player.ready ? '✓ 已准备' : '未准备'
+}
+// 返修第 5 轮（纯展示）：state() 保持原样；「✓」改由模板里的 k-icon check 显示，这里只把文字里的符号去掉
+function stateLabel(player) {
+	return state(player).replace('✓ ', '')
+}
+// 返修第 1 轮（纯展示）：状态字的颜色。等人时绿=已准备；对局中只有「正在发言」绿、「已出局」红，其余灰；结算按阵营（狼人红、好人绿）
+function stateTone(player) {
+	if (!player) return 'muted'
+	if (props.phase === 'finished') return roleOf(player.role).team === '狼人阵营' ? 'wolf' : 'good'
+	if (props.phase === 'waiting') return player.ready && player.online ? 'ready' : 'muted'
+	if (!player.alive) return 'out'
+	if (props.phase === 'discussion' && player.seat === props.speaker) return 'speaking'
+	return 'muted'
 }
 function voiceState() {
 	return props.playMode === 'face_to_face' ? '面对面交流' : '语音消息'
@@ -197,11 +216,11 @@ function seatStyle(number) {
 }
 .ww-seat__label {
 	position: absolute;
-	left: 5px;
-	right: 5px;
+	left: 2px;
+	right: 2px;
 	bottom: 0;
-	padding: 5px 4px;
-	border-radius: 12px;
+	padding: 6px 6px;
+	border-radius: 10px;
 	background: rgba(255, 250, 240, 0.96);
 	box-shadow: 0 2px 6px rgba(80, 55, 30, 0.12);
 	color: var(--k-ink);
@@ -215,13 +234,15 @@ function seatStyle(number) {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 5px;
+	gap: 4px;
 	font-size: 12px;
+	letter-spacing: 1px;
 	color: #fff1d4;
 	text-shadow: 0 1px 4px #4c311b;
 }
 .ww-table__timer {
-	font-size: 25px;
+	font-size: 28px;
+	letter-spacing: 0;
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 }
@@ -233,9 +254,10 @@ function seatStyle(number) {
 }
 .ww-seat__voice {
 	display: block;
-	font-size: 10px;
-	color: #766c59;
-	margin-top: 2px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--k-light);
+	margin-top: 1px;
 }
 .ww-seat--selected .ww-seat__label {
 	outline: 3px solid #ba603e;
@@ -253,10 +275,15 @@ function seatStyle(number) {
 	position: absolute;
 	right: 8px;
 	top: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
 	background: #ad5639;
-	color: #fff4da;
+	border: 2px solid var(--k-paper);
 	border-radius: 50%;
-	padding: 4px 7px;
+	box-sizing: border-box;
 }
 .ww-seat__wave {
 	position: absolute;
@@ -296,17 +323,23 @@ function seatStyle(number) {
 }
 .ww-seat__name {
 	display: block;
-	font-size: 13px;
+	font-size: 12px;
+	line-height: 1.4;
 	font-weight: 600;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 .ww-seat__state {
-	display: block;
-	font-size: 12px;
-	margin-top: 2px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	font-size: 11px;
+	line-height: 1.4;
+	margin-top: 1px;
 	color: var(--k-muted);
+	white-space: nowrap;
 }
 .ww-seat__state--ready {
 	color: var(--k-green);
@@ -319,10 +352,10 @@ function seatStyle(number) {
 }
 .ww-seat__plus {
 	position: absolute;
-	top: 45px;
-	left: 33px;
-	width: 30px;
-	height: 30px;
+	top: 44px;
+	left: 32px;
+	width: 32px;
+	height: 32px;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -332,14 +365,21 @@ function seatStyle(number) {
 }
 .ww-seat__me {
 	position: absolute;
-	top: 10px;
+	top: 8px;
 	right: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	box-sizing: border-box;
 	color: var(--k-paper);
 	background: var(--k-red);
-	border: 2px solid var(--k-paper2);
+	border: 2px solid var(--k-paper);
 	border-radius: 50%;
-	padding: 3px;
-	font-size: 12px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1;
 }
 @media (max-width: 350px) {
 	.ww-table {
@@ -357,11 +397,21 @@ function seatStyle(number) {
 		height: 210px;
 	}
 }
-.ww-out-stamp{position:absolute;top:38px;left:22px;color:#b52d28;border:3px solid #b52d28;background:#fff9;transform:rotate(-15deg);font-size:22px;font-weight:900;line-height:26px;padding:2px 5px;border-radius:4px;z-index:8;pointer-events:none}
+.ww-out-stamp{position:absolute;top:40px;left:24px;color:var(--k-alert);border:2px solid var(--k-alert);background:#fff9;transform:rotate(-12deg);font-size:18px;font-weight:700;letter-spacing:1px;line-height:22px;padding:1px 6px;border-radius:4px;z-index:8;pointer-events:none}
 </style>
 <style scoped>
-.ww-table--large .ww-table__wood{top:50%;width:42%;height:calc(100% - 86px);border-radius:80px;background:#a67649;border:8px solid #835c38;box-shadow:inset 0 0 0 3px #c2996b,0 10px 15px #3b302526;box-sizing:border-box}
-.ww-table--large .ww-table__center{top:50%;max-width:42%}
+/* 返修第 3 轮：木桌减重——宽 140→112（≤360 宽 104，两侧名牌离桌边至少 8），去掉 3px 粗边改 1px 内高光，两端色差减半，.92 不透明；
+   上下各收 17px，桌头桌尾对齐第一排和最后一排座位的中线 */
+.ww-table--large .ww-table__wood{top:50%;width:112px;height:calc(100% - 120px);border-radius:56px;background:linear-gradient(90deg,var(--ww-wood),var(--ww-wood-mid) 50%,var(--ww-wood));opacity:1;box-shadow:var(--ww-wood-shadow);box-sizing:border-box}
+.ww-table--large .ww-table__center{top:50%;max-width:104px;text-align:center}
+@media (max-width: 360px){.ww-table--large .ww-table__wood{width:104px}.ww-table--large .ww-table__center{max-width:96px}}
+.ww-table .ww-seat__state.ww-seat__state--muted{color:var(--k-muted)}
+.ww-table .ww-seat__state.ww-seat__state--ready,.ww-table .ww-seat__state.ww-seat__state--good{color:var(--k-green)}
+.ww-table .ww-seat__state.ww-seat__state--speaking{color:var(--k-green);font-weight:600}
+.ww-table .ww-seat__state.ww-seat__state--out{color:var(--k-alert)}
+.ww-table .ww-seat__state.ww-seat__state--wolf{color:var(--k-alert);font-weight:600}
 .ww-table--large .ww-seat{width:92px;height:116px}
 .ww-table--large .ww-seat__chair{bottom:34px}
+/* 返修第 4 轮：木桌不再半透明（不透出月亮）；桌心只有一行字时（等人「袋鼠好友局」、结算「本局结束」）升到 15/600 奶油色 */
+.ww-table__center--solo text{font-size:15px;font-weight:600;color:var(--ww-cream)}
 </style>

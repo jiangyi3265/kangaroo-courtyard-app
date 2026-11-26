@@ -1,10 +1,9 @@
 <template>
-  <view class="k-page reminders">
+  <view class="k-page reminders" :class="$userSurface">
     <k-topbar :title="titles[s - 1]" back custom-back @back="onBack" />
 
     <view v-if="s === 1" class="k-body k-pad-tab user-page">
-      <view class="hello"><image :src="helloAvatar" mode="aspectFill" /><text>{{ helloName }}</text><view class="k-flex1" /><view class="k-row k-gap4" @click="s=4"><text>设置</text><k-icon name="chevron-right" :size="18" color="ink" /></view></view>
-      <text class="count-title">共 {{ userReminders.length }} 条提醒</text>
+      <view class="hello"><image :src="helloAvatar" mode="aspectFill" /><view class="k-flex1"><text class="hello__name">{{ helloName }}</text><text class="count-title">共 {{ userReminders.length }} 条提醒</text></view><view class="k-row k-gap4" hover-class="k-press" @click="s=4"><text>设置</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
       <view class="reminder-tabs">
         <button :class="{ active: reminderFilter === 'all' }" :aria-pressed="reminderFilter === 'all'" @click="reminderFilter = 'all'">全部 {{ userReminders.length }}</button>
         <button :class="{ active: reminderFilter === 'pending' }" :aria-pressed="reminderFilter === 'pending'" @click="reminderFilter = 'pending'">未读 {{ userPending }}</button>
@@ -12,29 +11,29 @@
       </view>
       <view v-if="userRemindersLoading" class="reminder-empty"><text>正在加载提醒…</text></view>
       <view v-else-if="userReminderError" class="reminder-empty"><text>{{ userReminderError }}</text><k-button type="secondary" size="sm" @click="fetchReminders">重新加载</k-button></view>
-      <view v-else-if="!filteredUserReminders.length" class="reminder-empty"><text>{{ reminderEmptyText }}</text></view>
-      <view v-else class="user-list"><view v-for="item in filteredUserReminders" :key="item.id" class="user-reminder" @click="openReminder(item)"><view class="reminder-icon" :class="'reminder-icon--'+item.tone"><k-icon :name="item.icon" :size="18" color="white" /></view><view class="user-reminder__main"><text>{{ item.title }}</text><text>{{ item.desc }}</text></view><k-chip :tone="item.statusTone"><text>{{ item.status }}</text></k-chip><view class="user-reminder__next"><text>{{ item.source || item.time }}</text><text v-if="item.next">下一步：{{ item.next }}</text></view></view></view>
+      <view v-else-if="!filteredUserReminders.length" class="reminder-empty"><view class="re-ico"><k-icon name="bell" :size="32" color="red" /></view><text>{{ reminderEmptyText }}</text><text class="re-sub">报名、面试、订单等提醒会出现在这里</text></view>
+      <view v-else class="user-list"><view v-for="item in filteredUserReminders" :key="item.id" class="user-reminder" :class="{ rd: item.read }" @click="openReminder(item)"><view class="reminder-icon" :class="'reminder-icon--'+item.tone"><k-icon :name="item.icon" :size="20" color="red" /></view><view class="user-reminder__main"><text>{{ item.title }}</text><text>{{ item.desc }}</text></view><view class="user-reminder__next"><text>{{ item.source || item.time }}</text><text v-if="item.next">下一步：{{ item.next }}</text><k-chip :tone="item.statusTone"><text>{{ item.status }}</text></k-chip></view><k-icon name="chevron-right" :size="12" color="light" /></view></view>
     </view>
 
     <view v-else-if="s === 2" class="k-body k-pad-tab merchant-page">
-      <view class="shop-head"><image :src="storeImage" mode="aspectFill" /><view class="k-flex1"><text class="shop-head__name">{{ storeName }}</text><text class="shop-head__role">{{ storeRole }}</text></view><view class="switch-role" @click="go(R.staffBusiness + '?s=2')"><text>切换门店</text><k-icon name="chevron-right" :size="17" color="ink" /></view></view>
+      <view class="shop-head"><view class="shop-ico"><k-icon name="store" :size="22" color="red" /></view><view class="k-flex1"><text class="shop-head__name">{{ storeName }}</text><text class="shop-head__role">{{ storeRole }}</text></view><view class="switch-role" @click="go(R.staffBusiness + '?s=2')"><text>切换门店</text><k-icon name="chevron-right" :size="12" color="red" /></view></view>
       <view class="k-between pending-head"><text>未读 {{ staffPending }} 条提醒</text><view v-if="overdueCount" class="k-row k-gap6 k-alert"><k-icon name="circle-alert" :size="16" color="alert" /><text>逾期 {{ overdueCount }} 条</text></view></view>
-      <view class="large-list"><view v-for="item in merchantReminders" :key="item.id" class="large-reminder" @click="openReminder(item)"><view class="large-icon" :class="'large-icon--'+item.tone"><k-icon :name="item.icon" :size="22" color="white" /></view><view class="k-flex1"><text class="large-reminder__title">{{ item.title }}</text><text class="large-reminder__desc">{{ item.desc }}</text></view><text class="large-reminder__time" :class="item.urgent?'k-alert':'k-ochre'">{{ item.time }}</text><k-icon name="chevron-right" :size="19" color="ink" /></view></view>
+      <view v-if="!merchantReminders.length && !userRemindersLoading" class="reminder-empty"><view class="re-ico"><k-icon name="bell" :size="32" color="red" /></view><text>暂无提醒</text><text class="re-sub">报名、订单、审核等待办会出现在这里</text></view><view v-else class="large-list"><view v-for="item in merchantReminders" :key="item.id" class="large-reminder" :class="{ rd: item.read }" @click="openReminder(item)"><view class="large-icon" :class="'large-icon--'+item.tone"><k-icon :name="item.icon" :size="20" color="red" /></view><view class="k-flex1"><text class="large-reminder__title">{{ item.title }}</text><text class="large-reminder__desc">{{ item.desc }}</text></view><view class="lr-side"><text class="large-reminder__time" :class="item.urgent?'k-alert':'k-ochre'">{{ item.time }}</text><text v-if="!item.read" class="lr-unread">{{ item.status }}</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
     </view>
 
     <view v-else-if="s === 3" class="k-body k-pad-tab staff-page">
-      <view class="shop-head"><image :src="helloAvatar" mode="aspectFill" /><view class="k-flex1"><text class="shop-head__name">{{ staffViewName }}</text><text class="shop-head__role">{{ staffViewRole }}</text></view><view class="switch-role" @click="go(R.identity + '?choose=1')"><text>切换角色</text><k-icon name="chevron-right" :size="17" color="ink" /></view></view>
+      <view class="shop-head"><image :src="helloAvatar" mode="aspectFill" /><view class="k-flex1"><text class="shop-head__name">{{ staffViewName }}</text><text class="shop-head__role">{{ staffViewRole }}</text></view><view class="switch-role" @click="go(R.identity + '?choose=1')"><text>切换角色</text><k-icon name="chevron-right" :size="12" color="red" /></view></view>
       <view class="k-between pending-head"><text>未读 {{ staffPending }} 条提醒</text><k-button size="xs" type="secondary" @click="makeDigest">生成待办</k-button></view>
-      <view class="large-list"><view v-for="item in staffReminders" :key="item.id" class="large-reminder" @click="openReminder(item)"><view class="large-icon" :class="'large-icon--'+item.tone"><k-icon :name="item.icon" :size="22" color="white" /></view><view class="k-flex1"><text class="large-reminder__title">{{ item.title }}</text><text class="large-reminder__desc">{{ item.desc }}</text></view><text class="large-reminder__time" :class="item.urgent?'k-alert':'k-ochre'">{{ item.time }}</text><k-icon name="chevron-right" :size="19" color="ink" /></view></view>
+      <view v-if="!staffReminders.length && !userRemindersLoading" class="reminder-empty"><view class="re-ico"><k-icon name="bell" :size="32" color="red" /></view><text>暂无提醒</text><text class="re-sub">报名、订单、审核等待办会出现在这里</text></view><view v-else class="large-list"><view v-for="item in staffReminders" :key="item.id" class="large-reminder" :class="{ rd: item.read }" @click="openReminder(item)"><view class="large-icon" :class="'large-icon--'+item.tone"><k-icon :name="item.icon" :size="20" color="red" /></view><view class="k-flex1"><text class="large-reminder__title">{{ item.title }}</text><text class="large-reminder__desc">{{ item.desc }}</text></view><view class="lr-side"><text class="large-reminder__time" :class="item.urgent?'k-alert':'k-ochre'">{{ item.time }}</text><text v-if="!item.read" class="lr-unread">{{ item.status }}</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
     </view>
 
     <view v-else class="k-body settings-page">
-      <view class="setting-note"><text>{{ settingNote }}</text></view>
-      <k-subscribe label="管理全部微信订阅提醒" />
-      <view class="matrix"><view class="matrix-row matrix-head"><text>通知类型</text><text>微信订阅</text><text>小程序消息</text><text>员工通知</text></view><view v-for="row in notifyRows" :key="row.label" class="matrix-row"><view class="notify-type"><view class="reminder-icon" :class="'reminder-icon--'+row.tone"><k-icon :name="row.icon" :size="17" color="white" /></view><text>{{ row.label }}</text></view><view v-for="(on,index) in row.values" :key="index" class="check-box" :class="{on}" @click="toggleCell(row, index)"><k-icon v-if="on" name="check" :size="14" color="white" :stroke="3" /></view></view></view>
-      <view class="sms-setting"><view class="quiet-head"><text class="settings-title">流程短信提醒</text><switch :checked="smsConsent" :disabled="smsSaving||!smsLoaded" color="#8b603b" @change="setSmsConsent"/></view><text class="quiet-note">同意通过已验证手机号接收纠纷、权益及合作复核提醒，可随时关闭。{{smsAvailable?'':'短信通道暂未开放，站内消息正常接收。'}}</text><text v-if="smsError" class="quiet-note">{{smsError}}</text></view><text class="settings-title">接收频率</text><view class="frequency"><view :class="{ active: freq === 'instant' }" @click="setFreq('instant')"><text>即时推送</text></view><view :class="{ active: freq === 'daily' }" @click="setFreq('daily')"><text>每日汇总（09:00）</text></view></view>
-      <view class="quiet-head"><text class="settings-title">免打扰时段</text><view class="toggle" :style="{ background: quiet.on ? 'var(--k-green)' : 'var(--k-line2)' }" @click="quiet.on = !quiet.on"><view :style="{ marginLeft: quiet.on ? 'auto' : '0' }" /></view></view><view class="time-range"><view @click="pickTime('start')"><text>{{ quiet.start }}</text></view><text>至</text><view @click="pickTime('end')"><text>{{ quiet.end }}</text></view></view><text class="quiet-note">{{ quietNote }}</text>
-      <k-button block size="md" class="save" :disabled="saving" @click="saveSettings">保存设置</k-button>
+      <k-subscribe manage label="管理全部微信订阅提醒" />
+      <view class="matrix"><view class="matrix-row matrix-head"><text>通知类型</text><text>微信订阅</text><text>小程序消息</text><text>员工通知</text></view><view v-for="row in notifyRows" :key="row.label" class="matrix-row"><view class="notify-type"><view class="reminder-icon"><k-icon :name="row.icon" :size="18" color="ink2" /></view><text>{{ row.label }}</text></view><view v-for="(on,index) in row.values" :key="index" class="check-box" :class="{on}" @click="toggleCell(row, index)"><k-icon v-if="on" name="check" :size="14" color="red" /></view></view></view><view class="setting-note"><text>{{ settingNote }}</text></view>
+      <view class="sms-setting"><view class="quiet-head"><text class="settings-title">流程短信提醒</text><switch :checked="smsConsent" :disabled="smsSaving||!smsLoaded" color="#4A6E3A" @change="setSmsConsent"/><!-- #4A6E3A = --k-green --></view><view class="quiet-note sms-note"><text>同意通过已验证手机号接收纠纷、权益及合作复核提醒，</text><text>可随时关闭。</text><text>{{smsAvailable?'':'短信通道暂未开放，站内消息正常接收。'}}</text></view><text v-if="smsError" class="quiet-note">{{smsError}}</text></view><text class="settings-title">接收频率</text><view class="frequency"><view :class="{ active: freq === 'instant' }" @click="setFreq('instant')"><text>即时推送</text></view><view :class="{ active: freq === 'daily' }" @click="setFreq('daily')"><text>每日汇总（09:00）</text></view></view>
+      <view class="quiet-head"><text class="settings-title">免打扰时段</text><view class="toggle" :style="{ background: quiet.on ? 'var(--k-green)' : 'var(--k-line2)' }" @click="toggleQuiet"><view :style="{ marginLeft: quiet.on ? 'auto' : '0' }" /></view></view><view class="time-range"><view @click="pickTime('start')"><text>{{ quiet.start }}</text></view><text>至</text><view @click="pickTime('end')"><text>{{ quiet.end }}</text></view></view><text class="quiet-note">{{ quietNote }}</text>
+      <k-button v-if="settingsFailed" block size="md" class="save" @click="loadSettings">重新读取设置</k-button>
+      <k-button v-else block size="md" class="save" :disabled="!settingsReady || saving" @click="saveSettings">保存设置</k-button>
     </view>
 
     <k-tabbar v-if="s===1" active="messages" />
@@ -47,7 +46,7 @@ import { askTime } from '@/common/ui.js'
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { onShow, onHide } from '@dcloudio/uni-app'
 import { useScreen, toast, go, back } from '@/common/screen.js'
-import { apiGovernanceSmsConsent, apiSetGovernanceSmsConsent, apiMarkRead, apiMessages, apiNotifySettings, apiSaveNotifySettings, apiWorkbenchDigest, apiSubscribeStatus, apiSubscribeAccept, apiSubscribeRevoke } from '@/common/api.js'
+import { apiGovernanceSmsConsent, apiSetGovernanceSmsConsent, apiMarkRead, apiMessages, apiNotifySettings, apiSaveNotifySettings, apiWorkbenchDigest, apiSubscribeStatus } from '@/common/api.js'
 import { experience, ensureSession, hasStaffAccess, currentStaffStore, getMessageScopeKey, refreshUnread } from '@/common/experience.js'
 import { absUrl } from '@/common/upload.js'
 import R from '@/common/routes.js'
@@ -66,14 +65,15 @@ const titles = ['提醒中心（我的提醒）', '提醒中心（商家端）',
 // 三方流程提醒按 category 分组：报名 → 面试 → 签约，其余（订单/系统/会话）排在后面。
 const CATEGORY_ORDER = ['apply', 'interview', 'contract', 'order', 'system', 'chat', 'group']
 // 图标与配色取自页面原有的视觉词汇，只按 category 选，不代表任何后端数值。
-const CATEGORY_LOOK = {
-  apply: { icon: 'clipboard-check', tone: 'green' },
-  interview: { icon: 'calendar-clock', tone: 'blue' },
-  contract: { icon: 'file-signature', tone: 'ochre' },
-  order: { icon: 'badge-check', tone: 'ochre' },
-  system: { icon: 'shield-check', tone: 'blue' },
-  chat: { icon: 'messages-square', tone: 'purple' },
-  group: { icon: 'users', tone: 'purple' }
+const REMINDER_APPEARANCE = {
+  apply: { icon: 'clipboard-check', tone: 'red' },
+  interview: { icon: 'calendar-clock', tone: 'red' },
+  contract: { icon: 'file-signature', tone: 'red' },
+  order: { icon: 'receipt-text', tone: 'red' },
+  activity: { icon: 'ticket', tone: 'red' },
+  system: { icon: 'bell', tone: 'red' },
+  chat: { icon: 'message-circle', tone: 'red' },
+  group: { icon: 'users', tone: 'red' }
 }
 
 // 提醒时间只有 createTime 一个真实来源：今天显示时分，昨天显示「昨天」，更早显示月日。
@@ -109,20 +109,21 @@ const clamp = (text, max) => (text.length > max ? text.slice(0, max) + '…' : t
  * 按约定留空而不是编造一个看起来合理的值。
  */
 const mapReminder = (m) => {
-  const look = CATEGORY_LOOK[m.category] || CATEGORY_LOOK.system
+  const look = REMINDER_APPEARANCE[m.category === 'system' && /^activity/.test(m.bizType || '') ? 'activity' : m.category] || REMINDER_APPEARANCE.system
   const shown = messageWording(m)
   return {
     id: m.id,
     category: m.category || 'system',
     title: shown.title,
-    desc: clamp(shown.content || '', 14),
+    desc: clamp(shown.content || '', 40),
     time: formatTime(m.createTime),
     ts: parseTime(m.createTime) ? parseTime(m.createTime).getTime() : 0,
     read: !!m.read,
+    unread: m.read ? 0 : Number(m.unreadCount || 1),
     expiresAt: Number(m.expiresAt) || 0,
     icon: look.icon,
     tone: look.tone,
-    status: m.read ? '已读' : '未读',
+    status: m.read ? '已读' : (Number(m.unreadCount) > 99 ? '99+' : String(m.unreadCount || 1)),
     statusTone: m.read ? 'green' : 'ochre',
     urgent: false,
     source: '',
@@ -145,9 +146,9 @@ const reminderEmptyText = computed(() => ({
 // 所以商家端(s=2)与员工/平台端(s=3)取的是同一份 staff 消息。
 const staffReminders = ref([])
 const merchantReminders = computed(() => staffReminders.value)
-const userPending = computed(() => userReminders.value.filter(r => !r.read).length)
+const userPending = computed(() => userReminders.value.reduce((n,r) => n + r.unread, 0))
 const userDone = computed(() => userReminders.value.filter(r => r.read).length)
-const staffPending = computed(() => staffReminders.value.filter(r => !r.read).length)
+const staffPending = computed(() => staffReminders.value.reduce((n,r) => n + r.unread, 0))
 // 消息体里没有紧急/逆期字段，mapReminder 里 urgent 恒为 false，
 // 所以这个数当前必为 0，页面上那一行也就不会出现；
 // 将来服务端能判定逆期时，改 mapReminder 即可自动点亮。
@@ -171,8 +172,6 @@ const helloAvatar = computed(
 const activeGrant = computed(() => currentStaffStore.value || null)
 const storeName = computed(() => activeGrant.value?.storeName || '未绑定门店')
 const storeRole = computed(() => activeGrant.value?.roleName || '暂无员工授权')
-// 门店照片后端没有下发，用品牌默认图占位，不套设计稿里某家具体民宿的照片
-const storeImage = computed(() => '/static/media/cover-empty.png')
 // s=3 后端没有"平台运营"这个角色（员工角色只有主理人/管家/店员），
 // 这一屏取的和 s=2 是同一份 staff 消息，所以如实写成当前账号与其真实角色
 const staffViewName = computed(() => experience.account?.nickname || '当前账号')
@@ -246,7 +245,7 @@ const fetchReminders = async () => {
   return !userReminderError.value
 }
 onShow(() => { reminderVisible = true; fetchReminders() })
-const leaveReminders = () => { reminderVisible = false; reminderSequence++; clearReminderExpiry() }
+const leaveReminders = () => { reminderVisible = false; reminderSequence++; clearReminderExpiry(); resetSettings() }
 onHide(leaveReminders)
 onUnmounted(leaveReminders)
 watch(reminderScope, () => {
@@ -264,68 +263,109 @@ watch(reminderScope, () => {
 // 免打扰时段影响的是"主动推送"那一类（新机会提醒），与你正在办的事直接相关的通知照常送达。
 // ---------------------------------------------------------------------------
 const TONE_OF = { job_new: 'green', apply_progress: 'green', activity: 'blue', order: 'ochre', review: 'ochre', community: 'purple' }
-const ICON_OF = { job_new: 'star', apply_progress: 'house', activity: 'calendar-days', order: 'badge-check', review: 'message-square', community: 'messages-square' }
+const ICON_OF = { governance_case: 'shield-check', mediation: 'scale', mediation_jury: 'users', merchant_review: 'badge-check', dispute: 'scale', jury: 'users', job_new: 'briefcase-business', apply_progress: 'clipboard-check', activity: 'ticket', order: 'receipt-text', review: 'star', community: 'message-circle' }
 
 const smsConsent=ref(false),smsAvailable=ref(false),smsSaving=ref(false),smsLoaded=ref(false),smsError=ref('')
-const loadSms=async()=>{try{const r=(await apiGovernanceSmsConsent()).data;smsConsent.value=!!r.enabled;smsAvailable.value=!!r.available;smsLoaded.value=true;smsError.value=''}catch(e){smsLoaded.value=false;smsError.value='短信设置暂时无法读取，请重新进入页面'}}
-const setSmsConsent=async(e)=>{if(smsSaving.value)return;smsSaving.value=true;smsConsent.value=!!e.detail.value;try{const r=(await apiSetGovernanceSmsConsent(smsConsent.value)).data;smsConsent.value=!!r.enabled;smsError.value=''}catch(err){await loadSms();smsError.value=err.message||'保存失败，请重试'}finally{smsSaving.value=false}}
 const notifyRows = ref([])
 const freq = ref('instant')
 const freqAvailable = ref(false)
-const quiet = ref({ on: false, start: '22:00', end: '08:00' })
+const defaultQuiet = () => ({ on: false, start: '22:00', end: '08:00' })
+const quiet = ref(defaultQuiet())
 const staffAvailable = ref(false)
 const settingNote = ref('正在读取通知设置…')
 const quietNote = ref('免打扰时段内，将不再发送非重要通知')
 const saving = ref(false)
-
-// 微信订阅消息：模板由后台配置（订阅消息模板），用户在这一列逐类授权。
-// 一次授权只能发一条，所以这里显示的是"还有没有授权额度"，不是一个长期开关。
-const subscribeOn = ref(false)
-const subscribeRows = ref([])
-const subscribeOf = (key) => subscribeRows.value.find(x => x.bizKey === key) || null
-
-const loadSubscribe = async () => {
+const settingsReady = ref(false), settingsFailed = ref(false)
+let settingsSequence = 0
+let settingsScope = null
+const settingsCurrent = sequence => sequence === settingsSequence && reminderVisible && s.value === 4
+  && !!experience.account && settingsScope === reminderScope()
+const canEditSettings = () => settingsCurrent(settingsSequence) && settingsReady.value && !saving.value
+const resetSettings = () => {
+  settingsSequence++
+  settingsScope = null
+  settingsReady.value = settingsFailed.value = saving.value = false
+  notifyRows.value = []
+  freq.value = 'instant'
+  quiet.value = defaultQuiet()
+  freqAvailable.value = staffAvailable.value = false
+  smsLoaded.value = smsConsent.value = smsAvailable.value = smsSaving.value = false
+  smsError.value = ''
+  settingNote.value = '正在读取通知设置…'
+}
+const loadSms = async sequence => {
   try {
-    const res = await apiSubscribeStatus()
-    const d = res.data || {}
-    subscribeOn.value = !!d.enabled
-    subscribeRows.value = d.rows || []
-  } catch (e) {
-    subscribeOn.value = false
-    subscribeRows.value = []
+    const { data } = await apiGovernanceSmsConsent()
+    if (!settingsCurrent(sequence)) return
+    smsConsent.value = !!data.enabled
+    smsAvailable.value = !!data.available
+    smsLoaded.value = true
+    smsError.value = ''
+  } catch {
+    if (!settingsCurrent(sequence)) return
+    smsLoaded.value = false
+    smsError.value = '短信设置暂时无法读取，请重新进入页面'
   }
+}
+const setSmsConsent = async e => {
+  const sequence = settingsSequence
+  if (!settingsCurrent(sequence) || !smsLoaded.value || smsSaving.value) return
+  smsSaving.value = true
+  smsConsent.value = !!e.detail.value
+  try {
+    const { data } = await apiSetGovernanceSmsConsent(smsConsent.value)
+    if (!settingsCurrent(sequence)) return
+    smsConsent.value = !!data.enabled
+    smsError.value = ''
+  } catch (err) {
+    if (!settingsCurrent(sequence)) return
+    await loadSms(sequence)
+    if (settingsCurrent(sequence) && smsLoaded.value) smsError.value = err.message || '保存失败，请重试'
+  } finally { if (settingsCurrent(sequence)) smsSaving.value = false }
 }
 
 const loadSettings = async () => {
-  await ensureSession()
-  if (!experience.account) return
-  await Promise.all([loadSubscribe(),loadSms()])
+  resetSettings()
+  if (!reminderVisible || s.value !== 4) return
+  const sequence = settingsSequence
   try {
-    const res = await apiNotifySettings()
-    const d = res.data || {}
-    notifyRows.value = (d.rows || []).map(r => ({
+    await ensureSession()
+    if (sequence !== settingsSequence || !reminderVisible || s.value !== 4) return
+    if (!experience.account) { settingNote.value = '请登录后查看通知设置'; return }
+    settingsScope = reminderScope()
+    void loadSms(sequence)
+    const [res, subscription] = await Promise.all([apiNotifySettings(), apiSubscribeStatus().catch(() => null)])
+    if (!settingsCurrent(sequence)) return
+    const d = res.data
+    if (!Array.isArray(d?.rows)) throw new Error('请重新读取')
+    const subscribed = new Set((subscription?.data?.rows || []).filter(row => row.on).map(row => row.bizKey))
+    notifyRows.value = d.rows.map(r => ({
       key: r.key,
       label: r.label,
       tone: TONE_OF[r.key] || 'green',
       icon: ICON_OF[r.key] || 'bell',
-      values: [!!(subscribeOf(r.key) && subscribeOf(r.key).on), !!r.app, !!r.staff]
+      values: [subscribed.has(r.key), !!r.app, !!r.staff]
     }))
     freq.value = d.freq || 'instant'
     freqAvailable.value = !!d.freqAvailable
-    quiet.value = d.quiet || quiet.value
+    quiet.value = d.quiet || defaultQuiet()
     staffAvailable.value = !!d.staffAvailable
     settingNote.value = d.note || ''
+    settingsReady.value = true
   } catch (e) {
+    if (sequence !== settingsSequence || !reminderVisible || s.value !== 4) return
+    settingsFailed.value = true
     settingNote.value = '通知设置暂时读不到：' + ((e && e.message) || '请稍后重试')
   }
 }
 
-// 微信订阅那一列：点一下就去要授权（必须在用户点击里调），已授权时点则是关掉
-const toggleWechat = row => go('/pages/profile/subscriptions?scenes=' + encodeURIComponent(row.key))
+// 微信列统一进入各身份的订阅管理页。
+const toggleWechat = () => go('/pages/profile/subscriptions')
 
 const toggleCell = (row, index) => {
+  if (!canEditSettings()) return
   if (index === 0) {
-    toggleWechat(row)
+    toggleWechat()
     return
   }
   if (index === 2 && !staffAvailable.value) {
@@ -336,6 +376,7 @@ const toggleCell = (row, index) => {
 }
 
 const setFreq = (v) => {
+  if (!canEditSettings()) return
   if (!freqAvailable.value) {
     toast('还没有岗位订阅，先在找机会页订阅城市或岗位')
     return
@@ -343,16 +384,19 @@ const setFreq = (v) => {
   freq.value = v
 }
 
-// 之前要手动输入 HH:mm，现在用滚轮选
+const toggleQuiet = () => { if (canEditSettings()) quiet.value.on = !quiet.value.on }
 const pickTime = async (which) => {
+  if (!canEditSettings()) return
+  const sequence = settingsSequence
   const v = await askTime(which === 'start' ? '免打扰开始时间' : '免打扰结束时间', which === 'start' ? quiet.value.start : quiet.value.end, 30)
-  if (!v) return
+  if (!v || !settingsCurrent(sequence) || !canEditSettings()) return
   if (which === 'start') quiet.value.start = v
   else quiet.value.end = v
 }
 
 const saveSettings = async () => {
-  if (saving.value) return
+  if (!canEditSettings()) return
+  const sequence = settingsSequence
   saving.value = true
   try {
     const payload = {
@@ -361,12 +405,12 @@ const saveSettings = async () => {
     }
     if (freqAvailable.value) payload.freq = freq.value
     const res = await apiSaveNotifySettings(payload)
+    if (!settingsCurrent(sequence)) return
     toast((res.data && res.data.message) || '已保存')
-    await loadSettings()
   } catch (e) {
-    toast((e && e.message) || '保存失败')
+    if (settingsCurrent(sequence)) toast((e && e.message) || '保存失败')
   } finally {
-    saving.value = false
+    if (settingsCurrent(sequence)) saving.value = false
   }
 }
 
@@ -379,7 +423,7 @@ const openReminder = async (item) => {
   if (item.read && item.expiresAt && item.expiresAt <= Date.now()) { scheduleReminderExpiry(); return }
   readingReminderIds.add(item.id)
   try {
-    if (!item.read || !item.expiresAt) {
+    if (!item.read) {
       await apiMarkRead(item.id)
       if (!current()) return
       // 再读取服务端首次 read_time 派生的期限；重复阅读不重新开始 72 小时。
@@ -416,10 +460,25 @@ const makeDigest = async () => {
 }
 
 onShow(loadSettings)
+watch([reminderScope, () => s.value === 4], loadSettings)
 </script>
 
 <style scoped lang="scss">
-.hello,.shop-head{height:75px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--k-line);font-family:var(--k-sans);font-size:18px}.hello>text{font-family:var(--k-serif);font-weight:700}.hello image{width:48px;height:48px;border-radius:50%}.count-title{display:block;margin:10px 2px 7px;font-family:var(--k-serif);font-size:15px;font-weight:700}.reminder-tabs{display:flex;gap:8px;margin-bottom:8px}.reminder-tabs>button{flex:1;min-width:0;height:48px;margin:0;padding:0;border:1px solid var(--k-line);border-radius:24px;background:transparent;display:flex;align-items:center;justify-content:center;color:var(--k-ink);font-size:14px;line-height:1.4}.reminder-tabs>button::after{border:0}.reminder-tabs>button.active{border-color:var(--k-red);background:var(--k-paper2);color:var(--k-red-deep);font-weight:600}.reminder-empty{padding:32px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--k-muted);font-size:14px;text-align:center}.user-list{border:1px solid var(--k-line);border-radius:10px;overflow:hidden}.user-reminder{height:48px;padding:0 9px;border-top:1px solid var(--k-line);display:flex;align-items:center;gap:8px}.user-reminder:first-child{border-top:0}.reminder-icon{width:27px;height:27px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}.reminder-icon--green{background:var(--k-green)}.reminder-icon--ochre{background:#CC861C}.reminder-icon--blue{background:#35638D}.reminder-icon--red{background:var(--k-red)}.reminder-icon--purple{background:#7E5E9C}.user-reminder__main{flex:1;min-width:0}.user-reminder__main text{display:block;font-size:10px;color:var(--k-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.user-reminder__main text:first-child{font-family:var(--k-serif);font-size:14px;font-weight:700;color:var(--k-ink);margin-bottom:4px}.user-reminder__next{flex:0 0 auto;margin-left:auto;padding-left:10px;border-left:1px solid var(--k-line);min-width:52px;max-width:122px}.user-reminder__next text{display:block;color:var(--k-muted);font-size:10px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.shop-head image{width:58px;height:58px;border-radius:50%}.shop-head__name{display:block;font-family:var(--k-serif);font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.shop-head__role{display:block;margin-top:8px;color:var(--k-muted);font-size:12px}.switch-role{height:32px;padding:0 9px;border:1px solid #B89472;border-radius:17px;display:flex;align-items:center;gap:3px;font-size:12px}.pending-head{height:55px;font-family:var(--k-serif);font-size:16px;font-weight:700}.large-list{display:flex;flex-direction:column;gap:8px}.large-reminder{height:61px;padding:0 11px;border:1px solid var(--k-line);border-radius:10px;background:var(--k-paper);display:flex;align-items:center;gap:10px}.large-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center}.large-icon--green{background:var(--k-green)}.large-icon--ochre{background:#CC861C}.large-icon--blue{background:#35638D}.large-icon--red{background:var(--k-red)}.large-icon--purple{background:#7E5E9C}.large-reminder__title,.large-reminder__desc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.large-reminder__title{display:block;font-family:var(--k-serif);font-size:15px;font-weight:700}.large-reminder__desc{display:block;margin-top:6px;color:var(--k-muted);font-size:11px}.large-reminder__time{font-family:var(--k-serif);font-size:13px;font-weight:700;white-space:nowrap}.k-ochre{color:#C98324}
-.setting-note{height:36px;padding:0 11px;border:1px solid var(--k-line);border-radius:8px;background:var(--k-paper2);display:flex;align-items:center;color:var(--k-ink2);font-size:11px}.matrix{margin-top:20px}.matrix-row{height:47px;display:grid;grid-template-columns:1.2fr repeat(3,1fr);align-items:center;border-bottom:1px solid var(--k-line);text-align:center;font-size:13px}.matrix-head{height:34px;border-bottom:0;font-family:var(--k-serif);font-size:14px;font-weight:700}.notify-type{display:flex;align-items:center;gap:8px;text-align:left;padding-left:7px}.check-box{width:20px;height:20px;margin:auto;border:1.5px solid var(--k-line2);border-radius:5px;display:flex;align-items:center;justify-content:center}.check-box.on{border-color:var(--k-green);background:var(--k-green)}.settings-title{display:block;margin-top:20px;font-family:var(--k-serif);font-size:16px;font-weight:700}.frequency{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:9px}.frequency>view{height:37px;border:1px solid var(--k-line);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--k-muted);font-size:13px}.frequency>view.active{color:var(--k-red-deep);border-color:var(--k-red)}.quiet-head{display:flex;align-items:center;justify-content:space-between}.toggle{width:46px;height:27px;border-radius:14px;background:var(--k-green);padding:2px}.toggle view{width:23px;height:23px;margin-left:auto;border-radius:50%;background:var(--k-paper)}.time-range{display:flex;align-items:center;gap:12px;margin-top:10px}.time-range>view{width:90px;height:36px;border:1px solid var(--k-line);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}.quiet-note{display:block;margin-top:10px;color:var(--k-muted);font-size:11px}.save{margin-top:31px}
+.reminders{--k-bg:var(--k-page)}.reminders :deep(.k-navbar__title){font-size:16px}.reminders :deep(.subscribe-entry){padding:8px 0 0}.reminders :deep(.subscribe-entry button){min-height:36px;background:none;font-size:13px}.k-body{padding-left:16px;padding-right:16px}
+.hello,.shop-head{height:64px;display:flex;align-items:center;gap:12px;font-size:13px}.hello__name{display:block;font-size:17px;line-height:24px;font-weight:600}.hello>image{width:44px;height:44px;border-radius:50%}.hello .k-row{align-self:stretch;font-size:13px;color:var(--k-muted)}
+.count-title{display:block;margin-top:2px;font-size:13px;line-height:18px;color:var(--k-muted);font-variant-numeric:tabular-nums}
+.reminder-tabs{display:flex;margin:12px 0;border-radius:16px;background:var(--k-fill)}.reminder-tabs>button{flex:1;min-width:0;height:36px;margin:-2px 0;padding:0;border:solid transparent;border-width:4px 2px;border-radius:18px;background:transparent;display:flex;align-items:center;justify-content:center;color:var(--k-ink2);font-size:13px;line-height:1.4;font-variant-numeric:tabular-nums}.reminder-tabs>button::after{border:0}.reminder-tabs>button.active{background:var(--k-paper) padding-box;color:var(--k-ink);font-weight:600}
+.reminder-empty{padding:112px 16px 0;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--k-ink2);font-size:14px;font-weight:500;text-align:center}.re-ico+text{font-size:15px;font-weight:600;color:var(--k-ink)}.re-ico{width:64px;height:64px;margin-bottom:4px;border-radius:18px;background:var(--k-red-soft);display:flex;align-items:center;justify-content:center}.re-sub{font-size:13px;font-weight:400;line-height:1.6;color:var(--k-muted)}
+.user-list,.large-list{border-radius:12px;background:var(--k-paper);overflow:hidden}.user-reminder,.large-reminder{position:relative;height:68px;padding:0 14px;display:flex;align-items:center;gap:12px;background:var(--k-red-soft)}.rd{background:none}.rd .reminder-icon,.rd .large-icon{background:var(--k-fill)}.user-reminder+.user-reminder::before,.large-reminder+.large-reminder::before{content:'';position:absolute;left:66px;right:14px;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.reminder-icon,.large-icon{width:40px;height:40px;border-radius:12px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;flex:0 0 auto}.notify-type .reminder-icon{width:20px;height:20px;background:none}
+.user-reminder__main{flex:1;min-width:0}.user-reminder__main text{display:block;font-size:13px;line-height:18px;color:var(--k-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.user-reminder__main text:first-child,.large-reminder__title{font-size:15px;line-height:20px;font-weight:600;color:var(--k-ink);margin-bottom:2px}.rd .user-reminder__main text:first-child,.rd .large-reminder__title{font-weight:500}
+.user-reminder :deep(.k-chip){height:16px;padding:0;background:transparent;font-size:11px;font-weight:400}.user-reminder :deep(.is-green){color:var(--k-light)}.user-reminder :deep(.is-ochre),.lr-unread{color:var(--k-muted)}.user-reminder :deep(.is-ochre),.lr-unread{display:inline-flex;justify-content:center;min-width:16px;padding:0 4px;border-radius:10px;box-sizing:border-box;background:var(--k-alert);color:white;font-size:11px;line-height:16px}.user-reminder__next,.lr-side{flex:0 0 auto;align-self:flex-start;min-width:56px;max-width:96px;padding-top:16px;display:flex;flex-direction:column;align-items:flex-end;gap:4px}.user-reminder__next text{display:block;color:var(--k-muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}.lr-unread{display:flex;align-items:center;font-size:11px}.user-reminder__next>text:nth-child(2){white-space:normal;text-align:right}
+.shop-head>image,.shop-ico{width:44px;height:44px;flex:none;border-radius:50%;background:var(--k-red-soft);display:flex;align-items:center;justify-content:center}.shop-head__name{display:block;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.shop-head__role{display:block;margin-top:2px;color:var(--k-muted);font-size:12px}.switch-role{position:relative;height:28px;padding:0 8px 0 12px;border:1px solid var(--k-red-line);border-radius:14px;background:var(--k-paper);display:flex;align-items:center;gap:2px;color:var(--k-red-deep);font-size:12px}.switch-role::after{content:'';position:absolute;inset:-8px 0}
+.pending-head{height:36px;margin:4px 0;font-size:14px;font-weight:600;color:var(--k-ink2)}.pending-head :deep(.is-xs){height:28px;padding:0;border:0;background:none;font-size:14px;font-weight:500;color:var(--k-red-deep)}.shop-ico{border-radius:14px}
+.large-reminder__title,.large-reminder__desc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.large-reminder__title{display:block}.large-reminder__desc{display:block;color:var(--k-muted);font-size:13px;line-height:18px}.large-reminder__time{font-size:11px;white-space:nowrap}.k-ochre{color:var(--k-muted)}
+.setting-note{padding:8px 0 0;color:var(--k-muted);font-size:12px;line-height:1.6}.matrix{margin-top:8px;padding:0 12px;border-radius:12px;background:var(--k-paper)}.matrix-row{height:48px;display:grid;grid-template-columns:minmax(0,1fr) 60px 64px 60px;align-items:center;border-top:.5px solid var(--k-line);text-align:center;font-size:14px}.matrix-head{height:40px;border-top:0;color:var(--k-muted);font-size:11px;line-height:1.2;white-space:nowrap}.matrix-head>text:first-child{text-align:left}.notify-type{display:flex;align-items:center;gap:10px;text-align:left;color:var(--k-ink)}
+.check-box{position:relative;width:18px;height:18px;margin:auto;border:1.5px solid var(--k-line2);border-radius:5px;display:flex;align-items:center;justify-content:center;box-sizing:border-box}.check-box::after{content:'';position:absolute;inset:-13px -8px}.check-box.on{border-color:var(--k-red);background:var(--k-red-soft)}
+.settings-title{display:block;margin-top:24px;font-size:16px;line-height:22px;font-weight:700}.frequency{display:flex;margin-top:10px;padding:3px;border-radius:18px;background:var(--k-fill)}.frequency>view{flex:1;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center;color:var(--k-ink2);font-size:13px}.frequency>view.active{color:var(--k-ink);background:var(--k-paper);font-weight:600}
+.quiet-head{display:flex;align-items:flex-end;justify-content:space-between}.quiet-head switch{margin-right:-4px;transform:scale(.846);transform-origin:100% 50%}.toggle{position:relative;width:44px;height:26px;border-radius:13px;background:var(--k-green);padding:2px;box-sizing:border-box}.toggle::after{content:'';position:absolute;inset:-5px 0}.toggle view{width:22px;height:22px;margin-left:auto;border-radius:50%;background:var(--k-paper)}
+.time-range{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:13px;color:var(--k-muted)}.time-range>text{font-size:12px}.time-range>view{flex:1;height:36px;border-radius:8px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--k-ink);font-variant-numeric:tabular-nums}.quiet-note{display:block;margin-top:8px;color:var(--k-muted);font-size:12px;line-height:1.6}.sms-note{word-break:keep-all}.settings-page{padding-bottom:calc(32px + var(--k-safe-bottom))}.settings-page .save{margin-top:24px;height:44px;border-radius:22px;font-size:15px}@media(max-width:359px){.user-reminder>.k-icon{display:none}.matrix{padding:0 8px}.matrix-row{grid-template-columns:minmax(0,1fr) 50px 58px 50px;font-size:13px}.user-reminder,.large-reminder{gap:8px}.notify-type{gap:6px}.matrix-head{font-size:11px}.notify-type>text{font-size:12px}.setting-note,.sms-note{font-size:11px}}
 </style>

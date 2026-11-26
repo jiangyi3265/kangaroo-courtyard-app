@@ -1,5 +1,5 @@
 // One unfinished application per account on this device. Never store verification state.
-const fields = { contactName: 32, phone: 11, city: 80, storeType: 30, storeName: 64, intro: 500 }
+const fields = { contactName: 32, city: 80, storeType: 30, storeName: 64, intro: 500 }
 export const emptyMerchantForm = () => Object.fromEntries(Object.keys(fields).map(k => [k, '']))
 const key = owner => {
   if (!owner || !/^\d+$/.test(String(owner))) throw new Error('请先登录后保存申请')

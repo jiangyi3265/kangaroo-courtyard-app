@@ -12,13 +12,13 @@
       <!-- 2026-11-03 主人：简化列表。「筛选」按钮和下面三个下拉是同一件事，去掉；商家只留 4 个页签（本店活动没有「来源」可选，状态就是页签），
            员工留 来源 / 状态 / 排序 三个下拉 -->
       <view class="k-body search-row">
-        <view class="search"><k-icon name="search" :size="16" color="light" :stroke="1.8" /><input v-model="kw" confirm-type="search" placeholder="搜索活动名称、地点、发起人" placeholder-class="k-placeholder" @confirm="loadList" /></view>
+        <view class="search"><k-icon name="search" :size="16" color="muted" :stroke="1.8" /><input v-model="kw" confirm-type="search" placeholder="搜索活动名称、地点、发起人" placeholder-class="k-placeholder" @confirm="loadList" /></view>
       </view>
       <view class="tabs">
         <view v-for="t in listTabs" :key="t" class="tabs__item" :class="{ active: tab === t }" @click="setTab(t)"><text>{{ t }}</text></view>
       </view>
       <view v-if="pills.length" class="pills">
-        <view v-for="(p, pi) in pills" :key="pi" class="pill" @click="pickPill(pi)"><text>{{ p }}</text><k-icon name="chevron-down" :size="13" color="ink" :stroke="1.8" /></view>
+        <view v-for="(p, pi) in pills" :key="pi" class="pill" @click="pickPill(pi)"><text>{{ p }}</text><k-icon name="chevron-down" :size="12" color="muted" :stroke="1.8" /></view>
       </view>
       <view class="list">
         <view v-for="(a, i) in activities" :key="a.activityId" class="item" @click="openDetail(a.activityId)">
@@ -40,9 +40,16 @@
          标题、地点没填就地标红（aerr），校验规则和原来一样 -->
     <template v-else-if="s === 2">
       <view class="fc-form">
+        <view v-if="canFillActivityText" class="fc-block">
+          <text class="fc-group__title">粘贴活动文案</text>
+          <view class="fc-field">
+            <textarea v-model="activityText" class="fc-area fc-area--short" maxlength="2000" placeholder="例如：海岛徒步，12月6日09:00到12:00，在码头集合，限12人，每人30元" placeholder-class="fc-ph" />
+            <button class="paste-action" :disabled="!activityText.trim()" @click="fillActivityText">识别并填入</button>
+          </view>
+        </view>
         <view class="fc-block">
           <text class="fc-group__title">基本信息</text>
-          <view class="fc-field"><text class="fc-label__t">发布内容</text><view class="fc-seg"><view class="fc-seg__item" :class="{on:productKind==='activity'}" hover-class="k-press" @click="productKind='activity'">社区活动</view><view class="fc-seg__item" :class="{on:productKind==='travel'}" hover-class="k-press" @click="productKind='travel'">旅游产品</view></view><text v-if="productKind==='travel'" class="fc-note">审核通过后展示在旅居页的旅游产品中。介绍里请写明行程、费用包含和退改安排。</text></view>
+          <view class="fc-field"><text class="fc-label__t">发布内容</text><view class="fc-seg fc-seg--2"><view class="fc-seg__item" :class="{on:productKind==='activity'}" hover-class="k-press" @click="productKind='activity'">社区活动</view><view class="fc-seg__item" :class="{on:productKind==='travel'}" hover-class="k-press" @click="productKind='travel'">旅游产品</view></view><text v-if="productKind==='travel'" class="fc-note">审核通过后展示在旅居页的旅游产品中。介绍里请写明行程、费用包含和退改安排。</text></view>
           <view class="fc-row" hover-class="k-press" @click="typeSheet = true"><text class="fc-row__k">活动类型</text><text class="fc-row__v">{{ type }}</text><k-icon name="chevron-right" :size="18" color="muted" /></view>
           <view class="fc-field">
             <view class="fc-label"><text class="fc-label__t">活动封面</text></view>
@@ -96,13 +103,14 @@
     <!-- 3 报名数据 -->
     <view v-else-if="s === 3" class="k-body pad-both data-body">
       <view class="k-between k-gap10">
-        <view class="select select--act" @click="pickActivity"><text class="k-ellipsis">{{ stat.title || d.title }}</text><k-icon name="chevron-down" :size="14" color="ink" :stroke="1.8" /></view>
-        <view class="select select--date" @click="pickRange"><text>{{ stat.range || RANGES[range][0] }}</text><k-icon name="calendar" :size="15" color="ink" :stroke="1.6" /></view>
+        <view class="select select--act" @click="pickActivity"><text class="k-ellipsis">{{ stat.title || d.title }}</text><k-icon name="chevron-down" :size="12" color="muted" :stroke="1.8" /></view>
+        <view class="select select--date" @click="pickRange"><text>{{ stat.range || RANGES[range][0] }}</text><k-icon name="calendar" :size="14" color="muted" :stroke="1.6" /></view>
       </view>
       <view class="stats k-mt12">
         <view v-for="st in stats" :key="st.label" class="stat"><text class="stat__label">{{ st.label }}</text><text class="stat__num">{{ st.value }}</text><view class="k-row k-gap2"><text class="k-meta">较昨日</text><k-icon v-if="deltaDir(st.delta)" :name="deltaDir(st.delta) > 0 ? 'arrow-up' : 'arrow-down'" :size="11" :color="deltaDir(st.delta) > 0 ? 'green' : 'alert'" :stroke="2.4" /><text class="stat__delta" :style="deltaStyle(st.delta)">{{ st.delta || '—' }}</text></view></view>
       </view>
       <view class="k-divider k-mt14" />
+      <view class="data-card">
       <text class="sec k-mt12">渠道来源</text>
       <view class="k-row k-gap16 k-mt10">
         <view class="donut" :style="{ background: donutBg }"><view class="donut__hole" /></view>
@@ -124,6 +132,7 @@
         </view>
       </view>
       <view class="chart__x"><text v-for="(x, xi) in xDates" :key="xi">{{ x }}</text></view>
+      </view>
       <view class="k-row k-gap10 k-mt16 sums">
         <view class="sum sum--pair">
           <view class="sum__cell"><text class="sum__label">已确认</text><view class="k-row k-gap6 k-baseline"><text class="sum__num">{{ stat.confirmed || 0 }}</text><text class="k-small">人</text></view><text class="k-small k-muted k-mt6">占比 {{ stat.confirmedPct || '0%' }}</text></view>
@@ -142,9 +151,9 @@
         <view class="k-flex1">
           <view class="tag tag--green" :class="'tag--' + dTone"><text>{{ d.phaseLabel || d.statusLabel }}</text></view>
           <text class="d-title">{{ d.title }}</text>
-          <view class="d-line"><k-icon name="calendar" :size="15" color="ink" :stroke="1.6" /><text>{{ d.timeText }}</text></view>
-          <view class="d-line"><k-icon name="map-pin" :size="15" color="ink" :stroke="1.6" /><text>{{ d.place }}</text></view>
-          <view class="d-line"><k-icon name="map-pin" :size="15" color="ink" :stroke="1.6" /><text>发起人：{{ d.organizerName }}{{ d.status === 'pending' ? (merchantStaff ? '（待审核）' : '（待平台审核）') : '' }}</text></view>
+          <view class="d-line"><k-icon name="calendar" :size="14" color="muted" :stroke="1.6" /><text>{{ d.timeText }}</text></view>
+          <view class="d-line"><k-icon name="map-pin" :size="14" color="muted" :stroke="1.6" /><text>{{ d.place }}</text></view>
+          <view class="d-line"><k-icon name="map-pin" :size="14" color="muted" :stroke="1.6" /><text>发起人：{{ d.organizerName }}{{ d.status === 'pending' ? (merchantStaff ? '（待审核）' : '（待平台审核）') : '' }}</text></view>
         </view>
       </view>
       <!-- 被驳回：原因只发过一条消息，翻不到就不知道改什么。修改走下面的「修改活动」，保存后重新进入待审核 -->
@@ -188,7 +197,7 @@
       <view class="tips k-mt12">
         <text class="tips__title">温馨提示</text>
         <text class="tips__text">{{ cancelTip }}</text>
-        <view v-if="canCancel" class="k-between k-mt12" @click="cancelActivity"><text class="tips__link">取消活动流程</text><k-icon name="chevron-right" :size="16" color="ink" :stroke="1.6" /></view>
+        <view v-if="canCancel" class="k-between k-mt12" @click="cancelActivity"><text class="tips__link">取消活动流程</text><k-icon name="chevron-right" :size="12" color="muted" :stroke="1.6" /></view>
       </view>
       <k-bottom flat><k-button type="outline" class="btn-pause" @click="togglePause" :label="pauseLabel" /><k-button class="k-flex1" @click="endActivity" label="结束活动" /></k-bottom>
       </template>
@@ -220,6 +229,7 @@ import { uploadTo, chooseImage, absUrl } from '@/common/upload.js'
 import R from '@/common/routes.js'
 import { staffCan } from '@/common/staff-perms.js'
 import { whenColumns, whenIndex, whenPicked, addHours, whenKey, feeError, feeBody, feeKindOf, yuanText } from '@/common/activity-form.js'
+import { parseActivityText, activityTextPreview } from '@/common/activity-text.js'
 // 填写屏的底部弹层、操作条上的客服方块、滚到报错、锁背景：staff 分包里的，组件要显式引入，不走全局 easycom
 import FcSheet from './components/fc-sheet.vue'
 import FcKefu from './components/fc-kefu.vue'
@@ -348,20 +358,53 @@ const when = computed(() => whenColumns(todayCn(), 366))
 const whenLabel = (x) => `${dayLabel(x)} ${x.time || ''}`.trim()
 // 结束时间自己选过（或改的是已有活动）就不跟着开始时间走，除非它不再晚于开始
 let endTouched = false
+function setStart(value) {
+  start.value = value
+  if (!endTouched || whenKey(end.value) <= whenKey(value)) end.value = addHours(value, 3)
+}
 const setWhen = (which, e) => {
   const w = whenPicked(e && e.detail && e.detail.value, when.value.dates)
   if (!w.date) return
-  if (which === 'start') {
-    start.value = w
-    if (!endTouched || whenKey(end.value) <= whenKey(w)) end.value = addHours(w, 3)
-    return
-  }
+  if (which === 'start') return setStart(w)
   if (whenKey(w) <= whenKey(start.value)) return toast('结束时间要晚于开始时间')
   end.value = w
   endTouched = true
 }
+const activityText = ref('')
+const canFillActivityText = computed(() => s.value === 2 && hasStaffAccess.value && !editId.value && productKind.value === 'activity')
+async function fillActivityText() {
+  if (!canFillActivityText.value) return
+  const store = currentStaffStoreId()
+  const owner = experience.account?.id
+  const source = activityText.value
+  const { values, schedule } = parseActivityText(source, todayCn())
+  const fields = { title, place, people, feeKind, fee, aaFee, intro }
+  const recognized = {}
+  for (const key of Object.keys(fields)) {
+    if (values[key] != null) recognized[key] = String(values[key])
+  }
+  if (recognized.title) recognized.title = recognized.title.slice(0, 30)
+  if (recognized.place) recognized.place = recognized.place.slice(0, 100)
+  const dates = {}
+  for (const key of ['date', 'time', 'endDate', 'endTime']) {
+    if (schedule[key]) dates[key] = schedule[key]
+  }
+  const preview = activityTextPreview(recognized, dates)
+  if (!preview) return toast('暂未识别到活动名称、时间或地点，可补充后再试')
+  if (!(await confirm('将以下内容填入表单？', preview))) return
+  if (!canFillActivityText.value || store !== currentStaffStoreId() || owner !== experience.account?.id || source !== activityText.value) return
+  if (recognized.place && recognized.place !== place.value) meet.value = null
+  for (const [key, value] of Object.entries(recognized)) fields[key].value = value
+  if (dates.date || dates.time) setStart({ date: dates.date || start.value.date, time: dates.time || start.value.time })
+  if (dates.endDate || dates.endTime) {
+    end.value = { date: dates.endDate || (dates.time ? start.value.date : end.value.date), time: dates.endTime || end.value.time }
+    endTouched = true
+  }
+  toast('已填入，可以继续修改')
+}
 async function newActivity() {
   editId.value = null
+  activityText.value = ''
   start.value = { date: shiftDate(todayCn(), 3), time: '14:00' }
   end.value = addHours(start.value, 3)
   endTouched = false
@@ -804,43 +847,53 @@ const onBack = () => {
 <style scoped lang="scss">
 /* 创建活动（s=2）的样式在 ./form-clean.scss，和招募、新增房源、线上任务发布共用 */
 @import './form-clean.scss';
+.paste-action { margin: 8px 0 0 auto; padding: 0 16px; border-radius: 8px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 14px; line-height: 44px; }
+.paste-action::after { border: 0; }
+/* 2026-11-17 改版「小而精」（活动列表、报名数据、活动详情）：浅灰底、页边距 12；活动一条一张白卡（12 圆角、不描边），状态和审核结果是浅底小标签；
+   搜索框、下拉都是白色胶囊；数字格、天气条、提示都是白卡。详情里的 6 格（112 高、字 17）和审核中的两个大按钮（52 高）是 2026-11-03 给年纪大的人定的，没动 */
+.act :deep(.k-button) { border-radius: 999px; }
+.act > .k-body { padding-left: 12px; padding-right: 12px; }
 .pad-both { padding-bottom: calc(150px + var(--k-safe-bottom)); }
-.act-bar { position: fixed; left: 0; right: 0; bottom: calc(56px + var(--k-safe-bottom)); z-index: 49; padding: 10px 16px 12px; background: var(--k-bg); display: flex; gap: 12px; }
+/* 底栏 2026-11-17 起是 50 高：操作条贴着它，中间不留缝；下边多留 10，让开底栏中间凸起来的「发布」圆钮（凸出 16） */
+.act-bar { position: fixed; left: 0; right: 0; bottom: calc(50px + var(--k-safe-bottom)); z-index: 49; padding: 8px 12px 18px; background: var(--k-paper); display: flex; gap: 10px; }
+/* 11-18 词典「底部操作条」：白底 + 顶上一条发丝线 */
+.act-bar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
 
-.sec { display: block; font-family: var(--k-serif); font-weight: 700; font-size: 16px; }
+.sec { display: block; font-family: var(--k-sans); font-weight: 700; font-size: 15px; line-height: 22px; }
 .k-mt6 { margin-top: 6px; } .k-mt10 { margin-top: 10px; } .k-mt14 { margin-top: 14px; }
 .k-gap2 { gap: 2px; } .k-gap5 { gap: 5px; } .k-gap14 { gap: 14px; }
 .k-baseline { align-items: baseline; }
 
 /* s1 */
-.search-row { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; }
-.search { flex: 1; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 1px solid var(--k-line2); border-radius: 999px; background: var(--k-paper); }
+.search-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px 4px; }
+.search { flex: 1; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--k-paper); }
 .search input { flex: 1; min-width: 0; font-size: 13px; height: 34px; }
-.tabs { display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid var(--k-line); }
-.tabs__item { position: relative; flex: 1; text-align: center; padding: 10px 0; font-size: 14px; color: var(--k-ink); }
-.tabs__item.active { color: var(--k-red); font-weight: 600; }
-.tabs__item.active::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 46px; height: 2px; margin-left: -23px; background: var(--k-red); border-radius: 2px; }
-.pills { display: flex; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--k-line); }
-.pill { display: flex; align-items: center; gap: 4px; height: 30px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 999px; background: var(--k-paper); font-size: 13px; }
-.list { padding: 0 16px; }
-.item { display: flex; gap: 12px; padding: 14px 0 12px; border-bottom: 1px solid var(--k-line); }
-.item__img { width: 56px; height: 82px; border-radius: 8px; flex: 0 0 auto; }
-.tag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 4px; color: #fff; font-size: 11px; font-weight: 600; flex: 0 0 auto; }
-.tag--green { background: var(--k-green); }
-.tag--ochre { background: #B8792A; }
-.tag--gray { background: #8C8378; }
-.item__title { font-family: var(--k-serif); font-weight: 700; font-size: 16px; flex: 1; min-width: 0; }
-.item__meta { display: flex; align-items: center; gap: 10px; margin-top: 5px; font-size: 12px; color: var(--k-muted); letter-spacing: .5px; }
-.vline { width: 1px; height: 12px; background: var(--k-line2); }
-.item__line { display: flex; align-items: center; gap: 6px; margin-top: 5px; font-size: 13px; color: var(--k-ink); }
-.item__price { margin-left: 16px; }
+.tabs { display: flex; align-items: center; padding: 0 12px; }
+/* 11-18 词典「页签」：行高 40、14 号，未选灰 400、选中墨色 600，下面 16×3 的暖棕短条 */
+.tabs__item { position: relative; flex: 1; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 400; color: var(--k-muted); }
+.tabs__item.active { color: var(--k-ink); font-weight: 600; }
+.tabs__item.active::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 16px; height: 3px; margin-left: -8px; background: var(--k-red); border-radius: 2px; }
+.pills { display: flex; gap: 6px; padding: 4px 12px 2px; }
+.pill { display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--k-paper); font-size: 12px; color: var(--k-ink2); }
+.list { padding: 0 12px; }
+.item { display: flex; gap: 10px; margin-top: 8px; padding: 10px; border-radius: 12px; background: var(--k-paper); }
+.item__img { width: 60px; height: 84px; border-radius: 8px; flex: 0 0 auto; background: var(--k-paper2); }
+.tag { display: inline-flex; align-items: center; height: 17px; padding: 0 5px; border-radius: 4px; background: #F5F1EB; color: var(--k-ink2); font-size: 10px; font-weight: 500; flex: 0 0 auto; }
+.tag--green { background: var(--k-green-soft); color: var(--k-green); }
+.tag--ochre { background: var(--k-ochre-soft); color: var(--k-ochre-deep); }
+.tag--gray { background: #F5F1EB; color: var(--k-muted); }
+.item__title { font-family: var(--k-sans); font-weight: 600; font-size: 14px; line-height: 20px; flex: 1; min-width: 0; }
+.item__meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; font-size: 11px; color: var(--k-muted); }
+.vline { width: 1px; height: 10px; background: var(--k-line2); }
+.item__line { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 12px; line-height: 17px; color: var(--k-ink2); }
+.item__price { margin-left: 12px; font-weight: 600; color: var(--k-red-deep); }
 .item__src { flex-shrink: 0; }
 .item__owner, .item__place { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .item__place { flex: 1; margin-right: 8px; }
-.audit { flex-shrink: 0; height: 20px; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; font-size: 11px; border: 1px solid; }
-.audit--green { color: var(--k-green); border-color: #B9CFC0; background: var(--k-paper); }
-.audit--ochre { color: var(--k-ochre-deep); border-color: #E3CFA6; background: var(--k-paper); }
-.audit--gray { color: var(--k-muted); border-color: var(--k-line2); background: var(--k-paper); }
+.audit { flex-shrink: 0; height: 17px; padding: 0 5px; display: flex; align-items: center; border-radius: 4px; font-size: 10px; font-weight: 500; }
+.audit--green { color: var(--k-green); background: var(--k-green-soft); }
+.audit--ochre { color: var(--k-ochre-deep); background: var(--k-ochre-soft); }
+.audit--gray { color: var(--k-muted); background: #F5F1EB; }
 
 /* s2 */
 .fc-count.k-alert { color: var(--k-alert); }
@@ -851,16 +904,16 @@ const onBack = () => {
 .fc-form { padding-bottom: calc(128px + var(--k-safe-bottom)); }
 
 /* s3 */
-.select { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper); font-size: 13px; }
+.select { display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--k-paper); font-size: 12px; color: var(--k-ink2); }
 .select--date { flex: 0 0 auto; }
 .select--act { flex: 1; min-width: 0; }
-.stats { display: flex; gap: 10px; }
-.stat { flex: 1; min-width: 0; padding: 12px 10px 10px; border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-paper); display: flex; flex-direction: column; gap: 6px; }
-.stat__label { font-size: 13px; font-weight: 500; }
-.stat__num { font-family: var(--k-serif); font-weight: 700; font-size: 22px; line-height: 1.1; }
-.stat__delta { font-size: 12px; color: var(--k-green); }
+.stats { display: flex; gap: 8px; }
+.stat { flex: 1; min-width: 0; padding: 12px 10px 10px; border-radius: 12px; background: var(--k-paper); display: flex; flex-direction: column; gap: 5px; }
+.stat__label { font-size: 11px; color: var(--k-muted); }
+.stat__num { font-family: var(--k-sans); font-weight: 700; font-size: 18px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat__delta { font-size: 11px; color: var(--k-green); }
 .donut { width: 90px; height: 90px; border-radius: 50%; flex: 0 0 auto; background: conic-gradient(#4E8FC4 0 42%, #73B3DA 42% 67%, #9ED0E4 67% 85%, #B9B9B9 85% 95%, #DADADA 95% 100%); display: flex; align-items: center; justify-content: center; }
-.donut__hole { width: 54px; height: 54px; border-radius: 50%; background: var(--k-bg); }
+.donut__hole { width: 54px; height: 54px; border-radius: 50%; background: var(--k-paper); }
 .legend { padding-left: 8px; display: flex; flex-direction: column; gap: 3px; }
 .legend__row { display: flex; align-items: center; gap: 8px; font-size: 13px; height: 18px; }
 .legend__dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
@@ -875,47 +928,57 @@ const onBack = () => {
 .seg { position: absolute; height: 2px; transform-origin: 0 50%; border-radius: 1px; }
 .seg--blue { background: #4E8FC4; }
 .seg--green { background: var(--k-green); }
-.pt { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--k-bg); border: 1.5px solid; }
+.pt { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--k-paper); border: 1.5px solid; }
 .pt--blue { border-color: #4E8FC4; }
 .pt--green { border-color: var(--k-green); }
 .chart__x { display: flex; justify-content: space-between; padding-left: 20px; margin-top: 8px; font-size: 12px; color: var(--k-muted); }
 .sums { align-items: stretch; }
-.sum { flex: 1; min-width: 0; border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-paper); display: flex; }
+.sum { flex: 1; min-width: 0; border-radius: 12px; background: var(--k-paper); display: flex; }
 .sum--pair { flex: 2; }
 .sum__cell { flex: 1; min-width: 0; padding: 14px 16px; display: flex; flex-direction: column; }
 .sum__cell--line { border-left: 1px solid var(--k-line); }
-.sum__label { font-family: var(--k-serif); font-weight: 700; font-size: 14px; margin-bottom: 6px; }
-.sum__num { font-family: var(--k-serif); font-weight: 700; font-size: 24px; line-height: 1; }
+.sum__label { font-family: var(--k-sans); font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+.sum__num { font-family: var(--k-sans); font-weight: 700; font-size: 18px; line-height: 1; font-variant-numeric: tabular-nums; }
 .btn-export { flex: 0 0 auto; }
 
 /* s4 */
 .d-cover { width: 92px; height: 108px; border-radius: 8px; flex: 0 0 auto; }
-.d-title { display: block; font-family: var(--k-serif); font-weight: 700; font-size: 18px; margin-top: 8px; }
-.d-line { display: flex; align-items: center; gap: 6px; margin-top: 7px; font-size: 14px; }
-.d-stats { display: flex; border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-paper); }
-.d-stat { flex: 1; min-width: 0; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.d-title { display: block; font-family: var(--k-sans); font-weight: 700; font-size: 16px; line-height: 22px; margin-top: 6px; }
+.d-line { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; color: var(--k-ink2); }
+.d-stats { display: flex; border-radius: 12px; background: var(--k-paper); }
+.d-stat { flex: 1; min-width: 0; height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .d-stat.line { border-left: 1px solid var(--k-line); }
-.d-stat__label { font-size: 13px; color: var(--k-muted); }
-.d-stat__num { font-family: var(--k-serif); font-weight: 700; font-size: 20px; line-height: 1.1; }
-.d-stat__sub { font-size: 12px; color: var(--k-muted); margin-left: 1px; }
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.d-stat__label { font-size: 11px; color: var(--k-muted); }
+.d-stat__num { font-family: var(--k-sans); font-weight: 700; font-size: 18px; line-height: 1.1; }
+.d-stat__sub { font-size: 11px; color: var(--k-muted); margin-left: 1px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); border-radius: 12px; background: var(--k-paper); overflow: hidden; }
 .grid__cell { height: 112px; padding: 0 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; }
 .grid__cell--r { border-right: 1px solid var(--k-line); }
 .grid__cell--b { border-bottom: 1px solid var(--k-line); }
-.grid__title { font-family: var(--k-serif); font-weight: 700; font-size: 17px; margin-top: 6px; }
+.grid__title { font-family: var(--k-sans); font-weight: 600; font-size: 17px; margin-top: 6px; }
 .grid__sub { font-size: 13px; color: var(--k-muted); }
-.weather { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-paper); }
-.weather__text { font-size: 14px; line-height: 1.6; white-space: pre-line; }
-.weather__btn { height: 30px; padding: 0 8px; display: flex; align-items: center; border: 1px solid var(--k-ochre); border-radius: 6px; color: var(--k-ochre-deep); font-size: 12px; flex: 0 0 auto; }
-.tips { padding: 14px; border-radius: 10px; background: var(--k-paper2); }
-.tips__title { display: block; font-family: var(--k-serif); font-weight: 700; font-size: 14px; }
-.tips__text { display: block; margin-top: 8px; font-size: 13px; color: var(--k-muted); line-height: 1.6; }
-.tips__link { font-family: var(--k-serif); font-weight: 700; font-size: 14px; color: var(--k-red); }
+.weather { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; background: var(--k-paper); }
+.weather__text { font-size: 13px; line-height: 1.6; color: var(--k-ink2); white-space: pre-line; }
+.weather__btn { height: 28px; padding: 0 12px; display: flex; align-items: center; border: 1px solid var(--k-red-line); border-radius: 999px; color: var(--k-red-deep); font-size: 12px; font-weight: 500; flex: 0 0 auto; }
+.tips { padding: 12px; border-radius: 12px; background: var(--k-paper); }
+.tips__title { display: block; font-family: var(--k-sans); font-weight: 600; font-size: 14px; }
+.tips__text { display: block; margin-top: 6px; font-size: 13px; color: var(--k-muted); line-height: 1.6; }
+.tips__text:first-child { margin-top: 0; }
+.tips__link { font-family: var(--k-sans); font-weight: 600; font-size: 13px; color: var(--k-red-deep); }
 .btn-pause { width: 134px; }
 /* 2026-11-03 简化：审核中的详情只有「修改活动」「联系客服」两个大按钮（52 高，老年用户点得准）；小程序 button 要去掉自带的边和内距 */
 .rv-btns { display: flex; gap: 12px; }
 .rv-btn { flex: 1; min-width: 0; height: 52px; margin: 0; padding: 0; border-radius: 12px; background: var(--k-red-deep); color: var(--k-paper); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 17px; font-weight: 600; line-height: 1; }
 .rv-btn::after { border: 0; }
 .rv-btn--ghost { background: var(--k-paper2); color: var(--k-ink); }
-.data-body .stat{padding:8px}.data-body .donut{width:78px;height:78px}.data-body .donut__hole{width:47px;height:47px}.data-body .chart{height:90px;margin-top:8px}.data-body .chart__plot{height:90px}.data-body .chart__x{margin-top:5px}.data-body .k-mt16{margin-top:9px}.data-body .sum__cell{padding:9px 12px}.data-body .act-bar{padding-top:8px;padding-bottom:8px}
+.data-body .stat{padding:8px}.data-body .donut{width:78px;height:78px}.data-body .donut__hole{width:47px;height:47px}.data-body .chart{height:90px;margin-top:8px}.data-body .chart__plot{height:90px}.data-body .chart__x{margin-top:5px}.data-body .k-mt16{margin-top:8px}.data-body .sum__cell{padding:9px 12px}.data-body .act-bar{padding-top:8px}
+/* 11-18：「渠道来源」「报名趋势」两段收进一张白卡（上面的数字格、下面的汇总也是白卡，页面层次不再断开）；中间那条通栏分隔线不再画，卡与卡间距 8 */
+.data-body .k-divider { height: 0; margin-top: 0; background: transparent; }
+.data-card { margin-top: 8px; padding: 12px; border-radius: 12px; background: var(--k-paper); }
+.data-card > .sec:first-child { margin-top: 0; }
+/* 折线图的画布宽度是脚本按「屏宽 − 64」算的（页边距 12×2 + Y 轴 20 + 间距 8 + 右边留 4）：卡片左右各多了 12 的内边距，
+   图和日期行左右各往外让 8，画布宽度和原来一样，最右边的点不会伸出去 */
+.data-card .chart, .data-card .chart__x { margin-left: -8px; margin-right: -8px; }
+/* 「发布内容」这一栏的名字没套 fc-label，和下面的分段选项贴在一起：补上和其他栏一样的 10 间距（字号不变） */
+.fc-field > .fc-label__t { display: block; margin-bottom: 10px; }
 </style>

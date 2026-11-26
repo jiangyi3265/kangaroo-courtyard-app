@@ -1,51 +1,83 @@
+/* 袋鼠狼人杀共用样式（11-18 第三轮精修）：保留游戏的深绿 / 夜色气氛，只抠比例、间距、层次。
+   节奏只用 4 / 8 / 12 / 16 / 24；页边距 16；白卡 12 圆角无描边无阴影；主按钮 44 高。
+   深绿、夜色、金色是这组游戏页一直在用的气氛色，收成下面四个变量，页面里只引用变量。 */
 .ww-page {
+	--ww-night: #193d34;
+	--ww-deep: #244b3c;
+	--ww-gold: #e7d6a8;
+	--ww-cream: #fff5df;
+	/* 返修第 3 轮：夜里的字色、木桌色也只在这里定义一次，其它地方全部引用 */
+	--ww-night-ink: #f8eedb;
+	--ww-night-sand: #f5dca6;
+	--ww-night-gold: #fff1c8;
+	--ww-night-alert: rgba(192, 68, 55, 0.32);
+	--ww-night-goldbg: rgba(231, 214, 168, 0.18);
+	--ww-night-mist: #d7d6bc;
+	--ww-wood: #a67649;
+	--ww-wood-mid: #c2996b;
+	/* 返修第 5 轮：夜里的浅色叠层、弹层遮罩、小阴影也只在这里定义，页面里只引用变量 */
+	--ww-night-fill: rgba(224, 231, 219, 0.08);
+	--ww-night-tint: rgba(224, 231, 219, 0.12);
+	--ww-night-line: rgba(224, 231, 219, 0.22);
+	--ww-mask: rgba(58, 50, 43, 0.5);
+	--ww-lift: 0 1px 2px rgba(58, 50, 43, 0.08);
+	--ww-wood-shadow: inset 0 0 0 1px rgba(255, 250, 240, 0.25), 0 4px 10px rgba(58, 50, 43, 0.08);
+	/* 返修第 2 轮：顶栏和页面同色（同 undercover.scss），不再有一条色差缝 */
+	--k-bg: var(--k-page);
 	max-width: 480px;
 	min-height: 100vh;
 	margin: 0 auto;
-	background: var(--k-bg);
+	background: var(--k-page);
 	color: var(--k-ink);
 	font-family: var(--k-sans);
 }
 .ww-body {
-	padding: 12px 16px calc(24px + env(safe-area-inset-bottom));
+	padding: 12px 16px calc(32px + env(safe-area-inset-bottom));
 }
 .ww-title {
+	display: block;
 	font-size: 20px;
 	font-weight: 700;
-	line-height: 1.4;
+	line-height: 1.35;
 }
 .ww-heading {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	margin: 22px 0 12px;
+	margin: 24px 0 12px;
 }
 .ww-heading__title {
-	font-size: 18px;
-	font-weight: 600;
+	font-size: 16px;
+	font-weight: 700;
+	line-height: 22px;
 }
 .ww-muted {
 	color: var(--k-muted);
-	font-size: 14px;
+	font-size: 13px;
 	line-height: 1.6;
 }
 .ww-row {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
 }
 .ww-between {
 	justify-content: space-between;
 }
+/* 文字链：12 号灰字 + 12 号箭头（同全站「查看全部」） */
 .ww-link {
-	padding: 10px 0;
-	color: var(--k-red-deep);
-	font-size: 14px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	min-height: 32px;
+	padding: 0;
+	margin: 0;
+	color: var(--k-muted);
+	font-size: 12px;
+	line-height: 1.4;
 	background: transparent;
 	border: 0;
-	line-height: 1.5;
-	margin: 0;
 }
 .ww-link::after {
 	border: 0;
@@ -54,48 +86,60 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 10px;
-	padding: 12px;
+	gap: 12px;
+	padding: 10px 12px;
 	margin-bottom: 12px;
 	border-radius: 12px;
 	background: var(--k-alert-soft);
 	color: var(--k-alert);
+	font-size: 13px;
+	line-height: 1.6;
+}
+.ww-error .ww-link {
+	color: var(--k-alert);
+	font-weight: 500;
+}
+/* 加载 / 空 / 出错：居中小字，不顶在左上角 */
+.ww-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 48px 16px;
+	text-align: center;
+	color: var(--k-ink2);
 	font-size: 14px;
 	line-height: 1.6;
 }
-.ww-state {
-	padding: 50px 20px;
-	text-align: center;
-	font-size: 15px;
-	line-height: 1.8;
-}
 .ww-state .k-button {
-	margin-top: 18px;
+	margin-top: 16px;
 }
 .ww-field {
 	min-width: 0;
 	flex: 1;
-	height: 46px;
-	border: 1px solid var(--k-line2);
-	border-radius: 12px;
-	padding: 0 14px;
+	height: 44px;
+	border: 1px solid var(--k-line);
+	border-radius: 22px;
+	padding: 0 16px;
 	background: var(--k-paper);
 	color: var(--k-ink);
 	font-size: 15px;
 	box-sizing: border-box;
 }
 .ww-panel {
-	padding: 16px;
-	border-radius: 16px;
+	padding: 4px 16px;
+	border-radius: 12px;
 	background: var(--k-paper);
-	box-shadow: var(--k-sh1);
 }
 .ww-pill {
-	padding: 4px 10px;
-	border-radius: 999px;
+	display: inline-flex;
+	align-items: center;
+	height: 20px;
+	padding: 0 8px;
+	border-radius: 10px;
 	background: var(--k-green-soft);
 	color: var(--k-green);
-	font-size: 12px;
+	font-size: 11px;
+	font-weight: 500;
 }
 .ww-stack {
 	display: flex;
@@ -106,7 +150,7 @@
 	padding: 16px 0 0;
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 8px;
 }
 .ww-note {
 	display: block;
@@ -121,57 +165,70 @@
 	justify-content: center;
 	gap: 6px;
 	flex-wrap: wrap;
-	padding: 12px 0;
+	padding: 12px 0 4px;
 }
 .ww-lineup text {
-	padding: 4px 8px;
+	padding: 4px 12px;
 	font-size: 12px;
-	background: var(--k-paper2);
-	border-radius: 6px;
+	line-height: 20px;
+	color: var(--k-ink2);
+	background: var(--k-paper);
+	border-radius: 14px;
 }
+/* 分段控件：--k-fill 外框、选中块白底（精修词典） */
 .ww-tabs {
 	display: flex;
-	gap: 6px;
-	margin: 12px 0 20px;
-	padding: 4px;
-	background: var(--k-paper2);
-	border-radius: 12px;
+	padding: 2px;
+	margin: 4px 0 16px;
+	background: var(--k-fill);
+	border-radius: 18px;
 }
 .ww-tabs button {
 	flex: 1;
-	padding: 10px 8px;
-	font-size: 14px;
-	line-height: 1.5;
+	height: 32px;
+	padding: 0 4px;
+	margin: 0;
+	font-size: 13px;
+	line-height: 32px;
 	border: 0;
 	background: transparent;
 	color: var(--k-ink2);
-	border-radius: 8px;
+	border-radius: 16px;
 }
 .ww-tabs button::after {
 	border: 0;
 }
 .ww-tabs button.on {
-	background: var(--k-red);
-	color: var(--k-paper);
+	background: var(--k-paper);
+	color: var(--k-ink);
+	font-weight: 600;
+	box-shadow: var(--ww-lift);
 }
+.ww-tabs button[disabled] {
+	opacity: 0.45;
+}
+/* 说明块：白卡 */
 .ww-rule {
-	padding: 16px 0;
-	border-bottom: 1px solid var(--k-line);
+	margin-top: 12px;
+	padding: 16px;
+	border-radius: 12px;
+	background: var(--k-paper);
 }
 .ww-rule__title {
 	display: block;
 	margin-bottom: 6px;
-	font-size: 16px;
+	font-size: 15px;
 	font-weight: 600;
+	line-height: 1.4;
 }
 .ww-rule__copy {
 	font-size: 14px;
-	line-height: 1.8;
+	line-height: 1.7;
 	color: var(--k-ink2);
 }
 .ww-actions-row {
 	display: flex;
-	gap: 10px;
+	gap: 8px;
 }
 .ww-actions-row > view {
 	flex: 1;
@@ -179,6 +236,19 @@
 }
 .ww-actions-row .k-button {
 	width: 100%;
+}
+/* 按钮成套：页面里的大按钮 44 高，中按钮 40 高 */
+.ww-page .k-button.is-lg {
+	height: 44px;
+	font-size: 15px;
+}
+.ww-page .k-button.is-outline {
+	border-color: var(--k-line2);
+}
+/* 11-18 第四轮：主按钮不能点时用公共按钮默认（原配色 + 60% 透明），不再压到 40%，字看得清 */
+/* 区块标题行里的文字链：点击区仍是 32 高，但不把标题行撑高 */
+.ww-heading .ww-link {
+	margin: -5px 0;
 }
 button:focus-visible {
 	outline: 2px solid var(--k-red);

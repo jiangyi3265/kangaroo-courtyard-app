@@ -93,6 +93,7 @@ const harness = (screen = 3) => {
   const went = [], backs = []
   const h = runSetup({
     useScreen: () => vue.ref(screen),
+    communityEnabled: vue.ref(true), recruitmentEnabled: vue.ref(true),
     experience: vue.reactive({ account: { id: 7, nickname: '小院同学' }, mode: 'user' }),
     hasStaffAccess: vue.computed(() => false), onlineStaff: vue.computed(() => false),
     R: { orders: '/o', invite: '/iv', jobsList: '/jobs', memberBenefits: '/mb', trip: '/t', activityMine: '/a', resume: '/r', opportunities: '/op', tasks: '/tk', myIncome: '/i', myFollows: '/f', reminders: '/rm', myPosts: '/mp', publish: '/pub' },
@@ -176,7 +177,7 @@ test('赚取积分：两项一张卡；「去完成」分别去编辑资料（�
   assert.equal(h.run('s.value'), 3)
   assert.deepEqual(h.backs, [])
   // 已完成的显示「已完成」、不能点
-  assert.match(s3, /<view v-if="taskItem\.done" class="mi-task__go"><view class="mi-task__btn done"><text>已完成<\/text><\/view><\/view>/)
+  assert.match(s3, /<view v-if="taskItem\.done" class="mi-task__go[^"]*"><view class="mi-task__btn done"><text>已完成<\/text><\/view><\/view>/)
   assert.match(s3, /<view v-else class="mi-task__go" hover-class="k-press" @click="doTask\(taskItem\)"><view class="mi-task__btn"><text>去完成<\/text><\/view><\/view>/)
   // 服务端一项都没下发：整块不显示
   h.run(`me.value = ${meOf(0, { tasks: [] })}`)
@@ -200,8 +201,11 @@ test('赚取积分：旅居攻略任务「去完成」进发布页预选旅居�
   assert.equal(typeOfKind('nope'), '')
   assert.equal(typeOfKind(undefined), '')
   const publish = readSfc('pages/community/publish.vue').scriptSetup.content
-  // 预选放在手机验证分支和恢复草稿之前：之后恢复的草稿照旧用草稿里的类型
-  assert.match(publish, /await ensureSession\(\)\n[^\n]*\n\s+if \(typeOfKind\(q\?\.kind\)\) pickType\(typeOfKind\(q\.kind\)\)\n\s+if \(q\?\.need === 'phone'\)/)
+  // 已登录用户从积分入口发帖，先应用传入的类型，再进入手机验证分支。
+  const restoreSession = publish.indexOf('await ensureSession()')
+  const selectKind = publish.indexOf('if (typeOfKind(q?.kind)) pickType(typeOfKind(q.kind))', restoreSession)
+  const verifyPhone = publish.indexOf("if (q?.need === 'phone')", selectKind)
+  assert.ok(restoreSession >= 0 && selectKind > restoreSession && verifyPhone > selectKind)
 })
 
 test('积分规则：编 01、02…；老接口只有 note 时按行拆', (t) => {
@@ -238,10 +242,11 @@ const mrules = rulesIn(mcss)
 
 test('消息页：未读暖色卡片与已读区分，保留未读标识、全部已读和翻页', () => {
   assert.match(mtpl, /'row--unread': !m\.read/)
-  assert.match(mtpl, /unread-label/)
+  assert.match(mtpl, /class="count-pill".*m\.unread/)
   const theme = fs.readFileSync(path.join(APP, 'pages/messages/messages-home.scss'), 'utf8')
   assert.match(theme, /\.row--unread \{ background:\s*#FBF0DE;/)
-  assert.match(theme, /\.row \{[^}]*background:\s*#F2F2F1;/)
+  // 2026-11-17 改版「小而精」（主人按样张第三版拍板）：已读行从灰块 #F2F2F1 改成白底细行，未读仍是整行浅杏色
+  assert.match(theme, /\.row \{[^}]*background:\s*var\(--k-paper\);/)
   assert.match(theme, /\.row__desc \{[^}]*font-size:\s*13px;/)
   assert.match(mtpl, /@click="readAll">全部已读/)
   assert.match(mtpl, /@click="openMessage\(m\)"/)
@@ -268,7 +273,8 @@ test('社区：右边「筛选」按钮（图标 + 字）点开小下拉 最新 
   assert.match(cscript, /function toggleSort\(\) \{ sortOpen\.value = !sortOpen\.value \}/)
   assert.doesNotMatch(cscript, /await sheet\(SORTS/, '不再用底部系统菜单')
   assert.match(cscript, /const onFeedTab = \(t\) => \{\n\s+sortOpen\.value = false/)
-  assert.match(cscript, /onHide\(\(\) => \{ pageShown = false; sortOpen\.value = false;/)
+  const onHideBody = cscript.match(/onHide\(\(\) => \{([^}]+)\}\)/)?.[1] || ''
+  assert.match(onHideBody, /sortOpen\.value = false/)
   assert.ok(crules('.fmenu').some(r => /position: absolute/.test(r) && /right: 0/.test(r) && /box-shadow: var\(--k-sh3\)/.test(r)))
   assert.ok(crules('.fmenu__item').some(r => /height: 48px/.test(r)), '每项 44px 高，好点')
   assert.ok(crules('.fmask').some(r => /position: fixed/.test(r)))

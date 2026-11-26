@@ -3,70 +3,90 @@
   <page-meta :page-style="dateOpen || skillOpen || noticePopup.show ? 'overflow: hidden' : ''" />
   <!-- page-meta 必须是页面第一个节点。日历、技能弹框、公告弹窗开着时锁住页面滚动：弹框里的 scroll-view 不能用 catchtouchmove 拦（拦了它自己也滑不动），之前在那块拖动会带着后面的页面一起滚；只在小程序里加：H5 的 page-meta 关弹窗时清不掉这条样式，顶栏会从此不吸顶 -->
   <!-- #endif -->
-  <view class="k-page home-page">
+  <view class="k-page home-page" :class="$userSurface">
     <template v-if="s === 1 || !recruitmentEnabled">
-      <!-- 品牌占导航左侧，城市独立成行，完整长城市名不与微信胶囊争空间。 -->
-      <k-topbar>
-        <template #left><view class="brand"><text class="brand__name">袋鼠全球青年</text><image class="brand__logo" src="/static/media/brand-kangaroo-lg.png" mode="aspectFit" /></view></template>
-        <view class="home-header">
-          <view class="location" hover-class="home-soft-press" aria-role="button" :aria-label="'切换城市，当前' + city" @click="openCity"><k-icon name="map-pin" :size="18" color="ink2" :stroke="1.7" /><text class="location__name">{{ city }}</text><k-icon name="chevron-down" :size="15" color="ink2" :stroke="1.8" /></view>
-        </view>
+      <k-topbar :bg="atTop ? 'var(--k-top)' : ''">
+        <!-- 小程序里具名插槽的内容外面会多包一层，两个并排的块要自己包进一个横排容器，否则城市会掉到第二行 -->
+        <template #left><view class="home-nav"><view class="brand"><image class="brand__logo" src="/static/user-icons/travel-roo.svg" mode="aspectFit" /><text class="brand__name">袋鼠青年旅行</text></view><view class="location" hover-class="home-soft-press" aria-role="button" :aria-label="'切换城市，当前' + city" @click="openCity"><k-icon name="map-pin" :size="14" color="red" /><text class="location__name">{{ city }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view></view></template>
       </k-topbar>
       <view class="home-content k-pad-tab">
-        <!-- 普通关键词搜索，输入和右侧圆钮进入同一个搜索结果页。 -->
-        <view v-if="recruitmentEnabled || stayBookingEnabled" class="search-box"><view class="search-box__field"><k-icon name="search" :size="22" color="red" :stroke="1.5" /><input v-model="searchKeyword" class="search-box__input" maxlength="80" :placeholder="recruitmentEnabled ? (stayBookingEnabled ? '搜索岗位、旅居' : '搜索岗位、城市、技能') : '搜索旅居'" placeholder-class="search-box__placeholder" confirm-type="search" aria-label="搜索" @confirm="searchHome" /></view><button class="k-circle search-box__go" hover-class="k-press-s" aria-label="搜索" @click="searchHome"><k-icon name="search" :size="19" color="white" :stroke="2" /></button></view>
-        <!-- 圆形浅底与双色线稿；入口标题和图标均可点击。 -->
-        <view v-if="entries.length" class="entry-grid" :style="{gridTemplateColumns: `repeat(${entries.length},minmax(0,1fr))`}">
-          <view v-for="item in entries" :key="item.name" class="entry" hover-class="home-soft-press" aria-role="button" :aria-label="item.name" @click="openEntry(item)"><view class="entry__icon" :class="'entry__icon--' + item.illustration"><image class="entry__drawing" :src="homeEntryIcon(item.illustration)" mode="aspectFit" /></view><text class="entry__name">{{ item.name }}</text></view>
+        <view class="home-top">
+        <!-- 普通关键词搜索，输入和右侧「搜索」钮进入同一个搜索结果页。 -->
+        <view v-if="recruitmentEnabled || stayBookingEnabled" class="search-box"><view class="search-box__field"><k-icon name="search" :size="16" color="muted" /><input v-model="searchKeyword" class="search-box__input" maxlength="80" placeholder="想要什么问ai，智能检索出答案" placeholder-class="search-box__placeholder" confirm-type="search" aria-label="搜索" @confirm="searchHome" /></view><button class="search-box__go" hover-class="k-press-s" aria-label="搜索" @click="searchHome">搜索</button></view>
+        <view class="handbook-cover">
+          <button v-if="!handbookReady" class="handbook-cover__fallback" @click="openHandbook()">打开袋鼠使用手册</button>
+          <handbook-carousel :active="homeVisible && !noticePopup.show" :reduce-motion="reduceMotion" @ready="handbookReady = true" @open="openHandbook" />
         </view>
-        <view class="handbook-banner" role="button" hover-class="home-soft-press" @click="go('/pages/camp/handbook')"><view><text class="handbook-banner__eyebrow">出发前，先认识袋鼠</text><text class="handbook-banner__title">袋鼠使用手册</text><text class="handbook-banner__copy">报名 · 订房 · 安心出行</text></view><view class="handbook-banner__action"><k-icon name="book-open" :size="30" color="green" /><text>翻开看看 ›</text></view></view>
-        <!-- 近期活动采用整行图文卡，长标题与时间、地点、费用分层；只有一场时保留紧凑的「全部活动」入口。没有活动时显示筹备提示。
-             之前没活动时只剩一行标题；加载中 / 出错时整块不显示 -->
+        <view v-if="entries.length" class="entry-grid" :style="{gridTemplateColumns: `repeat(${entries.length},minmax(0,1fr))`}">
+          <view v-for="item in entries" :key="item.name" class="entry" hover-class="home-soft-press" aria-role="button" :aria-label="item.name" @click="openEntry(item)"><view class="entry__icon"><k-icon :name="item.icon" :art="item.illustration" :size="28" color="red" /></view><text class="entry__name">{{ item.name }}</text></view>
+        </view>
+        </view>
         <template v-if="!feedLoading && !feedError">
-          <view class="section-head"><text class="section-head__title k-display">{{ otherCityActs ? '其他城市的近期活动' : '近期活动' }}</text><view class="section-head__more" hover-class="k-press" @click="go(R.activity)"><text>更多</text><k-icon name="chevron-right" :size="15" color="muted" /></view></view>
-          <view v-if="activities.length" class="activity-list">
-            <view v-for="item in activities" :key="item.activityId" class="feed-card activity-card" hover-class="k-press-s" aria-role="button" :aria-label="'查看活动：' + item.title" @click="openActivity(item)">
-              <view class="activity-card__main">
-                <view class="feed-card__media activity-card__media"><image class="feed-card__img" :src="item.image" mode="aspectFill" /><text class="feed-card__badge" :class="{ 'is-few': item.few, 'is-full': item.full }">{{ item.badge }}</text></view>
-                <view class="activity-card__copy">
-                  <text class="feed-card__title activity-card__title">{{ displayWording(item.title) }}</text>
-                  <view v-if="item.date" class="activity-card__meta"><k-icon name="calendar-days" :size="13" color="muted" :stroke="1.6" /><text class="activity-card__date">{{ item.date }}</text></view>
-                  <view v-if="item.place" class="activity-card__meta"><k-icon name="map-pin" :size="13" color="muted" :stroke="1.6" /><text class="activity-card__place">{{ item.place }}</text></view>
-                  <text class="activity-card__price" :class="item.free ? 'k-green' : 'k-red'">{{ item.price }}</text>
-                </view>
-              </view>
-
-            </view>
-            <view v-if="activities.length === 1" class="act-more" hover-class="k-press-s" aria-role="button" aria-label="全部活动，看各城市活动" @click="go(R.activity)"><k-icon name="calendar-days" :size="18" color="red" :stroke="1.7" /><text class="act-more__title">全部活动</text><text class="act-more__hint">看各城市活动</text><k-icon name="chevron-right" :size="15" color="muted" /></view>
+          <view class="section-head">
+            <text class="section-head__title k-display">{{ otherCityActs ? '其他城市的近期活动' : '近期活动' }}</text>
+            <view class="section-head__more" hover-class="k-press" aria-role="button" aria-label="全部活动，看各城市活动" @click="go(R.activity)"><text>{{ activities.length === 1 ? '全部活动' : '更多' }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
           </view>
-          <view v-else class="act-empty" hover-class="k-press-s" @click="go(R.activity)"><view class="k-flex1"><text class="act-empty__title">近期活动筹备中</text><text class="act-empty__copy">订阅城市活动，有新活动提醒你</text></view><view class="act-icon"><k-icon name="calendar-days" :size="26" color="red" :stroke="1.5" /></view></view>
+          <view v-if="activities.length" class="activity-list">
+            <swiper class="activity-swiper" :current="activitySlideIndex" :next-margin="activities.length > 1 ? '160rpx' : '0px'"
+              :circular="activities.length > 1" :autoplay="activities.length > 1 && homeVisible && !reduceMotion && !noticePopup.show"
+              :interval="5000" :duration="reduceMotion ? 0 : 360" @change="activitySlideIndex = $event.detail.current">
+              <swiper-item v-for="(item, index) in activitySlides" :key="index">
+                <view class="activity-slide" :class="{ 'activity-slide--peek': activities.length > 1 }">
+                  <view class="feed-card activity-card" hover-class="k-press-s" aria-role="button" :aria-hidden="index !== activitySlideIndex" :aria-label="[displayWording(item.title), item.date, item.place, item.badge, item.price].filter(Boolean).join('，')" @click="openActivity(item)">
+                    <view class="feed-card__media activity-card__media">
+                      <image v-if="item.hasCover" class="feed-card__img" :src="item.image" mode="aspectFill" @error="failedActivityImages[item.activityId] = item.image" />
+                      <view v-else class="activity-card__blank" aria-hidden="true">
+                        <template v-if="item.day"><text class="activity-card__month">{{ item.month }}</text><text class="activity-card__day">{{ item.day }}</text></template>
+                        <k-icon v-else name="map" :size="30" color="red" />
+                      </view>
+                    </view>
+                    <view class="activity-card__copy">
+                      <text class="feed-card__title activity-card__title k-clamp2">{{ displayWording(item.title) }}</text>
+                      <view v-if="item.when || item.place" class="activity-card__details">
+                        <view v-if="item.when" class="activity-card__meta activity-card__date"><k-icon name="calendar-days" :size="12" color="muted" /><text>{{ item.when }}</text></view>
+                        <view v-if="item.place" class="activity-card__meta activity-card__place"><k-icon name="map-pin" :size="12" color="muted" /><text>{{ item.place }}</text></view>
+                      </view>
+                    </view>
+                    <view class="activity-card__foot">
+                      <text class="feed-card__badge" :class="{ 'is-few': item.few, 'is-full': item.full }">{{ item.badge }}</text>
+                      <text class="activity-card__price" :class="item.free ? 'k-green' : 'k-red'">{{ item.price }}</text>
+                    </view>
+                  </view>
+                </view>
+              </swiper-item>
+            </swiper>
+            <view v-if="activities.length > 1" class="activity-pages">
+              <button v-for="(item, index) in activities" :key="item.activityId" class="activity-page" :class="{ 'is-current': activityPage === index }"
+                :aria-label="'第' + (index + 1) + '场，' + displayWording(item.title)" :aria-current="activityPage === index" @click="selectActivityPage(index)"><view class="activity-page__mark" /></button>
+            </view>
+          </view>
+          <view v-else class="act-empty" hover-class="k-press-s" @click="go(R.activity)"><view class="act-icon"><k-icon name="calendar-days" :size="22" color="red" /></view><view class="k-flex1"><text class="act-empty__title">近期活动筹备中</text><text class="act-empty__copy">订阅城市活动，有新活动提醒你</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view>
         </template>
         <!-- 按后台门店运营类型分组，不按店名或安心认证推断自营。每组先露一行，独立展开。 -->
         <template v-if="stayBookingEnabled"><view class="section-head"><text class="section-head__title k-display">旅居推荐</text></view>
-        <view v-if="feedLoading" class="feed-state"><text>正在加载推荐…</text></view>
-        <view v-else-if="feedError" class="feed-state"><text>{{ feedError }}</text><k-button type="secondary" size="sm" @click="loadFeed">重新加载</k-button></view>
+        <view v-if="feedLoading" class="feed-state feed-state--loading"><text>正在加载推荐…</text></view>
+        <view v-else-if="feedError" class="feed-state"><view class="state-icon"><k-icon name="wifi-off" :size="32" color="red" /></view><text>{{ feedError }}</text><k-button type="secondary" size="sm" @click="loadFeed">重新加载</k-button></view>
         <view v-else-if="recStays.length" class="stay-groups">
           <view v-for="group in stayGroups" :key="group.key" class="stay-group" :class="'stay-group--' + group.key">
             <view class="stay-group__head">
               <view class="stay-group__heading"><text class="stay-group__title">{{ group.title }}</text><text class="stay-group__count">{{ group.total }}家</text></view>
-              <view v-if="group.total > 2" class="section-head__more" hover-class="k-press" aria-role="button" :aria-label="(group.expanded ? '收起' : '展开') + group.title" @click="openRecommendations(group.key)"><text>{{ group.expanded ? '收起' : '展开' }}</text><k-icon :name="group.expanded ? 'chevron-up' : 'chevron-down'" :size="15" color="muted" /></view>
+              <view v-if="group.total > 2" class="section-head__more" hover-class="k-press" aria-role="button" :aria-label="(group.expanded ? '收起' : '展开') + group.title" @click="openRecommendations(group.key)"><text>{{ group.expanded ? '收起' : '展开' }}</text><k-icon :name="group.expanded ? 'chevron-up' : 'chevron-down'" :size="12" color="muted" /></view>
             </view>
-            <view class="card-grid stay-grid">
+            <view class="card-grid stay-grid" :class="{ 'stay-grid--one': group.stays.length === 1 }">
               <view v-for="stay in group.stays" :key="stay.stayId" class="stay-tile" hover-class="k-press-s" aria-role="button" :aria-label="'查看' + group.title + '：' + stay.stayName" @click="openStay(stay)">
                 <view class="feed-card feed-card--stay">
                   <view class="stay-cover">
-                    <image v-if="stay.cover && failedStayImages[stay.stayId] !== stay.image" class="stay-cover__image" :src="stay.image" mode="aspectFill" @error="markStayCoverFailed(stay)" />
-                    <view v-else class="stay-cover__empty"><k-icon name="house" :size="28" color="muted" :stroke="1.3" /><text>小院照片待更新</text></view>
-                  </view>
-                  <text class="stay-source" :class="'stay-source--' + group.key">{{ group.title }}</text>
-                  <view class="feed-card__body stay-copy"><text class="feed-card__title k-ellipsis">{{ stay.stayName }}</text><text class="feed-card__meta">{{ stay.sub }}</text></view>
+                    <image v-if="stay.cover && failedStayImages[stay.stayId] !== stay.image" class="stay-cover__image" :src="stay.image" :data-stay-id="stay.stayId" :data-cover="stay.image" mode="aspectFill" @error="markStayCoverFailed" />
+                    <view v-else class="stay-cover__empty"><k-icon name="house" :size="32" color="red" /><text>小院照片待更新</text></view>
+                  <text class="stay-source" :class="'stay-source--' + group.key">{{ group.title }}</text></view>
+                  <view class="feed-card__body stay-copy"><text class="feed-card__title k-clamp2">{{ stay.stayName }}</text><text class="feed-card__meta">{{ stay.sub }}</text></view>
                 </view>
-                <view v-if="stay.safe" class="safe-chip stay-trust"><k-icon name="shield-check" :size="14" color="green" /><text>安心商家</text></view>
+                <view v-if="stay.safe" class="stay-tags"><view class="safe-chip"><k-icon name="shield-check" :size="12" color="green" /><text>安心商家</text></view></view>
               </view>
             </view>
           </view>
         </view>
-        <view v-else class="feed-state"><text>暂无已上架的小院，稍后再来看看</text><k-button type="secondary" size="sm" @click="loadFeed">重新加载</k-button></view></template>
+        <view v-else class="feed-state feed-state--empty"><view class="state-icon"><k-icon name="house" :size="32" color="red" /></view><text>暂无已上架的小院，稍后再来看看</text><text class="state-sub">小院上新后会第一时间出现在这里</text><k-button type="secondary" size="sm" @click="loadFeed">重新加载</k-button></view></template>
       </view>
       <k-tabbar active="home" />
     </template>
@@ -75,36 +95,35 @@
       <k-topbar title="找机会" back custom-back @back="s = 1" />
       <view class="ai-body k-pad-safe">
         <!-- 头像换成首页品牌同一只袋鼠（144px 贴纸）：之前 49×50 的线稿放大到 56px 发糊 -->
-        <view class="ai-avatar"><image class="ai-avatar__img" src="/static/media/brand-kangaroo-lg.png" mode="aspectFit" /></view>
-        <text class="ai-title">你好，我是AI袋鼠！</text>
+        <view class="ai-hello"><view class="ai-avatar"><image class="ai-avatar__img" src="/static/user-icons/mine-ai.png" mode="aspectFit" /></view><text class="ai-title">你好，我是AI袋鼠！</text></view>
         <text class="ai-intro">写出来您的诉求或者想法，\n我会搜索全部信息尽可能帮您解决问题。</text>
         <!-- 小程序里 textarea 盖在页面最上层，日历 / 技能弹框 / 公告弹窗压在它上面时会点不动；不打字时先显示成普通文字，点了再换成真输入框 -->
         <view class="idea-box"><textarea v-if="editingIdea" v-model="idea" class="idea-box__input" :maxlength="200" :auto-height="false" placeholder="例如：丽江换工单间一个月或青岛兼职全职工作或想在阳朔住一周，预算500，还能抽空做点兼职" placeholder-class="k-placeholder" :focus="true" auto-focus @blur="idea = $event.detail.value; editingIdea = false" /><view v-else class="idea-box__input home-area-idle" @click="editingIdea = true"><text :class="{ 'k-placeholder': !idea }">{{ idea || '例如：丽江换工单间一个月或青岛兼职全职工作或想在阳朔住一周，预算500，还能抽空做点兼职' }}</text></view><text class="idea-box__count">{{ idea.length }}/200</text></view>
         <!-- 热门问法：新手不知道怎么问，点一下填进输入框并直接匹配。只用匹配规则认得的字眼（城市名、换宿 / 换工、天数、预算数字、拍照），点了一定按这些条件出结果 -->
         <view class="hot-words"><view v-for="w in hotWords" :key="w.text" class="hot-word" hover-class="k-press" @click="useHotWord(w)"><text>{{ w.text }}</text></view></view>
         <view class="preference-head"><view class="k-row k-gap6"><text class="preference-head__title">偏好设置</text><text class="preference-head__hint">（可选）</text></view><view class="preference-head__clear" hover-class="k-press" @click="clearPrefs">清空</view></view>
-        <view class="pref-grid"><view v-for="item in preferences" :key="item.label" class="pref-card" hover-class="k-press-s" @click="editPref(item)"><k-icon :name="item.icon" :size="21" color="ink" :stroke="1.6" /><view class="pref-card__copy"><text class="pref-card__label">{{ item.label }}</text><text class="pref-card__value">{{ item.value }}</text></view></view></view>
+        <view class="pref-grid"><view v-for="item in preferences" :key="item.label" class="pref-card" hover-class="k-press-s" @click="editPref(item)"><k-icon :name="item.icon" :size="18" color="red" /><text class="pref-card__label">{{ item.label }}</text><text class="pref-card__value" :class="{ 'is-unset': item.value === '不限' || item.value === '未选择' }">{{ item.value }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
         <k-button block icon="sparkles" class="match-button" @click="runMatch">开始匹配</k-button><text class="ai-note">按你填写的条件规则匹配，结果仅供参考</text><view class="k-home-indicator" />
       </view>
     </template>
 
     <template v-else-if="s === 3">
-      <k-topbar title="综合结果" back custom-back @back="s = resultBack"><view class="result-tabs"><view class="result-tab" :class="{ active: rtab === 0 }" hover-class="k-press" @click="rtab = 0"><text>岗位 {{ tabCounts[0] }}</text></view><view v-if="stayBookingEnabled" class="result-tab" :class="{ active: rtab === 1 }" hover-class="k-press" @click="rtab = 1"><text>房源 {{ tabCounts[1] }}</text></view><view class="result-tab" :class="{ active: rtab === 2 }" hover-class="k-press" @click="rtab = 2"><text>活动 {{ tabCounts[2] }}</text></view></view></k-topbar>
+      <k-topbar title="综合结果" back custom-back @back="s = resultBack"><view class="result-tabs"><view class="result-tab" :class="{ active: rtab === 0 }" hover-class="k-press" @click="rtab = 0"><text>岗位</text><text class="result-tab__n">{{ tabCounts[0] }}</text></view><view v-if="stayBookingEnabled" class="result-tab" :class="{ active: rtab === 1 }" hover-class="k-press" @click="rtab = 1"><text>房源</text><text class="result-tab__n">{{ tabCounts[1] }}</text></view><view class="result-tab" :class="{ active: rtab === 2 }" hover-class="k-press" @click="rtab = 2"><text>活动</text><text class="result-tab__n">{{ tabCounts[2] }}</text></view></view></k-topbar>
       <view class="result-body k-pad-safe">
-        <view class="result-sort"><text>综合匹配度从高到低排序</text><view class="k-row k-gap6" hover-class="k-press" @click="pickSort"><text>排序</text><k-icon name="list-filter" :size="17" color="ink" /></view></view>
-        <view v-for="job in matchedJobs" :key="(job.jobId || job.stayId || job.activityId) + job.title" class="match-card" hover-class="k-press-s" @click="openResult(job)"><image class="match-card__image" :src="job.image" mode="aspectFill" /><view class="match-card__main"><k-job-urgency v-if="job.jobId" :job="job" /><text class="match-card__title">{{ displayWording(job.title) }}</text><view class="match-card__tag"><view v-if="job.safe" class="safe-chip"><k-icon name="shield-check" :size="12" color="green" :stroke="2" /><text>安心商家</text></view><text v-if="job.skill" class="match-card__skill">{{ job.skill }}</text></view><view class="match-card__price"><text class="k-price">{{ job.price }}</text><text> {{ job.unit }}</text></view><text class="match-card__date">{{ job.dateText }}</text><view class="match-card__line" /><text class="match-card__reason">原因：{{ displayWording(job.reason) }}</text></view><view class="match-card__score"><text class="match-card__percent">{{ job.score }}<text class="match-card__percent-sign">%</text></text><text>匹配度</text></view></view>
-        <text class="result-end">{{ endText }}</text><view class="k-home-indicator" />
+        <view class="result-sort" :class="{ 'is-dim': !matchedJobs.length }"><text>综合匹配度从高到低排序</text><view class="k-row k-gap6" hover-class="k-press" @click="pickSort"><text>排序</text><k-icon name="list-filter" :size="14" :color="matchedJobs.length ? 'ink2' : 'muted'" /></view></view>
+        <view v-for="job in matchedJobs" :key="(job.jobId || job.stayId || job.activityId) + job.title" class="match-card" hover-class="k-press-s" @click="openResult(job)"><view class="match-card__top"><image class="match-card__image" :src="job.image" mode="aspectFill" /><view class="match-card__main"><k-job-urgency v-if="job.jobId" :job="job" /><text class="match-card__title k-clamp2">{{ displayWording(job.title) }}</text><view class="match-card__tag"><view v-if="job.safe" class="safe-chip"><k-icon name="shield-check" :size="12" color="green" /><text>安心商家</text></view><text v-if="job.skill" class="match-card__skill">{{ job.skill }}</text></view><view class="match-card__row"><view class="match-card__price"><text class="k-price">{{ job.price }}</text><text> {{ job.unit }}</text></view><view class="match-card__score"><text class="match-card__percent">{{ job.score }}<text class="match-card__percent-sign">%</text></text><text>匹配度</text></view></view><text class="match-card__date">{{ job.dateText }}</text></view></view><view class="match-card__line" /><view class="match-card__reason"><k-icon name="lightbulb" :size="14" color="muted" /><text>原因：{{ displayWording(job.reason) }}</text></view></view>
+        <view v-if="!matchedJobs.length" class="result-empty"><view class="state-icon"><k-icon name="search" :size="32" color="red" /></view><text class="result-end">{{ endText }}</text><text class="state-sub">换个城市、放宽日期或预算再试试</text><k-button type="secondary" size="sm" @click="s = 2">调整条件</k-button></view>
+        <text v-else class="result-end is-end">{{ endText }}</text><view class="k-home-indicator" />
       </view>
     </template>
 
     <template v-else>
       <k-topbar title="推荐理由" back custom-back @back="s = 3" />
       <view class="reason-body k-pad-safe">
-        <view class="score-card"><view class="score-ring"><text class="score-ring__num">{{ result.overall }}<text class="score-ring__sign">%</text></text><text class="score-ring__label">匹配度</text></view><text class="score-card__text">基于你的需求和偏好，\n我们为你推荐了最合适的\n{{ stayBookingEnabled ? '工作、房源和活动组合。' : '工作和活动组合。' }}</text></view>
-        <text class="reason-title">匹配依据</text>
-        <view class="reason-list"><view v-for="item in reasons" :key="item.label" class="reason-row"><view class="reason-row__icon"><k-icon :name="item.icon" :size="20" color="ink" :stroke="1.6" /></view><text class="reason-row__label">{{ item.label }}</text><text class="reason-row__desc">{{ item.desc }}</text><text class="reason-row__score">{{ item.score }}%</text></view></view>
-        <view class="preference-head reason-pref-head"><view class="k-row k-gap6"><text class="preference-head__title">偏好设置</text><text class="preference-head__hint">（可编辑）</text></view><view class="k-row" hover-class="k-press" @click="s = 2"><text class="preference-head__clear">编辑</text><k-icon name="chevron-right" :size="14" color="muted" /></view></view>
-        <view class="reason-prefs"><view v-for="item in preferences" :key="item.label" class="reason-pref"><text class="reason-pref__label">{{ item.label }}</text><text class="reason-pref__value">{{ item.value }}</text></view></view>
+        <view class="score-card"><view class="preference-head reason-pref-head"><text class="preference-head__title">匹配依据</text></view><view class="score-card__top"><view class="score-ring" :style="{ background: 'conic-gradient(var(--k-red) ' + (Number(result.overall) || 0) * 3.6 + 'deg, var(--k-line) 0)' }"><text class="score-ring__num">{{ result.overall }}<text class="score-ring__sign">%</text></text><text class="score-ring__label">匹配度</text></view><text class="score-card__text">基于你的需求和偏好，\n我们为你推荐了最合适的\n{{ stayBookingEnabled ? '工作、房源和活动组合。' : '工作和活动组合。' }}</text></view>
+        <view class="reason-list"><view v-for="item in reasons" :key="item.label" class="reason-row"><view class="reason-row__icon"><k-icon :name="item.icon" :size="18" color="red" /></view><view class="reason-row__copy"><text class="reason-row__label">{{ item.label }}</text><text class="reason-row__desc">{{ item.desc }}</text></view><text class="reason-row__score">{{ item.score }}%</text></view></view></view>
+        <view class="reason-box"><view class="preference-head reason-pref-head"><view class="k-row k-gap6"><text class="preference-head__title">偏好设置</text><text class="preference-head__hint">（可编辑）</text></view><view class="k-row" hover-class="k-press" @click="s = 2"><text class="preference-head__clear">编辑</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
+        <view class="reason-prefs"><view v-for="item in preferences" :key="item.label" class="reason-pref"><view class="k-row k-gap4"><k-icon :name="item.icon" :size="14" color="muted" /><text class="reason-pref__label">{{ item.label }}</text></view><text class="reason-pref__value" :class="{ 'is-unset': item.value === '不限' || item.value === '未选择' }">{{ item.value }}</text></view></view></view>
         <k-button block icon="sparkles" class="rematch-button" @click="s = 2">按新条件重新匹配</k-button><text class="ai-note reason-note">调整偏好后，我们将为你重新匹配更优结果</text><view class="k-home-indicator" />
       </view>
     </template>
@@ -126,6 +145,7 @@
 </template>
 
 <script setup>
+import HandbookCarousel from '../camp/components/handbook-carousel.vue'
 import { publicShare, shareWithCover, timelineShare, showPublicShareMenu } from '@/common/public-share.js'
 // ---------------------------------------------------------------------------
 // 首页接入情况：
@@ -137,18 +157,21 @@ import { publicShare, shareWithCover, timelineShare, showPublicShareMenu } from 
 // ---------------------------------------------------------------------------
 import { stayBookingEnabled, recruitmentEnabled } from '@/common/features.js'
 import { ref, computed, watch } from 'vue'
-import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onShow, onHide, onShareAppMessage, onShareTimeline, onPageScroll } from '@dcloudio/uni-app'
 import { experience, ensureSession, loadPreferences, savePreferences, saveAllCities } from '@/common/experience.js'
 import { locateCity } from '@/common/locate.js'
 import { checkNoticePopup, noticePopup } from '@/common/notice.js'
+import { askOnVisit } from '@/common/visit-subscriptions.js'
 import { useScreen, go, toast } from '@/common/screen.js'
 import { apiHomeFeed, apiHomeMatch } from '@/common/api.js'
 import { sheet, prompt, shiftDate, todayCn, errText, confirm } from '@/common/ui.js'
 import { absUrl } from '@/common/upload.js'
 import R from '@/common/routes.js'
 import { displayWording } from '@/common/display-wording.js'
-import { homeEntryIcon } from './entry-icons.js'
 
+// 顶栏在顶部是暖色，往下翻换成页面底色，和内容区不留色差
+const atTop = ref(true)
+onPageScroll(e => { atTop.value = e.scrollTop < 200 })
 const searchKeyword = ref('')
 const searchHome = () => go(R.search + '?keyword=' + encodeURIComponent(searchKeyword.value.trim()))
 const s = useScreen(4, {
@@ -176,6 +199,12 @@ const openCity = () => go(R.city + '?s=2&from=home')
 const feed = ref({ activities: [], jobs: [], stays: [] })
 const feedLoading = ref(true)
 const feedError = ref('')
+const activitySlideIndex = ref(0)
+const failedActivityImages = ref({})
+const handbookReady = ref(false)
+const openHandbook = chapter => go('/pages/camp/handbook' + (chapter ? '?chapter=' + encodeURIComponent(chapter) : ''))
+const homeVisible = ref(false)
+const reduceMotion = ref(false)
 const expandedStays = ref({ direct: false, partner: false })
 let feedRequest = 0
 async function loadFeed() {
@@ -183,6 +212,9 @@ async function loadFeed() {
   feedLoading.value = true
   feedError.value = ''
   feed.value = { activities: [], jobs: [], stays: [] }
+  activitySlideIndex.value = 0
+  failedActivityImages.value = {}
+  failedStayImages.value = {}
   expandedStays.value = { direct: false, partner: false }
   try {
     const data = (await apiHomeFeed(requestedCity)).data
@@ -194,7 +226,18 @@ async function loadFeed() {
   }
 }
 // 之前进首页只恢复登录态、拉推荐；现在登录态恢复后再看一眼有没有要弹的公告（本次启动只弹一次，见 common/notice.js）
-onShow(async () => { await ensureSession(); loadPreferences(); loadFeed(); checkNoticePopup(); autoLocateOnce() })
+onShow(async () => {
+  homeVisible.value = true
+  // #ifdef H5
+  reduceMotion.value = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  // #endif
+  await ensureSession()
+  loadPreferences()
+  loadFeed()
+  checkNoticePopup()
+  autoLocateOnce()
+})
+onHide(() => { homeVisible.value = false })
 // 首次浏览先说明位置用途，经用户同意再请求位置权限；成功后才保存定位标记。
 const LOCATED_KEY = 'kangaroo:located-once'
 let lastLocateAttempt = 0
@@ -234,7 +277,10 @@ const recStays = computed(() => (feed.value.stays || []).map(stay => ({
   ...stay, image: stay.cover ? absUrl(stay.cover) : '/static/media/cover-empty.png', sub: [stay.city, stay.intro].filter(Boolean).join(' · ')
 })))
 const failedStayImages = ref({})
-const markStayCoverFailed = stay => { failedStayImages.value[stay.stayId] = stay.image }
+function markStayCoverFailed(event) {
+  const { stayId, cover } = event.currentTarget.dataset
+  if (stayId && cover) failedStayImages.value[stayId] = cover
+}
 const stayGroups = computed(() => [
   { key: 'direct', title: '袋鼠自营', rows: recStays.value.filter(stay => stay.opType === 'direct') },
   { key: 'partner', title: '合作商家', rows: recStays.value.filter(stay => stay.opType !== 'direct') }
@@ -246,20 +292,23 @@ const stayGroups = computed(() => [
 const openStay = stay => go(R.stayDetail + '?stayId=' + stay.stayId)
 const openRecommendations = key => { if (key === 'direct' || key === 'partner') expandedStays.value[key] = !expandedStays.value[key] }
 // 名字和岗位列表的页签一致（换宿旅行 / 兼职旅行 / 全职旅行 / 线上任务），第 5 个是旅居订房。
-// 暖棕与豆绿的双色入口插画；分类路由保持一致。
+// 每个业务入口使用对应的浅杏插画。
 const entries = computed(() => [
-  { name: '换宿旅行', icon: 'house', illustration: 'house', ink: 'red', route: R.jobsList + '?type=volunteer' },
-  { name: '兼职旅行', icon: 'briefcase-business', illustration: 'backpack', ink: 'green', route: R.jobsList + '?type=parttime' },
-  { name: '全职驻店', icon: 'store', illustration: 'store', ink: 'red', route: R.jobsList + '?type=fulltime' },
-  { name: '线上任务', icon: 'laptop', illustration: 'cloud', ink: 'green', route: R.jobsList + '?type=online' },
-  { name: '旅居订房', icon: 'bed-double', illustration: 'stay', ink: 'red', route: R.staysList, withCity: true }
+  { name: '换工旅行', icon: 'house', illustration: 'entry-exchange', ink: 'red', route: R.jobsList + '?type=volunteer' },
+  { name: '兼职旅行', icon: 'briefcase-business', illustration: 'entry-parttime', ink: 'green', route: R.jobsList + '?type=parttime' },
+  { name: '全职驻店', icon: 'store', illustration: 'entry-staffed', ink: 'red', route: R.jobsList + '?type=fulltime' },
+  { name: '线上任务', icon: 'laptop', illustration: 'entry-online', ink: 'green', route: R.jobsList + '?type=online' },
+  { name: '旅居订房', icon: 'bed-double', illustration: 'entry-stay', ink: 'red', route: R.staysList, withCity: true }
 ].filter(item => item.route === R.staysList ? stayBookingEnabled.value : recruitmentEnabled.value))
 // 只有旅居订房带着首页城市进列表（订房列表读 ?city=，首页写着大理点进去就是大理的小院）。
 // 四个岗位入口 2026-10-17 起不带：首页城市多半是第一次打开时自动定位来的，带进去就成了岗位筛选里一个「已选城市」，
 // 主人反馈「选择地址的时候默认我在的位置也加到里面了」。岗位列表默认全部城市，想看哪个城市在列表里自己选
-const openEntry = (item) => go(item.route + (item.withCity && selectedCity.value ? (item.route.includes('?') ? '&' : '?') + 'city=' + encodeURIComponent(selectedCity.value) : ''))
+const openEntry = (item) => {
+  askOnVisit()
+  go(item.route + (item.withCity && selectedCity.value ? (item.route.includes('?') ? '&' : '?') + 'city=' + encodeURIComponent(selectedCity.value) : ''))
+}
 const ACT_IMG = '/static/media/cover-empty.png'
-// 首页只露两张大卡：「10月16日 周五 14:00」、「城市 · 集合地」、价格（免费绿、收费红）、名额状态签
+// 首页展示最近两场，更多活动从标题右侧进入。
 const activities = computed(() => (feed.value.activities || []).slice(0, 2).map(a => ({
   activityId: a.activityId, title: a.title,
   date: ((a.dateText || '').replace('（', ' ').replace('）', '') + ' ' + (a.time || '').split('–')[0]).trim(),
@@ -267,6 +316,19 @@ const activities = computed(() => (feed.value.activities || []).slice(0, 2).map(
   badge: a.full ? '已满可候补' : (a.few ? '名额紧张' : '报名中'), few: a.few && !a.full, full: !!a.full,
   image: a.img ? absUrl(a.img) : ACT_IMG
 })))
+const activitySlides = computed(() => {
+  const slides = activities.value.map(item => {
+    const hasCover = item.image !== ACT_IMG && failedActivityImages.value[item.activityId] !== item.image
+    const stamp = hasCover ? null : /^(\d{1,2}月)(\d{1,2})日\s*(.*)$/.exec(item.date)
+    return { ...item, hasCover, month: stamp?.[1], day: stamp?.[2], when: stamp ? stamp[3] : item.date }
+  })
+  // 两场时前后邻居相同，重复一组以衔接循环两端的封面。
+  return slides.length === 2 ? slides.concat(slides) : slides
+})
+const activityPage = computed(() => activitySlideIndex.value % (activities.value.length || 1))
+function selectActivityPage(index) {
+  activitySlideIndex.value += index - activityPage.value
+}
 // 选了城市、露出来的活动却一场都不在这个城市（本城不够两场时后端补的是其他城市的）：标题写「其他城市的近期活动」；全部城市照旧
 const otherCityActs = computed(() => {
   const list = (feed.value.activities || []).slice(0, 2), mine = [selectedCity.value, feed.value.city]
@@ -283,8 +345,8 @@ const openFinder = () => { s.value = 2; editingIdea.value = true }
 // 热门问法：首页选了城市时「X 换宿」排第一。带城市的按词里的城市匹配（不受首页所选城市影响），不带的按首页城市；
 // 写了天数的顺手把旅行天数改成对应天数（出发日期不变），和词里说的一致
 const hotWords = computed(() => [
-  ...(selectedCity.value ? [{ text: selectedCity.value + ' 换宿', city: selectedCity.value }] : []),
-  { text: '大理 换宿 一个月', city: '大理', days: 30 },
+  ...(selectedCity.value ? [{ text: selectedCity.value + ' 换工', city: selectedCity.value }] : []),
+  { text: '大理 换工 一个月', city: '大理', days: 30 },
   { text: '丽江 换工 包住', city: '丽江' },
   { text: '会拍照 想找民宿换工' },
   { text: '住一周 预算500', days: 7 }
@@ -404,7 +466,7 @@ async function openResult(x) {
 const endText = computed(() => (matchedJobs.value.length ? `— 已显示全部${TAB_NAMES[rtab.value]} —` : `暂无匹配的${TAB_NAMES[rtab.value]}，看看其他分类`))
 const reasons = computed(() => result.value.reasons || [])
 
-const pageShareMessage = () => publicShare('/pages/home/index', {}, '袋鼠全球青年 · 一起旅行，一起生活')
+const pageShareMessage = () => publicShare('/pages/home/index', {}, '袋鼠青年旅行 · 一起旅行，一起生活')
 
 onShareAppMessage((event) => shareWithCover(pageShareMessage(event)))
 onShareTimeline(() => timelineShare(pageShareMessage()))
@@ -412,203 +474,231 @@ onShow(showPublicShareMenu)
 </script>
 
 <style scoped lang="scss">
-.handbook-banner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px 20px; margin:16px 0 24px; background:#e4edda; color:#3a4931; border-radius:16px; }
-.handbook-banner__eyebrow,.handbook-banner__title,.handbook-banner__copy { display:block; }.handbook-banner__eyebrow { font-size:11px; letter-spacing:1px; }.handbook-banner__title { font-size:22px; font-weight:700; margin:6px 0 8px; }.handbook-banner__copy { font-size:12px; }.handbook-banner__action { display:flex; flex-direction:column; align-items:center; gap:12px; flex-shrink:0; font-size:12px; }
-
-/* 首页：品牌导航、城市、搜索与图文推荐，遵循系统安全区。 */
-.home-page { --k-bg:#F8F8F6; --k-paper:#FFFEFC; color: var(--k-ink); font-family: var(--k-sans);background:#F8F8F6; }
-.home-header { display: flex; align-items: center; padding: 6px 16px 10px; }
-.brand { display: flex; align-items: center; gap: 8px; padding-left: 8px; min-width: 0; }
-.brand__logo { width: 28px; height: 32px; flex: 0 0 auto; }
-.brand__name { font-family: var(--k-brand); font-size: 24px; font-weight: 700; color: var(--k-ink); white-space: nowrap; letter-spacing: 0; }
-.location { min-width: 0; max-width: 100%; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 7px; border-radius: 22px; background: #EEEEE9; border: 1px solid #DDDCD6; }
-.location__name { display: block; min-width: 0; font-size: 15px; font-weight: 600; color: var(--k-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.home-content { padding: 0 16px calc(100px + var(--k-safe-bottom)); background: var(--k-bg); }
-.search-box { height: 56px; padding-right: 4px; display: flex; align-items: center; border: 1px solid #B69772; border-radius: 999px; background: var(--k-paper); box-shadow: 0 5px 13px rgba(83,60,34,.11); }
-.search-box__field { flex: 1; min-width: 0; height: 56px; padding: 0 6px 0 17px; display: flex; align-items: center; gap: 9px; }
-.search-box__input { flex: 1; min-width: 0; height: 48px; color: var(--k-ink); font-size: 16px; }
-.search-box__placeholder { color: #75695F; font-size: 16px; font-weight: 500; }
-.search-box__go { width: 46px; height: 46px; flex: 0 0 auto; margin: 0; padding: 0; background: linear-gradient(135deg,#BB895A,#9F6A3E); }
+@use '../../styles/user-search' as user-search;
+.home-page { --k-bg: var(--k-page); --k-top: var(--k-red-soft); color: var(--k-ink); font-family: var(--k-sans); background: var(--k-bg); }
+.home-page :deep(.k-button.is-lg) { height: 44px; border-radius: 22px; font-size: 15px; box-shadow: none; }
+.home-page :deep(.k-button.is-sm) { border-radius: 16px; }
+.home-nav { display: flex; align-items: center; min-width: 0; flex: 1; }
+.brand { display: flex; align-items: center; gap: 6px; padding-left: 8px; flex: 0 0 auto; }
+.brand__logo { width: 24px; height: 24px; flex: 0 0 auto; }
+.brand__name { font-family: var(--k-brand); font-size: 17px; font-weight: 700; color: var(--k-ink); white-space: nowrap; letter-spacing: .2px; }
+.location { min-width: 0; flex: 0 1 auto; height: 44px; margin-left: 2px; padding: 0 8px; display: flex; align-items: center; gap: 4px; overflow: hidden; border: 8px solid transparent; border-radius: 22px; background: var(--k-paper) padding-box; }
+.location__name { display: block; min-width: 0; font-size: 13px; color: var(--k-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-content { padding-left: 16px; padding-right: 16px; background: linear-gradient(180deg,var(--k-top) 0,var(--k-bg) 280px) no-repeat, var(--k-bg); }
+.home-top { padding-top: 4px; }
+.handbook-cover { position: relative; height: 55vw; min-height: 184px; max-height: 350px; margin: 12px -16px 0; overflow: hidden; background: #efe2c9; }
+.handbook-cover__fallback { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 6%; color: #452e1e; background: #efe2c9; font-size: 18px; border-radius: 0; }
+.handbook-cover__fallback::after { border: 0; }
+.search-box { height: 40px; display: flex; align-items: center; border-radius: 20px; background: var(--k-paper); }
+.search-box__field { flex: 1; min-width: 0; height: 40px; padding: 0 8px 0 14px; display: flex; align-items: center; gap: 8px; }
+.search-box__input { flex: 1; min-width: 0; height: 40px; color: var(--k-ink); font-size: 14px; }
+.search-box__placeholder { color: var(--k-muted); font-size: 14px; }
+.search-box__go { position: relative; height: 40px; flex: 0 0 auto; margin: 0; padding: 0 16px; border-radius: 0 20px 20px 0; background: none; color: var(--k-red-deep); font-size: 14px; font-weight: 600; line-height: 40px; }
+.search-box__go::before { content: ''; position: absolute; left: 0; top: 12px; width: 1px; height: 16px; background: var(--k-line2); transform: scaleX(.5); }
 .search-box__go::after { border: 0; }
-.entry-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; margin-top: 18px; }
-.entry { min-width: 0; min-height: 82px; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 0; border-radius: 12px; }
-.entry__icon { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #F0E4D3;box-shadow:inset 0 1px 4px rgba(255,255,255,.35); }
-.entry__icon--backpack { background: #F1E7DD; }
-.entry__icon--store { background: #E8EDE4; }
-.entry__icon--cloud { background: #E5EDEA; }
-.entry__icon--stay { background: #EEEEE5; }
-.entry__drawing { display: block; width: 48px; height: 48px; }
-.entry__name { font-size: 14px; font-weight: 500; line-height: 20px; color: var(--k-ink); white-space: nowrap; }
+.entry-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); margin-top: 12px; padding: 16px 4px; border-radius: 12px; background: var(--k-paper); }
+.entry { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.entry__icon { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--k-red-soft); }
+.entry__name { font-size: 12px; line-height: 16px; color: var(--k-ink2); white-space: nowrap; }
 .home-soft-press { opacity: .75; }
-/* #ifdef H5 */
-@media (hover: hover) { .entry:hover { background: var(--k-paper2); } }
-/* #endif */
-.section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 16px 0 12px; min-height: 36px; }
-.section-head__title { font-family: var(--k-sans); font-size: 20px; font-weight: 700; line-height: 28px; letter-spacing: 0; }
-.section-head__more { min-height: 44px; display: flex; align-items: center; gap: 2px; color: var(--k-muted); font-size: 14px; flex: 0 0 auto; }
-.card-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
-.feed-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border-radius: 18px; background: var(--k-paper); box-shadow: 0 6px 14px rgba(58,50,43,.10),0 1px 2px rgba(58,50,43,.04); }
-.feed-card__media { position: relative; display: block; width: 100%; height: 275rpx; border-radius: 18px 18px 0 0; overflow: hidden; background: var(--k-paper2); }
-.feed-card__img { width: 100%; height: 100%; }
-.feed-card__body { flex: 1; min-width: 0; padding: 10px 11px 12px; display: flex; flex-direction: column; }
-.feed-card__badge { position: absolute; left: 8px; top: 8px; height: 24px; padding: 0 8px; border-radius: 8px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; font-weight: 600; line-height: 24px; }
-.feed-card__badge.is-few { background: var(--k-alert); color: var(--k-paper); }
-.feed-card__badge.is-full { background: var(--k-paper2); color: var(--k-red-deep); }
-.feed-card__title { font-family: var(--k-sans); font-size: 16px; font-weight: 600; line-height: 24px; color: var(--k-ink); }
-.feed-card__title.k-clamp2 { min-height: 48px; }
-.feed-card__meta { margin-top: 4px; color: var(--k-muted); font-size: 13px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.feed-card__foot { display: flex; align-items: center; gap: 6px; }
-.feed-card__price { margin-top: 4px; font-size: 13px; font-weight: 700; flex: 0 0 auto; }
-.activity-list { display: flex; flex-direction: column; gap: 12px; }
-.activity-card { box-shadow: var(--k-sh1); border-radius: var(--k-radius); }
-.activity-card__main { display: flex; align-items: flex-start; gap: 12px; padding: 12px; }
-.activity-card__media { width: 78px; height: 88px; flex: 0 0 78px; border-radius: 10px; }
-.activity-card__media .feed-card__badge { top: 6px; left: 6px; padding: 0 6px; font-size: 10px; }
-.activity-card__copy { flex: 1; min-width: 0; }
-.activity-card__title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; line-height: 21px; }
-.activity-card__meta { display: flex; align-items: center; gap: 5px; min-width: 0; margin-top: 3px; color: var(--k-muted); font-size: 12px; line-height: 18px; }
-.activity-card__date { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.activity-card__place { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.activity-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 12px; padding: 10px 0 12px; border-top: 1px solid var(--k-line); }
-.activity-card__price { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; line-height: 21px; overflow-wrap: anywhere; }
-.activity-card__detail { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; color: var(--k-red); font-size: 12px; line-height: 20px; }
-@media (max-width: 360px) { .activity-card__media { width: 70px; height: 84px; flex-basis: 70px; } }
-.act-icon { width: 52px; height: 52px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #FFFEFC; border: 1px solid #F1EEE8;box-shadow:0 1px 4px rgba(65,52,38,.05); }
-.act-more { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 12px; background: var(--k-paper); }
-.act-more__title { font-size: 14px; font-weight: 600; }
-.act-more__hint { flex: 1; min-width: 0; text-align: right; color: var(--k-muted); font-size: 12px; }
-.act-empty { min-height: 102px; padding: 20px 17px; display: flex; align-items: center; gap: 12px; border-radius: 19px; background: var(--k-paper); box-shadow: 0 6px 15px rgba(58,50,43,.085); }
-.act-empty__title { display: block; font-family: var(--k-sans); font-size: 18px; font-weight: 650; line-height: 27px; }
-.act-empty__copy { display: block; margin-top: 7px; color: var(--k-ink2); font-size: 14px; line-height: 1.6; }
-.act-empty + .section-head { margin-top: 26px; }
-.stay-grid { align-items: start; row-gap: 20px; }
-.stay-group + .stay-group { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--k-line); }
-.stay-group__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 8px; }
-.stay-group__heading { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.stay-group__title { font-size: 17px; line-height: 25px; font-weight: 600; color: var(--k-ink); }
-.stay-group__count { font-size: 12px; line-height: 18px; color: var(--k-muted); }
-.stay-source { position: absolute; top: 9px; left: 9px; z-index: 1; padding: 3px 8px; border-radius: 6px; background: var(--k-paper); color: var(--k-ink2); font-size: 11px; font-weight: 600; line-height: 18px; }
-.stay-source--direct { background: var(--k-red-soft); color: var(--k-red-deep); }
-.stay-tile { min-width: 0; }
-/* 照片铺满卡片；上方留出 4:3 画面，渐变文字层下方露出 6px 照片边。 */
-.feed-card--stay { position: relative; padding-top: 75%; padding-bottom: 6px; border-radius: var(--k-radius); box-shadow: 0 2px 3px rgba(58,50,43,.035), 0 7px 16px rgba(58,50,43,.065); }
-.stay-cover { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; background: var(--k-paper2); }
-.stay-cover__image { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.stay-cover__empty { position: absolute; inset: 0 0 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--k-muted); font-size: 12px; line-height: 18px; }
-.feed-card--stay .stay-copy { position: relative; z-index: 1; flex: 0 0 auto; padding: 10px 12px 12px; border-radius: 0 0 12px 12px; background: linear-gradient(110deg, rgba(255,254,252,.90) 0%, rgba(255,254,252,.88) 20%, rgba(255,254,252,.82) 45%, rgba(255,254,252,.72) 75%, rgba(255,254,252,.62) 100%); }
-.feed-card--stay .feed-card__title { line-height: 22px; }
-.feed-card--stay .feed-card__meta { margin-top: 5px; line-height: 19px; color: var(--k-ink2); }
-.stay-trust { margin: 8px 0 0 8px; box-shadow: none; }
-.safe-chip { align-self: flex-start; height: 24px; padding: 0 8px; border-radius: 8px; background: var(--k-green-soft); color: var(--k-green); display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; white-space: nowrap; flex: 0 0 auto; }
-.feed-state { padding: 28px 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--k-muted); font-size: 14px; text-align: center; }
-@media (max-width: 360px) {
-  .brand { gap: 5px; }
-  .brand__name { font-size: 20px; }
-  .brand__logo { width: 24px; height: 28px; }
-  .entry-grid { gap: 4px; }
-  .entry__icon { width: 50px; height: 50px; }
-  .entry__drawing { width: 42px; height: 42px; }
-  .entry__name { font-size: 13px; }
-  .search-box__field { padding-left: 12px; gap: 7px; }
-  .search-box__placeholder { font-size: 14px; letter-spacing: -.3px; }
-  .search-box__go { width: 44px; height: 44px; }
-  .feed-card__body { padding: 10px; }
-  .feed-card__title { font-size: 15px; }
-  .feed-card--stay .stay-copy { padding: 10px; }
-  .act-empty { padding: 18px 14px; gap: 10px; }
-  .act-icon { width: 44px; height: 44px; }
-}
-.ai-body { position: relative; min-height: calc(100vh - 88px); padding: 28px 18px 42px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 24px; margin: 24px 0 12px; }
+.section-head__title { font-family: var(--k-sans); font-size: 16px; font-weight: 700; line-height: 24px; letter-spacing: 0; }
+.section-head__more { height: 44px; margin: -11px 0; display: flex; align-items: center; gap: 2px; color: var(--k-muted); font-size: 12px; flex: 0 0 auto; }
+.card-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.feed-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border-radius: 12px; background: var(--k-paper); }
+.feed-card__media { position: relative; overflow: hidden; background: var(--k-red-soft); }
+.feed-card__img { display: block; width: 100%; height: 100%; }
+.feed-card__badge { display: inline-flex; align-items: center; gap: 4px; color: var(--k-green); font-size: 11px; line-height: 16px; white-space: nowrap; }
+.feed-card__badge::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.feed-card__badge.is-few { color: var(--k-alert); }
+.feed-card__badge.is-full { color: var(--k-muted); }
+.feed-card__title { font-size: 15px; font-weight: 600; line-height: 21px; color: var(--k-ink); }
+.feed-card__meta { margin-top: 2px; color: var(--k-muted); font-size: 12px; line-height: 17px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.activity-list { --activity-height: 128px; }
+.activity-swiper { width: 100%; height: var(--activity-height); border-radius: 12px; overflow: hidden; }
+.activity-slide { height: 100%; box-sizing: border-box; }
+.activity-slide--peek { padding-right: 8px; }
+.activity-card { display: grid; grid-template-columns: 29% minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 5px 9px; height: 100%; box-sizing: border-box; padding: 8px 10px 7px 8px; }
+.activity-card__media { min-width: 0; min-height: 0; border-radius: 8px; }
+.activity-card__blank { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--k-red-soft); }
+.activity-card__month { color: var(--k-red-deep); font-size: 11px; font-weight: 600; line-height: 16px; }
+.activity-card__month::after { content: ''; display: block; width: 18px; height: 1px; margin: 4px auto 2px; background: var(--k-red-line); }
+.activity-card__day { color: var(--k-ink); font-size: 31px; font-weight: 600; line-height: 36px; font-variant-numeric: tabular-nums; }
+.activity-card__copy { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+.activity-card__title { flex: 0 0 auto; font-size: 14px; line-height: 19px; text-wrap: balance; }
+.activity-card__details { display: flex; flex-direction: column; gap: 2px; }
+.activity-card__meta { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--k-muted); font-size: 12px; line-height: 16px; }
+.activity-card__meta text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity-card__foot { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--k-line); }
+.activity-card__price { min-width: 0; text-align: right; font-size: 13px; font-weight: 600; line-height: 17px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.activity-pages { display: flex; align-items: center; justify-content: center; }
+.activity-page { width: 25px; height: 24px; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; }
+.activity-page::after { border: 0; }
+.activity-page__mark { width: 4px; height: 3px; border-radius: 2px; background: var(--k-red-line); }
+.activity-page.is-current .activity-page__mark { width: 13px; background: var(--k-red); }
+.activity-list + .section-head { margin-top: 14px; }
+.act-icon { width: 40px; height: 40px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--k-red-soft); }
+.act-empty { display: flex; align-items: center; gap: 12px; padding: 14px 12px; border-radius: 12px; background: var(--k-paper); }
+.act-empty__title { display: block; font-size: 14px; font-weight: 600; line-height: 20px; }
+.act-empty__copy { display: block; margin-top: 2px; color: var(--k-muted); font-size: 12px; line-height: 17px; }
+.stay-group + .stay-group { margin-top: 20px; }
+.stay-group__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; height: 20px; margin-bottom: 10px; }
+.stay-group__heading { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.stay-group__title { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--k-ink2); }
+.stay-group__count { font-size: 12px; color: var(--k-muted); font-variant-numeric: tabular-nums; }
+.stay-tile { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border-radius: 12px; background: var(--k-paper); }
+.feed-card--stay { position: relative; border-radius: 0; background: transparent; }
+.stay-cover { position: relative; width: 100%; padding-top: 75%; overflow: hidden; background: var(--k-red-soft); }
+.stay-cover__image { position: absolute; left: 0; top: 0; display: block; width: 100%; height: 100%; }
+.stay-cover__empty { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--k-muted); font-size: 12px; line-height: 16px; }
+.stay-tags { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-height: 18px; padding: 0 10px 10px; }
+.stay-source { position: absolute; left: 8px; top: 8px; z-index: 1; height: 18px; padding: 0 6px; border-radius: 10px; background: rgba(58,50,43,.55); color: var(--k-paper); font-size: 11px; font-weight: 500; line-height: 18px; white-space: nowrap; }
+.stay-copy { display: flex; flex-direction: column; min-width: 0; padding: 10px 10px 8px; }
+.feed-card--stay .feed-card__title { font-size: 14px; line-height: 20px; }
+.safe-chip { align-self: flex-start; height: 18px; padding: 0 6px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 500; white-space: nowrap; flex: 0 0 auto; }
+.feed-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 16px; border-radius: 12px; background: var(--k-paper); color: var(--k-ink); font-size: 14px; font-weight: 500; line-height: 1.6; text-align: center; }
+.feed-state--loading { padding: 40px 16px; background: transparent; color: var(--k-muted); font-size: 12px; font-weight: 400; }
+.state-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: var(--k-red-soft); }
+.state-sub { margin-top: -8px; color: var(--k-muted); font-size: 12px; font-weight: 400; line-height: 1.6; }
+/* 输入框加高而不整体上移：右边的「清空」要落在悬浮客服钮下面 */
+.ai-body { position: relative; min-height: calc(100vh - 88px); padding: 24px 16px 40px; }
 /* 贴纸右边和底边是平切的：贴着圆的右下放，切口让圆框裁掉 */
-.ai-avatar { position: relative; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: var(--k-paper2); box-shadow: var(--k-sh1); }
-.ai-avatar__img { position: absolute; left: 7px; top: 6px; width: 49px; height: 53px; }
-.ai-title { display: block; margin-top: 14px; font-size: 22px; font-weight: 600; }
-.ai-intro { display: block; margin-top: 10px; color: var(--k-ink2); font-size: 14px; line-height: 1.7; white-space: pre-line; }
-.idea-box { position: relative; margin-top: 26px; height: 128px; border: 1px solid var(--k-line2); border-radius: var(--k-radius); background: var(--k-paper); padding: 14px; }
-/* 新例句占 3 行：框 110→128、输入区 72→80（3 行 × 25.6px），第 3 行不被裁、也不碰右下角「0/200」 */
-.idea-box__input { width: 100%; height: 80px; font-size: 16px; line-height: 1.6; }
-/* 不打字时的占位文字：和输入框一样大，长文字换行、超出的藏起来 */
+.ai-hello { display: flex; align-items: center; gap: 12px; }
+.ai-avatar { position: relative; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex: 0 0 auto; background: var(--k-red-soft); }
+.ai-avatar__img { position: absolute; left: 5px; top: 5px; width: 39px; height: 42px; }
+.ai-title { font-size: 20px; font-weight: 700; line-height: 28px; }
+.ai-intro { display: block; margin-top: 12px; color: var(--k-ink2); font-size: 13px; line-height: 1.6; white-space: pre-line; }
+.idea-box { position: relative; margin-top: 20px; height: 136px; padding: 12px 14px; border-radius: 12px; background: var(--k-paper); }
+.idea-box__input { width: 100%; height: 88px; font-size: 14px; line-height: 1.6; }
 .home-area-idle { overflow: hidden; white-space: pre-wrap; word-break: break-all; }
-.idea-box__count { position: absolute; right: 14px; bottom: 10px; color: var(--k-muted); font-size: 12px; }
-/* 热门问法：奶油色小胶囊，放不下就折行 */
-.hot-words { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.hot-word { height: 30px; padding: 0 12px; border-radius: 15px; background: var(--k-paper2); color: var(--k-ink2); font-size: 13px; line-height: 30px; white-space: nowrap; }
-.hot-words + .preference-head { margin-top: 24px; }
-.preference-head { margin-top: 32px; display: flex; align-items: center; justify-content: space-between; }
-.preference-head__title { font-size: 15px; font-weight: 700; }
+.idea-box__count { position: absolute; right: 14px; bottom: 10px; color: var(--k-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.hot-words { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.hot-word { height: 28px; padding: 0 12px; border-radius: 14px; background: var(--k-paper); color: var(--k-ink2); font-size: 12px; line-height: 28px; white-space: nowrap; }
+.preference-head { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; }
+.preference-head__title { font-size: 16px; font-weight: 700; line-height: 22px; }
 .preference-head__hint, .preference-head__clear { color: var(--k-ink2); font-size: 12px; }
-.pref-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 12px; }
-.pref-card { height: 66px; padding: 0 11px; display: flex; align-items: center; gap: 9px; border-radius: var(--k-radius); background: var(--k-paper); box-shadow: var(--k-sh1); }
-.pref-card__copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.pref-card__label { color: var(--k-muted); font-size: 12px; white-space: nowrap; }
-.pref-card__value { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.match-button { margin-top: 34px; }
-.skill-pop { position: fixed; inset: 0; z-index: 1000; }
-.skill-pop__mask { position: absolute; inset: 0; background: rgba(36,27,23,.45); }
-.skill-pop__panel { position: absolute; left: 0; right: 0; bottom: 0; max-width: 540px; margin: 0 auto; padding: 18px 16px calc(16px + var(--k-safe-bottom)); border-radius: 20px 20px 0 0; background: var(--k-paper); }
+.preference-head__hint { margin-left: -4px; color: var(--k-muted); }
+.pref-grid { margin-top: 12px; padding: 0 12px; border-radius: 12px; background: var(--k-paper); }
+.pref-card { position: relative; height: 48px; display: flex; align-items: center; gap: 10px; }
+.pref-card + .pref-card::before { content: ''; position: absolute; left: 28px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.pref-card__label { flex: 0 0 auto; color: var(--k-ink2); font-size: 14px; }
+.pref-card__value { flex: 1; min-width: 0; text-align: right; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.pref-card__value.is-unset, .reason-pref__value.is-unset { color: var(--k-muted); font-weight: 400; }
+.reason-prefs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; row-gap: 16px; margin-top: 4px; }
+.reason-pref { display: flex; flex-direction: column; gap: 4px; min-width: 0; border-radius: 12px; background: var(--k-paper); }
+.reason-pref__label { color: var(--k-muted); font-size: 11px; line-height: 16px; white-space: nowrap; }
+.reason-pref__value { font-size: 14px; font-weight: 600; line-height: 20px; word-break: break-all; font-variant-numeric: tabular-nums; }
+.match-button, .rematch-button { margin-top: 20px; }
+.ai-note { display: block; margin-top: 8px; color: var(--k-muted); text-align: center; font-size: 11px; }
+.skill-pop { position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 1000; }
+.skill-pop__mask { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(36,27,23,.45); }
+.skill-pop__panel { position: absolute; left: 0; right: 0; bottom: 0; max-width: 540px; margin: 0 auto; padding: 20px 16px calc(12px + var(--k-safe-bottom)); border-radius: 16px 16px 0 0; background: var(--k-paper); }
 .skill-pop__head { display: flex; align-items: baseline; justify-content: space-between; }
-.skill-pop__title { font-size: 18px; font-weight: 700; }
-.skill-pop__hint { color: var(--k-muted); font-size: 13px; }
-.skill-pop__chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 20px; }
-.skill-pop__chip { padding: 8px 14px; border: 1px solid var(--k-line); border-radius: 18px; font-size: 14px; background: var(--k-bg); }
-.skill-pop__chip.on { color: #fff; border-color: var(--k-red); background: var(--k-red); font-weight: 600; }
-.skill-pop__foot { display: flex; gap: 12px; }
+.skill-pop__title { font-size: 16px; font-weight: 700; }
+.skill-pop__hint { color: var(--k-muted); font-size: 12px; }
+.skill-pop__chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 12px -2px 16px; }
+.skill-pop__chip { height: 36px; padding: 0 14px; border: 2px solid transparent; border-radius: 18px; color: var(--k-ink2); font-size: 13px; line-height: 32px; background: var(--k-paper2) padding-box; }
+.skill-pop__chip.on { color: var(--k-red-deep); background: var(--k-red-soft) padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); font-weight: 500; }
+.skill-pop__foot { display: flex; gap: 8px; }
 .skill-pop__btn { flex: 1; min-width: 0; }
 .skill-pop__btn--main { flex: 2; }
-.ai-note { display: block; margin-top: 16px; color: var(--k-ink2); text-align: center; font-size: 12px; }
-.result-tabs { height: 48px; display: flex; border-bottom: 1px solid var(--k-line); }
-.result-tab { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; }
-.result-tab.active { color: var(--k-red); }
-.result-tab.active::after { content: ''; position: absolute; bottom: 0; left: 50%; width: 50px; height: 3px; border-radius: 2px; background: var(--k-red); transform: translateX(-50%); }
-.result-body { position: relative; min-height: calc(100vh - 136px); padding: 14px 16px 36px; }
-.result-sort { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; color: var(--k-ink2); font-size: 12px; }
-/* 结果卡、圆环卡、匹配依据和下面四格偏好：和首页一样是 16px 圆角白卡 + 轻阴影，不再描边（之前 12px 圆角 + 1px 边） */
-.match-card { position: relative; min-height: 150px; margin-bottom: 12px; display: flex; overflow: hidden; border-radius: var(--k-radius); background: var(--k-paper); box-shadow: var(--k-sh1); }
-.match-card__image { width: 92px; min-height: 150px; height: auto; flex: 0 0 auto; border-radius: var(--k-radius) 0 0 var(--k-radius); }
-.match-card__main { flex: 1; min-width: 0; padding: 12px 10px; }
-/* 长标题之前不截断，一直伸到右上角的匹配度数字下面 */
-.match-card__title { display: block; margin-right: 56px; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* 标签行右边让出匹配度数字的位置（最宽是「100%」约 64px）：之前 320 宽「安心商家 / 咖啡制作」和「95%」叠在一起。
-   放不下时技能折到下一行，再长就省略号 */
-.match-card__tag { min-width: 0; margin: 5px 68px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
-.match-card__skill { min-width: 0; max-width: 100%; color: var(--k-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.match-card__price { margin-top: 7px; font-size: 12px; }
-.match-card__date { display: block; margin-top: 5px; color: var(--k-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.match-card__line { height: 1px; margin: 8px 0 6px; background: var(--k-line); }
-.match-card__reason { display: block; color: var(--k-muted); font-size: 11px; line-height: 1.5; white-space: pre-line; }
-.match-card__score { position: absolute; right: 10px; top: 31px; display: flex; flex-direction: column; align-items: flex-end; color: var(--k-muted); font-size: 10px; }
-/* 匹配度数字之前是 Georgia 衬线，10-16 改版全站系统黑体，改成黑体加粗（下面圆环里的、匹配依据的分数同样） */
-.match-card__percent { color: var(--k-green); font-size: 30px; font-weight: 700; line-height: 1; }
-.match-card__percent-sign { font-size: 16px; }
-.result-end { display: block; margin: 18px 0 6px; color: var(--k-muted); text-align: center; font-size: 14px; }
-.reason-body { position: relative; min-height: calc(100vh - 88px); padding: 10px 16px 34px; }
-.score-card { min-height: 128px; padding: 14px; display: flex; align-items: center; gap: 12px; border-radius: var(--k-radius); background: var(--k-paper); box-shadow: var(--k-sh1); }
-.score-ring { width: 92px; height: 92px; border-radius: 50%; border: 7px solid var(--k-green); box-shadow: inset 0 0 0 5px var(--k-paper), inset 0 0 0 6px var(--k-line); display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto; }
-.score-ring__num { color: var(--k-green); font-size: 32px; font-weight: 700; line-height: 1; }
-.score-ring__sign { font-size: 17px; }
-.score-ring__label { margin-top: 6px; font-size: 12px; }
-/* 320 宽时右边只剩约 156px：14px 字一行 11 个刚好放下，三行不再折成五行；卡片改成最小高度，万一折行也不会溢出 */
-.score-card__text { font-size: 14px; line-height: 1.7; white-space: pre-line; }
-.reason-title { display: block; margin: 14px 0 8px; font-size: 16px; font-weight: 700; }
-.reason-list { padding: 0 10px; border-radius: var(--k-radius); background: var(--k-paper); box-shadow: var(--k-sh1); }
-.reason-row { min-height: 64px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--k-line); }
-.reason-row:last-child { border-bottom: 0; }
-.reason-row__icon { width: 36px; height: 36px; border-radius: 50%; background: var(--k-green-soft); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-/* 「生活偏好」4 个 14px 粗体字要 56px：之前宽 46px 被折成「生活偏 / 好」两行 */
-.reason-row__label { width: 58px; font-size: 14px; font-weight: 700; white-space: nowrap; flex: 0 0 auto; }
-.reason-row__desc { flex: 1; min-width: 0; color: var(--k-muted); font-size: 11px; line-height: 1.55; white-space: pre-line; }
-.reason-row__score { color: var(--k-green); font-size: 17px; font-weight: 700; }
-.reason-pref-head { margin-top: 14px; }
-/* 四格偏好：小标题之前只有 9px（为了 320 宽一排塞下 4 格），现在 11px。375 宽及以上一排 4 格，按 375 宽量过「技能标签（可选）」放得下；
-   更窄时改成两排两格，日期、技能也不会被截 */
-.reason-prefs { display: grid; grid-template-columns: 1.6fr .7fr 1.4fr 1.75fr; gap: 4px; margin-top: 10px; }
-.reason-pref { min-width: 0; min-height: 53px; padding: 8px 6px; border-radius: var(--k-radius); background: var(--k-paper); box-shadow: var(--k-sh1); }
-.reason-pref__label { display: block; color: var(--k-muted); font-size: 11px; white-space: nowrap; }
-@media (max-width: 374px) {
-  .reason-prefs { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
-  .reason-pref { padding: 8px 10px; }
+.result-tabs { position: relative; height: 44px; display: flex; gap: 24px; padding: 0 16px; }
+.result-tabs::after, .match-card__line::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.result-tab { position: relative; display: flex; align-items: center; gap: 2px; font-size: 14px; line-height: 20px; color: var(--k-muted); }
+.result-tab__n { font-size: 12px; font-weight: 400; color: var(--k-muted); font-variant-numeric: tabular-nums; }
+.result-tab.active .result-tab__n { color: var(--k-ink2); }
+.result-tab.active { color: var(--k-ink); font-weight: 600; }
+.result-tab.active::after { content: ''; position: absolute; bottom: 6px; left: 6px; width: 16px; height: 3px; border-radius: 2px; background: var(--k-red); }
+.result-body { position: relative; min-height: calc(100vh - 136px); padding: 12px 16px 36px; }
+.result-sort { display: flex; align-items: center; justify-content: space-between; height: 20px; margin-bottom: 10px; color: var(--k-ink2); font-size: 12px; }
+.result-sort.is-dim text { color: var(--k-muted); }
+.match-card { position: relative; margin-bottom: 8px; border-radius: 12px; background: var(--k-paper); }
+.match-card__top, .match-card__row { display: flex; gap: 8px; }
+.match-card__row { align-items: baseline; justify-content: space-between; margin-top: 6px; }
+.match-card__image { width: 84px; height: 84px; margin: 12px 0 0 12px; flex: 0 0 auto; border-radius: 8px; background: var(--k-red-soft); }
+.match-card__main { flex: 1; min-width: 0; padding: 12px 12px 0 4px; }
+.match-card__main :deep(.job-urgency) { display: flex; width: fit-content; margin-bottom: 4px; padding: 0 6px; border-radius: 4px; font-size: 11px; font-weight: 500; line-height: 18px; }
+.match-card__title { font-size: 15px; font-weight: 600; line-height: 21px; }
+.match-card__tag { min-width: 0; margin: 6px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.match-card__skill { min-width: 0; max-width: 100%; height: 18px; color: var(--k-muted); font-size: 12px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.match-card__price { min-width: 0; color: var(--k-muted); font-size: 11px; }
+.match-card__price .k-price { font-size: 17px; font-variant-numeric: tabular-nums; }
+.match-card__date { display: block; margin-top: 2px; color: var(--k-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.match-card__line { position: relative; height: 12px; margin: 0 12px; }
+.match-card__reason { display: flex; gap: 4px; padding: 8px 12px 12px; color: var(--k-ink2); font-size: 12px; line-height: 1.6; white-space: pre-line; }
+.match-card__reason :deep(.k-icon) { flex: 0 0 auto; margin-top: 3px; }
+.match-card__score { flex: 0 0 auto; display: flex; flex-direction: row-reverse; align-items: baseline; gap: 4px; color: var(--k-muted); font-size: 11px; }
+.match-card__percent { color: var(--k-ink2); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.match-card__percent-sign { color: var(--k-muted); font-size: 11px; font-weight: 400; }
+.result-end { display: block; margin: 16px 0 6px; color: var(--k-muted); text-align: center; font-size: 14px; }
+.result-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 16px; border-radius: 12px; background: var(--k-paper); }
+.result-empty .result-end { margin: 0; color: var(--k-ink); font-weight: 500; line-height: 1.6; }
+.result-end.is-end { font-size: 12px; }
+.reason-body { position: relative; min-height: calc(100vh - 88px); padding: 12px 16px 34px; }
+.score-card { padding: 0 16px 16px; border-radius: 12px; background: var(--k-paper); }
+.score-card__top { display: flex; align-items: center; gap: 16px; }
+.score-ring { position: relative; width: 84px; height: 84px; flex: 0 0 auto; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.score-ring::before { content: ''; position: absolute; left: 6px; top: 6px; right: 6px; bottom: 6px; border-radius: 50%; background: var(--k-paper); }
+.score-ring__num, .score-ring__label { position: relative; }
+.score-ring__num { font-size: 24px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.score-ring__sign { font-size: 13px; }
+.score-ring__label { margin-top: 4px; color: var(--k-muted); font-size: 11px; }
+/* 320 宽时右边约 180px：13px 字一行 11 个放得下，三行不会折成五行；卡片是最小高度，万一折行也不会溢出 */
+.score-card__text { flex: 1; min-width: 0; color: var(--k-ink2); font-size: 13px; line-height: 1.7; white-space: pre-line; }
+.reason-list { border-radius: 12px; background: var(--k-paper); }
+.reason-box { margin-top: 12px; padding: 0 16px 16px; border-radius: 12px; background: var(--k-paper); }
+.reason-row { position: relative; min-height: 60px; padding: 10px 0; display: flex; align-items: flex-start; gap: 12px; }
+.reason-row:first-child { margin-top: 12px; }
+.reason-row__icon { width: 32px; height: 32px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--k-red-soft); }
+.reason-row + .reason-row::before { content: ''; position: absolute; left: 44px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.reason-row__copy { flex: 1; min-width: 0; }
+.reason-row__label { display: block; width: 64px; font-size: 14px; font-weight: 600; line-height: 20px; white-space: nowrap; }
+.reason-row__desc { display: block; margin-top: 2px; color: var(--k-muted); font-size: 12px; line-height: 1.5; white-space: pre-line; }
+.reason-row__score { flex: 0 0 auto; width: 44px; text-align: right; color: var(--k-ink); font-size: 14px; font-weight: 600; line-height: 32px; font-variant-numeric: tabular-nums; }
+.reason-pref-head { height: 48px; margin-top: 0; }
+.ai-body .preference-head { padding-right: 12px; }
+@media (max-width: 360px) {
+  .handbook-cover { margin-left: -12px; margin-right: -12px; }
+  .brand { gap: 4px; padding-left: 4px; }
+  .brand__name { font-size: 14px; letter-spacing: 0; }
+  .location { margin-left: 0; padding: 0 4px 0 6px; gap: 2px; border-width: 8px 0; }
+  .location__name { font-size: 12px; }
+  .home-content, .ai-body, .result-body, .reason-body { padding-left: 12px; padding-right: 12px; }
+  .result-tabs { padding: 0 12px; }
+  .entry-grid { padding: 16px 0; }
+  .activity-list { --activity-height: 124px; }
+  .activity-card { column-gap: 8px; padding-right: 9px; }
+  .entry__icon { width: 40px; height: 40px; border-radius: 12px; }
+  .reason-row { gap: 8px; }
+  .reason-row + .reason-row::before { left: 40px; }
 }
-.reason-pref__value { display: block; margin-top: 5px; font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rematch-button { margin-top: 16px; }
-.reason-note { margin-top: 11px; }
+
+.home-page.user-surface {
+  --k-top: #FAF7F1;
+  .search-box { @include user-search.field; }
+  .search-box__field { height: 44px; padding: 0; gap: 7px; }
+  .search-box__input { @include user-search.input; }
+  .search-box__placeholder { font-size: 13px; }
+  .search-box__go { @include user-search.submit; }
+  .entry-grid { margin-top: 5px; padding: 11px 0 12px; background: transparent; }
+  .entry__icon { width: 39px; height: 39px; border-radius: 11px; background: #FFFDFA; }
+  .section-head { margin-top: 21px; margin-bottom: 10px; }
+  .section-head__title { font-size: 17px; font-weight: 600; }
+  .activity-list + .section-head { margin-top: 14px; }
+  .stay-cover { width: auto; margin: 5px 5px 0; padding-top: 63%; border-radius: 8px; }
+  .stay-source { left: 6px; top: 6px; border-radius: 5px; background: rgba(255, 253, 249, .94); color: var(--k-ink); }
+  .stay-tile { box-shadow: none; }
+  .stay-copy { padding: 8px 10px 6px; }
+  .stay-grid--one { grid-template-columns: minmax(0, 1fr); }
+  .stay-grid--one .stay-tile, .stay-grid--one .feed-card--stay { flex-direction: row; align-items: center; }
+  .stay-grid--one .feed-card--stay { display: flex; flex: 1; min-width: 0; }
+  .stay-grid--one .stay-cover { flex: 0 0 32%; height: 68px; margin: 4px; padding-top: 0; border-radius: 6px; }
+  .stay-grid--one .stay-source { display: none; }
+  .stay-grid--one .stay-copy { padding: 8px 4px; }
+  .stay-grid--one .stay-tags { flex-shrink: 0; min-height: 0; margin: 0; padding: 0 9px 0 0; }
+}
+@media (max-width: 359px) {
+  .home-page.user-surface .entry-grid { padding: 11px 0; }
+  .home-page.user-surface .entry__icon { width: 38px; height: 38px; }
+}
 </style>

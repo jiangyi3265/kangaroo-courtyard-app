@@ -64,7 +64,8 @@ export function stageBanner(status, { online = false, detail = {}, interview = n
     case 'user_confirmed': return wait('候选人已确认意向，待门店确认录用', when(d.userConfirmTime, '确认意向'))
     case 'store_confirmed': return wait(d.jobType === 'volunteer' && d.volunteerContractStatus === 'pending' ? '用户已确认协议，待店家核对' : d.jobType === 'volunteer' && d.volunteerContractStatus === 'rejected' ? '协议已退回，待用户重新确认' : '已确认录用，待候选人签约', when(d.storeConfirmTime, '录用'))
     case 'contract_signed': return wait('已签约，待到岗后标记入职')
-    case 'onboarded': return { label: d.volunteerDone === true ? '已入职 · 换工已完成' : '已入职（入职成功）', date: when(d.onboardTime, '入职'), tone: 'ok' }
+    case 'onboarded': if (d.workEndTime) return { label: '工作已结束', date: when(d.workEndTime, '结束'), tone: 'ok' }
+      return { label: d.volunteerDone === true ? '已入职 · 换工已完成' : '已入职（入职成功）', date: when(d.onboardTime, '入职'), tone: 'ok' }
     default: return wait(d.statusLabel || '处理中')
   }
 }

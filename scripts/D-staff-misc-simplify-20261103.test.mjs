@@ -232,7 +232,7 @@ function business(who, hub = {}) {
   const r = ROLES[who], log = { gone: [], sheets: [], toasts: [] }
   const s = vue.ref(1)
   const h = runSetup('pages/staff/business.vue', {
-    ...v, R, useScreen: () => s, onlineStaff: { value: false }, merchantStaff: { value: false }, merchantService: { value: who === 'service' }, cityLead: { value: false }, cityLeadFull: { value: false },
+    ...v, R, recruitmentEnabled: vue.ref(true), useScreen: () => s, onlineStaff: { value: false }, merchantStaff: { value: false }, merchantService: { value: who === 'service' }, cityLead: { value: false }, cityLeadFull: { value: false },
     staffCan: (item, action) => (r.perms[item] || []).includes(action), currentStaffStore: { value: { roleCode: r.role, storeId: 102, roleName: r.roleName } }, currentStaffStoreId: () => 102, currentAlsoService: { value: false },
     staffStoreUrl: storeUrl, go: (u) => log.gone.push(u), relaunch: (u) => log.gone.push(u), getSessionRevision: () => 1, ensureSession: async () => {}, hasStaffAccess: { value: true }, absUrl: x => x,
     apiStaffHub: async () => ({ data: { storeId: 102, role: r.role, roleName: r.roleName, ...hub } }),
@@ -248,7 +248,7 @@ test('K7 业务页：三个菜单都拆成格子，点了直接进，全程不�
   assert.doesNotMatch(b.script, /label: '(人员管理|下周任务|二消管理)'/)
   assert.doesNotMatch(b.template, /人员管理|下周任务|二消管理|换工主理人中心/)
   assert.deepEqual(b.json('frequent.value.map(e => e.label)'), ['纠纷调解', '岗位管理', '调度管理', '活动管理', '评价管理', '保险管理', '员工与权限', '人才库'])
-  assert.deepEqual(b.json('daily.value.map(e => e.label)'), ['招募周报', '查看任务', '发布任务', '日报管理', '数据看板'])
+  assert.deepEqual(b.json('daily.value.map(e => e.label)'), ['日报与月度任务', '招募周报', '查看任务', '发布任务', '日报管理', '数据看板'])
   assert.deepEqual(b.json('ownerEntries.map(e => e.label)'), ['看板', '钱包', '荣誉'])
   await b.run("openItem(frequent.value.find(e => e.label === '员工与权限'))")
   assert.equal(b.s.value, 3)
@@ -276,7 +276,7 @@ test('K7 业务页：不是本店换工主理人点专区三格只提示；小�
   const labels = k.json('frequent.value.map(e => e.label)')
   assert.ok(labels.includes('二消订单') && labels.includes('员工与权限') && !labels.includes('人才库'), labels.join())
   assert.equal(k.json("frequent.value.find(e => e.label === '二消订单').to"), '/pages/staff/insurance?s=3')
-  assert.deepEqual(k.json('daily.value.map(e => e.label)'), ['周报管理', '查看任务', '发布任务', '日报管理', '数据看板'])
+  assert.deepEqual(k.json('daily.value.map(e => e.label)'), ['日报与月度任务', '周报管理', '查看任务', '发布任务', '日报管理', '数据看板'])
 
   const st = business('staff')
   t.after(st.stop)

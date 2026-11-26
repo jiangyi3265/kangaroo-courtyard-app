@@ -10,19 +10,19 @@
     <k-topbar v-else :title="titles[s-2]" back custom-back @back="backScreen" />
 
     <view v-if="s===1" class="k-body k-pad-business hub-page">
-      <view class="staff-head"><image :src="absUrl(hub.avatar) || '/static/media/profile-avatar.jpg'" mode="aspectFill" /><view class="k-flex1"><text class="k-ellipsis">{{ hub.name ? '你好，' + hub.name : '你好' }}</text><text>{{ roleLabel ? '角色：' + roleLabel : '' }}</text></view><view class="head-icon" hover-class="k-press-s" @click="openMessages"><k-icon name="message-square" :size="25" color="ink" /><text v-if="hub.unread">{{ hub.unread > 99 ? '99+' : hub.unread }}</text></view><view class="head-icon" hover-class="k-press-s" @click="scan"><k-icon name="scan-line" :size="27" color="ink" /></view></view>
-      <view class="current-store" :class="{ 'current-store--long': alsoService }" hover-class="k-press-s" @click="s=2"><k-icon name="house" :size="27" color="ink" /><view class="k-flex1"><view class="k-row k-gap8"><text class="store-name">{{ hub.storeName || '' }}</text><k-chip v-if="roleLabel" tone="ochre"><text>{{ roleLabel }}</text></k-chip></view><text>数据范围：{{ hub.storeName || '' }}</text></view><k-icon name="chevron-right" :size="22" color="ink" /></view>
-      <text class="group-title">报名审核与交付</text><view class="function-grid review-entries" :class="'review-entries--' + reviewEntries.length"><view v-for="item in reviewEntries" :key="item.label" hover-class="k-press" @click="item.open()"><view class="review-icon"><k-icon :name="item.icon" :size="29" :color="item.color" /><text v-if="item.badge" class="review-badge">{{ item.badge > 99 ? '99+' : item.badge }}</text></view><text>{{ item.label }}</text></view></view>
+      <view class="staff-head"><image :src="absUrl(hub.avatar) || '/static/media/profile-avatar.jpg'" mode="aspectFill" /><view class="k-flex1"><text class="k-ellipsis">{{ hub.name ? '你好，' + hub.name : '你好' }}</text><text>{{ roleLabel ? '角色：' + roleLabel : '' }}</text></view><view class="head-icon" hover-class="k-press-s" @click="openMessages"><k-icon name="message-square" :size="22" color="ink" /><text v-if="hub.unread">{{ hub.unread > 99 ? '99+' : hub.unread }}</text></view><view class="head-icon" hover-class="k-press-s" @click="scan"><k-icon name="scan-line" :size="22" color="ink" /></view></view>
+      <view class="current-store" :class="{ 'current-store--long': alsoService }" hover-class="k-press-s" @click="s=2"><k-icon name="house" :size="20" color="ink" /><view class="k-flex1"><view class="k-row k-gap8"><text class="store-name">{{ hub.storeName || '' }}</text><k-chip v-if="roleLabel" tone="ochre"><text>{{ roleLabel }}</text></k-chip></view><text>数据范围：{{ hub.storeName || '' }}</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view>
+      <text class="group-title">报名审核与交付</text><view class="function-grid review-entries" :class="'review-entries--' + reviewEntries.length"><view v-for="item in reviewEntries" :key="item.label" hover-class="k-press" @click="item.open()"><view class="review-icon"><k-icon :name="item.icon" :size="22" color="red" :stroke="1.7" /><text v-if="item.badge" class="review-badge">{{ item.badge > 99 ? '99+' : item.badge }}</text></view><text>{{ item.label }}</text></view></view>
       <!-- 每日概况（2026-10-17，主人要在手机上每天看各城市、各小院的入住和报名）：合起来看所有有授权的门店，不限当前门店。
            小院主理人（10-30 店员 Luna 的备忘录）不看换工：普通的整段不显示，下面的旅居订单就是他的概况；兼任商家服务人的换成线上任务 -->
-      <template v-if="!isKeeper"><text class="group-title">每日概况</text><view class="owner-entry stay-entry daily-entry" hover-class="k-press-s" @click="go(DAILY_PAGE)"><view><k-icon name="chart-column" :size="26" color="red" /></view><view class="k-flex1"><text>当地换工招募概况</text><text>招募缺口 · 今日到达 · 一周内离开</text></view><k-icon name="chevron-right" :size="20" color="ink" /></view></template>
-      <template v-else-if="alsoService"><text class="group-title">每日概况</text><view class="owner-entry stay-entry daily-entry" hover-class="k-press-s" @click="go(staffStoreUrl(ONLINE_DAILY_PAGE, hub.storeId))"><view><k-icon name="chart-column" :size="26" color="red" /></view><view class="k-flex1"><text>线上任务招募概况</text><text>招募中 · 招募缺口 · 待审核报名</text></view><k-icon name="chevron-right" :size="20" color="ink" /></view></template>
+      <template v-if="!isKeeper"><text class="group-title">每日概况</text><view class="owner-entry stay-entry daily-entry" hover-class="k-press-s" @click="go(DAILY_PAGE)"><view><k-icon name="chart-column" :size="20" color="red" /></view><view class="k-flex1"><text>当地换工招募概况</text><text>招募缺口 · 今日到达 · 一周内离开</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view></template>
+      <template v-if="alsoService || (isCityLead && cityLeadFull)"><text v-if="alsoService" class="group-title">每日概况</text><view class="owner-entry stay-entry daily-entry" hover-class="k-press-s" @click="go(staffStoreUrl(ONLINE_DAILY_PAGE, hub.storeId))"><view><k-icon name="chart-column" :size="20" color="red" /></view><view class="k-flex1"><text>线上任务招募概况</text><text>招募中 · 招募缺口 · 待审核报名</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view></template>
       <!-- 旅居订单单独一个入口：新订单排房、今日到店 / 离店、办理入住退房（之前只能从消息或「二消订单」里翻） -->
-      <template v-if="canStay"><text class="group-title">旅居订单</text><view class="owner-entry stay-entry" hover-class="k-press-s" @click="go(staffStoreUrl(R.staffStayOrders, hub.storeId))"><view><k-icon name="bed-double" :size="26" color="green" /></view><view class="k-flex1"><text>订单与排房</text><text>新订单排房 · 今日到店离店 · 房态图 · 办理入住退房</text></view><k-icon name="chevron-right" :size="20" color="ink" /></view>
-      </template><text class="group-title">高频工作</text><view class="function-grid"><view v-for="item in frequent" :key="item.label" hover-class="k-press-s" @click="openItem(item)"><k-icon :name="item.icon" :size="29" :color="item.color" /><text>{{ item.label }}</text></view></view>
-      <text class="group-title daily-title">日常管理</text><view class="function-grid daily-grid"><view v-for="item in daily" :key="item.label" hover-class="k-press-s" @click="openItem(item)"><k-icon :name="item.icon" :size="29" :color="item.color" /><text>{{ item.label }}</text></view></view>
+      <template v-if="canStay"><text class="group-title">旅居订单</text><view class="owner-entry stay-entry" hover-class="k-press-s" @click="go(staffStoreUrl(R.staffStayOrders, hub.storeId))"><view><k-icon name="bed-double" :size="20" color="red" /></view><view class="k-flex1"><text>订单与排房</text><text>新订单排房 · 今日到店离店 · 房态图 · 办理入住退房</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view>
+      </template><text class="group-title">高频工作</text><view class="function-grid"><view v-for="item in frequent" :key="item.label" hover-class="k-press-s" @click="openItem(item)"><view class="fn-icon"><k-icon :name="item.icon" :size="22" color="red" :stroke="1.7" /></view><text>{{ item.label }}</text></view></view>
+      <text class="group-title daily-title">日常管理</text><view class="function-grid daily-grid"><view v-for="item in daily" :key="item.label" hover-class="k-press-s" @click="openItem(item)"><view class="fn-icon"><k-icon :name="item.icon" :size="22" color="red" :stroke="1.7" /></view><text>{{ item.label }}</text></view></view>
       <!-- 2026-11-03 主人：简化——换工主理人专区不再是一条点了再弹菜单的入口，直接拆成「看板 / 钱包 / 荣誉」三格 -->
-      <template v-if="!isKeeper"><text class="group-title owner-title">换工主理人专区</text><view class="function-grid owner-grid"><view v-for="item in ownerEntries" :key="item.label" hover-class="k-press-s" @click="openOwner(item)"><k-icon :name="item.icon" :size="29" :color="item.color" /><text>{{ item.label }}</text></view></view></template>
+      <template v-if="!isKeeper"><text class="group-title owner-title">换工主理人专区</text><view class="function-grid owner-grid"><view v-for="item in ownerEntries" :key="item.label" hover-class="k-press-s" @click="openOwner(item)"><view class="fn-icon"><k-icon :name="item.icon" :size="22" color="red" :stroke="1.7" /></view><text>{{ item.label }}</text></view></view></template>
     </view>
 
     <view v-else-if="s===2" class="k-body k-pad-business switch-page">
@@ -33,15 +33,15 @@
     </view>
 
     <view v-else-if="s===3" class="k-body k-pad-business roles-page">
-      <view class="role-tabs"><view class="active"><text>员工角色</text></view><view hover-class="k-press" @click="showTemplate"><text>权限模板</text></view></view><view class="role-head"><text>角色列表</text><view v-if="grantOptions.length" hover-class="k-press" @click="newRole"><k-icon name="plus" :size="18" color="ink" /><text>新建角色</text></view></view>
-      <view class="roles"><view v-for="role in roles" :key="role.name" hover-class="k-press" @click="openRole(role)"><view class="role-icon" :style="{background:role.bg}"><k-icon :name="role.icon" :size="23" color="white" /></view><text>{{ role.name }}</text><view class="k-flex1" /><text>{{ role.count }} 人</text><k-icon name="chevron-right" :size="18" color="muted" /></view></view>
-      <view class="permission"><view class="permission-title"><view><text>权限配置（{{ perm.selectedName || '' }}）</text><text>有效期：{{ perm.validity || '' }}</text></view><text @click="editPerm">编辑</text></view><view class="permission-row permission-head"><text>权限项</text><text v-for="head in ['查看','编辑','审核','支付','导出']" :key="head">{{ head }}</text></view><view v-for="row in permissions" :key="row.name" class="permission-row"><text>{{ row.name }}</text><view v-for="(value,index) in row.values" :key="index"><k-icon v-if="value==='yes'" name="check" :size="17" color="green" :stroke="2.4" /><text v-else-if="value==='part'">部分</text><text v-else>—</text></view></view></view>
+      <view class="role-tabs"><view class="active"><text>员工角色</text></view><view hover-class="k-press" @click="showTemplate"><text>权限模板</text></view></view><view class="role-head"><text>角色列表</text><view v-if="grantOptions.length" hover-class="k-press" @click="newRole"><k-icon name="plus" :size="14" color="red" /><text>新建角色</text></view></view>
+      <view class="roles"><view v-for="role in roles" :key="role.name" hover-class="k-press" @click="openRole(role)"><view class="role-icon" :style="{background:role.bg}"><k-icon :name="role.icon" :size="18" color="red" /></view><text>{{ role.name }}</text><view class="k-flex1" /><text>{{ role.count }} 人</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
+      <view class="permission"><view class="permission-title"><view><text>权限配置（{{ perm.selectedName || '' }}）</text><text>有效期：{{ perm.validity || '' }}</text></view><text @click="editPerm">权限说明</text></view><view class="permission-row permission-head"><text>权限项</text><text v-for="head in ['查看','编辑','审核','支付','导出']" :key="head">{{ head }}</text></view><view v-for="row in permissions" :key="row.name"><view class="permission-row"><text>{{ row.name }}</text><view v-for="(value,index) in row.values" :key="index"><k-icon v-if="value==='yes'" name="check" :size="17" color="green" :stroke="2.4" /><text v-else-if="value==='part'">部分</text><text v-else>—</text></view></view><text v-if="row.note" class="permission-note">{{ row.note }}</text></view></view>
     </view>
 
     <view v-else class="k-body k-pad-business logs-page">
-      <view class="log-filter"><view hover-class="k-press" @click="pickCategory"><text>{{ categoryLabel }}</text><k-icon name="chevron-down" :size="17" color="ink" /></view><view hover-class="k-press" @click="pickDays"><text>近 {{ days }} 天</text><k-icon name="chevron-down" :size="17" color="ink" /></view><view hover-class="k-press" @click="pickResult"><k-icon name="filter" :size="18" color="ink" /><text>{{ resultLabel }}</text></view></view>
+      <view class="log-filter"><view hover-class="k-press" @click="pickCategory"><text>{{ categoryLabel }}</text><k-icon name="chevron-down" :size="12" color="muted" /></view><view hover-class="k-press" @click="pickDays"><text>近 {{ days }} 天</text><k-icon name="chevron-down" :size="12" color="muted" /></view><view hover-class="k-press" @click="pickResult"><k-icon name="filter" :size="14" color="ink2" /><text>{{ resultLabel }}</text></view></view>
       <view class="summary-grid"><view v-for="item in summaries" :key="item.label"><text>{{ item.label }}</text><text :class="item.red?'k-alert':''">{{ item.value }}</text></view></view>
-      <text class="logs-title">操作日志{{ opl.scope ? '（' + opl.scope + '）' : '' }}</text><view class="logs-table"><view class="table-head"><text></text><text>操作人 / 时间</text><text>设备</text><text>结果</text></view><view v-for="log in logs" :key="log.logId" class="log-row" hover-class="k-press" @click="logTap(log)"><view class="log-action"><view :style="{background:log.color}"><k-icon :name="log.icon" :size="17" color="white" /></view><text>{{ log.action }}</text></view><view><text>{{ log.person }}</text><text>{{ log.time }}</text></view><text>{{ log.device }}</text><view class="result"><text :class="log.ok?'k-green':'k-alert'">{{ log.ok?'成功':'失败' }}</text><text v-if="!log.ok">{{ log.reason }}</text></view></view></view>
+      <text class="logs-title">操作日志{{ opl.scope ? '（' + opl.scope + '）' : '' }}</text><view class="logs-table"><view class="table-head"><text></text><text>操作人 / 时间</text><text>设备</text><text>结果</text></view><view v-for="log in logs" :key="log.logId" class="log-row" hover-class="k-press" @click="logTap(log)"><view class="log-action"><view :style="{background:log.color}"><k-icon :name="log.icon" :size="17" color="red" /></view><text>{{ log.action }}</text></view><view><text>{{ log.person }}</text><text>{{ log.time }}</text></view><text>{{ log.device }}</text><view class="result"><text :class="log.ok?'k-green':'k-alert'">{{ log.ok?'成功':'失败' }}</text><text v-if="!log.ok">{{ log.reason }}</text></view></view></view>
       <k-button block type="outline" size="md" class="report-button" @click="reportOp" label="上报异常操作" />
     </view>
 
@@ -177,7 +177,7 @@ const canTalents = computed(() => staffCan('jobs', 'edit') && !isKeeper.value)
 const frequent = computed(() => frequentEntries.filter(item => (recruitmentEnabled.value || ![R.staffJobs,R.staffTalents,R.staffDispatch].includes(item.to)) && (!item.managerOnly || storeRole.value === 'manager') && (!item.stay || canStay.value) && !(item.noKeeper && isKeeper.value) && (!item.talents || canTalents.value))
   .map(item => (item.keeperTo && isKeeper.value ? { ...item, to: item.keeperTo } : item)))
 const dailyEntries = [
-  { label: '日报与月度任务', icon: 'file-text', color: 'ochre', to: '/pages/staff/operations', manage: true },
+  { label: '日报与月度任务', icon: 'file-text', color: 'ochre', to: '/pages/staff/operations', roles: ['keeper', 'manager', 'city_lead'] },
   { label: '周报管理', icon: 'clipboard-list', color: 'ink', to: R.weekly, scoped: true, manage: true },
   // 城市负责人两本账都能做：经营账（小院主理人）和招募账（换工主理人）分开进
   { label: '招募周报', icon: 'clipboard-list', color: 'red', to: R.weekly + '?as=recruit', scoped: true, manage: true, leadOnly: true },
@@ -191,7 +191,7 @@ const dailyEntries = [
   { label: '数据看板', icon: 'chart-pie', color: 'indigo', to: R.dashboard, scoped: true, manage: true, dashboard: true }
 ]
 // 换工主理人的周报是「换工招募情况周报」，入口跟着改名；小院主理人、员工还是周报管理
-const daily = computed(() => dailyEntries.filter(item => (!item.manage || canManage.value) && (!item.leadOnly || isCityLead.value)
+const daily = computed(() => dailyEntries.filter(item => (!item.roles || item.roles.includes(storeRole.value)) && (!item.manage || canManage.value) && (!item.leadOnly || isCityLead.value)
   && (!item.dashboard || staffCan('dashboard', 'view')))
   .map(item => (item.to === R.weekly && storeRole.value === 'manager' ? { ...item, label: '招募周报' } : item)))
 // 2026-11-03 主人：简化——点格子直接进，不再先弹菜单（人员管理、下周任务原来各有一个菜单，现在各拆成两格）
@@ -290,6 +290,11 @@ async function switchStore() {
       if (session === getSessionRevision()) relaunch(R.staff)
       return
     }
+    if (staffStores.value.find(grant => String(grant.storeId) === String(target))?.sharedRecruitment) {
+      await selectStaffStore(target)
+      if (session === getSessionRevision()) relaunch(R.staffApplications + '?storeId=' + target)
+      return
+    }
     const [storesRes, hubRes] = await Promise.all([apiStaffStoreInfo(target), apiStaffHub(target)])
     if (session !== getSessionRevision()) return
     const selected = storesRes.data?.stores?.find(x => x.current && String(x.storeId) === String(target))
@@ -379,7 +384,7 @@ async function newRole() {
   if (i === options.length) return alert('自定义角色', '门店角色由平台统一维护，权限矩阵与服务端实际执行的一致。需要新角色请联系平台运营。')
   addMember(options[i].code, options[i].name)
 }
-const editPerm = () => alert('权限模板', '角色权限由平台统一维护，这里展示的就是服务端实际执行的权限；如需调整请联系平台运营。')
+const editPerm = () => alert('权限说明', '角色权限由平台统一维护，这里展示的就是服务端实际执行的权限；如需调整请联系平台运营。')
 // 「权限模板」页签：选一个角色，下方「权限配置」换成该角色的那张矩阵（与服务端实际执行的同一张表），并滚到矩阵处。
 // 之前这个页签跳到了「操作与权限日志」，名不副实
 async function showTemplate() {
@@ -476,4 +481,51 @@ async function reportOp() {
 .log-filter{height:43px;display:grid;grid-template-columns:1fr 1fr .9fr;gap:9px}.log-filter>view{height:34px;border:1px solid var(--k-line);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px}.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:7px}.summary-grid>view{height:72px;padding:11px;border:1px solid var(--k-line);border-radius:9px;background:var(--k-paper);display:flex;flex-direction:column;justify-content:space-between}.summary-grid text:first-child{font-family:var(--k-sans);font-size:12px}.summary-grid text:last-child{font-family:var(--k-sans);font-size:26px}.logs-title{display:block;margin:13px 2px 8px;font-family:var(--k-serif);font-size:15px;font-weight:700}.logs-table{border:1px solid var(--k-line);border-radius:9px;overflow:hidden}.table-head{height:29px;display:grid;grid-template-columns:1.25fr 1.45fr .85fr .55fr;align-items:center;background:var(--k-paper2);font-family:var(--k-sans);font-size:10px;text-align:center}.log-row{height:47px;padding:0 6px;border-top:1px solid var(--k-line);display:grid;grid-template-columns:1.25fr 1.45fr .85fr .55fr;align-items:center;font-size:9px}.log-row>view:nth-child(2)>text{display:block;margin-top:3px}.log-action{display:flex;align-items:center;gap:7px;font-family:var(--k-serif);font-size:11px;font-weight:700}.log-action>view{width:27px;height:27px;border-radius:6px;display:flex;align-items:center;justify-content:center}.result{text-align:center}.result>text{display:block;font-weight:700}.result>text:last-child{margin-top:4px;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.report-button{margin-top:10px}.k-green{color:var(--k-green)}.k-red{color:var(--k-red)}
 .switch-page .store-row{height:48px}.switch-page .store-row image{height:37px}.switch-page .store-info>view{min-height:27px}
 .store-row__main{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.store-row__main>text{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.store-row__name{font-family:var(--k-serif);font-size:13px;font-weight:700}.store-row__role{color:var(--k-muted);font-size:10px}
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边、不加阴影），标题用系统黑体；宫格收进一张白卡，图标放在浅暖色的圆角方块里（和「我的」同一个样子）。
+   入口、角标、按钮和文字一个不少；9px 的小字提到 10–11px。共用写法在 ./work-lite.scss。 */
+@import './work-lite.scss';
+.business-page{@include lite-page}
+/* 其他身份的工作台是组件，整页顶替 .business-page：顶栏标题、按钮这几条穿透要写在页面里，小程序才认 */
+@include lite-role-hosts;
+.staff-head{height:60px;gap:10px}.staff-head>image{width:44px;height:44px}.staff-head>view:nth-child(2)>text:first-child{font-family:var(--k-sans);font-size:17px;font-weight:700}.staff-head>view:nth-child(2)>text:last-child{margin-top:3px;font-size:12px}
+.head-icon>text{min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;font-size:10px;line-height:16px}
+/* 右上角「消息」「扫一扫」图标收小了，四周多留一圈看不见的可点范围（保持原来 38 左右见方），红点跟着挪回图标右上角 */
+.head-icon{padding:8px;margin:-8px}.head-icon>text{top:-2px;right:-1px}.head-icon+.head-icon{margin-left:-2px}
+.current-store{height:56px;padding:0 12px;border:0;border-radius:12px;gap:10px}.current-store view>view>text{font-family:var(--k-sans);font-size:14px;font-weight:600}.current-store>view>text:last-child{margin-top:4px;font-size:11px}
+.current-store.current-store--long{min-height:56px}
+.current-store :deep(.k-chip) text,.active-store :deep(.k-chip) text{font-family:var(--k-sans);font-size:10px;font-weight:500}
+.group-title{margin:16px 2px 8px;font-family:var(--k-sans);font-size:16px;font-weight:700;line-height:22px}.daily-title,.owner-title{margin-top:16px}
+.function-grid{gap:4px 0;padding:10px 4px;border-radius:12px;background:var(--k-paper)}
+.function-grid>view{height:66px;border:0;border-radius:0;background:transparent;gap:6px;font-size:12px;color:var(--k-ink2)}.daily-grid>view{height:66px}
+.function-grid.review-entries>view,.function-grid.owner-grid>view{font-size:13px}.function-grid.review-entries--3>view{font-size:12px}
+.fn-icon,.review-icon{position:relative;width:40px;height:40px;border-radius:12px;background:linear-gradient(145deg,#FCF4E8,#F4E4CC);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.review-badge{top:-5px;left:auto;right:-8px;min-width:16px;height:16px;border-radius:8px;font-weight:600;line-height:16px}
+.owner-entry{height:auto;min-height:60px;padding:8px 12px;box-sizing:border-box;border:0;border-radius:12px;gap:10px}.owner-entry>view:first-child{border-radius:12px}.owner-entry>view:nth-child(2)>text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}.owner-entry>view:nth-child(2)>text:last-child{margin-top:3px;font-size:11px}.stay-entry{margin-bottom:0}
+.block-title{font-family:var(--k-sans);font-size:15px;font-weight:700}
+.active-store,.managed,.store-info{border:0;border-radius:12px;padding:12px;margin-bottom:8px}.active-store image{border-radius:8px}.active-store view>view>text{font-family:var(--k-sans);font-size:14px;font-weight:600}.active-store view>text{margin-top:6px;font-size:11px}
+.active-store>view>view>text{font-family:var(--k-sans);font-size:11px;font-weight:400}
+/* 当前门店的名字用正文深色，和右边的小标签对齐（原来跟着下面两行说明一起成了灰字、还往下错了几像素） */
+.active-store .store-name{margin-top:0;color:var(--k-ink)}
+.managed>.k-between>text:last-child{color:var(--k-muted)}
+.store-row{border:0;border-radius:8px;background:#F7F5F2}.store-row>text{font-family:var(--k-sans);font-weight:600}.store-row__name{font-family:var(--k-sans);font-size:13px;font-weight:600}.store-row__role{font-size:11px}
+.store-info>view{font-size:12px}.switch-tip{font-size:11px}
+.role-tabs{height:40px;border:0;border-radius:12px;background:var(--k-paper);overflow:hidden}.role-tabs>view{position:relative;font-size:14px;color:var(--k-muted)}.role-tabs>view.active{border-bottom:0;color:var(--k-ink);font-weight:600}.role-tabs>view.active::after{content:'';position:absolute;left:50%;bottom:4px;width:16px;height:3px;margin-left:-8px;border-radius:2px;background:var(--k-red)}
+.role-head{font-family:var(--k-sans);font-size:15px}.role-head>view{font-size:12px;color:var(--k-red-deep)}
+.roles{border:0;border-radius:12px;background:var(--k-paper)}.roles>view{height:48px;padding:0 12px;font-size:14px}.role-icon{width:30px;height:30px}.roles>view>text:nth-of-type(2){font-size:12px}
+.permission{margin-top:8px;border:0;border-radius:12px;padding:10px 12px}.permission-title view text:first-child{font-family:var(--k-sans);font-size:14px;font-weight:600}.permission-title view text:last-child{margin-top:4px;font-size:11px}.permission-title>text{color:var(--k-red-deep);font-size:12px;font-weight:500}
+.permission-note{display:block;padding-bottom:6px;color:var(--k-muted);font-size:11px}.permission-row{height:30px;font-size:11px}.permission-row>view>text:first-child{color:var(--k-ochre-deep)}.permission-head{border-top:0;border-radius:6px;background:#F5F1EB;font-family:var(--k-sans);font-weight:600}
+.log-filter{gap:8px}.log-filter>view{height:28px;border:0;border-radius:999px;background:var(--k-paper);gap:4px;font-size:12px;color:var(--k-ink2)}
+.summary-grid{margin-top:4px}.summary-grid>view{height:68px;padding:10px;border:0;border-radius:12px}.summary-grid text:first-child{font-size:11px;color:var(--k-muted)}.summary-grid text:last-child{font-size:18px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.logs-title{margin:16px 2px 8px;font-family:var(--k-sans);font-size:15px}.logs-table{border:0;border-radius:12px;background:var(--k-paper)}.table-head{background:#F5F1EB}
+.log-row{height:50px;font-size:10px}.log-action{font-family:var(--k-sans);font-weight:600}.log-action>view{border-radius:8px}.result>text{font-weight:600}.result>text:last-child{font-size:11px}.result>text+text:last-child{font-size:10px;font-weight:400;color:var(--k-ink2)}
+/* 11-18 精修：入口图标都放进 40 的浅暖色渐变方块、暖棕线性图标（和「我的」宫格同一做法），不再一屏五六种颜色；
+   角色、日志的图标方块同样改成浅暖色（脚本给的行内底色用 !important 盖过，名字照样写在旁边） */
+.stay-entry>view:first-child,.daily-entry>view:first-child{width:40px;height:40px;background:linear-gradient(145deg,#FCF4E8,#F4E4CC)}
+.role-icon,.log-action>view{background:linear-gradient(145deg,#FCF4E8,#F4E4CC) !important}
+/* 门店信息：标题下面留 4，行高 36，行间发丝线，紧挨标题的第一行不画线 */
+.store-info>.block-title{height:auto;margin-bottom:4px}
+.store-info>view{position:relative;border-top:0}
+.store-info>view::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--k-line);transform:scaleY(.5)}
+.store-info>.block-title+view::before{display:none}
+.switch-page .store-info>view{min-height:36px}
 </style>

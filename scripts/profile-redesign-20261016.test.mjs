@@ -26,9 +26,7 @@ const require = createRequire(path.join(APP, 'package.json'))
 const compiler = require('@vue/compiler-sfc'), vue = require('vue')
 const read = (rel) => fs.readFileSync(path.join(APP, rel), 'utf8').replace(/\r\n/g, '\n')
 const readSfc = (rel) => compiler.parse(read(rel), { filename: rel }).descriptor
-const { PROFILE_ICONS, profileIcon } = await import('../pages/profile/profile-icons.js')
-const PREFIX = 'data:image/svg+xml;base64,'
-const decode = (uri) => Buffer.from(uri.slice(PREFIX.length), 'base64').toString('latin1')
+const { userIconPicture } = await import('../common/user-icons/art.js')
 
 const PAGE = 'pages/profile/index.vue'
 const sfc = readSfc(PAGE)
@@ -46,70 +44,31 @@ const media359 = mediaBlocks(359)
 const media374 = mediaBlocks(374)
 const media340 = mediaBlocks(340)
 
-test('双色图标：页面用到的名字都有，16 枚各不相同（10-16 去掉了「我的提醒」的铃铛），都是 base64 的 SVG', () => {
-  const used = [...script.matchAll(/\bart: '([a-z-]+)'/g)].map(m => m[1])
-  // 常用 4 格（含调解进度）+ 工作与成长 2 格 + 内容与关注 4 格（含我的心愿）+ 更多服务 4 格。
-  assert.equal(used.length, 14, '包含我的心愿和调解进度的十四个常用入口')
-  for (const name of [...used, 'staff']) assert.ok(PROFILE_ICONS[name], `缺图标 ${name}`)
-  const names = Object.keys(PROFILE_ICONS)
-  assert.equal(names.length, 16)
-  const uris = names.map(profileIcon)
-  assert.equal(new Set(uris).size, 16)
-  for (const uri of uris) {
-    assert.ok(uri.startsWith(PREFIX))
-    const svg = decode(uri)
-    assert.equal(Buffer.from(svg, 'latin1').toString('base64'), uri.slice(PREFIX.length))
-    assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 48 48">[\s\S]*<\/svg>$/)
+const cellArt = [...script.matchAll(/\bart: '([a-z-]+)'/g)].map(m => m[1])
+
+test('个人中心每个业务入口都显示各自的透明 PNG 插画', () => {
+  assert.match(tpl, /:art="cellItem\.art"/)
+  assert.deepEqual(cellArt, [
+    'mine-trip', 'mine-review', 'mine-income', 'mine-resume', 'mine-create', 'nav-messages', 'nav-publish', 'wish-mine',
+    'mine-save', 'mine-guide', 'mine-invite', 'mine-ai', 'mine-merchant', 'mine-settings'
+  ])
+  const images = cellArt.map(name => fs.readFileSync(path.join(APP, userIconPicture(name))))
+  assert.equal(new Set(images.map(bytes => bytes.toString('base64'))).size, cellArt.length)
+  for (const bytes of images) {
+    assert.equal(bytes.readUInt32BE(0), 0x89504E47)
+    assert.equal(bytes.readUInt32BE(16), bytes.readUInt32BE(20))
+    assert.ok(bytes[25] === 6 || bytes.includes(Buffer.from('tRNS')), '插画需有透明通道')
   }
 })
 
-test('双色图标：只有 ASCII，只用 path / circle / g、transform，不用 style / filter / clipPath；颜色是绿线 + 桃色底 + 橙色点缀', () => {
-  for (const name of Object.keys(PROFILE_ICONS)) {
-    const svg = decode(profileIcon(name))
-    assert.ok(/^[\x20-\x7E]*$/.test(svg), `${name} 有非 ASCII 字符`)
-    const tags = new Set([...svg.matchAll(/<([a-zA-Z]+)/g)].map(m => m[1]))
-    for (const tag of tags) assert.ok(['svg', 'path', 'circle', 'g'].includes(tag), `${name} 用了 <${tag}>`)
-    assert.doesNotMatch(svg, /style=|filter|clip|mask|url\(|<text|<image|NaN|undefined/, name)
-    assert.equal((svg.match(/<g /g) || []).length, (svg.match(/<\/g>/g) || []).length, `${name} 的 <g> 要成对`)
-    const colors = new Set([...svg.matchAll(/(?:fill|stroke)="([^"]+)"/g)].map(m => m[1]))
-    for (const c of colors) assert.ok(['none', '#4F8A5B', '#EC9A5A', '#FADBBD'].includes(c), `${name} 颜色 ${c}`)
-    // 双色：每枚都有绿色线条，也都有桃色或橙色
-    assert.ok(colors.has('#4F8A5B'), `${name} 没有绿色线条`)
-    assert.ok(colors.has('#EC9A5A') || colors.has('#FADBBD'), `${name} 只有一种颜色`)
+test('个人中心专属插画只在 profile 分包，跨页面复用的插画在主包', () => {
+  const shared = new Set(['nav-messages', 'nav-publish', 'mine-ai', 'wish-mine'])
+  for (const name of cellArt) {
+    const file = userIconPicture(name)
+    assert.equal(file, (shared.has(name) ? '/static/user-icons/' : '/pages/profile/static/user-icons/') + name + '.png')
+    if (!shared.has(name)) assert.equal(fs.existsSync(path.join(APP, 'static/user-icons', name + '.png')), false)
   }
-})
-
-test('双色图标：同一枚只拼一次；名字不认识时画空心圆，不抛错', async () => {
-  const fresh = await import('../pages/profile/profile-icons.js?cache-test')
-  const first = fresh.profileIcon('orders')
-  const original = String.prototype.charCodeAt
-  let calls = 0
-  String.prototype.charCodeAt = function (...args) { calls++; return original.apply(this, args) }
-  try {
-    assert.equal(fresh.profileIcon('orders'), first)
-    assert.equal(calls, 0)
-  } finally {
-    String.prototype.charCodeAt = original
-  }
-  const unknown = fresh.profileIcon('no-such-icon')
-  assert.ok(unknown.startsWith(PREFIX))
-  assert.equal(fresh.profileIcon(undefined), unknown)
-  assert.ok(!Object.values(PROFILE_ICONS).some(body => decode(unknown).includes(body)))
-})
-
-test('双色图标模块只在 profile 分包里引用，不碰主包的 common/icons.js', () => {
-  const users = []
-  const walk = (dir) => {
-    for (const name of fs.readdirSync(path.join(APP, dir))) {
-      const rel = dir + '/' + name
-      if (fs.statSync(path.join(APP, rel)).isDirectory()) walk(rel)
-      else if (/\.(vue|js)$/.test(name) && fs.readFileSync(path.join(APP, rel), 'utf8').includes('profile-icons')) users.push(rel)
-    }
-  }
-  ;['pages', 'components', 'common'].forEach(walk)
-  assert.ok(users.includes(PAGE))
-  assert.deepEqual(users.filter(rel => !rel.startsWith('pages/profile/')), [])
-  assert.doesNotMatch(read('pages/profile/profile-icons.js'), /^import /m, '模块自己画，不引用别的文件')
+  assert.equal(userIconPicture('unregistered'), '')
 })
 
 // Layout is verified in acceptance/20261021-community-profile/browser.mjs.
@@ -132,9 +91,9 @@ const box = (value) => {
 
 test('设置屏：名字不缩不折行，右边说明占剩下的地方、放不下显示「…」（320 宽「注销账号」不再一字一行）', () => {
   const s4 = tpl.slice(tpl.indexOf('<!-- 4 账号与隐私设置 -->'))
-  assert.doesNotMatch(s4, /srow__label k-flex1/, '名字不再 flex:1（会被说明挤成一字一行）')
+  for (const row of s4.matchAll(/<view class="srow__main">([\s\S]*?)<\/view>/g)) assert.doesNotMatch(row[1], /srow__label k-flex1/, '名字不再 flex:1（会被说明挤成一字一行）')
   for (const label of ['授权管理', '导出数据']) assert.match(s4, new RegExp(`<text class="srow__label">${label}</text>\\s*<text class="k-small k-muted srow__hint">`))
-  assert.match(s4, /<text class="srow__label k-alert">注销账号<\/text>\s*<text class="k-small k-alert srow__hint">注销后将无法恢复，请谨慎操作<\/text>/)
+  assert.match(s4, /<text class="srow__label k-alert">注销账号<\/text>\s*<text class="k-small k-muted srow__hint">注销后将无法恢复，请谨慎操作<\/text>/) // 11-18 第二轮精修：说明改灰字，红色只留在「注销账号」上
   assert.match(s4, /<text class="srow__label">\{\{ r\.label \}\}<\/text>\s*<view v-if="r\.green" class="k-row k-gap6 srow__hint">[\s\S]*?<text v-else class="k-small k-muted srow__hint">\{\{ r\.value \}\}<\/text>/)
   assert.ok(rules('.srow__label').some(r => /flex: 0 0 auto/.test(r) && /white-space: nowrap/.test(r)))
   // 说明的 flex-basis 用 0：只有它伸缩，前后图标不会被一起压扁
@@ -151,7 +110,7 @@ test('设置屏：名字不缩不折行，右边说明占剩下的地方、放�
 
 test('编辑资料屏（反馈 2.0）：标题叫「编辑资料」，底部简历入口是一行浅色文字链接，不再是整宽大按钮', () => {
   assert.match(script, /const titles = \['我的', '编辑资料', '会员信息', '账号与隐私设置'\]/)
-  assert.match(tpl, /<view class="resume-link" hover-class="k-press" @click="go\(R\.resume \+ '\?s=2'\)"><text>报名用的简历资料，去简历里修改<\/text>/)
+  assert.match(tpl, /<view v-if="recruitmentEnabled" class="resume-link" hover-class="k-press" @click="go\(R\.resume \+ '\?s=2'\)"><text>报名用的简历资料，去简历里修改<\/text>/)
   assert.doesNotMatch(tpl, /<k-button[^>]*>编辑简历资料<\/k-button>/)
   assert.doesNotMatch(tpl, />编辑资料<\/k-button>/)
 })
@@ -171,7 +130,8 @@ function runSetup(stubs) {
   scope.run(() => vm.runInContext(body, sandbox, { filename: PAGE + ':script-setup' }))
   return { run: code => vm.runInContext(code, sandbox), stop: () => scope.stop() }
 }
-const harness = (online) => runSetup({
+const harness = (online, enabled = true) => runSetup({
+  recruitmentEnabled: vue.ref(enabled), communityEnabled: vue.ref(enabled), wishEnabled: vue.ref(enabled),
   useScreen: () => vue.ref(1),
   experience: vue.reactive({ account: { id: 7, nickname: '小院同学' }, mode: 'user' }),
   hasStaffAccess: vue.computed(() => false), onlineStaff: vue.computed(() => online), unreadCount: vue.ref(120),
@@ -185,23 +145,24 @@ test('分组入口复用原页面；线上专员不出现门店任务；会员�
   const groups = JSON.parse(h.run('JSON.stringify(groups.value)'))
   assert.deepEqual(groups.map(g => g.title), ['订单与行程', '工作与成长', '内容与关注', '更多服务'])
   assert.deepEqual(groups.map(g => g.items.map(it => it.label)), [
-    ['我的行程', '调解进度', '我的评价', '我的收入'], ['简历与机会', '创办活动'],
+    ['我的行程', '我的评价', '我的收入'], ['简历与机会', '创办活动', '进入袋鼠群聊', '大众评审'],
     ['我的发布', '我的心愿', '收藏与关注', '全国攻略'], ['邀请有礼', 'AI袋鼠', '成为商家', '设置']
   ])
   assert.deepEqual(groups.map(g => g.items.map(it => it.url || '')), [
-    ['/o?cat=stay', '/pages/governance/mediation', '/o?s=2', '/i'], ['/r', '/a?view=create'],
+    ['/o?cat=stay', '/o?s=2', '/i'], ['/r', '/a?view=create', '/pages/camp/index', '/pages/governance/jury'],
     ['', '/pages/wish/mine', '/f?mode=fav', '/c?tab=guide&all=1'], ['/iv', '', '/m', '']
   ])
-  for (const g of groups) for (const it of g.items) assert.equal(it.img, 'icon:' + it.art)
-  const restricted = harness(true)
+  for (const g of groups) for (const it of g.items) assert.ok(h.run('CELL_LINE[' + JSON.stringify(it.label) + ']'), it.label)
+  const restricted = harness(true, false)
   t.after(restricted.stop)
   assert.equal(restricted.run("groups.value.some(g => g.items.some(it => it.label === '门店任务'))"), false)
-  const extras = JSON.parse(h.run('JSON.stringify(extraLinks)'))
-  assert.deepEqual(extras.map(it => it.url), ['/pages/governance/badges', '/pages/governance/jury'])
+  assert.deepEqual(JSON.parse(restricted.run('JSON.stringify(groups.value[1].items.map(it => it.label))')), ['进入袋鼠群聊', '大众评审'])
+  assert.equal(restricted.run('groups.value[2].items[0].label'), '历史心愿订单')
+  assert.match(tpl, /go\('\/pages\/governance\/badges'\)/)
   assert.equal(h.run('aiOpen.value'), false)
   h.run("groups.value[3].items.find(it => it.label === 'AI袋鼠').action()")
   assert.equal(h.run('aiOpen.value'), true)
-  assert.equal(h.run('staffIcon'), 'icon:staff')
+  assert.match(tpl, /v-if="hasStaffAccess" class="card staff"[^>]*@click="openStaff"/)
   h.run("me.value = { levelName: '巨袋鼠', level: 4, points: 2100, upgradeTip: '再获得 2900 积分升到「袋鼠王」', pointsProgress: '2100/5000', pointsPercent: 42 }")
   assert.equal(h.run('currentLevel.value'), 4)
   assert.equal(h.run('upgradeTip.value'), '再获得 2900 积分升到袋鼠王')
@@ -239,7 +200,7 @@ test('个人资料屏：没填的项一律写「未填写」（浅色字），�
   const s2 = tpl.slice(tpl.indexOf('<!-- 2 个人资料 -->'), tpl.indexOf('<!-- 3 会员信息与成长积分 -->'))
   assert.match(s2, /<text class="frow__value" :class="\{ 'frow__value--empty': f\.empty \}">\{\{ f\.value \}\}<\/text>/)
   // 2026-11-03 简化：昵称、自我介绍是「账号资料」区里的输入框 + 一个保存钮（原来各弹一个系统输入框）
-  assert.match(s2, /<input v-model="draft\.nickname" maxlength="16"/)
+  assert.match(s2, /<input type="nickname" name="nickname" :value="draft\.nickname" @input="draft\.nickname=\$event\.detail\.value" @blur="draft\.nickname=\$event\.detail\.value" maxlength="16"/)
   assert.match(s2, /<textarea v-if="editingIntro" v-model="draft\.intro" class="acct__textarea" maxlength="60"/)
   assert.match(s2, /<text class="frow__value" :class="\{ 'frow__value--empty': !phone \}">\{\{ phoneShown \}\}<\/text>/)
   assert.match(s2, /\{\{ draft\.intro\.length \}\}\/60/)
@@ -279,4 +240,47 @@ test('直接打开设置屏（?s=4）：登录态恢复后再去读「谁可以�
   warm.screen.value = 1; await tick()
   assert.equal(warm.calls.length, 1, '一打开就是 s=4 时立刻读')
   assert.equal(warm.h.run('dmLabel.value'), '互相关注的人')
+})
+test('设置切换账号后重读当前私信权限，旧账号的慢响应不能覆盖', async t => {
+  const account = vue.reactive({ account: { id: 1 } })
+  const reads = []
+  const h = runSetup({
+    experience: account, useScreen: () => vue.ref(4), apiDmPrivacy: () => new Promise(resolve => reads.push(resolve))
+  })
+  t.after(h.stop)
+  account.account = { id: 2 }
+  await vue.nextTick()
+  assert.equal(reads.length, 2)
+  reads[1]({ data: { value: 'mutual' } })
+  await Promise.resolve()
+  reads[0]({ data: { value: 'following' } })
+  await Promise.resolve()
+  assert.equal(h.run('dmValue.value'), 'mutual')
+})
+
+test('离开原账号后不执行原确认框的操作，实名草稿也不会带给下一人', async t => {
+  const experience = vue.reactive({ account: { id: 1 } })
+  let finish, exits = 0, revoked = 0
+  const h = runSetup({
+    experience, useScreen: () => vue.ref(4), currentStaffStore: vue.ref({ storeName: '甲店' }),
+    uni: { showModal: options => { finish = yes => options.success({ confirm: yes }) } },
+    apiMeSessions: async () => ({ data: { rows: [{ current: false, device: '旧设备', id: 1 }] } }),
+    sheet: async () => 1, apiMeRevokeOthers: async () => { revoked++; return {} },
+    post: async () => { exits++; return {} }, recheckAccount: async () => {}, toast: () => {}, relaunch: () => {}, switchMode: () => '', hasStaffAccess: vue.ref(false)
+  })
+  t.after(h.stop)
+  h.run("realOpen.value=true; realForm.name='甲'; realForm.idNo='旧账号的证件号码'")
+  const exit = h.run('exitMerchant()')
+  experience.account = { id: 2 }
+  finish(true)
+  await exit
+  assert.equal(exits, 0)
+  assert.equal(h.run('realForm.idNo'), '')
+  assert.equal(h.run('realOpen.value'), false)
+  const sessions = h.run('openSessions()')
+  await new Promise(resolve => setTimeout(resolve, 0))
+  experience.account = { id: 3 }
+  finish(true)
+  await sessions
+  assert.equal(revoked, 0)
 })

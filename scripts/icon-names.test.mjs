@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
-const { parse } = require('@vue/compiler-sfc')
+const { parse, babelParse, walk: walkAst } = require('@vue/compiler-sfc')
 
 const src = readFileSync('common/icons.js', 'utf8')
 const icons = JSON.parse(src.slice(src.indexOf('{'), src.lastIndexOf('}') + 1))
@@ -38,7 +38,19 @@ function literalIcons(source, isVue = true) {
     if (descriptor.template?.ast) walk(descriptor.template.ast)
     script = [descriptor.script?.content, descriptor.scriptSetup?.content].filter(Boolean).join('\n')
   }
-  for (const m of script.matchAll(/\bicon:\s*['"]([a-z][a-z0-9-]+)['"]/g)) names.push(m[1])
+  if (/\bicon\s*:/.test(script)) {
+    const nativeToastOptions = new Set()
+    const ast = babelParse(script, { sourceType: 'module', errorRecovery: true, plugins: ['typescript'] })
+    walkAst(ast.program, { enter(node, parent) {
+      if (node.type === 'CallExpression' && node.callee.object?.name === 'uni' && node.callee.property?.name === 'showToast') {
+        nativeToastOptions.add(node.arguments[0])
+      }
+      if (node.type === 'ObjectProperty' && node.key.name === 'icon' && node.value.type === 'StringLiteral' &&
+          /^[a-z][a-z0-9-]*$/.test(node.value.value) && !nativeToastOptions.has(parent)) {
+        names.push(node.value.value)
+      }
+    } })
+  }
   return names
 }
 
@@ -47,6 +59,7 @@ test('scanner distinguishes slot names from icons and still catches invalid icon
   assert.deepEqual(literalIcons('<template><k-icon name="subscription"/><k-icon :name="dynamic"/></template><script setup>const a = { icon: "not-a-real-icon" }</script>'), ['subscription', 'not-a-real-icon'])
   assert.ok(!icons.subscription)
   assert.ok(icons.bell)
+  assert.deepEqual(literalIcons("uni.showToast({ title: '完成', icon: 'success' }); const action = { icon: 'success' }", false), ['success'])
 })
 
 test('every literal icon name exists in common/icons.js', () => {

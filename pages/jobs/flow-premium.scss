@@ -3,7 +3,6 @@
 .ap-card, .steps--flow, .subscribe-card, .subscribe-line, .match-slider, .message-switch, .frequency { border: 1px solid #E9DFD3; border-radius: 15px; box-shadow: 0 3px 10px rgba(91,61,32,.04); }
 .ap-page .k-bottom, .progress .k-bottom { box-shadow: 0 -2px 10px rgba(91,61,32,.04); }
 .ap-page .k-bottom :deep(.k-button.is-primary), .progress .k-bottom :deep(.k-button.is-primary) { background: #8A603D; box-shadow: 0 3px 9px rgba(95,58,27,.12); letter-spacing: 0; }
-.ap-page .k-bottom :deep(.k-button.is-primary.is-disabled) { background: #ECE5DC; color: #A39A92; box-shadow: none; }
 .ap-job__img { border-radius: 10px; box-shadow: none; }
 .ap-job__title { white-space: normal; font-size: 17px; line-height: 1.45; }
 .ap-sec { margin-top: 20px; }
@@ -91,3 +90,456 @@
  .deliver .stats > view:nth-child(2) .stats__value { font-size: 12px; letter-spacing: -.3px; white-space: nowrap; }
  .deliver .guide-link__sub { font-size: 11px; }
 }
+
+/* ================= 2026-11-17 改版「小而精」（主人按样张第三版拍板） =================
+   报名流程这几页统一成：浅灰底 var(--k-page) 上放纯白卡片，卡片 12 圆角、不描边、不加阴影；页边距 12、卡片间距 8；
+   小节标题 15 / 700、卡片标题 14 / 600、正文 13、辅助 11–12；功能图标放在 32–36 的浅色圆角方块里；
+   底部主按钮 44 高的暖棕渐变胶囊。每一步的入口、按钮、提示、状态都照旧，只是收小、做细。上面的旧规则保留，这里放在最后盖过去。 */
+.ap-page, .progress, .contract-page, .filter-page, .deliver, .interview-page:not(.video-page) { --k-bg: var(--k-page); background: var(--k-page); }
+.ap-card, .steps--flow, .subscribe-card, .subscribe-line, .match-slider, .message-switch, .frequency { border: 0; border-radius: 12px; box-shadow: none; }
+.ap-page .k-bottom, .progress .k-bottom, .deliver .k-bottom, .filter-page .k-bottom, .interview-page .k-bottom { background: #FFFFFF; box-shadow: none; }
+/* 按钮：大按钮 44 高的胶囊，主按钮暖棕渐变（点不了的仍是按钮自带的浅灰）；描边按钮只改成胶囊形，字色不动 */
+.ap-page, .progress, .contract-page, .filter-page, .deliver, .interview-page:not(.video-page) {
+  :deep(.k-button.is-lg) { height: 44px; border-radius: 22px; font-family: var(--k-sans); font-size: 15px; font-weight: 600; letter-spacing: 0; }
+  :deep(.k-button.is-md) { border-radius: 20px; }
+  :deep(.k-button.is-sm) { border-radius: 16px; }
+  :deep(.k-button.is-xs) { border-radius: 13px; }
+  :deep(.k-button.is-primary:not(.is-disabled)) { background: linear-gradient(135deg, #B5814D, #8E5E33); box-shadow: none; }
+  /* 第二轮：点不了的按钮不再盖冷灰底——公共按钮已统一成「原配色整体变淡」，这里只去阴影 */
+  :deep(.k-button.is-disabled), :deep(.k-button.is-primary.is-disabled) { box-shadow: none; }
+}
+.ap-page .k-bottom .ap-two :deep(.k-button) { font-size: 14px; }
+/* 页面里的小标签按标签规格（17 高、4 圆角、10 号字）；筛选用的胶囊（is-pill）不动 */
+.ap-page, .progress, .contract-page, .deliver, .interview-page:not(.video-page) {
+  :deep(.k-chip:not(.is-pill)) { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 10px; }
+}
+/* 几个公共小入口（订阅提醒、纠纷调解、确认时间）放进这几页时，左右边距和卡片样子跟着本页走：只在这里盖，不改组件本身 */
+.progress, .deliver, .filter-page {
+  :deep(.subscribe-entry) { padding-left: 12px; padding-right: 12px; }
+  :deep(.subscribe-entry button) { border: 0; background: var(--k-paper); color: var(--k-ochre-deep); font-size: 12px; }
+}
+.progress :deep(.order-mediation), .contract-page :deep(.order-mediation) { margin: 8px 12px; }
+.contract-page .arrival-dispute :deep(.order-mediation) { margin: 8px 0 0; }
+.interview-page :deep(.ad-card) { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; }
+.interview-page :deep(.ad-heading) { font-size: 15px; }
+.interview-page :deep(.ad-dates) { margin-top: 10px; padding: 10px; border-radius: 8px; background: var(--k-page); }
+
+/* —— 报名页 apply —— */
+.ap-page .ap { padding: 8px 12px calc(104px + var(--k-safe-bottom)); }
+.ap-page .ap-card { margin-top: 8px; }
+.ap-page .ap-flow { margin-top: 0; padding: 12px 4px 10px; }
+.ap-page .ap-job { margin-top: 8px; padding: 10px; gap: 10px; border-radius: 12px; background: var(--k-paper); }
+.ap-page .ap-job__img { width: 48px; height: 48px; border-radius: 8px; box-shadow: none; }
+.ap-page .ap-job__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; }
+.ap-page .ap-job__sub { font-size: 11px; line-height: 16px; }
+.ap-page .ap-sec { margin-top: 16px; padding-left: 2px; gap: 6px; }
+.ap-page .ap-sec__title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; letter-spacing: 0; color: var(--k-ink); }
+.ap-page .ap-sec__sub { font-size: 11px; }
+.ap-page .ap-state { padding: 14px 12px; }
+.ap-page .ap-state__text { font-size: 13px; }
+.ap-page .ap-resume { padding: 12px; }
+.ap-page .ap-resume--loading { min-height: 72px; }
+.ap-page .ap-resume__head { gap: 10px; }
+.ap-page .ap-resume__avatar { width: 44px; height: 44px; border: 0; box-shadow: none; }
+.ap-page .ap-resume__name { font-family: var(--k-sans); font-size: 15px; font-weight: 600; }
+.ap-page .ap-resume__meta { font-size: 12px; color: var(--k-muted); }
+.ap-page .ap-resume__edit { height: 26px; padding: 0 5px 0 10px; border-radius: 13px; background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-red-line); font-size: 12px; font-weight: 500; }
+.ap-page .ap-resume__rows { margin-top: 10px; padding-top: 10px; gap: 6px; }
+.ap-page .ap-resume__row { font-size: 12px; }
+.ap-page .ap-resume__miss { margin-top: 10px; border-radius: 8px; }
+.ap-page .ap-empty { padding: 20px 16px 18px; background: var(--k-paper); }
+.ap-page .ap-empty__art { width: 52px; height: 52px; background: linear-gradient(160deg, #FFF6EA, #FFE7CC); box-shadow: none; }
+.ap-page .ap-empty__img { width: 32px; height: 34px; }
+.ap-page .ap-empty__title { margin-top: 10px; font-family: var(--k-sans); font-size: 15px; font-weight: 600; }
+.ap-page .ap-empty__text { font-size: 12px; }
+.ap-page .ap-empty__btn { margin-top: 12px; height: 36px; padding: 0 12px 0 18px; border-radius: 18px; background: linear-gradient(135deg, #B5814D, #8E5E33); box-shadow: none; font-size: 13px; }
+.ap-page .ap-plan { padding: 2px 12px 12px; }
+.ap-page .ap-row { min-height: 56px; }
+.ap-page .ap-row--top { min-height: 54px; }
+.ap-page .ap-row__icon { border-radius: 10px; background: linear-gradient(160deg, #FFF6EA, #FFE7CC); }
+
+.ap-page .ap-row__label { font-size: 14px; }
+.ap-page .ap-row__hint { font-size: 11px; color: var(--k-muted); }
+.ap-page .ap-row__value { font-family: var(--k-sans); font-size: 14px; font-weight: 600; color: var(--k-red-deep); }
+.ap-page .ap-dur { border-radius: 8px; background: #F5F1EB; color: var(--k-ink2); }
+.ap-page .ap-other { border-radius: 8px; background: #F5F1EB; }
+.ap-page .ap-other__label { color: var(--k-ink2); }
+.ap-page .ap-dur.on, .ap-page .ap-other.on { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; }
+.ap-page .ap-other.on .ap-other__label, .ap-page .ap-other.on .ap-other__value { color: var(--k-red-deep); font-weight: 600; }
+.ap-page .ap-other-box { border-color: var(--k-red-line); }
+.ap-page .ap-other-box__ok { background: linear-gradient(135deg, #B5814D, #8E5E33); }
+.ap-page .ap-note { padding: 10px 12px; }
+.ap-page .ap-foot-tip { margin-top: 12px; }
+.ap-page .ap-done { padding: 12px; grid-template-columns: 36px minmax(0, 1fr); column-gap: 10px; }
+.ap-page .ap-done__icon { width: 36px; height: 36px; margin-top: 2px; background: linear-gradient(135deg, #B5814D, #8E5E33); box-shadow: none; }
+
+.ap-page .ap-done__title { font-family: var(--k-sans); font-size: 15px; line-height: 22px; font-weight: 700; }
+.ap-page .ap-done__text { font-size: 12px; line-height: 18px; }
+.ap-page .online-contact { padding: 4px 12px 12px; gap: 0; }
+.ap-page .online-contact label { margin: 10px 0 0; font-size: 13px; }
+.ap-page .online-contact input { height: 44px; min-height: 44px; margin-top: 6px; padding: 0 12px; border: 0; border-radius: 10px; background: #F5F1EB; font-size: 14px; }
+
+/* —— 审核进度 progress —— */
+.progress :deep(.k-card) { border: 0; border-radius: 12px !important; box-shadow: none; }
+.progress .k-body { padding-left: 12px; padding-right: 12px; }
+.progress .contact-entry { padding: 8px 12px 0; }
+.progress .safety-entry { padding: 0 12px; }
+.progress .steps { padding: 10px 8px 4px; }
+.progress .steps--flow { margin: 8px 12px 0; padding: 12px 4px 10px; }
+.progress .steps__tip { margin: 10px 8px 0; padding-top: 8px; border-top: 1px solid var(--k-line); }
+/* 审核通过 / 未通过：插画、标题、说明收进一张白卡（插画是带浅底的图片，放在白卡上才不显出一块方底） */
+.progress .hero--plain { padding: 16px 12px 14px; border-radius: 12px; background: var(--k-paper); }
+.progress .hero__img { border-radius: 12px; }
+.progress .tips { margin-top: 8px; }
+.progress :deep(.k-card.reason) { margin-top: 8px; }
+.progress .hero__img--1 { width: 112px; height: 88px; }
+.progress .hero__img--2 { width: 124px; height: 126px; }
+.progress .hero__img--3 { width: 116px; height: 96px; }
+.progress .hero__title { margin-top: 10px; font-family: var(--k-sans); font-size: 18px; font-weight: 700; letter-spacing: 0; color: var(--k-ink); }
+.progress .hero__desc { margin-top: 6px; font-size: 13px; line-height: 1.7; }
+.progress .row { height: 40px; font-size: 13px; }
+.progress .row__label { gap: 8px; }
+.progress .status { height: 20px; padding: 0 7px; border: 0; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.progress .tip { padding: 10px 12px; border: 0; border-radius: 8px; background: var(--k-page); }
+.progress .tip--card { border-radius: 12px; background: var(--k-paper); }
+.progress .tip__title { font-size: 13px; }
+.progress .tip__text { margin-top: 4px; font-size: 12px; line-height: 1.7; }
+.progress .tips { padding: 12px; gap: 12px; border: 0; border-radius: 12px; background: var(--k-paper); }
+.progress .tips__row { gap: 10px; }
+.progress .tips__icon { width: 32px; height: 32px; border: 0; border-radius: 10px; background: linear-gradient(160deg, #FFF6EA, #FFE7CC); }
+
+.progress .tips__text { padding-top: 5px; font-size: 13px; }
+.progress .reason__label { font-size: 12px; font-weight: 500; color: var(--k-muted); }
+.progress .reason__title { margin-top: 4px; font-family: var(--k-sans); font-size: 15px; }
+.progress .reason__text { margin-top: 4px; font-size: 13px; line-height: 1.7; }
+.progress .action { height: 44px; padding: 0 12px; gap: 8px; border: 0; border-radius: 12px; font-size: 14px; }
+.progress .cheer { margin-top: 16px; font-size: 12px; }
+.progress .pick__title { margin-top: 8px; font-family: var(--k-sans); font-size: 16px; }
+.progress .pick__sub { margin-top: 4px; font-size: 12px; }
+.progress .opt { gap: 12px; padding: 12px; border: 1px solid transparent; border-radius: 12px; box-shadow: none; }
+.progress .opt.on { border-color: var(--k-red-line); background: #FFFBF6; }
+
+.progress .opt__date { font-size: 14px; font-weight: 600; }
+.progress .opt__meta { margin-top: 6px; padding-left: 30px; font-size: 12px; }
+/* 2026-11-18 看图评审（选面试时间这一屏）：
+   ①「刷新时段」放到标题那一行的最右边（原来单独占一行，紧贴上面的说明、离下面的时段卡又很远）；
+   ② 单选圈对齐第一行（和日历图标、日期同一行），选中色用暖棕；日期一行 13 号常规字，时间一行保持粗体，分出主次；
+   ③ 底部「联系当地主理人」按字数留宽，字和图标各收小一号、两边内边距 14，不再把胶囊塞满。 */
+.progress .k-body { position: relative; }
+.progress .pick__title { padding-right: 92px; line-height: 28px; }
+.progress .k-body > :deep(.k-button.is-sm.is-outline) { position: absolute; right: 12px; top: 20px; height: 28px; padding: 0 12px; font-size: 12px; }
+.progress .opt { align-items: flex-start; }
+.progress .opt > .k-radio { margin-top: 1px; }
+.progress .opt .k-radio.checked { border-color: var(--k-red); background: var(--k-red); }
+.progress .opt .k-gap12 > :deep(.k-icon) { margin-top: 1px; }
+.progress .opt .k-col > .opt__date { line-height: 20px; }
+.progress .opt .k-col > .opt__date:first-child { font-size: 13px; font-weight: 400; color: var(--k-ink2); }
+.progress .contact { width: auto; }
+.progress .contact :deep(.k-button) { padding: 0 14px; font-size: 14px; }
+
+/* 第一屏底部两个按钮和后面几屏排成同一种：「撤回报名」在左、窄一点，主按钮在右、宽一点（原来这一屏是反的，一步步往下走时「撤回报名」会左右跳） */
+.progress .k-flex1.danger { order: -1; flex: 0 0 88px; }
+.progress .k-flex1.danger :deep(.k-button) { padding: 0 8px; }
+
+/* —— 面试候场 / 双向确认 interview（第 2 屏深色视频示意不动） —— */
+.interview-page .lobby, .interview-page .confirm-body, .interview-page .progress-body { padding-left: 12px; padding-right: 12px; }
+.interview-page .countdown, .interview-page .card, .interview-page .lobby .card, .interview-page .job, .interview-page .meeting-card, .interview-page .success-banner, .interview-page .confirm-cards > view, .interview-page .confirm-group .choice-card, .interview-page .note-box, .interview-page .interview-flow { border: 0; border-radius: 12px; background: var(--k-paper); }
+.interview-page .success-banner { padding: 12px; background: var(--k-green-soft); }
+.interview-page .interview-messages { padding: 0 12px 8px; }
+.interview-page .interview-flow { margin: 8px 12px 0; padding: 10px 6px; }
+.interview-page .interview-flow__head { margin: 0 6px 10px; font-size: 13px; font-weight: 600; }
+.interview-page .interview-flow__stage { padding: 0 5px; border-radius: 4px; background: var(--k-red-soft); font-size: 10px; line-height: 17px; }
+.interview-page .interview-flow__hint { margin: 10px 6px 0; padding-top: 8px; }
+.interview-page .countdown { height: 64px; padding: 10px 12px; grid-template-columns: 76px 1fr; }
+.interview-page .countdown > text:first-child { font-size: 14px; font-weight: 600; }
+.interview-page .countdown > view text:first-child { font-size: 20px; color: var(--k-red-deep); }
+.interview-page .countdown > view text:last-child { font-size: 13px; }
+.interview-page .countdown > text:last-child { font-size: 11px; }
+.interview-page .section-title { margin: 16px 2px 8px; font-size: 15px; font-weight: 700; }
+.interview-page .job { height: auto; min-height: 0; padding: 10px; }
+.interview-page .job > image { width: 72px; height: 72px; border-radius: 8px; }
+.interview-page .job > view { padding: 0 0 0 10px; }
+.interview-page .job__title { margin-bottom: 4px; font-size: 14px; font-weight: 600; line-height: 20px; }
+.interview-page .job > view > view { gap: 4px; margin: 3px 0; font-size: 11px; }
+/* 「安心商家」小标签：之前被上面那条行样式撑成一整条，这里收回成小标签 */
+.interview-page .job > view > :deep(.k-chip) { display: inline-flex; gap: 2px; margin: 3px 0 0; color: var(--k-green); font-size: 10px; }
+.interview-page .meeting-card { margin-top: 8px; padding: 12px; font-size: 13px; }
+.interview-page .tm-title { font-size: 14px; font-weight: 600; }
+.interview-page .tm-row { font-size: 12px; }
+.interview-page .tm-code { font-size: 20px; }
+.interview-page .tm-copy { color: var(--k-red-deep); }
+.interview-page .tm-hint, .interview-page .help { color: var(--k-muted); }
+.interview-page .meeting-help { margin: 8px 0 0; padding: 12px; border-bottom: 0; border-radius: 12px; background: var(--k-paper); }
+.interview-page .meeting-help .tm-hint { margin: 4px 0 10px; }
+.interview-page .meeting-help__actions { gap: 8px; }
+/* 2026-11-18 看图评审：「设备检测」「面试准备清单」两张列表卡挨在一起，行高、字号、图标统一成一种（44 高、13 号字、16 的图标） */
+.interview-page .device > view, .interview-page .checklist > view { min-height: 44px; gap: 8px; font-size: 13px; }
+
+.interview-page .device > view > view, .interview-page .checklist > view > view { gap: 4px; font-size: 12px; color: var(--k-muted); }
+.interview-page .lobby-actions { margin-top: 12px; }
+.interview-page .slot-panel { margin-top: 8px; padding: 12px; }
+.interview-page .slot-panel__title { font-size: 15px; }
+.interview-page .slot-panel__close { margin: -12px -12px -12px 0; }
+.interview-page .slot-panel__hint { font-size: 12px; }
+/* 改期时段：看上去 36 高，透明边把可点范围留在 44（同上，11-03 定的不能缩） */
+.interview-page .slot-pills { gap: 0; margin: -4px; }
+.interview-page .slot-pill { min-height: 44px; border: 4px solid transparent; background: #F5F1EB padding-box; font-size: 13px; }
+.interview-page .slot-pill.on { border-color: transparent; background: var(--k-red-soft) padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); }
+.interview-page .withdraw-link { font-size: 13px; }
+
+.interview-page .success-banner > view text:first-child { font-size: 14px; font-weight: 600; }
+.interview-page .confirm-title { font-size: 14px; font-weight: 600; }
+.interview-page .confirm-title > text:first-child { width: 20px; height: 20px; font-size: 11px; }
+.interview-page .confirm-question { margin: 6px 2px; }
+.interview-page .confirm-group .choice-card { padding: 4px 12px; }
+.interview-page .choice-card > view { min-height: 40px; }
+.interview-page .note-box { padding: 10px 12px; }
+.interview-page .confirm-cards { gap: 8px; }
+/* 2026-11-18 看图评审：两张小卡的高度跟着内容走（原来最少 88 高，只有两行字时下半截空着，像少了一行）；
+   上下留白都是 12：第三行（确认时间）没有内容时不占位，有内容时和状态隔 4 */
+.interview-page .confirm-cards > view { height: auto; min-height: 0; padding: 12px 12px 8px; font-size: 12px; }
+.interview-page .confirm-cards > view > text:last-child { margin-top: 4px; }
+.interview-page .confirm-cards > view > view { gap: 6px; margin-top: 6px; font-size: 14px; }
+
+.interview-page .steps-block { margin-top: 8px; padding: 12px 6px 10px; border-radius: 12px; background: var(--k-paper); }
+.interview-page .steps-block > .section-title { margin: 0 6px 10px; }
+.interview-page .next { margin-top: 8px; padding: 12px; }
+.interview-page .next > text { margin: 4px 0 10px; font-size: 12px; }
+.interview-page .next > .section-title { margin: 0; font-size: 15px; font-weight: 700; color: var(--k-ink); }
+
+/* —— 签约到店 contract —— */
+.contract-page .contract-flow { margin: 8px 12px; padding: 12px 4px 10px; border: 0; border-radius: 12px; }
+.contract-page .card, .contract-page .signature, .contract-page .sign-date { border: 0; border-radius: 12px; background: var(--k-paper); }
+.contract-page .read-body, .contract-page .sign-body, .contract-page .arrival-body, .contract-page .finish-body { padding: 4px 12px 18px; }
+.contract-page .arrival-confirm-body { padding: 0 12px 28px; }
+.contract-page .read-progress { height: 40px; grid-template-columns: 64px 1fr 40px; font-size: 14px; font-weight: 600; }
+.contract-page .read-progress > view { height: 4px; }
+/* 右边的百分比靠右写，和上面步骤卡的右边缘对齐（原来靠左写，比卡片边多缩进一截） */
+.contract-page .read-progress > text:last-child { text-align: right; }
+.contract-page .terms > view { min-height: 0; padding: 12px 0; }
+.contract-page .term-icon { width: 36px; height: 36px; margin-right: 10px; background: linear-gradient(160deg, #FFF6EA, #FFE7CC); }
+.contract-page .terms > view > view:nth-child(2) text:first-child { font-size: 14px; font-weight: 600; }
+.contract-page .terms > view > view:nth-child(2) text:last-child { margin-top: 2px; font-size: 12px; line-height: 1.7; }
+.contract-page .read-done { height: 52px; gap: 6px; font-size: 13px; }
+.contract-page .screen-title { font-size: 15px; }
+.contract-page .sign-body > .screen-title { margin: 8px 2px 10px; }
+.contract-page .field-title { margin: 16px 2px 8px; font-size: 15px; }
+.contract-page .field-title > text { font-size: 11px; }
+.contract-page .identity > view { height: 52px; font-size: 14px; }
+.contract-page .signature { height: 110px; }
+.contract-page .signature > text { font-size: 36px; }
+.contract-page .sign-date { font-size: 14px; }
+.contract-page .agree { margin: 12px 2px 24px; font-size: 12px; }
+.contract-page .agree > view { width: 20px; height: 20px; border-radius: 4px; }
+/* 没勾的时候是白底细框的空方框（里面没有对勾图标），勾上才是实心棕块；原来没勾也是实心棕块，看不出勾没勾 */
+.contract-page .agree > view:empty { background: var(--k-paper); box-shadow: inset 0 0 0 1.5px var(--k-line2); }
+.contract-page .legal { gap: 6px; font-size: 11px; }
+.contract-page .arrival-row { min-height: 48px; grid-template-columns: 26px 84px 1fr 20px; }
+.contract-page .arrival-row--pills, .contract-page .arrival-row--input { grid-template-columns: 26px 84px 1fr; }
+.contract-page .arrival-row--pills > :deep(.k-icon) { margin-top: 9px; }
+.contract-page .arrival-row--pills > text { line-height: 36px; }
+/* 交通方式：看上去 36 高，外面一圈透明边把可点范围留在 44（11-03 主人定的页面内按钮 ≥44，照顾年纪大的人，不能缩） */
+.contract-page .arrival-pills { gap: 0; margin: -4px -4px -4px 0; }
+.contract-page .arrival-pill { min-height: 44px; border: 4px solid transparent; border-radius: 22px; background: #F5F1EB padding-box; color: var(--k-ink2); }
+.contract-page .arrival-pill.on { border-color: transparent; background: var(--k-red-soft) padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-weight: 600; }
+.contract-page .tickets { gap: 8px; }
+.contract-page .tickets > image, .contract-page .tickets > view { height: 96px; border-radius: 8px; }
+.contract-page .tickets > view { gap: 4px; background: var(--k-paper); font-size: 12px; color: var(--k-ink2); }
+.contract-page .note { margin: 8px 0 16px; padding: 12px; }
+.contract-page .note text:first-child { font-size: 14px; font-weight: 600; }
+.contract-page .note__input { background: #F5F1EB; }
+.contract-page .arrival-tip { margin-top: 10px; font-size: 11px; }
+/* 证件卡和保险条原来是贴在一起的（中间 0 间距），两块都是浅绿底时像粘成一块：和别的卡片一样隔 8；上面到进度条也收成 8 */
+.contract-page .finish-body { padding-top: 0; }
+.contract-page .insurance { margin-top: 8px; border: 0; border-radius: 12px; }
+.contract-page .insurance > view text:first-child { font-size: 16px; }
+.contract-page .policy { margin-top: 8px; padding: 12px 12px 0; }
+.contract-page .policy > view:not(.policy-link) { min-height: 30px; }
+.contract-page .policy > view:not(.policy-link) text:first-child { font-weight: 400; color: var(--k-muted); }
+.contract-page .policy > view:not(.policy-link) text:last-child { color: var(--k-ink); }
+.contract-page .policy-link { height: 44px; margin-top: 4px; font-size: 13px; font-weight: 500; color: var(--k-red-deep); }
+.contract-page .contact { margin-top: 8px; padding: 12px; }
+.contract-page .contact image { width: 40px; height: 40px; }
+.contract-page .contact > view > view:nth-child(2) > text:first-child { font-size: 14px; font-weight: 600; }
+.contract-page .contact > view > view:nth-child(2) > text:nth-child(2) { font-size: 14px; font-weight: 600; }
+.contract-page .call { width: 40px; height: 40px; border: 0; border-radius: 10px; background: var(--k-green-soft); }
+/* 地址折成两行时，小图标跟着第一行，不悬在两行中间 */
+.contract-page .contact > view > view:nth-child(2) > view { align-items: flex-start; }
+.contract-page .contact > view > view:nth-child(2) > view :deep(.k-icon) { flex: 0 0 auto; margin-top: 2px; }
+.contract-page .trip-card { min-height: 56px; margin-top: 8px; padding: 10px 12px; }
+.contract-page .trip-card > view text:first-child { font-size: 14px; font-weight: 600; }
+.contract-page .arrival-status { gap: 10px; padding: 14px 12px; background: var(--k-red-soft); }
+.contract-page .arrival-status--done { background: var(--k-green-soft); }
+.contract-page .arrival-status > view { gap: 4px; }
+.contract-page .arrival-status > view > text:first-child { font-size: 15px; }
+.contract-page .arrival-status > view > text:last-child { font-size: 12px; }
+.contract-page .arrival-summary { margin-top: 8px; padding: 12px; }
+.contract-page .arrival-job { margin: 6px 0 10px; font-size: 13px; }
+.contract-page .arrival-actions { gap: 8px; margin-top: 12px; }
+.contract-page .arrival-dispute { margin-top: 12px; padding: 12px; }
+.contract-page .arrival-dispute > text:not(.screen-title) { margin-top: 4px; font-size: 12px; }
+.contract-page .arrival-dispute :deep(.ma) { margin: 8px -12px 0; }
+.contract-page .arrival-insurance-note { margin: 12px 2px; font-size: 11px; }
+
+/* —— 线上任务交付 deliver —— */
+.deliver :deep(.k-card) { border-radius: 12px !important; box-shadow: none; }
+.deliver :deep(.k-card.k-mt12), .deliver :deep(.k-card.k-mt10) { margin-top: 8px; }
+.deliver .k-body { padding-left: 12px; padding-right: 12px; }
+.deliver .flow { padding: 12px 4px 10px; border: 0; border-radius: 12px; background: var(--k-paper); }
+.deliver .flow__tip { margin: 10px 8px 0; border-top: 1px solid var(--k-line); color: var(--k-ink2); }
+.deliver .task-title { font-size: 15px; }
+.deliver .stats > view { padding: 8px 10px; border: 0; background: var(--k-page); }
+.deliver .stats__value { font-size: 13px; font-weight: 600; }
+.deliver .section-title { font-size: 15px; }
+.deliver .row { font-size: 13px; line-height: 1.6; }
+.deliver .notice { padding: 8px 10px; background: var(--k-ochre-soft); font-size: 12px; line-height: 1.6; }
+.deliver .guide-link { border: 0; background: var(--k-page); }
+.deliver .material, .deliver .review { border: 0; border-radius: 8px; background: var(--k-page); }
+.deliver .review--returned { background: var(--k-alert-soft); }
+.deliver .mfile { border: 0; border-radius: 8px; background: var(--k-paper); }
+.deliver .material-empty { border-radius: 8px; font-size: 12px; }
+.deliver .material__head { font-size: 13px; font-weight: 600; }
+.deliver .mfile__act { padding: 7px 12px; border-radius: 999px; color: var(--k-red-deep); }
+.deliver .photos image { border-radius: 8px; }
+.deliver .round { font-weight: 600; }
+.deliver .empty { margin-top: 8px; padding: 28px 0; border: 0; border-radius: 12px; background: var(--k-paper); }
+.deliver .lsheet__title { font-size: 16px; }
+.deliver .lsheet__cancel { border-color: var(--k-red-line); border-radius: 22px; font-size: 14px; color: var(--k-red-deep); }
+
+/* —— 筛选条件 / 新机会订阅 / 筛选结果 filter（第一屏的高度是按一屏放下量过的，这里只换颜色和圆角，不动高度） —— */
+.filter-page .nationwide-note { margin: 2px 2px 10px; font-size: 12px; }
+/* 2026-11-18 看图评审：顶上「订阅新机会提醒」白条和下面筛选大卡原来只隔 2，两块白卡粘在一起——改成和别处一样隔 8 */
+.filter-page .filter-body { padding-top: 8px; padding-left: 12px; padding-right: 12px; }
+.filter-page .sheet { border-radius: 12px; box-shadow: none; }
+.filter-page .sec-head__title { font-weight: 600; color: var(--k-ink); }
+.filter-page .pill { background: #F5F1EB; color: var(--k-ink2); }
+.filter-page .pill.on { border-color: var(--k-red-line); background: var(--k-red-soft); color: var(--k-red-deep); font-weight: 600; }
+.filter-page .foot-reset { font-size: 14px; font-weight: 500; color: var(--k-ink2); }
+.filter-page .subscribe-body { padding: 8px 12px calc(18px + var(--k-safe-bottom)); }
+.filter-page .subscribe-card, .filter-page .subscribe-line, .filter-page .match-slider, .filter-page .message-switch, .filter-page .frequency { margin-bottom: 8px; padding: 12px; }
+.filter-page .filter-head, .filter-page .match-slider > view:first-child, .filter-page .frequency > view:first-child { font-size: 14px; font-weight: 600; }
+
+/* 已选 / 添加的小胶囊：看上去 28 高，透明边把可点范围撑到 36（原来 34） */
+.filter-page .selected-row { gap: 0; margin: 6px -4px -4px; }
+.filter-page .selected-chip { height: 36px; min-height: 36px; padding: 0 10px; gap: 4px; border: 4px solid transparent; border-radius: 18px; background: #F5F1EB padding-box; font-size: 12px; }
+.filter-page .subscribe-line { height: 48px; font-size: 14px; font-weight: 600; }
+.filter-page .subscribe-line > view:last-child { font-size: 13px; font-weight: 400; color: var(--k-ink2); }
+/* 2026-11-18 看图评审：选中色统一成暖棕（豆绿只留给安心 / 保险 / 包吃住）：滑块气泡、圆钮、已滑过的那段、推送频率的单选圆点。
+   圆钮停的位置是脚本按「第几档 × 20% + 10px」给的，原来滑轨拉满整行，最后一档 95% 只走到五分之四、刻度字也对不上。
+   把滑轨这一层放宽成 125% − 25px：五档正好从最左（10px）排到最右（卡片宽 − 10px），刻度字各自正对圆钮停的位置，多出来的空白由卡片裁掉；
+   已滑过的那段从第一档的位置开始画，停在最左一档时圆钮左边不再露出一小截。 */
+.filter-page .match-slider { overflow: hidden; }
+.filter-page .slider { width: calc(125% - 25px); margin-top: 28px; }
+.filter-page .slider::before { left: 10px; right: calc(20% - 10px); }
+.filter-page .slider__active { border-left: 10px solid transparent; background: var(--k-red) padding-box; }
+.filter-page .slider__knob { border-color: var(--k-red); }
+.filter-page .slider__knob text { background: var(--k-red-deep); }
+.filter-page .frequency .k-radio.checked { border-color: var(--k-red); background: var(--k-red); }
+.filter-page .message-switch__title { font-size: 14px; font-weight: 600; }
+.filter-page .message-switch__sub { margin-top: 2px; font-size: 11px; }
+.filter-page .frequency__choices { margin-top: 12px; gap: 12px; }
+.filter-page .frequency__item text { font-size: 13px; }
+.filter-page .frequency__item text + text { margin-top: 2px; font-size: 11px; }
+.filter-page .save-button { margin-top: 12px; }
+.filter-page .manage-note { margin-top: 12px; font-size: 11px; }
+.filter-page .result-body, .filter-page .empty-body { padding-left: 12px; padding-right: 12px; }
+/* 结果页顶上的条件胶囊：看上去 26 高，透明边把可点范围撑到 34（原来 30） */
+.filter-page .chosen { gap: 0; margin: -4px; }
+.filter-page .chosen view { height: 34px; padding: 0 10px; border: 4px solid transparent; border-radius: 17px; background: var(--k-red-soft) padding-box; }
+.filter-page .chosen view:last-child { background: var(--k-paper) padding-box; color: var(--k-ink); }
+.filter-page .result-count { margin: 12px 2px 8px; font-size: 12px; color: var(--k-muted); }
+.filter-page .job-card { min-height: 112px; margin-bottom: 8px; border: 0; border-radius: 12px; box-shadow: none; }
+/* 两行的「经袋鼠实地拍摄并含保险」角标约 102 宽，原来 100 的封面盖不住、会伸到标题那一侧：封面加宽到 106，角标贴住封面左边 */
+.filter-page .job-card__cover { width: 106px; background: #F5F1EB; }
+.filter-page .job-card__image { width: 106px; min-height: 112px; }
+.filter-page .job-card__badge { left: 6px; top: 6px; }
+/* 2026-11-18 看图评审：封面上的「经袋鼠实地拍摄并含保险」原来是带金边、折角、圆章的米色大牌子，盖住半张照片；
+   改成和详情页头图同一种白色小角标（白底、深棕字、不描边），贴在封面左上角 6 的位置。11 个字在 106 宽的封面里一行放不下，仍分两行写全，字没改 */
+.filter-page .job-card__badge :deep(.jb--card) { padding: 2px 6px; border-radius: 6px; background: rgba(255, 255, 255, .94); box-shadow: none; color: var(--k-red-deep); }
+.filter-page .job-card__badge :deep(.jb__fold), .filter-page .job-card__badge :deep(.jb__seal) { display: none; }
+.filter-page .job-card__badge :deep(.jb--card .jb__text) { font-size: 10px; font-weight: 500; line-height: 13px; letter-spacing: 0; }
+.filter-page .job-card__copy { padding: 10px; }
+.filter-page .job-card__title { font-size: 14px; font-weight: 600; line-height: 20px; }
+.filter-page .job-card__tags { gap: 4px; margin-top: 4px; }
+.filter-page .job-card__tags :deep(.k-chip) { height: 17px; padding: 0 5px; border-radius: 4px; background: #F5F1EB; font-size: 10px; }
+.filter-page .job-card__meta { gap: 3px; margin-top: 4px; font-size: 11px; }
+.filter-page .job-card__bottom { margin-top: 4px; font-size: 11px; }
+.filter-page .job-card__price .k-price { font-size: 15px; }
+.filter-page .job-card__star { right: 8px; bottom: 8px; }
+.filter-page .skeleton { border-radius: 12px; }
+/* 插画自带一块比页面底色略亮的米白方底，能看出方块边：按「取较暗的颜色」叠到页面上，那块底就和页面融在一起，只留下线条 */
+.filter-page .empty-image { width: 120px; height: 120px; margin-top: 24px; border-radius: 12px; mix-blend-mode: darken; }
+.filter-page .empty-title { font-size: 16px; }
+.filter-page .empty-desc { margin-top: 4px; }
+.filter-page .conflict, .filter-page .suggestions { margin-top: 8px; padding: 12px; gap: 6px; border-radius: 12px; box-shadow: none; }
+.filter-page .conflict__title { font-size: 14px; font-weight: 600; }
+.filter-page .adjust { margin-top: 12px; }
+/* 次按钮按规范：白底、浅棕细边、深棕字（原来是黑字灰边） */
+.filter-page .subscribe-btn { margin-top: 8px; border-color: var(--k-red-line); color: var(--k-red-deep); }
+.filter-page .service { height: 44px; margin-top: 8px; border-radius: 12px; box-shadow: none; color: var(--k-ink2); }
+/* 2026-11-18 复查：320 宽时 7 步进度条下面的小字（「视频时间」「安全协议」）会顶在一起——卡片左右不留内边距、字距收一点，把它们隔开 */
+@media (max-width: 359px) {
+  .ap-page .ap-flow, .progress .steps--flow { padding-left: 0; padding-right: 0; }
+}
+
+/* —— 第二轮精修（11-18）：同一条报名流程里同一种东西一个样子 —— */
+/* 区块标题：16 / 700 / 行高 22，正文字体 */
+.ap-page .ap-sec__title, .interview-page .section-title, .interview-page .next > .section-title, .contract-page .screen-title, .contract-page .field-title, .deliver .section-title { font-family: var(--k-sans); font-size: 16px; font-weight: 700; line-height: 22px; letter-spacing: 0; color: var(--k-ink); }
+.progress .k-title { font-family: var(--k-sans); font-size: 16px; font-weight: 700; line-height: 22px; letter-spacing: 0; color: var(--k-ink); }
+/* 分隔线一律发丝线（1px 高的底图只染一半，2 倍屏上就是 0.5px 的细线；不占位置、不用伪元素） */
+.ap-page .ap-resume__rows, .progress .steps__tip, .interview-page .interview-flow__hint, .deliver .flow__tip, .contract-page .policy-link, .contract-page .arrival-summary > view { border-top: 0; background-image: linear-gradient(to bottom, var(--k-line) 50%, transparent 50%); background-size: 100% 1px; background-repeat: no-repeat; background-position: left top; }
+.interview-page .device > view, .interview-page .checklist > view, .contract-page .terms > view, .contract-page .identity > view, .contract-page .arrival-row { border-bottom: 0; background-image: linear-gradient(to top, var(--k-line) 50%, transparent 50%); background-size: 100% 1px; background-repeat: no-repeat; background-position: left bottom; }
+.interview-page .device > view:last-child, .interview-page .checklist > view:last-child, .contract-page .terms > view:last-child, .contract-page .identity > view:last-child, .contract-page .arrival > .arrival-row:last-child { background-image: none; }
+.ap-page .ap-plan__line { transform: scaleY(.5); }
+/* 底部操作条：白底 + 顶上一条发丝线（flat 的顶线是透明的，白底栏压在页面底色上没分界） */
+.ap-page .k-bottom, .progress .k-bottom, .deliver .k-bottom, .filter-page .k-bottom, .interview-page:not(.video-page) .k-bottom { border-top-color: transparent; }
+.ap-page .k-bottom::before, .progress .k-bottom::before, .deliver .k-bottom::before, .filter-page .k-bottom::before, .interview-page:not(.video-page) .k-bottom::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); pointer-events: none; }
+/* 选中 / 完成统一暖棕（豆绿只留给安心、保险、成功提示） */
+.interview-page .choice-radio.active { border-color: var(--k-red); }
+.interview-page .choice-radio.active > view { background: var(--k-red); }
+.contract-page .read-progress > view > view { background: var(--k-red); }
+.deliver .flow__step.is-done .flow__dot { border-color: var(--k-red); background: var(--k-red); }
+.deliver .flow__step.is-done .flow__line, .deliver .flow__step.is-current .flow__line--l, .deliver .flow__step.is-skipped .flow__line { background: linear-gradient(90deg, #C9A57E, var(--k-red)); }
+.deliver .flow__step.is-current .flow__dot { box-shadow: 0 0 0 3px rgba(154, 107, 63, .16); }
+/* 双向确认：您 / 商家两张小卡状态同一个样子，不再一绿一黄 */
+.interview-page .confirm-cards > view > view, .interview-page .confirm-cards > view:nth-child(2) > view { font-size: 14px; font-weight: 600; color: var(--k-ink); }
+/* 设备检测 / 面试准备清单：按列表行（48 高、图标 18、正文 14） */
+.interview-page .device > view, .interview-page .checklist > view { min-height: 48px; font-size: 14px; font-weight: 400; color: var(--k-ink); }
+
+/* 审核未通过「你可以」：三条操作并成一张列表卡，行间发丝线 */
+.progress .k-col.k-gap8.k-mt8 { gap: 0; border-radius: 12px; background: var(--k-paper); overflow: hidden; }
+.progress .action { position: relative; justify-content: flex-start; height: 48px; padding: 0 12px; gap: 10px; border: 0; border-radius: 0; background: transparent; font-size: 14px; }
+.progress .action + .action::before { content: ''; position: absolute; left: 40px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+
+/* 白卡内边距 12 */
+.progress :deep(.k-card), .deliver :deep(.k-card) { padding: 12px !important; }
+/* 交付页：成果链接正文用正文灰、数据格数字等宽 */
+.deliver .link { color: var(--k-ink2); }
+.deliver .stats__value { font-variant-numeric: tabular-nums; }
+/* 修改简历：卡片右侧小按钮（28 高） */
+.ap-page .ap-resume__edit { height: 28px; padding: 0 8px 0 12px; border-radius: 14px; font-size: 12px; font-weight: 500; color: var(--k-red-deep); }
+/* 卡内选择块：网格排的统一圆角 8，选中字重 500（卡内保留细棕边，不然和未选分不出） */
+.filter-page .pill { border-radius: 8px; }
+.ap-page .ap-dur.on, .ap-page .ap-other.on, .ap-page .ap-other.on .ap-other__label, .ap-page .ap-other.on .ap-other__value, .contract-page .arrival-pill.on, .filter-page .pill.on { font-weight: 500; }
+/* 行尾箭头统一 12 */
+/* 筛选无结果：插画 → 标题 → 说明 → 卡片，间距 12 / 4 / 16 */
+.filter-page .empty-title { margin-top: 12px; }
+.filter-page .empty-desc { margin-top: 4px; }
+.filter-page .conflict { margin-top: 16px; }
+/* 筛选结果封面固定 1:1（106），圆角 8，卡内留 8 */
+.filter-page .job-card__cover { height: 106px; margin: 8px 0 8px 8px; align-self: flex-start; border-radius: 8px; overflow: hidden; }
+.filter-page .job-card__image { display: block; height: 106px; min-height: 0; }
+/* 筛选条件各区块之间、详情信息行之间也用发丝线 */
+.filter-page .sec { border-bottom: 0; background-image: linear-gradient(to top, var(--k-line) 50%, transparent 50%); background-size: 100% 1px; background-repeat: no-repeat; background-position: left bottom; }
+.filter-page .sec:last-child { background-image: none; }
+/* ==== r3jobsb 第三轮 start ==== */
+/* —— 第三轮（11-18）：描边按钮（白底灰框黑字）统一成次按钮：白底 + 浅棕细边 + 深棕字；点不了时同一套颜色整体变淡。
+   「撤回报名」这类危险操作仍是提醒红（审核进度页在下面盖回）。本文件只被报名流程这几页引入。 —— */
+.ap-page, .progress, .contract-page, .filter-page, .deliver, .interview-page:not(.video-page) {
+  :deep(.k-button.is-outline) { border-color: var(--k-red-line); color: var(--k-red-deep); }
+  :deep(.k-button.is-outline.is-disabled) { border-color: var(--k-red-line) !important; color: var(--k-red-deep) !important; }
+}
+.progress .danger :deep(.k-button.is-outline), .progress .danger :deep(.k-button.is-outline.is-disabled) { color: var(--k-alert) !important; border-color: var(--k-alert) !important; }
+/* 卡片之间的大号描边按钮（联系当地主理人、刷新确认状态、查看我的行程）收成 40 高胶囊、500 字重，不和底部主按钮抢 */
+.deliver :deep(.k-button.is-lg.is-outline), .contract-page .arrival-confirm-body :deep(.k-button.is-lg.is-outline) { height: 40px; border-radius: 20px; font-size: 14px; font-weight: 500; }
+/* ==== r3jobsb 第三轮 end ==== */

@@ -193,3 +193,57 @@ test('failed first room read leaves loading and can be retried without a write',
   assert.equal(f.state.error.value,'')
   assert.equal(f.writes.length,0)
 })
+
+for (const mode of ['monopoly', 'dice']) {
+  test(mode + ': returning from the background hides the old turn until the room is synchronized', async () => {
+    const f = fixture()
+    const turn = (version, currentSeat) => ({ ...snapshot(version), mode, phase: 'playing',
+      currentSeat, me: { seat: 2 }, canRoll: currentSeat === 2 })
+    f.behavior.read = async () => turn(3, 2)
+    await f.lifecycle.show(); await flush()
+    assert.equal(f.state.room.value.canRoll, true)
+    let oldRead
+    f.behavior.read = () => new Promise(resolve => { oldRead = resolve })
+    const stale = f.state.refresh()
+    f.lifecycle.hide()
+    let restore
+    f.behavior.session = () => new Promise(resolve => { restore = resolve })
+    const returning = f.lifecycle.show()
+    assert.equal(f.state.room.value, null, 'previous turn must not be offered after returning')
+    assert.equal(f.state.loading.value, true)
+    f.behavior.read = async () => { throw new Error('网络连接失败') }
+    restore(); await returning; await flush()
+    assert.equal(f.state.error.value, '网络连接失败')
+    f.behavior.read = async () => turn(4, 1)
+    await f.state.refresh()
+    oldRead(turn(3, 2)); await stale
+    assert.equal(f.state.room.value.currentSeat, 1)
+    assert.equal(f.state.room.value.canRoll, false)
+    assert.equal(f.state.error.value, '')
+    assert.equal(f.writes.length, 0)
+  })
+}
+
+test('a room that expires during polling stops displaying the previous active turn', async () => {
+  const f = fixture()
+  f.behavior.read = async () => ({ ...snapshot(2), phase: 'playing', currentSeat: 1, canRoll: true })
+  await f.lifecycle.show(); await flush()
+  f.behavior.read = async () => { throw Object.assign(new Error('房间已过期'), { code: 404 }) }
+  await f.state.refresh()
+  assert.equal(f.state.room.value, null)
+  assert.equal(f.state.loading.value, false)
+  assert.equal(f.state.error.value, '房间已过期')
+})
+
+test('an old failed poll cannot replace the state of a later successful action with an error', async () => {
+  const f = fixture()
+  await f.lifecycle.show(); await flush()
+  let fail
+  f.behavior.read = () => new Promise((_, reject) => { fail = reject })
+  const stale = f.state.refresh()
+  await f.state.act('end')
+  fail(Object.assign(new Error('网络连接失败'), { code: -1 }))
+  await stale
+  assert.equal(f.state.room.value.version, 2)
+  assert.equal(f.state.error.value, '')
+})

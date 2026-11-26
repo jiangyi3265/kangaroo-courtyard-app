@@ -143,19 +143,19 @@ test('高度：内容从状态栏往下排，就从状态栏往下量（高屏 3
   }
 })
 
-test('样子：贴屏幕右边、不跟着滑、宽 28；字 13px 竖排', () => {
+test('样子：贴屏幕右边、不跟着滑、宽 20（11-18 由 28 收到 24、再收到 20：新版卡片外沿离屏幕右边 16，只碰卡片外沿不压卡内文字）；字 12px 竖排', () => {
   const css = topbar.styles[0].content
   const fab = /\.k-fab \{([^}]*)\}/.exec(css)[1]
   assert.match(fab, /position: fixed;/)
   assert.match(fab, /right: 0;/)
   assert.match(fab, /left: auto;/)
-  assert.match(fab, /border-radius: 12px 0 0 12px;/)
+  assert.match(fab, /border-radius: 10px 0 0 10px;/)
   assert.match(fab, /top: 55%;/)
-  assert.match(fab, /width: 28px;/)
+  assert.match(fab, /width: 20px;/)
   assert.ok(Number(/height: (\d+)px;/.exec(fab)[1]) >= 44, '高度够手指点')
   assert.match(fab, /flex-direction: column;/)
   const text = /\.k-fab__text \{([^}]*)\}/.exec(css)[1]
-  assert.match(text, /font-size: 13px;/)
+  assert.match(text, /font-size: 12px;/)
   assert.match(css, /\.k-fab::after \{ border: 0; \}/, '微信 button 自带的边框要去掉')
   const tpl = topbar.template.content
   assert.equal((tpl.match(/<text class="k-fab__text">客<\/text><text class="k-fab__text">服<\/text>/g) || []).length, 2, '两段模板都是竖排两个字')

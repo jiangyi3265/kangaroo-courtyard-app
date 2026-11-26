@@ -2,7 +2,7 @@
   <view class="fp" :class="{ 'fp--online': type === 'online' }">
     <view class="fp__head">
       <text class="fp__title">筛选条件</text>
-      <view class="fp__close" aria-role="button" aria-label="关闭筛选，不保存更改" hover-class="k-press" @click="emit('close')"><text>关闭</text><k-icon name="x" :size="15" color="ink2" :stroke="1.7" /></view>
+      <view class="fp__close" aria-role="button" aria-label="关闭筛选，不保存更改" hover-class="k-press" @click="emit('close')"><text>关闭</text><k-icon name="x" :size="16" color="ink2" /></view>
     </view>
     <!-- 完整分组标题在上、选项在下；长文案换行或占整行，避免小屏截断。 -->
     <scroll-view class="fp__body" scroll-y :show-scrollbar="false">
@@ -11,7 +11,7 @@
         <view class="fp-group__head"><text class="fp__label">{{ groupItem.title }}</text><text v-if="['skills', 'restModes', 'roomTypes', 'categories'].includes(groupItem.key)" class="fp__hint">可多选</text></view>
         <view class="fp-opts" :class="{ 'fp-opts--two': ['skills', 'restModes', 'roomTypes', 'board', 'minStay', 'categories', 'task'].includes(groupItem.key), 'fp-opts--salary': ['payDay', 'payMonth'].includes(groupItem.key) }">
           <view v-for="optItem in groupItem.options" :key="optItem.value" class="fp-opt" :class="{ on: optItem.on, 'fp-opt--wide': optItem.wide, 'fp-opt--long': optItem.long, 'fp-opt--assured': groupItem.key === 'assured' }" hover-class="k-press-s" @click="pick(groupItem.key, optItem.value)">
-            <image v-if="groupItem.key === 'assured'" class="fp-opt__icon" src="/static/media/brand-kangaroo.png" mode="aspectFit" />
+            <k-icon v-if="groupItem.key === 'assured'" class="fp-opt__icon" name="shield-check" :size="14" :color="optItem.on ? 'red' : 'green'" />
             <text class="fp-opt__text">{{ optItem.label }}</text>
           </view>
         </view>
@@ -75,7 +75,7 @@ const pick = (key, value) => emit('pick', key, value)
 .fp-opt__text { min-width: 0; white-space: normal; line-height: 1.4; text-align: center; }
 .fp-opt--long { font-size: 14px; }
 .fp-opt--wide { grid-column: 1 / -1; justify-content: flex-start; padding: 10px 12px; }
-.fp-opt__icon { flex: 0 0 auto; width: 17px; height: 20px; }
+.fp-opt__icon { flex: 0 0 auto; }
 .fp-empty { display: block; padding: 18px 0; font-size: 13px; color: #7A7570; }
 .fp__foot { flex-shrink: 0; box-sizing: border-box; padding: 12px 14px calc(14px + var(--k-safe-bottom, 0px)); border-top: 1px solid #EDE8E1; }
 .fp__count { display: block; margin-bottom: 9px; text-align: center; font-size: 12px; line-height: 16px; color: #7A7570; }
@@ -102,4 +102,26 @@ const pick = (key, value) => emit('pick', key, value)
 .fp__head::before { content: ''; position: absolute; left: 50%; top: 5px; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #E4D9CB; }
 .fp-opt.on { background: #F3E3CC; border-color: #BE966C; }
 .fp__reset, .fp__ok { border-radius: 24px; }
+/* 2026-11-17 改版「小而精」：白底弹层、顶上 16 圆角，不描边；分组之间靠留白不画线；选项是 36 高、8 圆角的浅色块，
+   选中换成浅棕底 + 细棕边；底部「重置条件」是白底细边的次按钮，「查看结果」是暖棕渐变胶囊。分组、选项、统计数一项不少。 */
+.fp { border: 0; border-radius: 16px 16px 0 0; background: var(--k-paper); color: var(--k-ink); }
+.fp__head { min-height: 48px; padding: 8px 12px 0 16px; border-bottom: 0; }
+.fp__head::before { top: 6px; width: 32px; background: #E6E1DA; }
+.fp__title { font-size: 16px; font-weight: 700; }
+.fp__close { font-size: 12px; color: var(--k-muted); }
+.fp__body { padding: 0 16px; }
+.fp-group { padding-top: 10px; padding-bottom: 6px; }
+.fp-group--line { border-top: 0; }
+.fp__label { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--k-ink); }
+.fp__hint { font-size: 11px; }
+.fp-opt { min-height: 36px; padding: 4px 6px; border: 0; border-radius: 8px; background: var(--k-page); box-shadow: none; font-size: 13px; font-weight: 400; color: var(--k-ink2); }
+/* 选中：浅棕底 + 1px 暖棕实线 + 深棕 600；没选中：浅灰底无描边，一眼分得出 */
+.fp-opt.on { border: 0; background: var(--k-red-soft); box-shadow: inset 0 0 0 1px var(--k-red); color: var(--k-red-deep); font-weight: 600; }
+.fp-opt--wide { padding: 4px 12px; }
+.fp-empty { color: var(--k-muted); }
+.fp__foot { padding: 8px 16px calc(10px + var(--k-safe-bottom, 0px)); border-top: 0; background-image: linear-gradient(to bottom, var(--k-line) 50%, transparent 50%); background-size: 100% 1px; background-repeat: no-repeat; background-position: left top; }
+.fp__count { margin-bottom: 8px; font-size: 11px; color: var(--k-muted); }
+.fp__reset, .fp__ok { height: 42px; border-radius: 21px; font-size: 14px; }
+.fp__reset { flex-basis: 30%; border-color: var(--k-red-line); background: var(--k-paper); color: var(--k-red-deep); font-weight: 500; }
+.fp__ok { background: linear-gradient(135deg, #B5814D, #8E5E33); font-weight: 600; }
 </style>

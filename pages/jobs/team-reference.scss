@@ -2,7 +2,8 @@
 .team-page { background: #FCF9F3; }
 .team-page .tm-hero { height: 208px; background: #FCF9F3; }
 .team-page .tm-hero__copy { top: 24px; left: 12px; right: 12px; z-index: 3; text-align: center; align-items: center; }
-.team-page .tm-hero__title { font-family: var(--k-sans); color: #422C1D; font-size: 25px; font-weight: 800; letter-spacing: -.9px; line-height: 1.35; }
+/* 2026-11-18 看图评审：大标题从 800 特粗降到 700（全站标题不用 800 / 900）；插画、两个小贴纸是 10-19 按主人参考图还原的，照旧 */
+.team-page .tm-hero__title { font-family: var(--k-sans); color: #422C1D; font-size: 25px; font-weight: 700; letter-spacing: -.9px; line-height: 1.35; }
 .team-page .tm-hero__title--long { font-size: 22px; letter-spacing: -.8px; }
 .team-page .tm-hero__sub { margin-top: 7px; color: #765D43; font-size: 13px; letter-spacing: .2px; }
 .team-page .tm-hero__scene { top: auto; bottom: 0; height: 175px; width: 100%; }
@@ -31,7 +32,7 @@
 .team-page .tm-way:nth-child(4) .tm-way__icon { background: #F5B38F; }
 .team-page .tm-way__title { font-family: var(--k-sans); font-size: 17px; line-height: 1.35; font-weight: 700; }
 .team-page .tm-way__desc { color: #806A51; font-size: 12px; line-height: 1.5; }
-.team-page .tm-safe { min-height: 32px; margin: 8px 14px 0; padding: 6px 7px; gap: 3px; border-radius: 10px; background: #F6ECD9; box-shadow: none; font-size: 10px; font-weight: 500; box-sizing: border-box; }
+.team-page .tm-safe { min-height: 32px; margin: 8px 14px 0; padding: 6px 7px; gap: 3px; border-radius: 10px; background: #F6ECD9; box-shadow: none; font-size: 11px; font-weight: 500; box-sizing: border-box; }
 .team-page .tm-safe__item { margin-left: 2px; }
 .team-page .tm-safe__item + .tm-safe__item { margin-left: 4px; padding-left: 4px; }
 .team-page .tm-cta { margin-top: 12px; min-height: 48px; border: 1px solid #EADFD1; border-radius: 12px; box-shadow: none; }
@@ -67,7 +68,7 @@
  .team-page .tm-way__title { font-size: 15px; }
  .team-page .tm-way__desc { font-size: 11px; }
  .team-page .tm-way__icon { width: 38px; height: 38px; }
- .team-page .tm-safe { flex-wrap: wrap; justify-content: center; font-size: 10px; }
+ .team-page .tm-safe { flex-wrap: wrap; justify-content: center; font-size: 11px; }
  .team-page .shop-head__title { font-size: 19px; }
 }
 
@@ -102,3 +103,339 @@
  .team-page .score-row { gap: 3px; font-size: 11px; }
  .team-page .shop-actions :deep(.k-button) { font-size: 12px; padding-left: 6px; padding-right: 6px; }
 }
+
+/* 2026-11-17 改版「小而精」：插画和大标题留在顶部那块暖色里，下面换成浅灰底 #F7F5F2 + 白卡（12 圆角、不描边、不加阴影）。
+   四种分享方式收进一张白卡，一行一种、细线隔开，图标是 40 的圆角方块；岗位卡、安全提示、同行伙伴入口都收小一档。
+   分享、海报、商家评价、缺人提醒、联系客服一项不少。 */
+.team-page { background: #F7F5F2; }
+.team-page :deep(.k-chip:not(.is-pill)) { height: 17px; padding: 0 5px; border-radius: 4px; font-size: 11px; }
+.team-page .tm-card { margin: 12px 12px 0; padding: 14px 12px 12px; border-radius: 12px; box-shadow: none; }
+.team-page .tm-card__title { font-family: var(--k-sans); font-size: 15px; color: var(--k-ink); }
+.team-page .tm-job { margin: -18px 12px 0; padding: 10px; min-height: 0; gap: 10px; border-radius: 12px; box-shadow: none; }
+.team-page .tm-job__img { width: 56px; height: 56px; border-radius: 8px; }
+.team-page .tm-job__main { gap: 4px; padding-right: 26px; }
+.team-page .tm-job__title { font-family: var(--k-sans); font-size: 14px; font-weight: 600; line-height: 20px; letter-spacing: 0; color: var(--k-ink); }
+.team-page .tm-job__city { font-size: 12px; font-weight: 400; color: var(--k-muted); }
+.team-page .tm-job__chip { min-height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-ochre-soft); color: var(--k-ochre-deep); font-size: 11px; font-weight: 500; line-height: 17px; }
+.team-page .tm-job__meta { font-size: 11px; }
+.team-page .tm-job__share { top: 4px; right: 2px; }
+.team-page .tm-ways { margin: 16px 12px 0; }
+.team-page .tm-ways__title { margin: 0 2px 8px; text-align: left; font-size: 16px; line-height: 22px; letter-spacing: 0; color: var(--k-ink); }
+.team-page .tm-ways__panel { padding: 0 12px; border-radius: 12px; background: var(--k-paper); box-shadow: none; }
+.team-page .tm-ways .tm-way, .team-page .tm-ways .tm-way:nth-child(n) { position: relative; min-height: 60px; padding: 10px 0; gap: 10px; border-radius: 0; background: transparent; box-shadow: none; }
+.team-page .tm-ways .tm-way + .tm-way { margin-top: 0; }
+.team-page .tm-ways .tm-way + .tm-way::before { content: ''; display: block; position: absolute; left: 50px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.team-page .tm-way__icon { width: 40px; height: 40px; border-radius: 12px; }
+
+/* 2026-11-18 看图评审：四个图标方块原来是橙、绿、蓝、粉四种鲜艳实色 + 白图标，和下面「看看一起去的伙伴」那一行两种画法。
+   改成很浅的暖色渐变底 + 暖棕线条图标（微信那一行留一点绿：浅绿底 + 豆绿图标）；右边的长箭头换成和下面一样的小尖括号，浅灰色 */
+.team-page .tm-ways .tm-way .tm-way__icon { background: linear-gradient(160deg, #FFF6EA, #FFE7CC); }
+.team-page .tm-ways .tm-way .tm-way__icon--wechat { background: linear-gradient(160deg, #F1F7EA, #DDEBD0); }
+.team-page .tm-way__main { gap: 1px; }
+.team-page .tm-way__title { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--k-ink); }
+.team-page .tm-way__desc { font-size: 11px; line-height: 16px; color: var(--k-muted); }
+
+.team-page .tm-safe { min-height: 28px; margin: 8px 12px 0; padding: 4px 8px; border-radius: 8px; background: #FBF3E6; color: var(--k-ochre-deep); font-size: 11px; }
+@media (max-width: 359px) { .team-page .tm-safe { font-size: 11px; } }
+
+.team-page .tm-cta { margin: 8px 12px 0; min-height: 56px; padding: 10px 12px; gap: 10px; border: 0; border-radius: 12px; }
+.team-page .tm-cta__icon { flex-basis: 36px; width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(160deg, #FFF6EA, #FFE7CC); }
+
+.team-page .tm-cta__title { font-size: 14px; font-weight: 600; }
+.team-page .tm-cta__count { font-size: 11px; }
+.team-page .tm-cta__text { margin-top: 2px; font-size: 11px; }
+
+/* 海报 / 商家评价 */
+.team-page .poster-body { padding: 8px 12px calc(92px + var(--k-safe-bottom)); }
+.team-page .poster-card, .team-page .ai-summary, .team-page .score-panels, .team-page .shop-review { border: 0; border-radius: 12px; box-shadow: none; }
+.team-page .poster-hero { height: 200px; }
+.team-page .poster-benefits { height: 68px; }
+.team-page .poster-benefits view { gap: 4px; font-size: 12px; }
+
+.team-page .poster-tags { padding: 10px 12px 12px; }
+.team-page .poster-tags__title { margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+/* 岗位标签靠左排、放不下换行（原来左右撑开，三个标签中间空一大截）；底部左边岗位名可折行，右边「来自 / 岗位编号」不折行 */
+.team-page .poster-tags > view { justify-content: flex-start; flex-wrap: wrap; gap: 6px; }
+/* 2026-11-18 看图评审：右边靠右对齐的「来自 … / 岗位编号 …」最后一个字会被屏幕右边的客服小钮盖住——改成排在左边两句话下面一行（窄屏原本就是这样排）；
+   「保存图片」按次按钮规范：浅棕细边、深棕字 */
+.team-page .poster-foot { padding: 12px; gap: 6px; flex-direction: column; align-items: stretch; }
+.team-page .poster-foot__copy { flex: 0 0 auto; min-width: 0; margin-left: 0; }
+.team-page .poster-foot__brand { flex: 0 0 auto; margin-left: 0; flex-direction: row; flex-wrap: wrap; gap: 2px 10px; text-align: left; }
+.team-page .poster-foot__brand text { white-space: nowrap; }
+.team-page .poster-actions { margin-top: 12px; gap: 8px; }
+.team-page .poster-actions :deep(.k-button.is-outline) { border-color: var(--k-red-line); color: var(--k-red-deep); font-weight: 600; }
+.team-page .poster-actions :deep(.k-button), .team-page .shop-actions :deep(.k-button), .team-page .tm-entry-error :deep(.k-button) { height: 44px; border-radius: 22px; }
+.team-page .poster-actions :deep(.k-button.is-primary:not(.is-disabled)), .team-page .shop-actions :deep(.k-button.is-primary:not(.is-disabled)), .team-page .tm-entry-error :deep(.k-button.is-primary:not(.is-disabled)) { background: linear-gradient(135deg, #B5814D, #8E5E33); box-shadow: none; }
+.team-page .shop-body { padding: 8px 12px calc(172px + var(--k-safe-bottom)); }
+.team-page .shop-head > image, .team-page .shop-head__noimg { flex: 0 0 88px; width: 88px; height: 88px; border-radius: 8px; }
+/* 没传封面时的占位方块用白底：原来的浅米色压在浅灰页面上分不出边 */
+.team-page .shop-head__noimg { background: var(--k-paper); }
+.team-page .shop-head__main { padding: 2px 0 0 10px; }
+.team-page .shop-head__title { font-size: 17px; line-height: 24px; }
+.team-page .shop-head__place { margin-top: 0; font-size: 12px; }
+.team-page .shop-head__chips { margin-top: 6px; }
+.team-page .shop-head__meta { margin-top: 6px; font-size: 11px; color: var(--k-muted); }
+.team-page .block-title { font-size: 15px; }
+.team-page .ai-summary { margin-top: 12px; padding: 12px; }
+.team-page .ai-summary__copy > text { font-size: 12px; line-height: 1.7; }
+.team-page .ai-mark { height: 17px; padding: 0 5px; border-radius: 4px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 11px; font-weight: 500; }
+.team-page .score { flex: 0 0 80px; width: 80px; }
+.team-page .score text:first-child { font-size: 28px; font-weight: 700; color: var(--k-red-deep); }
+.team-page .score text:nth-child(2) { font-size: 12px; }
+.team-page .score text:last-child { font-size: 11px; }
+.team-page .score-panels { margin-top: 8px; }
+.team-page .distribution, .team-page .filters { padding: 12px; }
+.team-page .score-row { font-size: 11px; }
+.team-page .score-row > view { height: 4px; }
+/* 评价筛选的小胶囊：看上去 28 高（规范 26–28），外面一圈 2 的透明边把可点范围留在原来的 32 */
+.team-page .filters > view { gap: 2px; margin: 6px -2px -2px; }
+.team-page .filters > view text { min-height: 32px; height: 32px; border: 2px solid transparent; border-radius: 16px; background: var(--k-paper2) padding-box; color: var(--k-ink2); }
+.team-page .filters > view text.active { border-color: transparent; background: var(--k-red-soft) padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-weight: 500; }
+.team-page .review-sort { margin: 8px 0; gap: 8px; }
+.team-page .review-sort > view { height: 36px; border: 0; border-radius: 18px; background: var(--k-paper); font-size: 12px; }
+.team-page .shop-review { margin-top: 8px; padding: 12px; }
+.team-page .shop-review__head > image { width: 32px; height: 32px; }
+.team-page .shop-review__name { font-size: 13px; font-weight: 600; }
+.team-page .shop-review__copy { font-size: 13px; line-height: 1.7; }
+.team-page .shop-review__date { font-size: 11px; }
+.team-page .shop-review__photos image, .team-page .shop-review__photos > view { border-radius: 8px; }
+/* 「共 N 张」那一格：原来是灰底白字，看不清，换成浅色底深字 */
+.team-page .shop-review__photos > view { background: var(--k-paper2); color: var(--k-ink2); font-size: 11px; }
+.team-page .reply { background: #F7F5F2; }
+.team-page .reviews-empty { margin-top: 8px; padding: 36px 0; border-radius: 12px; background: var(--k-paper); }
+.team-page .shop-actions { padding: 8px 12px; border-top: 0; background: #FFFFFF; }
+/* 2026-11-18 看图评审：「商家评价」底部原来叠了两层（「这家店缺人了提醒我 / 联系客服」操作条 + 底部导航），占掉屏幕下方约五分之一，
+   凸起的「发布」圆钮正顶着两颗按钮中间的缝。两颗按钮改放进页面里、门店信息的正下方（只换位置：按钮、文字、点了以后做什么都没变），底部只留导航。
+   用排列顺序把它提到门店信息后面，模板里的先后没动。 */
+.team-page .shop-body { display: flex; flex-direction: column; padding-bottom: calc(92px + var(--k-safe-bottom)); }
+.team-page .shop-head { order: -2; }
+.team-page .shop-actions { order: -1; position: static; margin-top: 12px; padding: 0; background: transparent; gap: 8px; }
+.team-page .shop-actions :deep(.k-button) { height: 40px; border-radius: 20px; }
+@media (max-width: 359px) {
+ .team-page .tm-job, .team-page .tm-ways, .team-page .tm-safe, .team-page .tm-cta { margin-left: 10px; margin-right: 10px; }
+ .team-page .tm-ways .tm-way { gap: 8px; padding: 10px 0; }
+ .team-page .tm-way__title { font-size: 14px; }
+ .team-page .tm-way__icon { width: 36px; height: 36px; }
+ .team-page .shop-head > image, .team-page .shop-head__noimg { flex-basis: 80px; width: 80px; height: 80px; }
+ .team-page .score { flex-basis: 72px; width: 72px; }
+ .team-page .distribution, .team-page .filters { padding: 10px 8px; }
+ /* 窄屏：海报底部上下两行排，左边那两句不用再折成「查 / 看」 */
+ .team-page .poster-foot { flex-direction: column; gap: 6px; }
+ .team-page .poster-foot__copy { flex: 0 0 auto; width: 100%; }
+ .team-page .poster-foot__brand { flex-direction: row; gap: 10px; text-align: left; }
+}
+
+/* ===================== 2026-11-18 第三轮「逐页精修」（r3jobsa） =====================
+   寻伴同行：岗位卡标题一行（太长省略），城市跟在同一行，不再把「｜平潭」挤到下一行行首；分享方式、同行伙伴入口的图标方块统一浅米纯色底（微信那格浅绿）。
+   分享海报：照片放大到 3:2；岗位名 18 / 700 放在照片下面第一行，「微信搜索…」一行灰字；包吃包住 / 换宿旅行 / 城市改成一行浅米小胶囊；
+   「岗位标签」降成 11 号灰字小标题；最下面「来自 袋鼠全球青年 · 岗位编号」用发丝线隔开。只换排列顺序和样子，文字、按钮、保存与转发都没变。
+   商家评价：评分分布占满一行；评价筛选六个胶囊在下面一行排开（不再半宽里挤 2×3）；「缺人提醒我 / 联系客服」收成 32 高的小胶囊，不抢评分。 */
+.team-page .tm-job__head { display: flex; align-items: baseline; min-width: 0; }
+.team-page .tm-job__title { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.team-page .tm-job__city { flex: 0 0 auto; margin-left: 2px; color: var(--k-muted); }
+.team-page .tm-ways .tm-way .tm-way__icon, .team-page .tm-cta__icon { background: var(--k-paper2); }
+.team-page .tm-ways .tm-way .tm-way__icon--wechat { background: var(--k-green-soft); }
+.team-page .tm-ways__title { font-size: 16px; font-weight: 700; }
+.team-page .tm-safe { margin-top: 12px; }
+/* 分享海报 */
+.team-page .poster-body { padding-top: 12px; }
+.team-page .poster-card { display: flex; flex-direction: column; overflow: hidden; }
+.team-page .poster-hero { order: 0; height: 244px; }
+.team-page .poster-foot { display: contents; }
+.team-page .poster-foot__copy { order: 1; margin: 0; padding: 16px 16px 0; display: flex; flex-direction: column; gap: 4px; }
+.team-page .poster-foot__copy > text:first-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 18px; font-weight: 700; line-height: 26px; color: var(--k-ink); }
+.team-page .poster-foot__copy > text:last-child { font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.team-page .poster-benefits { order: 2; height: auto; padding: 12px 16px 0; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px; }
+.team-page .poster-benefits view { width: auto; height: 24px; padding: 0 10px 0 8px; border-radius: 12px; background: var(--k-paper2); flex-direction: row; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--k-ink2); }
+
+.team-page .poster-tags { order: 3; padding: 14px 16px 16px; }
+.team-page .poster-tags__title { margin-bottom: 6px; font-size: 11px; font-weight: 400; line-height: 16px; color: var(--k-muted); }
+.team-page .poster-tags > view { gap: 4px; }
+.team-page .poster-foot__brand { order: 4; position: relative; margin: 0 16px; padding: 12px 0 14px; flex-direction: row; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; font-size: 11px; line-height: 16px; color: var(--k-muted); text-align: left; }
+.team-page .poster-foot__brand::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.team-page .poster-actions { margin-top: 16px; }
+/* 商家评价 */
+.team-page .score-panels { display: flex; flex-direction: column; }
+.team-page .distribution { padding: 12px 12px 10px; border-right: 0; }
+.team-page .score-row { grid-template-columns: 28px 1fr 36px; gap: 8px; margin-top: 6px; color: var(--k-muted); }
+.team-page .score-row > text:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.team-page .filters { position: relative; padding: 12px; }
+.team-page .filters::before { content: ''; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.team-page .filters > view { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px -2px -2px; }
+.team-page .filters > view text { height: 32px; min-height: 32px; padding: 0 12px; }
+.team-page .shop-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px; margin-top: 12px; }
+.team-page .shop-actions :deep(.k-button) { flex: 0 0 auto; width: auto; height: 32px; padding: 0 14px; border-radius: 16px; font-size: 12px; font-weight: 500; }
+.team-page .shop-actions :deep(.k-button .k-icon) { display: none; } /* 实心按钮改成白底后，按钮里的白色图标看不见了：两颗都只留字 */
+.team-page .shop-actions :deep(.k-button.is-primary:not(.is-disabled)) { background: var(--k-paper); box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); }
+.team-page .shop-actions :deep(.k-button.is-outline) { background: var(--k-paper); border-color: var(--k-red-line); color: var(--k-red-deep); }
+/* 星级：文字「★★★★☆」换成 12 号星形图标（暖棕实心 / 浅线色空心），分数跟在后面 */
+.team-page .score__stars, .team-page .shop-review__stars { display: flex; align-items: center; gap: 2px; }
+.team-page .score__stars { justify-content: center; margin: 2px 0; }
+.team-page .shop-review__stars > text { margin-left: 4px; font-size: 11px; line-height: 16px; color: var(--k-muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 359px) {
+  .team-page .poster-hero { height: 198px; }
+  .team-page .poster-foot__copy > text:first-child { font-size: 17px; line-height: 24px; }
+}
+
+/* 2026-11-18 第三轮返修（r3jobsa 评审第 1 轮）
+   ① 商家评价页「这家店缺人了提醒我 / 联系客服」往下滑会盖在顶栏上（z-index 45 > 顶栏 40）：压回普通层级；
+   ② 分享海报：来源行左边加 20 高袋鼠小标 +「来自 袋鼠全球青年」12/600，看的人认得出是哪里的岗位；岗位标签和福利同一种 24 高胶囊；
+   ③ 安心提示条的分隔竖线改成 1×10 的发丝线，左右各留 8；「选择分享方式」和卡片左线对齐。 */
+.team-page .shop-actions { position: relative; top: auto; bottom: auto; z-index: 1; }
+.team-page .poster-foot__brand { align-items: center; }
+.team-page .poster-foot__logo { flex: 0 0 auto; width: 20px; height: 20px; margin-right: -4px; }
+.team-page .poster-foot__brand > text:first-of-type { margin-right: auto; font-size: 12px; font-weight: 600; color: var(--k-ink); }
+.team-page .poster-tags { padding-top: 8px; }
+.team-page .poster-tags :deep(.k-chip) { height: 24px; padding: 0 10px; border-radius: 12px; background: var(--k-paper2); font-size: 12px; line-height: 24px; color: var(--k-ink2); }
+.team-page .tm-safe__item--sep { position: relative; margin-left: 8px; padding-left: 9px; border-left: 0; }
+.team-page .tm-safe__item--sep::before { content: ''; position: absolute; left: 0; top: 50%; width: 1px; height: 10px; margin-top: -5px; background: var(--k-line2); }
+.team-page .tm-ways__title { padding-left: 12px; padding-right: 12px; }
+
+/* 2026-11-18 第三轮返修第 2 轮（r3jobsa 评审第 2 轮）
+   ① 商家评价：上一轮给按钮条加 position: relative 时把旧规则里的 bottom: 56px+安全区 又激活了，整组按钮被推上去压住门店名——上面已把 top / bottom 复位；
+   ② 评价照片后面的「共 N 张」不再是一个 120×92 的灰块（只有一张时像图没加载出来）：改成跟在照片右下的一行 11 号灰字；
+   ③ 寻伴同行：「选择分享方式」和卡片左线对齐；岗位卡标题允许两行，城市挪到第二行灰字；窄屏「看看一起去的伙伴」说明改 12 号；
+   ④ 分享海报：福利胶囊只留字（岗位类型、城市的小图标意思对不上，去掉不影响内容）；岗位标签改成 12 号灰字「#标签」，和福利胶囊分开；
+      照片收到 4:3、海报整体往下放 24，按钮下面不再空一大片；
+   ⑤ 商家评价右边贴着客服浮钮的问题要公共层收窄浮钮，本页不另开右边距（免得和上面几张卡的右线对不齐）。 */
+.team-page .shop-review__photos { align-items: flex-end; }
+.team-page .shop-review__photos > view { flex: 0 0 auto; width: auto; height: auto; min-height: 0; padding: 0 0 2px; border-radius: 0; background: transparent; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+.team-page .tm-ways__title { margin-left: 0; padding-left: 0; padding-right: 0; text-align: left; }
+.team-page .poster-benefits :deep(.k-icon) { display: none; }
+.team-page .poster-benefits view { padding: 0 10px; }
+.team-page .poster-tags :deep(.k-chip) { height: auto; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); }
+.team-page .poster-tags :deep(.k-chip text)::before { content: '#'; }
+.team-page .poster-tags > view { gap: 4px 10px; }
+.team-page .poster-body { padding-top: 24px; }
+.team-page .poster-hero { height: 256px; }
+@media (max-width: 359px) {
+  .team-page .tm-cta__text { font-size: 12px; }
+  .team-page .poster-hero { height: 210px; }
+}
+
+/* ===================== 2026-11-18 第三轮返修第 3 轮 =====================
+   岗位卡：标题一行省略、「｜城市」跟在同一行（删掉了把它改回两行的旧规则）；
+   商家评价「共N张」压在最后一张图右下角（半透明黑底白字小胶囊）；320 宽评价筛选单行横排；选中的筛选胶囊浅棕底深棕字。 */
+.team-page .shop-review__photos { gap: 8px; align-items: stretch; }
+.team-page .shop-review__photos > view { position: relative; justify-self: start; width: 0; height: 62px; margin-left: -8px; padding: 0; overflow: visible; background: transparent; }
+.team-page .shop-review__photos > view > text { position: absolute; right: 4px; bottom: 4px; height: 18px; padding: 0 6px; border-radius: 4px; background: rgba(0, 0, 0, .5); color: var(--k-paper); font-size: 11px; font-weight: 500; line-height: 18px; white-space: nowrap; }
+
+/* ===================== 2026-11-18 第三轮返修第 4 轮（r3jobsa 评审第 4 轮） =====================
+   ① 信任条竖线做成 1×10，左右各 8；② 分享方式：微信两项保留微信品牌浅绿（品牌色例外），其余两项浅棕底 + 暖棕图标（入口方块统一做法）；
+   ③ 海报照片 3:2；「岗位标签」放到 #话题那一行开头，不再单独占一层；④ 店铺没封面：浅棕底 + 28 号暖棕店铺图标；
+   ⑤ 评价筛选：选中浅棕底 + 深棕字 600 + 细描边，没选中浅米无描边；320 宽一行横向滑动，不再 5 + 1 折行。 */
+.team-page .tm-safe__item { margin-left: 0; }
+.team-page .tm-safe > .k-icon + .tm-safe__item, .team-page .tm-safe :deep(.k-icon) + .tm-safe__item { margin-left: 4px; }
+.team-page .tm-safe .tm-safe__item--sep { margin-left: 0; padding-left: 0; }
+.team-page .tm-safe .tm-safe__item--sep::before { position: static; display: inline-block; width: 1px; height: 10px; margin: 0 8px; vertical-align: -1px; background: var(--k-line2); }
+.team-page .tm-ways .tm-way .tm-way__icon { background: var(--k-red-soft); }
+.team-page .tm-ways .tm-way .tm-way__icon--wechat { background: var(--k-green-soft); }
+.team-page .poster-hero { height: calc((100vw - 24px) / 1.5); }
+.team-page .poster-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.team-page .poster-tags__title { margin: 0; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.team-page .poster-tags > view { display: contents; }
+.team-page .shop-head__noimg { background: var(--k-red-soft); display: flex; align-items: center; justify-content: center; }
+.team-page .filters > view text { box-shadow: none; background: var(--k-paper2) padding-box; color: var(--k-ink2); font-weight: 400; }
+.team-page .filters > view text.active { background: var(--k-red-soft) padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); font-weight: 600; }
+@media (max-width: 359px) {
+  .team-page .poster-hero { height: calc((100vw - 24px) / 1.5); }
+  .team-page .filters > view { flex-wrap: wrap; overflow: visible; gap: 4px; }
+  .team-page .filters > view text { flex: 0 0 auto; padding: 0 10px; }
+}
+/* 2026-11-18 第三轮返修第 5 轮：
+   ① 大标题 20/700（字号档里的页标题），「选择分享方式」18；② 四个分享方式方块同一种浅棕底，微信图标仍是绿色；
+   ③ 评价筛选：没选中浅灰底 + 墨灰 400，选中浅棕底 + 1px 暖棕实线 + 深棕 600，一眼分得出；320 宽放不下折到第二行，不再被切半枚；
+   ④ 右上评分 20/700 等宽数字，和左边标题比例协调。 */
+.team-page .tm-hero__title, .team-page .tm-hero__title--long { font-size: 20px; line-height: 28px; letter-spacing: 0; }
+.team-page .tm-ways__title { font-size: 18px; line-height: 26px; }
+.team-page .tm-ways .tm-way .tm-way__icon, .team-page .tm-ways .tm-way .tm-way__icon--wechat { background: var(--k-red-soft); }
+.team-page .filters > view text { background: var(--k-page) padding-box; color: var(--k-ink2); font-weight: 400; }
+.team-page .filters > view text.active { background: var(--k-red-soft) padding-box; box-shadow: inset 0 0 0 1px var(--k-red); color: var(--k-red-deep); font-weight: 600; }
+.team-page .score text:first-child { font-size: 20px; font-weight: 700; line-height: 28px; font-variant-numeric: tabular-nums; }
+@media (max-width: 359px) {
+  .team-page .tm-hero__title, .team-page .tm-hero__title--long { font-size: 18px; line-height: 26px; }
+}
+
+/* ===================== 2026-11-18 第四轮「高级感」（r3jobsa） =====================
+   ① 顶栏、页面、插画区上沿同一种底色 --k-page，不再有一道色带；页面左右边距统一 16；
+   ② 岗位卡标题不再被省略号吃掉：14/600 最多两行全显，「｜平潭」跟在标题后面；「袋鼠实地探访 · 含保险」浅绿小标签；
+   ③ 分享方式：四个方块同一种浅棕底，微信用绿色线性 message-circle；行标题 14/500；区块标题 16/600；
+   ④ 保障带去掉米黄底，退成一行 12 号灰字 + 绿盾；伙伴入口白卡不描边；
+   ⑤ 分享海报：海报和按钮在顶栏到底栏之间上下居中；标签前不再加「#」；标题不截断；
+   ⑥ 商家评价：无图占位 56 方块；「评价概况」「评分分布」并成一张卡（中间发丝线）；「统计」退成 11 号灰色眉标；
+      大分数在左、星星和「综合评分」在右；说明整行宽度；星星用 --k-ochre；排序两颗胶囊 32 高。 */
+.team-page { background: var(--k-page); }
+.team-page :deep(.k-topbar) { background: var(--k-page) !important; }
+.team-page .tm-hero { background: var(--k-page); }
+.team-page .tm-hero__fade { background: linear-gradient(var(--k-page), transparent); }
+.team-page .tm-job, .team-page .tm-ways, .team-page .tm-safe, .team-page .tm-cta { margin-left: 16px; margin-right: 16px; }
+.team-page .tm-job { align-items: flex-start; }
+.team-page .tm-job__main { padding-right: 28px; }
+.team-page .tm-job__head { display: block; }
+.team-page .tm-job__title { display: inline; flex: none; overflow: visible; white-space: normal; text-overflow: clip; overflow-wrap: anywhere; font-size: 14px; font-weight: 600; line-height: 20px; }
+.team-page .tm-job__city { display: inline; margin-left: 2px; font-size: 12px; line-height: 20px; color: var(--k-muted); white-space: nowrap; }
+.team-page .tm-job__chip { height: 20px; min-height: 20px; padding: 0 6px; border-radius: 4px; background: var(--k-green-soft); color: var(--k-green); font-size: 11px; font-weight: 500; line-height: 20px; }
+.team-page .tm-ways__title { font-size: 16px; font-weight: 600; line-height: 22px; }
+.team-page .tm-ways .tm-way .tm-way__icon, .team-page .tm-ways .tm-way .tm-way__icon--wechat, .team-page .tm-cta__icon { width: 40px; height: 40px; border-radius: 10px; background: var(--k-red-soft); }
+.team-page .tm-way__title { font-size: 14px; font-weight: 500; line-height: 20px; color: var(--k-ink); }
+.team-page .tm-way__desc { font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.team-page .tm-safe { justify-content: center; min-height: 0; margin-top: 12px; margin-bottom: 0; padding: 0; border-radius: 0; background: transparent; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); }
+.team-page .tm-cta { margin-top: 12px; border: 0; border-radius: 12px; background: var(--k-paper); }
+.team-page .tm-cta__count { padding: 0; background: transparent; font-size: 13px; font-weight: 400; color: var(--k-muted); }
+.team-page .poster-body { display: flex; flex-direction: column; justify-content: center; min-height: calc(100vh - 44px - var(--status-bar-height, 0px)); padding-left: 16px; padding-right: 16px; box-sizing: border-box; }
+.team-page .poster-tags :deep(.k-chip text)::before { content: none; }
+.team-page .poster-foot__copy > text:first-child { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.team-page .shop-body { padding-left: 16px; padding-right: 16px; }
+.team-page .shop-head { align-items: flex-start; gap: 12px; }
+.team-page .shop-head > image, .team-page .shop-head__noimg { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 12px; }
+.team-page .shop-head__title { font-size: 18px; font-weight: 700; line-height: 24px; }
+.team-page .ai-summary { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 8px; align-items: center; margin-bottom: 0; padding: 16px 12px 12px; border-radius: 12px 12px 0 0; box-shadow: none; }
+.team-page .ai-summary__copy { display: contents; }
+.team-page .ai-summary__copy > view { grid-column: 1 / -1; grid-row: 1; display: flex; align-items: baseline; gap: 6px; }
+.team-page .ai-summary .score { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: auto auto; justify-content: start; align-items: center; column-gap: 10px; width: auto; flex-basis: auto; margin: 0; padding: 0; border: 0; text-align: left; }
+.team-page .ai-summary .score::before { content: none; display: none; }
+.team-page .ai-summary .score > text:first-child { grid-row: 1 / span 2; font-size: 32px; font-weight: 700; line-height: 40px; color: var(--k-ink); }
+.team-page .ai-summary .score__stars { justify-content: flex-start; margin: 0; }
+.team-page .ai-summary .score > text:last-child { font-size: 12px; line-height: 16px; color: var(--k-muted); }
+.team-page .ai-summary__copy > text { grid-column: 1 / -1; grid-row: 3; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.team-page .ai-mark { height: auto; padding: 0; border-radius: 0; background: transparent; font-size: 11px; font-weight: 400; color: var(--k-muted); }
+.team-page .ai-mark text { font-size: 11px; color: var(--k-muted); }
+.team-page .score-panels { position: relative; margin-top: 0; border-radius: 0 0 12px 12px; box-shadow: none; }
+.team-page .score-panels::before { content: ''; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.team-page .review-sort > view { height: 32px; border-radius: 16px; }
+@media (max-width: 359px) {
+  .team-page .tm-job, .team-page .tm-ways, .team-page .tm-safe, .team-page .tm-cta { margin-left: 12px; margin-right: 12px; }
+  .team-page .shop-head > image, .team-page .shop-head__noimg { flex-basis: 56px; width: 56px; height: 56px; }
+  .team-page .tm-safe { flex-wrap: wrap; }
+}
+
+/* ===================== 2026-11-19 第四轮返修（r3jobsa 复评遗留） =====================
+   ① 岗位卡「｜平潭」固定当副标题行（13 号灰字），不再被标题挤成孤零零一行；② 插画上沿的渐变往下延 24，盖住图片顶边的浅色接缝；
+   ③ 320 宽保障一行：两行居中、不画竖线（竖线只是装饰）；④ 分享海报在顶栏和底部导航之间真正上下居中；
+   ⑤ 评价概况不再用 display:contents（老 iOS 微信不认）：左边「统计」眉标 / 标题 / 说明，右边大分数 + 星星 + 综合评分，中间发丝竖线；
+      评分条和星星同一种 --k-ochre；⑥ 320 宽评价筛选六颗一行。 */
+.team-page .tm-job__city { display: block; margin: 2px 0 0; font-size: 13px; font-weight: 400; line-height: 18px; color: var(--k-muted); }
+.team-page .tm-hero__fade { top: auto; bottom: 135px; height: 48px; background: linear-gradient(var(--k-page) 24px, transparent); } /* 跟着插画顶边走：从插画顶上 8px 起盖住 16px 再渐隐 */
+.team-page .tm-sticker { z-index: 3; } /* 11-19 核对：两枚小贴纸压在遮罩上面，不被盖掉 */
+.team-page .poster-body { padding-top: 24px; padding-bottom: calc(74px + var(--k-safe-bottom)); } /* 上 24、下 = 底部导航 50 + 安全区 + 24：内容落在顶栏和底部导航正中（最小高度在模板里按状态栏算） */
+.team-page .ai-summary { display: flex; align-items: center; gap: 0; }
+.team-page .ai-summary__copy { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; padding-right: 12px; }
+.team-page .ai-summary__copy > view { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.team-page .ai-summary__copy > text { margin-top: 6px; font-size: 12px; line-height: 18px; color: var(--k-muted); }
+.team-page .ai-summary .score { position: relative; display: flex; flex: 0 0 auto; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0 4px 0 16px; text-align: center; }
+.team-page .ai-summary .score::before { content: ''; display: block; position: absolute; left: 0; top: 4px; bottom: 4px; width: 1px; background: var(--k-line); transform: scaleX(.5); }
+.team-page .ai-summary .score > text:first-child { font-size: 28px; line-height: 34px; }
+.team-page .ai-summary .score__stars { justify-content: center; }
+.team-page .score-row > view > view { background: var(--k-ochre); }
+@media (max-width: 359px) {
+  .team-page .tm-hero__fade { bottom: 112px; }
+  .team-page .tm-safe { flex-wrap: wrap; column-gap: 12px; }
+  .team-page .tm-safe .tm-safe__item, .team-page .tm-safe .tm-safe__item--sep { margin-left: 0; padding-left: 0; }
+  .team-page .tm-safe .tm-safe__item--sep::before { content: none; display: none; }
+  .team-page .filters > view { gap: 6px; }
+  .team-page .filters > view text { padding-left: 10px; padding-right: 10px; }
+}
+
+/* ===================== 2026-11-19 微信实拍返修（r3jobsa） =====================
+   岗位卡城市单独一行后，行首的「｜」没有东西可隔、像排版走样：换成 12 号定位图标 + 城市名（和同行伙伴页「平潭 · 换宿旅行」那行一个样子）。 */
+.team-page .tm-job__city { display: flex; align-items: center; gap: 4px; white-space: nowrap; }

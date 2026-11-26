@@ -1,17 +1,17 @@
 <template>
   <view class="am">
-    <view class="am-head"><text>消息提醒</text><button class="am-refresh" :disabled="loading" @click="load"><k-icon name="refresh-cw" :size="13" color="muted" /><text>{{ loading ? '刷新中' : '刷新' }}</text></button></view>
-    <view v-if="error" class="am-error" role="button" @click="load"><text>{{ error }}，点击重试</text><k-icon name="chevron-right" :size="15" color="red" /></view>
+    <view class="am-head"><text>消息提醒</text><button class="am-refresh" :disabled="loading" @click="load"><k-icon name="refresh-cw" :size="12" color="muted" /><text>{{ loading ? '刷新中' : '刷新' }}</text></button></view>
+    <view v-if="error" class="am-error" role="button" @click="load"><text>{{ error }}，点击重试</text><k-icon name="chevron-right" :size="12" color="red" /></view>
     <view class="am-list">
       <view class="am-row" role="button" aria-label="查看商家聊天" hover-class="k-press" @click="openStore">
-        <view class="am-icon am-icon--store"><k-icon name="store" :size="23" color="red" /><text v-if="data?.store && !data.store.read" class="am-dot" /></view>
+        <view class="am-icon am-icon--store"><k-icon name="store" :size="22" color="red" /><text v-if="data?.store && !data.store.read" class="am-dot" /></view>
         <view class="am-main"><view class="am-title-row"><text class="am-name">{{ storeName || data?.storeName || '商家聊天' }}</text><text class="am-tag">商家</text></view><text class="am-copy">{{ data ? data.store?.content || '暂无聊天消息，点击联系门店' : error ? '点击进入商家聊天' : '正在读取商家消息…' }}</text><text v-if="data?.store?.createTime" class="am-time">{{ messageTime(data.store.createTime) }}</text></view>
-        <k-icon name="chevron-right" :size="16" color="muted" />
+        <k-icon name="chevron-right" :size="12" color="muted" />
       </view>
       <view class="am-row" role="button" aria-label="查看本次报名通知" hover-class="k-press" @click="openNotices">
-        <view class="am-icon am-icon--system"><k-icon name="bell" :size="23" color="green" /><text v-if="data?.unread" class="am-dot" /></view>
+        <view class="am-icon am-icon--system"><k-icon name="bell" :size="22" color="green" /><text v-if="data?.unread" class="am-dot" /></view>
         <view class="am-main"><view class="am-title-row"><text class="am-name">本次报名通知</text><text v-if="data?.unread" class="am-unread">{{ data.unread > 99 ? '99+' : data.unread }} 条未读</text><text v-else class="am-tag">系统</text></view><text class="am-copy">{{ displayWording(data ? latest?.content || latest?.title || '暂无通知，有新进展会在这里提醒' : error ? '点击查看报名通知' : '正在读取报名通知…', [latest?.actorName, latest?.peerName, storeName], { preserveQuotes: false }) }}</text><text v-if="latest?.createTime" class="am-time">{{ messageTime(latest.createTime) }}</text></view>
-        <k-icon name="chevron-right" :size="16" color="muted" />
+        <k-icon name="chevron-right" :size="12" color="muted" />
       </view>
     </view>
   </view>
@@ -71,4 +71,23 @@ function openNotices() {
 .am-copy { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; margin-top: 5px; font-size: 13px; line-height: 1.6; color: var(--k-ink2); }
 .am-time { display: block; margin-top: 5px; font-size: 11px; color: var(--k-muted); }
 .am-error { display: flex; align-items: center; gap: 6px; padding: 9px 0 12px; font-size: 12px; line-height: 1.6; color: var(--k-red-deep); }.am-error > text { flex: 1; }
+/* 2026-11-17 改版「小而精」：白卡 12 圆角、不描边；两行入口收小一档，图标放在 40 的浅色圆角方块里；刷新、重试、未读红点都照旧 */
+.am { margin-top: 12px; }
+.am-head { padding-left: 2px; font-size: 15px; }
+.am-refresh { margin-right: 0; padding: 0 2px 0 8px; gap: 3px; }
+.am-list { border: 0; border-radius: 12px; }
+.am-row { min-height: 68px; padding: 10px 12px; }
+.am-row + .am-row { position: relative; border-top: 0; }
+.am-row + .am-row::before { content: ''; position: absolute; left: 62px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.am-icon { border-radius: 12px; }
+
+.am-icon--store { background: linear-gradient(160deg, #FFF6EA, #FFE7CC); }
+.am-dot { background: var(--k-alert); }
+.am-name { font-size: 14px; font-weight: 600; line-height: 20px; }
+.am-tag { padding: 0 5px; font-size: 10px; font-weight: 500; line-height: 17px; }
+.am-unread { color: var(--k-alert); }
+.am-copy { margin-top: 2px; font-size: 12px; }
+.am-time { margin-top: 2px; }
+
+.am-head { font-size: 16px; line-height: 22px; }
 </style>

@@ -54,11 +54,12 @@ test('申请选单排除进行中调解，但保留后台允许重发的关闭�
 })
 test('提交成功跳到真实工单并保留查看路径提示',async()=>{
   const h=page()
-  await h.run("selectedOrder.value={orderType:'application',orderId:7};context.value.categories=['食宿不符'];draft.value.category='食宿不符';draft.value.narrative='真实事件经过'.repeat(10);draft.value.claims='核实住宿';draft.value.phone='13800000000';files.value=[{fileId:8}];submit()")
+  await h.run("selectedOrder.value={orderType:'application',orderId:7,volunteerApplicant:true};context.value.categories=['食宿不符'];draft.value.category='食宿不符';draft.value.narrative='真实事件经过'.repeat(10);draft.value.claims='核实住宿';draft.value.phone='13800000000';files.value=[{fileId:8}];submit()")
   assert.equal(h.routes[0],'/pages/governance/mediation?id=42&submitted=1')
   const next=page();next.hooks.load({id:'42',submitted:'1'})
-  assert.match(next.run('feedback.value'),/我的 → 纠纷调解 → 我的调解/)
+  assert.match(next.run('feedback.value'),/原报名或订单/)
   assert.equal(h.calls.filter(c=>c.path==='cases').length,1)
+  assert.equal(h.calls.find(c=>c.path==='cases').body.requestJury,true)
 })
 test('换工主理人列表/返回保持support模式，普通用户默认我的调解',()=>{
   const h=page();h.hooks.load({mode:'support',id:'42'});h.run('backToCases()')
@@ -66,12 +67,17 @@ test('换工主理人列表/返回保持support模式，普通用户默认我的
   const user=page();user.hooks.load({});assert.equal(user.run('mode.value'),'user')
 })
 
-test('用户与员工首页都显示独立调解卡片，不藏在订单分组内',()=>{
+test('换工报名成功后可申请调解，用户首页移除独立卡片，员工保留处理入口',()=>{
   const source=fs.readFileSync(new URL('../pages/profile/index.vue',import.meta.url),'utf8')
   const staffBranch=source.slice(source.indexOf('s === 1 && staffMode'),source.indexOf('<!-- 1 我的 -->'))
   assert.match(staffBranch,/<MediationEntry \/>/)
   const userBranch=source.slice(source.indexOf('<!-- 1 我的 -->'),source.indexOf('<!-- 2 个人资料 -->'))
-  assert.ok(userBranch.indexOf('<MediationEntry v-if="signedIn" />')<userBranch.indexOf('member-card'))
+  assert.doesNotMatch(userBranch,/<MediationEntry|\/pages\/profile\/drafts/)
+  const apply=fs.readFileSync(new URL('../pages/jobs/apply.vue',import.meta.url),'utf8')
+  assert.match(apply,/<k-order-mediation v-if="saved && jobType === 'volunteer' && appId"[^>]*volunteer-dispute/)
+  const growth=source.slice(source.indexOf("title: '工作与成长'"),source.indexOf("title: '内容与关注'"))
+  assert.match(growth,/进入袋鼠群聊'[^}]*\/pages\/camp\/index/)
+  assert.match(growth,/大众评审'[^}]*\/pages\/governance\/jury/)
 })
 
 test('商家与主理人兼任时，在用户界面也可进入授权门店的换工调解',()=>{

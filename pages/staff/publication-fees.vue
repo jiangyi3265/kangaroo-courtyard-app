@@ -17,7 +17,7 @@
 			<view v-for="f in rows" :key="f.feeId" class="fee"
 				><view class="row"
 					><text class="title">{{ f.title }}</text
-					><text>{{ states[f.status] }}</text></view
+					><text class="fee__state">{{ states[f.status] }}</text></view
 				><view class="row"
 					><text>任务 {{ f.jobId }}</text
 					><text class="amount">¥{{ yuan(f.amountFen) }}</text></view
@@ -87,67 +87,130 @@ onLoad((q) => {
 onShow(load)
 </script>
 <style scoped>
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边、不加阴影），页边距 12、卡片之间 8；
+   顶上的计费说明是一张很浅的暖色卡；每条费用一张白卡，金额用主色；颜色都换成主题变量。文字、金额、状态原样不动 */
+.k-page {
+	--k-bg: #f7f5f2;
+	background: #f7f5f2;
+}
+.k-page :deep(.k-navbar__title) {
+	font-family: var(--k-sans);
+	font-size: 16px;
+	font-weight: 600;
+}
 .fee-body {
-	padding: 18px;
+	padding: 8px 12px calc(24px + var(--k-safe-bottom));
 }
 .rule {
-	padding: 18px;
-	background: #f4eee3;
-	border-radius: 10px;
+	padding: 12px;
+	background: linear-gradient(180deg, #fff8ee, var(--k-paper));
+	border-radius: 12px;
 }
 .rule text {
 	display: block;
-	font-size: 14px;
-	line-height: 1.8;
-	color: #6d5944;
+	font-size: 12px;
+	line-height: 1.7;
+	color: var(--k-muted);
 }
 .rule .heading {
-	font-size: 20px;
-	font-weight: 600;
-	margin-bottom: 10px;
+	font-size: 16px;
+	font-weight: 700;
+	line-height: 22px;
+	margin-bottom: 6px;
+	color: var(--k-ink);
 }
 .fee {
-	padding: 20px 0;
-	border-bottom: 1px solid #e9e1d6;
+	margin-top: 8px;
+	padding: 12px;
+	border-radius: 12px;
+	background: var(--k-paper);
 }
 .row {
 	display: flex;
 	justify-content: space-between;
-	gap: 14px;
+	gap: 12px;
 	align-items: center;
-	margin: 8px 0;
-	font-size: 14px;
+	margin: 0 0 6px;
+	font-size: 12px;
+	color: var(--k-ink2);
 }
 .title {
-	font-size: 17px;
+	min-width: 0;
+	font-size: 14px;
 	font-weight: 600;
+	line-height: 20px;
+	color: var(--k-ink);
+	overflow-wrap: anywhere;
 }
 .muted {
 	display: block;
-	font-size: 13px;
-	color: #777;
-	line-height: 1.8;
+	font-size: 11px;
+	color: var(--k-muted);
+	line-height: 1.7;
 }
+/* 价格（11-18 第二轮精修）：18 / 700 暖棕，等宽数字 */
 .amount {
-	font-size: 20px;
-	color: #926036;
+	flex-shrink: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--k-red);
+	font-variant-numeric: tabular-nums;
 }
+/* 状态（待付款 / 已收款 / 已减免 / 未上架，已作废）：中性小标签，一眼看出是状态 */
+.fee__state {
+	flex-shrink: 0;
+	height: 17px;
+	padding: 0 5px;
+	border-radius: 4px;
+	background: #f5f1eb;
+	font-size: 10px;
+	font-weight: 500;
+	line-height: 17px;
+	color: var(--k-ink2);
+	white-space: nowrap;
+}
+/* 空状态 / 读取中：白卡里居中，14 / 500 二级墨，上下留白 28 */
 .empty {
 	display: block;
-	padding: 50px 0;
+	margin-top: 8px;
+	padding: 28px 16px;
+	border-radius: 12px;
+	background: var(--k-paper);
 	text-align: center;
-	color: #777;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.6;
+	color: var(--k-ink2);
 }
 .notice {
-	padding: 16px;
-	background: #fff0e3;
+	margin-top: 8px;
+	padding: 12px;
+	border-radius: 12px;
+	background: var(--k-alert-soft);
+	font-size: 13px;
+	color: var(--k-alert);
 }
+/* 重新加载、上一页 / 下一页：白底细边的胶囊，点击高度仍是 44 */
 button {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0 12px;
-	font-size: 14px;
+	padding: 0 16px;
+	border: 1px solid var(--k-red-line);
+	border-radius: 999px;
+	background: var(--k-paper);
+	font-size: 13px;
+	color: var(--k-red-deep);
 	min-height: 44px;
+}
+button[disabled] {
+	opacity: 0.45;
+}
+.notice button {
+	margin-top: 8px;
+}
+.fee-body > .row {
+	margin: 12px 0 0;
+	font-size: 13px;
 }
 </style>

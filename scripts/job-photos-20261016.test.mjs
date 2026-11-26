@@ -212,6 +212,8 @@ function staffHarness(platform = 'MP-WEIXIN', { putFail = null, uploadFail = () 
     useScreen: (max, opts) => { onLoad = opts && opts.onLoad; return s },
     onShareAppMessage() {},
     ensureSession: async () => {}, hasStaffAccess: { value: true }, currentStaffStoreId: () => 107, staffCan: () => edit, absUrl: x => 'https://api.test' + x,
+    currentStaffStore: vue.ref({ storeId: 107, roleCode: 'manager', identityKey: 'manager:107' }),
+    experience: { account: { id: 21 } }, merchantStaff: vue.ref(false),
     todayCn: () => '2026-10-16', shiftDate: () => '2026-10-23', isYmd: () => true, validateSalaryForm: () => '', salaryPayload: () => ({}),
     jobBenefits: (f) => ({ boardEnabled: typeof f.boardEnabled === 'boolean' ? f.boardEnabled : f.pay === 'board', salaryEnabled: false }),
     errText: (e, d) => (e && e.message) || d,
@@ -244,6 +246,8 @@ test('发布页：「岗位照片」最多 9 张，用现成的上传接口逐�
   const h = staffHarness()
   t.after(h.stop)
   await h.load()
+  h.run("startPublish(); choosePublish('volunteer')")
+  assert.equal(h.run('formOpen.value'), true)
   assert.deepEqual(plain(h.run('newForm().images')), [])
   h.ctl.chosen = ['wxfile://1', 'wxfile://2', 'wxfile://3']
   await h.run('addPhotos(form.value.images)')
@@ -410,7 +414,7 @@ test('岗位列表卡片用第一张照片，没传照片用服务端的封面',
 
 test('后台岗位表单：岗位照片用图片上传组件（最多 9 张），库里的 JSON 数组和组件的逗号分隔互相转；有照片时封面是第一张', () => {
   const admin = fs.readFileSync(path.join(APP, '..', 'RuoYi-Vue3', 'src', 'views', 'kangaroo', 'job', 'index.vue'), 'utf8').replace(/\r\n/g, '\n')
-  assert.match(admin, /<image-upload v-model="form\.imageList"[^>]*:limit="9" :file-size="5"[^>]*\/>/)
+  assert.match(admin, /<image-upload v-model="form\.imageList"[^>]*:limit="9" :file-size="20"[^>]*\/>/)
   assert.match(admin, /form\.value\.imageList = imagesToText\(form\.value\.images\)/)
   assert.match(admin, /form\.value\.images = JSON\.stringify\(photos\)\n      if \(photos\.length\) form\.value\.cover = photos\[0\]/)
   const fns = /function imagesToText[\s\S]*?\n}\nfunction textToImages[\s\S]*?\n}\n/.exec(admin)[0]

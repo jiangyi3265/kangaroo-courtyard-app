@@ -126,7 +126,7 @@ test('房型页：新增填写单个7天总价；空价阻止保存，保存发w
   h.run("step('capacity', 1, 1, 20); step('stock', -1, 1, 999)")
   await h.run('save()')
   await flush()
-  assert.deepEqual(h.log.created, [[66, { typeName: '庭院大床房', roomKind: 'private', capacity: 3, stock: 1, status: '0', weekTotalFen: 10001 }]])
+  assert.deepEqual(h.log.created, [[66, { typeName: '庭院大床房', roomKind: 'private', capacity: 3, stock: 1, status: '0', weekTotalFen: 10001, halfMonthTotalFen: null, monthTotalFen: null }]])
   assert.equal(h.s.value, 1, '保存后回到列表')
   assert.equal(h.run('rooms.value.length'), 2, '用接口返回的最新数据刷新')
   assert.equal(h.log.toasts.at(-1), '房型已新增')
@@ -134,6 +134,22 @@ test('房型页：新增填写单个7天总价；空价阻止保存，保存发w
   assert.match(editor, /v-model="editor\.weekTotal" class="fc-money__input" type="digit"/)
   assert.match(editor, /7天总价（元）/)
   assert.doesNotMatch(editor, /一键填满|editor\.prices/)
+})
+
+test('后台设为零库存的房型改套餐价不补房；主动增加库存才写库存', async t => {
+  const h = roomTypes({ apiStaffStay: async () => ({ data: STAY({ roomTypes: [{ ...STAY().roomTypes[0], stock: 0 }] }) }) })
+  t.after(h.stop)
+  await h.load()
+  h.run('openEditor(rooms.value[0])')
+  assert.equal(h.run('editor.value.stock'), 0)
+  h.run("editor.value.halfMonthTotal = '300.15'")
+  await h.run('save()')
+  assert.equal(h.log.edited[0][1].halfMonthTotalFen, 30015)
+  assert.ok(!('stock' in h.log.edited[0][1]))
+  await h.load()
+  h.run("openEditor(rooms.value[0]); step('stock', 1, 0, 999)")
+  await h.run('save()')
+  assert.equal(h.log.edited[1][1].stock, 1)
 })
 
 test('房型页：旧房型回显七晚合计，改单个总价保存；空名称不发、停用与取消行为保留', async (t) => {
@@ -148,7 +164,7 @@ test('房型页：旧房型回显七晚合计，改单个总价保存；空名�
   h.run("editor.value.typeName = '院子客房'; editor.value.weekTotal = '1526'")
   await h.run('save()')
   await flush()
-  assert.deepEqual(h.log.edited.at(-1), [7, { typeName: '院子客房', roomKind: 'private', capacity: 2, stock: 1, status: '0', weekTotalFen: 152600 }])
+  assert.deepEqual(h.log.edited.at(-1), [7, { typeName: '院子客房', roomKind: 'private', capacity: 2, status: '0', weekTotalFen: 152600 }])
   await h.run('toggleStatus(rooms.value[0])')
   assert.deepEqual(h.log.edited.at(-1), [7, { status: '1' }])
   assert.equal(h.log.confirms.length, 0, '停用随时能改回来，不弹确认')
@@ -289,7 +305,7 @@ test('设施地暖：字典代码 floorheat（V70），后端白名单有，详�
 test('来源类型：直营 / 加盟 / 代运营 / 合作（partner）；后台保存、员工端标签、团队页标签都认合作', () => {
   assert.match(java('service/impl/KgStoreServiceImpl.java'), /!"partner"\.equals\(op\)\)[\s\S]*?运营类型只能是 直营 \/ 加盟 \/ 代运营 \/ 合作/)
   assert.match(java('ext/stay/KgStayBrowseService.java'), /if \("partner"\.equals\(opType\)\)\s*\{\s*return "合作";/)
-  assert.match(java('ext/staff/KgStaffTeamService.java'), /if \("partner"\.equals\(t\)\)\s*\{\s*return "合作";/)
+  assert.match(java('ext/staff/KgStaffTeamService.java'), /if \("franchise"\.equals\(t\) \|\| "partner"\.equals\(t\)\)\s*\{\s*return "合作";/)
   assert.match(java('domain/KgStore.java'), /readConverterExp = "direct=直营,franchise=加盟,managed=代运营,partner=合作"/)
   const v70 = fs.readFileSync(path.join(ROOT, 'RuoYi-Vue', 'sql', 'kangaroo', 'V70__stay_week_price_options.sql'), 'utf8')
   const order = ['direct', 'franchise', 'managed', 'partner'].map(v => new RegExp(`set dict_sort = (\\d) where dict_type = 'kg_store_op_type' and dict_value = '${v}'`).exec(v70)[1])
@@ -308,9 +324,11 @@ test('资质：消防安全检查合格证改选填，加选填的食品安全�
     { title: '食品安全许可证', required: false, uploaded: false }, { title: '负责人身份证', required: true, uploaded: true }] }), [])
 })
 
-test('7 天价（后端）：某晚价 = 房态当晚价 → 星期几的 7 天价 → 基础价；订房、日历、员工房态三处都用同一个', () => {
+test('房价：订房支持周期总价和每日改价，日历和员工房态优先使用当晚改价', () => {
   const browse = java('ext/stay/KgStayBrowseService.java')
-  assert.equal((browse.match(/c\.get\("priceFen"\) == null \? KgRoomWeekPrice\.nightly\(rt, d\) : fen\(c\.get\("priceFen"\)\)/g) || []).length, 2)
+  assert.match(browse, /defaultPrice = periodTotal == null \? KgRoomWeekPrice\.nightly\(rt, d\)\s*: KgRoomPeriodPrice\.nightly\(periodTotal, stayNights, nightly\.size\(\)\)/)
+  assert.match(browse, /c\.get\("priceFen"\) == null \? defaultPrice : fen\(c\.get\("priceFen"\)\)/)
+  assert.match(browse, /c\.get\("priceFen"\) == null \? KgRoomWeekPrice\.nightly\(rt, d\) : fen\(c\.get\("priceFen"\)\)/)
   assert.match(java('ext/stay/KgStayStaffService.java'), /r\.get\("priceFen"\) == null \? KgRoomWeekPrice\.nightly\(rt, d\) : fen\(r\.get\("priceFen"\)\)/)
-  assert.match(java('ext/stay/KgStayStaffService.java'), /base_price_fen, week_price_fen, status/)
+  assert.match(java('ext/stay/KgStayStaffService.java'), /base_price_fen, week_price_fen, half_month_total_fen, month_total_fen, status/)
 })

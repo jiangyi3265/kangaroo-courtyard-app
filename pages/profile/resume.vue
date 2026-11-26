@@ -1,14 +1,14 @@
 <template>
   <k-feature-gate feature="recruitment">
-  <view class="k-page resume">
+  <view class="k-page resume" :class="$userSurface">
     <k-topbar :title="titles[s - 1]" back custom-back :fab="!editing" @back="onBack">
       <!-- 基本信息、技能这两屏是填写屏：标题和输入框从屏幕边开始，浮动客服钮滑到哪儿都压字。这两屏不出浮动钮，客服放顶栏返回箭头旁边，一样一直看得到、一样在左边 -->
       <template #left>
         <!-- #ifdef MP-WEIXIN -->
-        <button v-if="navKefu" class="nav-kefu" open-type="contact" :session-from="kefuFrom" hover-class="k-press" aria-label="联系人工客服"><k-icon name="headset" :size="14" color="red" :stroke="1.9" /><text>客服</text></button>
+        <button v-if="navKefu" class="nav-kefu" open-type="contact" :session-from="kefuFrom" hover-class="k-press" aria-label="联系人工客服"><k-icon name="headset" :size="14" color="ink2" /><text>客服</text></button>
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <view v-if="navKefu" class="nav-kefu" hover-class="k-press" aria-label="联系人工客服" @click="go('/pages/notice/support')"><k-icon name="headset" :size="14" color="red" :stroke="1.9" /><text>客服</text></view>
+        <view v-if="navKefu" class="nav-kefu" hover-class="k-press" aria-label="联系人工客服" @click="go('/pages/notice/support')"><k-icon name="headset" :size="14" color="ink2" /><text>客服</text></view>
         <!-- #endif -->
       </template>
       <view v-if="s === 4" class="tabs">
@@ -17,33 +17,39 @@
     </k-topbar>
 
     <!-- 概览只保留摘要，编辑和完整匹配列表按需展开。 -->
-    <view v-if="s === 1" class="k-body k-pad-tab resume-home">
-      <view class="privacy-note"><k-icon name="shield-check" :size="18" color="red" /><text>简历仅在报名时脱敏展示，保护你的隐私</text></view>
-      <view class="resume-summary" hover-class="k-press" @click="goMissing">
-        <view class="summary-badge" :style="{ background: 'conic-gradient(#B18045 ' + score + '%, #E9E1D4 0)' }"><view class="summary-badge__inner"><text class="summary-percent">{{ pct }}</text><text>完整度</text></view></view>
-        <view class="summary-copy"><view class="summary-heading"><text>完善简历，发现机会</text></view><view class="k-bar"><view class="k-bar__fill" :style="pctStyle" /></view><text class="summary-hint">{{ missing.length ? '基本信息 · 技能特长 · 真实经历' : '已完善，报名时确认投递即可' }}</text></view>
-      </view>
+    <view v-if="resumeState === 'loading' || resumeState === 'error'" class="k-body k-pad-tab resume-home">
+      <text>{{ resumeState === 'error' ? '简历读取失败，请重新加载后编辑' : '正在读取简历…' }}</text>
+      <k-button v-if="resumeState === 'error'" type="secondary" label="重新加载" @click="load" />
+    </view>
+    <view v-else-if="s === 1" class="k-body k-pad-tab resume-home">
+      <!-- 11-18 第三轮：名片卡 = 头像 + 称呼 + 年龄城市，完整度收进名片卡底部一行；隐私说明挪到页尾当脚注 -->
+      <!-- 11-18 第四轮：名片区去掉卡，做成「个人主页头」（头像 64 + 小眉题「基本信息」+ 名字 22 + 信息 13，右边「编辑简历」文字链）；完整度、技能、三栏经历合进下面一张白卡 -->
       <view class="resume-person-card">
-      <view class="summary-heading resume-person-heading"><text>基本信息</text></view>
       <view class="resume-person" hover-class="k-press" @click="s = 2">
         <image class="resume-person__avatar" :src="form.lifePhotoUrl ? absUrl(form.lifePhotoUrl) : '/static/media/profile-avatar.jpg'" mode="aspectFill" />
-        <view class="resume-person__info"><text class="resume-person__name">{{ form.name || '填写基本信息' }}</text><text class="resume-person__meta">{{ [form.gender, form.age ? form.age + '岁' : '', form.city].filter(Boolean).join(' · ') || '称呼、年龄、联系方式与所在城市' }}</text></view>
+        <view class="resume-person__info"><view class="summary-heading resume-person-heading"><text>基本信息</text></view><text class="resume-person__name">{{ form.name || '填写基本信息' }}</text><text class="resume-person__meta">{{ [form.gender, form.age ? form.age + '岁' : '', form.city].filter(Boolean).join(' · ') || '称呼、年龄、联系方式与所在城市' }}</text></view>
         <text class="resume-edit">编辑简历</text><k-icon name="chevron-right" :size="14" color="red" />
       </view>
       </view>
       <view class="resume-skills-card">
+      <view class="resume-summary" hover-class="k-press" @click="goMissing">
+        <view class="summary-badge" :style="{ background: 'conic-gradient(var(--k-red) ' + score + '%, var(--k-line) 0)' }"><view class="summary-badge__inner"><text class="summary-percent">{{ pct }}</text></view></view>
+        <view class="summary-copy"><text class="summary-eyebrow">完整度</text><view class="summary-heading"><text>完善简历，发现机会</text></view><view class="k-bar"><view class="k-bar__fill" :style="pctStyle" /></view><text class="summary-hint">{{ missing.length ? '基本信息 · 技能特长 · 真实经历' : '已完善，报名时确认投递即可' }}</text></view>
+        <k-icon v-if="missing.length" name="chevron-right" :size="14" color="muted" />
+      </view>
       <view class="resume-skills" hover-class="k-press" @click="s = 3">
         <view class="summary-heading"><text>技能与特长</text><text class="resume-edit">编辑</text></view>
-        <text class="resume-skills__text">{{ skill || '会做饭、拍照、接待，都可以成为你的优势' }}</text>
+        <view class="resume-skills__body" :class="{ 'is-empty': !skill }"><k-icon v-if="!skill" name="pencil" :size="14" color="red" /><text class="resume-skills__text">{{ skill || '会做饭、拍照、接待，都可以成为你的优势' }}</text></view>
       </view>
       <view class="resume-experiences">
-        <view v-for="(e, ei) in expStats" :key="e.title" hover-class="k-press" @click="openExps(ei)"><view class="resume-experiences__label"><k-icon :name="['heart','briefcase','building-2'][ei]" :size="17" :color="ei === 0 ? 'ochre' : 'green'" /><text>{{ ['换工经历','兼职经历','全职经历'][ei] }}</text></view><text class="resume-experiences__count">{{ e.num || 0 }} 段 <text>›</text></text></view>
+        <view v-for="(e, ei) in expStats" :key="e.title" hover-class="k-press" @click="openExps(ei)"><view class="resume-experiences__label"><k-icon :name="['house','briefcase','building-2'][ei]" :size="14" color="muted" /><text>{{ ['换工经历','兼职经历','全职经历'][ei] }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view><view class="resume-experiences__more"><text class="resume-experiences__count">{{ e.num || 0 }} 段 </text></view></view>
       </view>
       </view>
       <view class="resume-opportunities">
-        <view class="summary-heading"><text>技能匹配机会</text><k-icon name="sparkles" :size="20" color="red" /></view>
-        <view class="resume-opportunities__layout"><view class="resume-opportunities__emblem"><k-icon name="badge-check" :size="34" color="ochre" :stroke="1.35" /></view><view class="resume-opportunities__main"><text class="resume-opportunities__desc">{{ oppLoaded ? (oppJobs.length ? '已找到 ' + (opp.jobs || []).length + ' 个相关机会，看看哪份适合你' : oppEmptyText) : (oppError || '正在匹配适合你的机会…') }}</text><k-button block :label="oppError ? '重新匹配' : '查看匹配机会'" @click="oppError ? loadOpp() : go(R.opportunities + '?s=2')" /></view></view>
+        <view class="summary-heading"><text>技能匹配机会</text><k-icon name="sparkles" :size="16" color="red" /></view>
+        <view class="resume-opportunities__layout"><view class="resume-opportunities__emblem"><k-icon name="badge-check" :size="22" color="red" /></view><view class="resume-opportunities__main"><text class="resume-opportunities__desc">{{ oppLoaded ? (oppJobs.length ? '已找到 ' + (opp.jobs || []).length + ' 个相关机会，看看哪份适合你' : oppEmptyText) : (oppError || '正在匹配适合你的机会…') }}</text><k-button block type="secondary" size="sm" :label="oppError ? '重新匹配' : '查看匹配机会'" @click="oppError ? loadOpp() : go(R.opportunities + '?s=2')" /></view></view>
       </view>
+      <view class="privacy-note"><k-icon name="shield-check" :size="14" color="muted" /><text>简历仅在报名时脱敏展示，保护你的隐私</text></view>
     </view>
 
     <!-- 2 基本信息编辑 -->
@@ -54,7 +60,7 @@
       <view class="form k-mt10">
         <view class="form__row">
           <view class="form__label"><text>称呼</text><text class="req">*</text></view>
-          <view class="k-input form__input"><input v-model="form.name" maxlength="32" placeholder="怎么称呼你，不必填写真实姓名" placeholder-class="k-placeholder" /></view>
+          <view class="k-input form__input"><input v-model="form.name" @focus="onDraftFocus" maxlength="32" placeholder="怎么称呼你，不必填写真实姓名" placeholder-class="k-placeholder" /></view>
         </view>
         <view class="form__row">
           <view class="form__label"><text>性别</text><text class="req">*</text></view>
@@ -64,74 +70,82 @@
         </view>
         <view class="form__row">
           <view class="form__label"><text>年龄</text><text class="req">*</text></view>
-          <view class="k-input form__input"><input v-model="form.age" type="number" maxlength="3" placeholder="请输入年龄" placeholder-class="k-placeholder" /></view>
+          <view class="k-input form__input"><input v-model="form.age" @focus="onDraftFocus" type="number" maxlength="3" placeholder="请输入年龄" placeholder-class="k-placeholder" /></view>
         </view>
         <view class="form__row">
           <view class="form__label"><text>联系电话</text><text class="req">*</text></view>
-          <view class="k-input form__input"><input v-model="form.phone" type="number" maxlength="11" placeholder="请输入 11 位手机号" placeholder-class="k-placeholder" /></view>
+          <view class="k-input form__input"><input v-model="form.phone" @focus="onDraftFocus" type="number" maxlength="11" placeholder="请输入 11 位手机号" placeholder-class="k-placeholder" /></view>
         </view>
         <view class="form__row">
           <view class="form__label"><text>所在城市</text><text class="req">*</text></view>
-          <view class="k-input form__input" @click="pickCity"><text class="k-flex1">{{ form.city || '请选择' }}</text><k-icon name="chevron-right" :size="16" color="ink" /></view>
+          <view class="k-input form__input" @click="pickCity"><text class="k-flex1">{{ form.city || '请选择' }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view>
         </view>
       </view>
 
       <view class="resume-section-head"><text>认识你</text><text>以下内容选填</text></view>
-      <view class="editor-field"><text>兴趣爱好</text><view class="k-input"><input v-model="form.hobbies" maxlength="120" placeholder="例如：摄影、徒步、桌游" placeholder-class="k-placeholder" /></view></view>
-      <view class="editor-field"><text>性格特点</text><view class="k-input"><input v-model="form.personality" maxlength="120" placeholder="例如：开朗、耐心、有责任心" placeholder-class="k-placeholder" /></view></view>
-      <view class="editor-field"><text>自我介绍</text><textarea v-model="form.intro" maxlength="200" placeholder="简单介绍自己，让店家更了解你" placeholder-class="k-placeholder" /></view>
+      <view class="editor-card editor-card--lines">
+      <view class="editor-field editor-field--line"><text>兴趣爱好</text><view class="k-input"><input v-model="form.hobbies" @focus="onDraftFocus" maxlength="120" placeholder="例如：摄影、徒步、桌游" placeholder-class="k-placeholder" /></view></view>
+      <view class="editor-field editor-field--line"><text>性格特点</text><view class="k-input"><input v-model="form.personality" @focus="onDraftFocus" maxlength="120" placeholder="例如：开朗、耐心、有责任心" placeholder-class="k-placeholder" /></view></view>
+      <view class="editor-field"><text>自我介绍</text><textarea v-model="form.intro" @focus="onDraftFocus" maxlength="200" placeholder="简单介绍自己，让店家更了解你" placeholder-class="k-placeholder" /></view>
+      </view>
       <view class="resume-section-head"><text>相关经历与作品</text><text>选填</text></view>
-      <view class="editor-field"><text>相关专业或过往经历</text><textarea v-model="form.background" maxlength="1000" placeholder="学过什么、做过什么，或想尝试什么" placeholder-class="k-placeholder" /></view>
+      <view class="editor-card">
+      <view class="editor-field"><text>相关专业或过往经历</text><textarea v-model="form.background" @focus="onDraftFocus" maxlength="1000" placeholder="学过什么、做过什么，或想尝试什么" placeholder-class="k-placeholder" /></view>
       <view class="resume-media">
         <view class="resume-media__add" hover-class="k-press" @click="addResumeMedia('image')"><k-icon name="image-plus" :size="22" color="red" /><text>上传图片</text></view>
         <view class="resume-media__add" hover-class="k-press" @click="addResumeMedia('video')"><k-icon name="video" :size="22" color="red" /><text>上传视频</text></view>
       </view>
       <text class="k-meta">照片每张不超过20MB，视频每个不超过200MB；上传完成后请保存简历。</text>
       <view v-for="(item, i) in form.media" :key="item.key" class="resume-uploaded"><k-icon :name="item.kind === 'video' ? 'video' : 'image'" :size="20" color="muted" /><text>{{ item.name }}</text><view hover-class="k-press" @click="form.media.splice(i,1)"><k-icon name="x" :size="18" color="muted" /></view></view>
+      </view>
       <view class="resume-section-head"><text>本人特长</text><text>选填</text></view>
-      <view class="editor-field"><textarea v-model="skill" maxlength="1000" placeholder="别小看自己的能力：做饭、摄影、剪辑、接待，都值得写下来" placeholder-class="k-placeholder" /></view>
-      <view class="resume-photo" hover-class="k-press" @click="addResumeMedia('portrait')"><image v-if="form.lifePhotoUrl" :src="absUrl(form.lifePhotoUrl)" mode="aspectFill" /><k-icon v-else name="camera" :size="26" color="red" /><view><text>本人生活照</text><text>{{ form.lifePhoto ? '已上传，点击更换' : '选填，上传一张清晰的生活照' }}</text></view><k-icon name="chevron-right" :size="16" color="muted" /></view>
+      <view class="editor-card">
+      <view class="editor-field"><textarea v-model="skill" @focus="onDraftFocus" maxlength="1000" placeholder="别小看自己的能力：做饭、摄影、剪辑、接待，都值得写下来" placeholder-class="k-placeholder" /></view>
+      </view>
+      <view class="resume-photo" hover-class="k-press" @click="addResumeMedia('portrait')"><image v-if="form.lifePhotoUrl" :src="absUrl(form.lifePhotoUrl)" mode="aspectFill" /><k-icon v-else name="camera" :size="24" color="red" /><view><text>本人生活照</text><text>{{ form.lifePhoto ? '已上传，点击更换' : '选填，上传一张清晰的生活照' }}</text></view><k-icon name="chevron-right" :size="12" color="muted" /></view>
       <text v-if="uploading" class="upload-hint">正在上传，请稍候…</text>
-      <k-button block class="k-mt16" :disabled="saving || uploading || importing" :label="saving ? '保存中…' : '保存简历'" @click="save" />
+      <k-button block class="k-mt16" :disabled="saving || uploading || importing || expSaving" :label="saving ? '保存中…' : '保存简历'" @click="save" />
     </view>
 
     <!-- 3 自由技能编辑 -->
     <view v-else-if="s === 3" class="k-body k-pad-tab resume-skills-editor">
       <view class="tip">
-        <view class="tip__icon"><text>i</text></view>
+        <view class="tip__icon"><k-icon name="info" :size="14" color="muted" /></view>
         <text class="tip__text">没有预设标签，尽情描述你的技能与特长；系统按关键词把技能归到标签上用于匹配，原文保留。</text>
       </view>
 
+      <view class="skills-card">
       <view class="k-between k-mt16"><view class="form__label form__label--lg"><text>技能描述</text><text class="req">*</text></view><text class="k-text k-muted">{{ skill.length }}/1000</text></view>
       <!-- 同上：不打字时用普通 view 显示，避免原生 textarea 盖住底部导航 -->
       <view class="area area--tall k-mt8">
-        <textarea v-if="editingSkill" v-model="skill" :maxlength="1000" placeholder="例如：会修自行车、电动车的小毛病；会做简单的咖啡；做过两个月前台接待……写满 20 字计入完整度" placeholder-class="k-placeholder" :focus="true" auto-focus @blur="skill = $event.detail.value; editingSkill = false" />
+        <textarea v-if="editingSkill" v-model="skill" @focus="onDraftFocus" :maxlength="1000" placeholder="例如：会修自行车、电动车的小毛病；会做简单的咖啡；做过两个月前台接待……写满 20 字计入完整度" placeholder-class="k-placeholder" :focus="true" auto-focus @blur="skill = $event.detail.value; editingSkill = false" />
         <view v-else class="resume-area-idle" @click="editingSkill = true"><text :class="{ 'k-placeholder': !skill }">{{ skill || '例如：会修自行车、电动车的小毛病；会做简单的咖啡；做过两个月前台接待……写满 20 字计入完整度' }}</text></view>
       </view>
       <text v-if="skill.length < 20" class="k-small k-muted skill-hint">再写 {{ 20 - skill.length }} 个字，完整度 +{{ skill ? 15 : 25 }}%</text>
 
       <view class="k-between k-mt16"><view class="form__label form__label--lg"><text>补充说明</text><text class="k-muted form__hint">（可选，多段描述）</text></view><text class="k-text k-muted">{{ extra.length }}/1000</text></view>
       <view class="area area--mid k-mt8">
-        <textarea v-if="editingExtra" v-model="extra" :maxlength="1000" placeholder-class="k-placeholder" :focus="true" auto-focus @blur="extra = $event.detail.value; editingExtra = false" />
+        <textarea v-if="editingExtra" v-model="extra" @focus="onDraftFocus" :maxlength="1000" placeholder-class="k-placeholder" :focus="true" auto-focus @blur="extra = $event.detail.value; editingExtra = false" />
         <view v-else class="resume-area-idle" @click="editingExtra = true"><text>{{ extra }}</text></view>
       </view>
 
       <view class="k-between k-mt16"><view class="form__label form__label--lg"><text>作品/作品链接</text><text class="k-muted form__hint">（可选）</text></view><text class="k-text k-muted">{{ links.length }}/10</text></view>
       <view v-for="(l, i) in links" :key="i" class="k-input link k-mt8">
-        <k-icon name="link" :size="18" color="ink" :stroke="1.7" />
+        <k-icon name="link" :size="16" color="ink2" />
         <text class="link__url k-ellipsis">{{ l }}</text>
-        <view @click="links.splice(i, 1)"><k-icon name="circle-x" :size="18" color="muted" :stroke="1.6" /></view>
+        <view @click="links.splice(i, 1)"><k-icon name="circle-x" :size="18" color="muted" /></view>
       </view>
-      <view class="addlink k-mt8" @click="addLink"><k-icon name="plus" :size="16" color="ink" :stroke="2" /><text>添加链接</text></view>
+      <view class="addlink k-mt8" hover-class="k-press" @click="addLink"><k-icon name="plus" :size="16" color="red" /><text>添加链接</text></view>
+      </view>
 
-      <k-button block class="k-mt16" :disabled="saving" :label="saving ? '保存中…' : '保存'" @click="save" />
+      <k-button block class="k-mt16" :disabled="saving || uploading || importing || expSaving" :label="saving ? '保存中…' : '保存'" @click="save" />
     </view>
 
     <!-- 4 经历列表 -->
     <view v-else class="k-body k-pad-tab resume-history">
       <!-- 2026-11-03 主人：简化 —— 自己填的经历：点卡片在下面的小表单里改，右边「×」删除；平台记录的（已入职 / 已完成岗位自动生成）不能改、没有「×」 -->
-      <view v-for="(e, i) in volunteer" v-if="tab === 0" :key="e.expId" class="card exp" :class="{ 'k-mt12': i > 0 }" @click="editExp(e)">
-        <image class="exp__img" :src="e.img" mode="aspectFill" />
+      <view v-for="(e, i) in volunteer" v-if="tab === 0" :key="e.expId" class="card exp" :class="{ 'k-mt12': i > 0, 'exp--own': e.source !== 'platform' }" hover-class="k-press-s" @click="editExp(e)">
+        <view class="exp__ph"><k-icon name="house" :size="22" color="red" /></view>
         <view class="k-flex1 k-col">
           <text class="exp__title">{{ e.title }}</text>
           <text class="k-small k-muted k-mt2">{{ e.place }}</text>
@@ -139,48 +153,51 @@
           <view class="k-row k-gap6 k-mt4">
             <text class="k-small">评价：</text>
             <view class="stars"><view v-for="n in 5" :key="n" class="star">
-              <k-icon name="star" :size="14" color="#C99043" :stroke="1.6" :fill="n <= Math.floor(e.stars)" />
-              <view v-if="e.stars && n === Math.ceil(e.stars) && e.stars % 1" class="star__half"><k-icon name="star-half" :size="14" color="#C99043" :stroke="1.6" fill /></view>
+              <k-icon name="star" :size="12" color="ochre" :fill="n <= Math.floor(e.stars)" />
+              <view v-if="e.stars && n === Math.ceil(e.stars) && e.stars % 1" class="star__half"><k-icon name="star-half" :size="12" color="ochre" fill /></view>
             </view></view>
             <text class="k-small">{{ e.comment }}</text>
           </view>
         </view>
-        <view v-if="e.source !== 'platform'" class="exp__x" hover-class="k-press" @click.stop="removeExp(e)"><k-icon name="x" :size="20" color="muted" :stroke="2" /></view>
+        <view v-if="e.source !== 'platform'" class="exp__x" hover-class="k-press" @click.stop="removeExp(e)"><k-icon name="x" :size="16" color="muted" /></view>
       </view>
 
-      <text v-if="tab === 1 && !parttime.length" class="k-title k-mt16 b">还没有兼职经历</text>
-      <view v-for="e in parttime" v-if="tab === 1" :key="e.expId" class="card exp k-mt8" @click="editExp(e)">
-        <image class="exp__img exp__img--short" src="/static/media/cover-empty.png" mode="aspectFill" />
+      <view v-if="tab === 1 && !parttime.length" class="exp-empty"><view class="exp-empty__ic"><k-icon name="briefcase" :size="32" color="red" /></view><text class="k-title k-mt16 b">还没有兼职经历</text></view>
+      <view v-for="e in parttime" v-if="tab === 1" :key="e.expId" class="card exp k-mt8" :class="{ 'exp--own': e.source !== 'platform' }" hover-class="k-press-s" @click="editExp(e)">
+        <view class="exp__ph"><k-icon name="briefcase" :size="22" color="red" /></view>
         <view class="k-flex1 k-col">
           <text class="exp__title">{{ e.title }}</text>
           <text class="k-small k-muted k-mt2">{{ e.place }}</text>
           <view class="k-row k-gap16 k-mt6"><text class="k-text k-muted">{{ e.range }}</text><text class="k-text k-muted">{{ e.total }}</text></view>
         </view>
-        <view v-if="e.source !== 'platform'" class="exp__x" hover-class="k-press" @click.stop="removeExp(e)"><k-icon name="x" :size="20" color="muted" :stroke="2" /></view>
+        <view v-if="e.source !== 'platform'" class="exp__x" hover-class="k-press" @click.stop="removeExp(e)"><k-icon name="x" :size="16" color="muted" /></view>
       </view>
 
-      <text v-if="tab === 2" class="k-title k-mt16 b" @click="openCert">全职/培训经历 · 查看认证</text>
-      <view v-for="e in training" v-if="tab === 2" :key="e.expId" class="card exp k-mt8" @click="editExp(e)">
-        <image class="exp__img" src="/static/media/cover-empty.png" mode="aspectFill" />
+      <view v-if="tab === 2" class="exp-cert" hover-class="k-press" @click="openCert"><k-icon name="award" :size="16" color="red" /><text class="k-title k-mt16 b">全职/培训经历 · 查看认证</text><k-icon name="chevron-right" :size="14" color="muted" /></view>
+      <view v-for="e in training" v-if="tab === 2" :key="e.expId" class="card exp k-mt8" :class="{ 'exp--own': e.source !== 'platform' }" hover-class="k-press-s" @click="editExp(e)">
+        <view class="exp__ph"><k-icon :name="e.kind === 'training' ? 'graduation-cap' : 'building-2'" :size="22" color="red" /></view>
         <view class="k-flex1 k-col">
           <text class="exp__title">{{ e.title }}</text>
           <text class="k-small k-muted k-mt2">{{ e.place }}</text>
           <text class="k-text k-muted k-mt6">{{ e.range }}</text>
           <view class="k-row k-gap16 k-mt4"><text class="k-small">考核等级：{{ e.level || '—' }}</text><text class="k-small">{{ e.kind === 'training' ? '培训' : '全职' }}</text></view>
         </view>
-        <view v-if="e.source !== 'platform'" class="exp__x" hover-class="k-press" @click.stop="removeExp(e)"><k-icon name="x" :size="20" color="muted" :stroke="2" /></view>
+        <view v-if="e.source !== 'platform'" class="exp__x" hover-class="k-press" @click.stop="removeExp(e)"><k-icon name="x" :size="16" color="muted" /></view>
       </view>
 
       <!-- 2026-11-03 主人：简化 —— 添加 / 修改经历在这块小表单里一次填完（原来要连弹 4–5 个输入框 + 类型菜单，改要先弹「修改 / 删除」菜单） -->
       <view v-if="expForm.open" class="card exp-form k-mt16">
+        <text v-if="expSaving" class="exp-form__title">正在保存经历…</text>
+        <template v-else>
         <text class="exp-form__title">{{ expForm.expId ? '修改经历' : '添加经历' }}</text>
         <view class="exp-form__row exp-form__row--top"><text class="exp-form__label">类型</text><view class="exp-form__pills"><view v-for="k in KIND" :key="k[0]" class="exp-form__pill" :class="{ on: expForm.kind === k[0] }" hover-class="k-press-s" @click="expForm.kind = k[0]"><text>{{ k[1] }}</text></view></view></view>
         <view class="exp-form__row"><text class="exp-form__label">名称<text class="req">*</text></text><view class="k-input exp-form__input"><input v-model="expForm.title" maxlength="60" placeholder="岗位 / 课程名，如：咖啡店周末店员" placeholder-class="k-placeholder" /></view></view>
         <view class="exp-form__row"><text class="exp-form__label">门店 · 城市</text><view class="k-input exp-form__input"><input v-model="expForm.place" maxlength="60" placeholder="如：喜洲手作小店 · 大理" placeholder-class="k-placeholder" /></view></view>
-        <view class="exp-form__row"><text class="exp-form__label">开始日期</text><picker class="exp-form__input" mode="date" :value="expForm.startDate || today" :end="today" @change="expForm.startDate = $event.detail.value"><view class="k-input exp-form__pick"><text :class="{ 'k-placeholder': !expForm.startDate }">{{ expForm.startDate || '选填，点这里选' }}</text><k-icon name="chevron-right" :size="16" color="muted" /></view></picker><view v-if="expForm.startDate" class="exp-form__clear" hover-class="k-press" @click="expForm.startDate = ''"><k-icon name="x" :size="16" color="muted" /></view></view>
-        <view class="exp-form__row"><text class="exp-form__label">结束日期</text><picker class="exp-form__input" mode="date" :value="expForm.endDate || today" :start="expForm.startDate || ''" :end="today" @change="expForm.endDate = $event.detail.value"><view class="k-input exp-form__pick"><text :class="{ 'k-placeholder': !expForm.endDate }">{{ expForm.endDate || '至今（不填）' }}</text><k-icon name="chevron-right" :size="16" color="muted" /></view></picker><view v-if="expForm.endDate" class="exp-form__clear" hover-class="k-press" @click="expForm.endDate = ''"><k-icon name="x" :size="16" color="muted" /></view></view>
+        <view class="exp-form__row"><text class="exp-form__label">开始日期</text><picker class="exp-form__input" mode="date" :value="expForm.startDate || today" :end="today" @change="expForm.startDate = $event.detail.value"><view class="k-input exp-form__pick"><text :class="{ 'k-placeholder': !expForm.startDate }">{{ expForm.startDate || '选填，点这里选' }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></picker><view v-if="expForm.startDate" class="exp-form__clear" hover-class="k-press" @click="expForm.startDate = ''"><k-icon name="x" :size="16" color="muted" /></view></view>
+        <view class="exp-form__row"><text class="exp-form__label">结束日期</text><picker class="exp-form__input" mode="date" :value="expForm.endDate || today" :start="expForm.startDate || ''" :end="today" @change="expForm.endDate = $event.detail.value"><view class="k-input exp-form__pick"><text :class="{ 'k-placeholder': !expForm.endDate }">{{ expForm.endDate || '至今（不填）' }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></picker><view v-if="expForm.endDate" class="exp-form__clear" hover-class="k-press" @click="expForm.endDate = ''"><k-icon name="x" :size="16" color="muted" /></view></view>
         <view v-if="expForm.kind === 'training'" class="exp-form__row"><text class="exp-form__label">考核等级</text><view class="k-input exp-form__input"><input v-model="expForm.level" maxlength="20" placeholder="选填，例如：A / 初级" placeholder-class="k-placeholder" /></view></view>
-        <view class="exp-form__btns"><view class="exp-form__btn"><k-button block type="outline" label="取消" @click="expForm.open = false" /></view><view class="exp-form__btn"><k-button block :disabled="expSaving" :label="expSaving ? '保存中…' : '保存经历'" @click="saveExp" /></view></view>
+        <view class="exp-form__btns"><view class="exp-form__btn"><k-button block type="outline" label="取消" @click="expForm.open = false" /></view><view class="exp-form__btn"><k-button block :disabled="saving" label="保存经历" @click="saveExp" /></view></view>
+        </template>
       </view>
       <k-button v-else block icon="plus" class="k-mt16" @click="addExp">新增经历</k-button>
     </view>
@@ -239,17 +256,24 @@ const links = ref([])
 const editingIntro = ref(false)
 const editingSkill = ref(false)
 const editingExtra = ref(false)
+const resumeState = ref('loading')
+let editorVisit = 0
 // 切屏时收起，回到这一屏不会自己弹键盘
-watch(s, () => { editingIntro.value = false; editingSkill.value = false; editingExtra.value = false; expForm.open = false })
+watch(s, () => { editorVisit++; editingIntro.value = false; editingSkill.value = false; editingExtra.value = false; expForm.open = false }, { flush: 'sync' })
 async function load() {
   const scope = accountScope, request = ++readRevision
-  if (!scope.id || !isCurrent(scope)) return
+  if (!isCurrent(scope)) return
+  if (!scope.id) { resumeState.value = 'guest'; return }
+  resumeState.value = 'loading'
   loadOpp()
   try {
     const response = await apiResume()
     if (isCurrent(scope) && request === readRevision) apply(response.data)
   } catch (e) {
-    if (isCurrent(scope) && request === readRevision) toast(errText(e, '简历加载失败'))
+    if (isCurrent(scope) && request === readRevision) {
+      resumeState.value = 'error'
+      toast(errText(e, '简历加载失败'))
+    }
   }
 }
 // ---------------- s=1 下半部分：技能匹配机会 ----------------
@@ -279,13 +303,16 @@ const oppJobs = computed(() => (oppSkillBased.value ? opp.value.jobs || [] : [])
   img: j.cover ? absUrl(j.cover) : '/static/media/cover-empty.png', hasImg: !!j.cover,
   meta: [j.typeLabel, j.storeName, j.city, j.dateText].filter(Boolean).join(' · ')
 })))
-function apply(d) {
+function apply(d, section = 0) {
+  resumeState.value = 'ready'
   data.value = d
   const r = d.resume || {}
-  Object.assign(form, { name: r.name || '', gender: r.gender || '女', age: r.age == null ? '' : String(r.age), phone: r.phone || '', city: r.city || '', intro: r.intro || '', hobbies: r.hobbies || '', personality: r.personality || '', background: r.background || '', lifePhoto: r.lifePhoto || '', lifePhotoUrl: r.lifePhotoUrl || '', media: [...(r.media || [])] })
+  if (section !== 3) Object.assign(form, { name: r.name || '', gender: r.gender || '女', age: r.age == null ? '' : String(r.age), phone: r.phone || '', city: r.city || '', intro: r.intro || '', hobbies: r.hobbies || '', personality: r.personality || '', background: r.background || '', lifePhoto: r.lifePhoto || '', lifePhotoUrl: r.lifePhotoUrl || '', media: [...(r.media || [])] })
   skill.value = r.skillText || ''
-  extra.value = r.extraText || ''
-  links.value = [...(d.links || [])]
+  if (section !== 2) {
+    extra.value = r.extraText || ''
+    links.value = [...(d.links || [])]
+  }
 }
 // 完整度在这里按已保存的简历算（和服务端 KgResumeService 同一套规则）：基本信息 6 项各 10 分、技能描述满 20 字 25 分 / 不满 10 分、
 // 有一段经历 15 分，合计 100。作品链接是可选项不计分——之前它占 10 分，没有作品的人（多数换工）最高只能到 90%
@@ -344,23 +371,35 @@ async function pickCity() {
 }
 // 保存要等服务端返回：连点会提交两次
 const saving = ref(false)
+let focusedSinceSubmit = false
+const onDraftFocus = () => { if (saving.value) focusedSinceSubmit = true }
+const savePayload = section => section === 3
+  ? { skill: skill.value, extra: extra.value, links: [...links.value] }
+  : { ...form, media: [...form.media], skill: skill.value }
 async function save() {
   const scope = actionScope()
-  if (!scope) return
-  if (saving.value) return
+  if (!scope || resumeState.value !== 'ready' || saving.value || uploading.value || importing.value || expSaving.value) return
+  const section = s.value, visit = editorVisit
+  const payload = savePayload(section)
+  const submitted = JSON.stringify(payload)
   readRevision++
   saving.value = true
+  focusedSinceSubmit = false
   try {
-    const res = s.value === 3
-      ? await apiResumeSkills({ skill: skill.value, extra: extra.value, links: links.value })
-      : await apiResumeBasic({ ...form, skill: skill.value })
+    const res = section === 3 ? await apiResumeSkills(payload) : await apiResumeBasic(payload)
     if (!isCurrent(scope)) return
     readRevision++
-    apply(res.data)
+    data.value = res.data
+    loadOpp()
+    if (visit !== editorVisit) return
+    // 输入法的值可能晚于输入框的 focus 事件到达。
+    if (focusedSinceSubmit || JSON.stringify(savePayload(section)) !== submitted) {
+      toast('提交的内容已保存，继续编辑后请再保存')
+      return
+    }
+    apply(res.data, section)
     savedHint.value = '已保存'
     toast(res.msg || '已保存')
-    // 技能改了，匹配的机会跟着变
-    loadOpp()
     s.value = 1
   } catch (e) {
     if (isCurrent(scope)) toast(errText(e, '保存失败'))
@@ -386,15 +425,18 @@ const RESUME_VIDEO_MAX_MB = 200
 async function importResume() {
   const scope = actionScope()
   if (!scope) return
-  if (importing.value) return
+  if (importing.value || saving.value) return
   importing.value = true
+  const before = savePayload(2)
   try {
     const path = await chooseResumeDocument()
     if (!path || !isCurrent(scope)) return
     const result = (await uploadTo('/app/resume/import', path)).data || {}
     if (!isCurrent(scope)) return
-    for (const k of ['name','gender','age','phone','city','intro','hobbies','personality','background']) if (result.fields?.[k]) form[k] = String(result.fields[k])
-    if (result.fields?.skill) skill.value = result.fields.skill
+    for (const key of ['name','gender','age','phone','city','intro','hobbies','personality','background']) {
+      if (result.fields?.[key] && form[key] === before[key]) form[key] = String(result.fields[key])
+    }
+    if (result.fields?.skill && skill.value === before.skill) skill.value = result.fields.skill
     toast(result.message || '已识别，请核对后保存')
   } catch(e) { if (isCurrent(scope)) toast(errText(e, '识别失败，可继续手动填写')) }
   finally { if (isCurrent(scope)) importing.value = false }
@@ -402,19 +444,19 @@ async function importResume() {
 async function addResumeMedia(kind) {
   const scope = actionScope()
   if (!scope) return
-  if (uploading.value) return
+  if (uploading.value || saving.value) return
   if (kind !== 'portrait' && form.media.length >= 6) return toast('最多上传6个作品')
-  let path
-  if (kind === 'video') {
-    const video = await new Promise(resolve => uni.chooseVideo({ sourceType:['album','camera'], maxDuration:60, success:r=>resolve(r), fail:()=>resolve(null) }))
-    // 与私有简历上传服务一致；文件先存私有目录，仍需签名和授权才能查看。
-    if (!video || !isCurrent(scope)) return
-    if (Number(video.size) > RESUME_VIDEO_MAX_MB * 1024 * 1024) return toast(`视频不能超过 ${RESUME_VIDEO_MAX_MB}MB，可以剪短一点或用手机压缩后再传`)
-    path = video.tempFilePath
-  } else path = await chooseImage()
-  if (!path || !isCurrent(scope)) return
   uploading.value = true
   try {
+    let path
+    if (kind === 'video') {
+      const video = await new Promise(resolve => uni.chooseVideo({ sourceType:['album','camera'], maxDuration:60, success:r=>resolve(r), fail:()=>resolve(null) }))
+      // 与私有简历上传服务一致；文件先存私有目录，仍需签名和授权才能查看。
+      if (!video || !isCurrent(scope)) return
+      if (Number(video.size) > RESUME_VIDEO_MAX_MB * 1024 * 1024) return toast(`视频不能超过 ${RESUME_VIDEO_MAX_MB}MB，可以剪短一点或用手机压缩后再传`)
+      path = video.tempFilePath
+    } else path = await chooseImage()
+    if (!path || !isCurrent(scope)) return
     const media = (await uploadTo('/app/resume/media', path, {kind})).data
     if (!isCurrent(scope)) return
     if (kind === 'portrait') { form.lifePhoto = media.key; form.lifePhotoUrl = media.url }
@@ -437,7 +479,9 @@ const KIND = [['volunteer', '换工经历'], ['parttime', '兼职经历'], ['ful
 const today = todayCn()
 const expForm = reactive({ open: false, expId: 0, kind: 'volunteer', title: '', place: '', startDate: '', endDate: '', level: '' })
 const expSaving = ref(false)
+let expEditorVisit = 0
 function openExpForm(e) {
+  expEditorVisit++
   Object.assign(expForm, {
     open: true, expId: e.expId || 0, kind: KIND.some(k => k[0] === e.kind) ? e.kind : 'volunteer',
     title: e.title || '', place: e.place || '', startDate: e.startDate || '', endDate: e.endDate || '', level: e.level || ''
@@ -450,20 +494,21 @@ function editExp(e) { if (e.source !== 'platform') openExpForm(e) }
 async function saveExp() {
   const scope = actionScope()
   if (!scope) return
-  if (expSaving.value) return
+  if (expSaving.value || saving.value) return
   const title = String(expForm.title || '').trim()
   if (!title) return toast('请填写岗位 / 课程名称')
   if ((expForm.startDate && !isYmd(expForm.startDate)) || (expForm.endDate && !isYmd(expForm.endDate))) return toast('日期格式应为 yyyy-MM-dd')
   if (expForm.startDate && expForm.endDate && expForm.endDate < expForm.startDate) return toast('结束日期不能早于开始日期')
   const body = { kind: expForm.kind, title, place: String(expForm.place || '').trim(), startDate: expForm.startDate, endDate: expForm.endDate, level: String(expForm.level || '').trim() }
   const editing = expForm.expId
+  const visit = expEditorVisit
   expSaving.value = true
   try {
     const res = editing ? await apiResumeEditExp(editing, body) : await apiResumeAddExp(body)
     if (!isCurrent(scope)) return
     readRevision++
-    apply(res.data)
-    expForm.open = false
+    data.value = res.data
+    if (visit === expEditorVisit) expForm.open = false
     toast(res.msg || (editing ? '已保存' : '已添加'))
   } catch (e) {
     if (isCurrent(scope)) toast(errText(e, editing ? '保存失败' : '添加失败'))
@@ -474,18 +519,21 @@ async function saveExp() {
 async function removeExp(e) {
   const scope = actionScope()
   if (!scope) return
-  if (e.source === 'platform') return
+  if (e.source === 'platform' || expSaving.value || saving.value) return
   if (!(await confirm('删除经历', `确认删除「${e.title}」？`))) return
-  if (!isCurrent(scope)) return
+  if (!isCurrent(scope) || expSaving.value || saving.value) return
+  expSaving.value = true
   try {
     const response = await apiResumeRemoveExp(e.expId)
     if (!isCurrent(scope)) return
     readRevision++
-    apply(response.data)
+    data.value = response.data
     if (expForm.expId === e.expId) expForm.open = false
     toast('已删除')
   } catch (err) {
     if (isCurrent(scope)) toast(errText(err, '删除失败'))
+  } finally {
+    if (isCurrent(scope)) expSaving.value = false
   }
 }
 // 切页签时收起表单（表单里的类型是按页签预选的）
@@ -498,6 +546,7 @@ function syncAccountScope() {
   accountScope = next
   readRevision++; oppRevision++
   apply({ resume: {}, exps: [], stats: [], links: [], completeness: 0 })
+  resumeState.value = next.id ? 'loading' : 'guest'
   opp.value = { jobs: [] }; oppLoaded.value = false; oppError.value = ''
   savedHint.value = '填写后点「保存」生效'
   saving.value = false; importing.value = false; uploading.value = false; expSaving.value = false
@@ -541,7 +590,7 @@ onUnmounted(() => { disposed = true; readRevision++; oppRevision++ })
 .saving { padding: 4px 0 12px; }
 .saving__ok { width: 24px; height: 24px; }
 .reuse { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; background: var(--k-paper2); border: 1px solid #E3CFA6; border-radius: 12px; }
-.reuse__btn { height: 32px; padding: 0 12px; border: 1px solid #C99043; border-radius: 8px; background: var(--k-paper); color: #9A6A22; font-size: 14px; display: flex; align-items: center; }
+.reuse__btn { height: 32px; padding: 0 12px; border: 1px solid var(--k-ochre); border-radius: 8px; background: var(--k-paper); color: #9A6A22; font-size: 14px; display: flex; align-items: center; }
 .form { display: flex; flex-direction: column; gap: 16px; }
 .form__row { display: flex; align-items: center; gap: 12px; }
 .form__label { width: 80px; flex: 0 0 auto; font-size: 15px; color: var(--k-ink); display: flex; align-items: center; }
@@ -550,7 +599,7 @@ onUnmounted(() => { disposed = true; readRevision++; oppRevision++ })
 .form__input { flex: 1; min-height: 42px; }
 .form__input input { height: 40px; }
 .gender { min-width: 52px; height: 40px; padding: 0 14px; border: 1px solid var(--k-line2); border-radius: 8px; background: var(--k-paper); display: flex; align-items: center; justify-content: center; font-size: 15px; }
-.gender.on { background: var(--k-red); border-color: var(--k-red); color: #fff; }
+.gender.on { background: var(--k-red); border-color: var(--k-red); color: var(--k-paper); }
 .area { border: 1px solid var(--k-line2); border-radius: 10px; background: var(--k-paper); padding: 12px; }
 .area textarea, .area .resume-area-idle { width: 100%; height: 104px; font-size: 15px; line-height: 1.7; }
 .area--tall textarea, .area--tall .resume-area-idle { height: 122px; }
@@ -560,7 +609,7 @@ onUnmounted(() => { disposed = true; readRevision++; oppRevision++ })
 
 /* s3 */
 .tip { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--k-indigo-soft); border: 1px solid #C4D0D8; border-radius: 12px; }
-.tip__icon { width: 22px; height: 22px; border-radius: 50%; background: var(--k-indigo); color: #fff; font-family: var(--k-sans); font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; margin-top: 1px; }
+.tip__icon { width: 22px; height: 22px; border-radius: 50%; background: var(--k-indigo); color: var(--k-paper); font-family: var(--k-sans); font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; margin-top: 1px; }
 .tip__text { flex: 1; font-size: 14px; line-height: 1.7; color: var(--k-indigo); }
 .link { min-height: 42px; gap: 8px; }
 .link__url { flex: 1; min-width: 0; font-size: 14px; }
@@ -605,7 +654,7 @@ onUnmounted(() => { disposed = true; readRevision++; oppRevision++ })
 .opp__title { font-size: 17px; font-weight: 700; color: var(--k-ink); }
 .opp__more { display: flex; align-items: center; gap: 2px; min-height: 44px; margin: -6px -4px -6px 0; padding: 0 4px 0 10px; font-size: 13px; color: var(--k-muted); }
 .opp__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.opp__tag { height: 28px; padding: 0 12px; border-radius: 14px; background: #F6EBDD; color: var(--k-red-deep, #8A5E36); font-size: 13px; line-height: 28px; }
+.opp__tag { height: 28px; padding: 0 12px; border-radius: 14px; background: #F6EBDD; color: var(--k-red-deep); font-size: 13px; line-height: 28px; }
 .oppc { display: flex; gap: 12px; margin-top: 10px; padding: 10px; border: 0; border-radius: 16px; box-shadow: var(--k-sh1); }
 .oppc__img { width: 84px; height: 84px; border-radius: 12px; flex: 0 0 auto; background: var(--k-paper2); }
 .oppc__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }

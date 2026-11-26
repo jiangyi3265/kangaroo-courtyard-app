@@ -1,5 +1,5 @@
 // 10-15 首页改版的回归（node --test，不需要构建、不发请求）。跑的是首页真实的 script setup，接口换成假函数：
-//   · 近期活动固定两格：两场是两张大图卡（日期、城市 · 集合地、免费绿 / 收费红、名额状态签）；一场时第二格是「全部活动」入口；
+//   · 近期活动最多两场，可轮播查看日期、集合地、价格和名额；只有一场时标题旁保留「全部活动」入口；
 //     一场都没有时是「近期活动筹备中」提示条；加载中 / 出错时整块不显示；
 //   · 「为你推荐」改名「旅居推荐」：两列图卡；11-06 按后台运营类型分自营 / 合作，每组先露两个、独立展开；
 //   · 首页删掉「可能感兴趣的城市」卡片和「会员权益」条，整页不再是宋体，只有品牌名用 --k-brand；
@@ -16,10 +16,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import vm from 'node:vm'
+import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { chapters } from '../pages/camp/handbook-chapters.js'
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(APP, 'package.json'))
@@ -45,6 +47,7 @@ function home(feed, stubs = {}) {
   const gone = [], scrolls = []
   Object.assign(sandbox, {
     ref: vue.ref, computed: vue.computed, watch: vue.watch, onShow() {},
+    recruitmentEnabled: vue.ref(true), stayBookingEnabled: vue.ref(true),
     useScreen: () => vue.ref(1),
     experience: vue.reactive({ cities: [] }),
     apiHomeFeed: async () => (typeof feed === 'function' ? feed() : { data: feed }),
@@ -96,6 +99,44 @@ test('名额已满写「已满可候补」，不再标黄；没有封面 / 集�
   h.stop()
 })
 
+test('近期活动循环后仍标对场次，切换分页和进入详情对应同一场；重新加载或只有一场时从第一场开始', async () => {
+  let rows = [card(11), card(26)]
+  const h = home(() => ({ data: { activities: rows } }))
+  await h.run('loadFeed()')
+  h.run('activitySlideIndex.value = 3')
+  assert.equal(h.run('activityPage.value'), 1)
+  h.run('openActivity(activitySlides.value[activitySlideIndex.value])')
+  assert.equal(h.gone.at(-1), '/pages/community/activity?id=26&channel=home')
+  h.run('selectActivityPage(0)')
+  assert.equal(h.run('activitySlides.value[activitySlideIndex.value].activityId'), 11)
+  assert.equal(h.run('activityPage.value'), 0)
+  rows = [card(32)]
+  await h.run('loadFeed()')
+  assert.equal(h.run('activitySlideIndex.value'), 0)
+  assert.equal(h.run('activitySlides.value.length'), 1)
+  assert.equal(h.run('activitySlides.value[0].activityId'), 32)
+  h.stop()
+})
+
+test('活动封面缺失或加载失败时用活动月日做日历，时间只显示一次，其他日期格式保留原文', async () => {
+  const h = home({ activities: [card(1), card(2, { img: '', dateText: '时间待定', time: '' })] })
+  await h.run('loadFeed()')
+  const slide = index => h.run('activitySlides.value[' + index + ']')
+  assert.equal(slide(0).hasCover, true)
+  assert.equal(slide(0).when, '10月18日 周六 14:00')
+  h.run('failedActivityImages.value[1] = activities.value[0].image')
+  assert.equal(slide(0).hasCover, false)
+  assert.equal(slide(0).month, '10月')
+  assert.equal(slide(0).day, '18')
+  assert.equal(slide(0).when, '周六 14:00')
+  assert.equal(slide(1).day, undefined)
+  assert.equal(slide(1).when, '时间待定')
+  h.run("feed.value.activities[0].img = '/upload/new.jpg'")
+  assert.equal(slide(0).hasCover, true)
+  assert.equal(slide(0).when, '10月18日 周六 14:00')
+  h.stop()
+})
+
 test('旅居推荐分自营与合作，每组先露两个，展开互不影响；原卡片资料与详情链接保留', async () => {
   const h = home({ activities: [], stays: stays(6) })
   await h.run('loadFeed()'); await flush()
@@ -126,6 +167,101 @@ test('每组就地展开最多 12 个，收起回到一行；没有该类型时�
   assert.equal(h.run('stayGroups.value[0].key'), 'direct')
   h.run('feed.value.stays = []')
   assert.equal(h.run('stayGroups.value.length'), 0)
+  h.stop()
+})
+
+test('首页没有房源时也可从照片轮播进入手册各章，加载占位可打开手册', t => {
+  const h = home({ stays: [] })
+  t.after(h.stop)
+  const bannerStart = h.template.indexOf('class="handbook-cover"')
+  assert.ok(bannerStart > h.template.indexOf('class="search-box"'))
+  const top = h.template.slice(bannerStart, h.template.indexOf('class="entry-grid"'))
+  const carousel = top.match(/<handbook-carousel\b[^>]*@open="([^"]+)"/)
+  assert.ok(carousel)
+  const fallback = top.match(/<button\b[^>]*@click="([^"]+)"/)
+  assert.ok(fallback)
+  h.run(fallback[1])
+  const open = h.run(carousel[1])
+  for (const chapter of ['apply', 'stay', 'groups']) open(chapter)
+  assert.deepEqual(h.gone, [
+    '/pages/camp/handbook', '/pages/camp/handbook?chapter=apply',
+    '/pages/camp/handbook?chapter=stay', '/pages/camp/handbook?chapter=groups'
+  ])
+  const reader = readSfc('pages/camp/handbook.vue').scriptSetup.content.replace(/^import .*$/gm, '')
+  const opened = [...h.gone, '/pages/camp/handbook?chapter=unknown'].map(route => {
+    const options = Object.fromEntries(new URL(route, 'https://app.test').searchParams)
+    return vm.runInNewContext(reader + '\nchapter.value.id', {
+      ref: vue.ref, computed: vue.computed, chapters, R: {}, onLoad: callback => callback(options), onShow() {}
+    })
+  })
+  assert.deepEqual(opened, ['apply', 'apply', 'stay', 'groups', 'apply'])
+  assert.doesNotMatch(h.template, /<home-promotion\b/)
+})
+
+test('首页手册每 4.5 秒往返轮播；离开、拖动或减少动态时停止计时', async () => {
+  const component = readSfc('pages/camp/components/handbook-carousel.vue')
+  const source = component.scriptSetup.content.replace(/^import .*$/gm, '')
+  const props = vue.reactive({active:true,reduceMotion:false})
+  let pending, unmount
+  const sandbox = {
+    ...vue, defineProps: () => props, defineEmits: () => () => {},
+    setTimeout: (cb, delay) => { assert.equal(delay, 4500); pending=cb; return 1 }, clearTimeout: () => { pending=null },
+    onMounted: cb => cb(), onUnmounted: cb => { unmount=cb },
+    window: {}, document: {hidden:false, addEventListener() {}, removeEventListener() {}}
+  }
+  vm.createContext(sandbox)
+  const scope=vue.effectScope()
+  const run = code => vm.runInContext(code,sandbox)
+  scope.run(() => run(source))
+  const slides = Array.from(run('slides'))
+  const tap = component.template.content.match(/<button\b[^>]*@click="([^"]+)"/)
+  assert.ok(tap)
+  const emitTap = new Function('slide', 'emit', tap[1])
+  const events = []
+  for (const slide of slides) emitTap(slide, (name, chapter) => events.push([name, chapter]))
+  assert.deepEqual(events, [['open', 'apply'], ['open', 'stay'], ['open', 'groups']])
+  assert.equal(new Set(slides.map(slide => slide.title)).size, 3)
+  assert.ok(slides.every(slide => slide.title && slide.action))
+  assert.match(component.template.content, /<swiper-item\b[^>]*v-for="\(slide, index\) in slides"[^>]*>[\s\S]*?<image\b[^>]*:src="slide\.image"[^>]*\/>[\s\S]*?<\/swiper-item>/)
+  assert.equal(slides[0].image, '/pages/camp/static/handbook-covers/seaside-friends.jpg')
+  const fingerprints = slides.map(({ image }) => {
+    assert.match(image, /^\/pages\/camp\/static\/handbook-covers\/.+\.jpg$/)
+    return createHash('sha256').update(fs.readFileSync(path.join(APP, image))).digest('hex')
+  })
+  assert.equal(new Set(fingerprints).size, 3, '三张封面必须是不同的图片内容')
+  for (const index of [1,2,1,0]) {
+    assert.ok(pending); pending(); await vue.nextTick()
+    assert.equal(run('current.value'),index)
+  }
+  props.active=false; await vue.nextTick(); assert.equal(pending,null)
+  props.active=true; props.reduceMotion=true; await vue.nextTick(); assert.equal(pending,null)
+  props.reduceMotion=false; run('touching.value=true'); await vue.nextTick(); assert.equal(pending,null)
+  run('changed({detail:{current:2}}); touching.value=false'); await vue.nextTick()
+  pending(); await vue.nextTick(); assert.equal(run('current.value'),1)
+  unmount(); assert.equal(pending,null); scope.stop()
+})
+
+test('仅有一家小院时，旅居推荐仍显示该房源并可进入详情', async t => {
+  const h = home({ activities: [], stays: stays(1) })
+  t.after(h.stop)
+  await h.run('loadFeed()')
+  const groups = h.template.match(/v-for="group in (\w+)"/)[1]
+  assert.deepEqual(Array.from(h.run(groups + '.value[0].stays'), stay => stay.stayId), [1])
+  h.run('openStay(' + groups + '.value[0].stays[0])')
+  assert.deepEqual(h.gone, ['/pages/stays/detail?stayId=1'])
+})
+
+test('旅居卡片坏图只影响该照片，换图或重新加载后可恢复', async () => {
+  const h = home({ activities: [], stays: stays(3) })
+  await h.run('loadFeed()')
+  h.run("markStayCoverFailed({ currentTarget: { dataset: { stayId: 1, cover: recStays.value[0].image } } })")
+  assert.equal(h.run('failedStayImages.value[1]'), h.run('recStays.value[0].image'))
+  assert.equal(h.run('failedStayImages.value[3]'), undefined)
+  assert.deepEqual(Array.from(h.run('stayGroups.value[0].stays.map(stay => stay.stayId)')), [1, 3])
+  h.run("feed.value.stays[0].cover = '/upload/updated.jpg'")
+  assert.notEqual(h.run('recStays.value[0].image'), h.run('failedStayImages.value[1]'))
+  await h.run('loadFeed()')
+  assert.equal(h.run('failedStayImages.value[1]'), undefined)
   h.stop()
 })
 
@@ -172,7 +308,7 @@ test('首页选了「全部城市」（allCities 开关）：兴趣城市列表�
   assert.equal(h.run('city.value'), '全部城市')
   await h.run('quickMatch()'); await flush()
   assert.equal(calls[0].city, '')
-  h.run('openEntry(entries[0])')
+  h.run('openEntry(entries.value[0])')
   assert.equal(h.gone.at(-1), '/pages/jobs/list?type=volunteer')
   // 再选回某个城市（切换城市页会关掉开关）：首页显示这个城市
   h.run('experience.allCities = false')
@@ -183,23 +319,26 @@ test('首页选了「全部城市」（allCities 开关）：兴趣城市列表�
 test('找机会的结果 / 理由屏保持可读文字与 16px 圆角白卡', () => {
   const { styles } = home({ activities: [], stays: [] })
   assert.match(styles, /\.preference-head__hint, \.preference-head__clear \{ color: var\(--k-ink2\); font-size: 12px; \}/)
-  assert.match(styles, /\.ai-note \{[^}]*color: var\(--k-ink2\);/)
+  // 2026-11-18 第四轮精修（纯样式颜色）：评审说按钮下这行 11 号辅助说明用正文色抢了按钮的戏，改成辅助灰 --k-muted（仍是可读文字色，不是 --k-light）
+  assert.match(styles, /\.ai-note \{[^}]*color: var\(--k-muted\);/)
   assert.match(styles, /\.result-sort \{[^}]*color: var\(--k-ink2\); font-size: 12px; \}/)
   assert.match(styles, /\.result-end \{[^}]*color: var\(--k-muted\);[^}]*font-size: 14px; \}/)
   assert.ok(!/var\(--k-light\)/.test(styles), '浅灰 --k-light 只给占位 / 禁用')
   for (const cls of ['match-card', 'score-card', 'reason-list', 'reason-pref']) {
     const rule = styles.match(new RegExp(`\\.${cls} \\{[^}]*\\}`))[0]
-    assert.match(rule, /border-radius: var\(--k-radius\); background: var\(--k-paper\); box-shadow: var\(--k-sh1\);/, cls)
+    assert.match(rule, /border-radius: 12px; background: var\(--k-paper\); \}/, cls)
     assert.ok(!/border:/.test(rule), cls + ' 不描边')
   }
 })
 
-test('近期活动的三种版面都在模板里：图文列表 / 一场时「全部活动」入口 / 没有时「近期活动筹备中」条；加载中和出错时整块不显示', () => {
+test('近期活动有多场时轮播，一场时保留「全部活动」，无活动时显示筹备提示，加载中和出错时整块隐藏', () => {
   const { template } = home({ activities: [], stays: [] })
   const block = template.slice(template.indexOf('<template v-if="!feedLoading && !feedError">'), template.indexOf('旅居推荐'))
   assert.ok(block.length > 0 && block.includes('近期活动'), '近期活动整块套在「不在加载、没出错」里')
   assert.match(block, /<view v-if="activities\.length" class="activity-list">/)
-  assert.match(block, /v-if="activities\.length === 1"[^>]*@click="go\(R\.activity\)"[\s\S]*全部活动[\s\S]*看各城市活动/)
+  assert.match(block, /<swiper\b[^<]*:circular="activities\.length > 1"[^<]*:autoplay="activities\.length > 1 && homeVisible && !reduceMotion && !noticePopup\.show"/)
+  assert.match(block, /<view v-if="activities\.length > 1" class="activity-pages">/)
+  assert.match(block, /aria-label="全部活动，看各城市活动"[^>]*@click="go\(R\.activity\)"><text>\{\{ activities\.length === 1 \? '全部活动' : '更多' \}\}/)
   assert.match(block, /<view v-else class="act-empty"[^>]*@click="go\(R\.activity\)"[\s\S]*近期活动筹备中[\s\S]*订阅城市活动，有新活动提醒你/)
   assert.match(block, /:class="item\.free \? 'k-green' : 'k-red'"/, '免费绿、收费用主色')
   assert.match(block, /class="feed-card__badge" :class="\{ 'is-few': item\.few, 'is-full': item\.full \}"/)
@@ -219,7 +358,7 @@ test('加载中 / 出错时不显示近期活动；出错后点「重新加载�
   h.stop()
 })
 
-const firstScreen = (template) => template.slice(template.indexOf('<template v-if="s === 1">'), template.indexOf('<template v-else-if="s === 2">')).replace(/<!--[\s\S]*?-->/g, '')
+const firstScreen = (template) => template.slice(template.indexOf('<template v-if="s === 1'), template.indexOf('<template v-else-if="s === 2">')).replace(/<!--[\s\S]*?-->/g, '')
 
 test('首页普通搜索保留关键词并编码传入搜索页，输入和圆钮均不打开 AI 对话', () => {
   const h = home({ activities: [], stays: [] })
@@ -228,6 +367,7 @@ test('首页普通搜索保留关键词并编码传入搜索页，输入和圆�
   h.run("searchKeyword.value = '  '; searchHome()")
   assert.equal(h.gone[1], '/pages/search/index?keyword=')
   const screen = firstScreen(h.template)
+  assert.match(screen, /placeholder="想要什么问ai，智能检索出答案"/)
   assert.match(screen, /<input[^>]*v-model="searchKeyword"[^>]*@confirm="searchHome"/)
   assert.match(screen, /<button[^>]*search-box__go[^>]*@click="searchHome"/)
   assert.doesNotMatch(screen, /homeAiOpen|k-ai-sheet|问 AI/)
@@ -240,13 +380,14 @@ test('首页普通搜索保留关键词并编码传入搜索页，输入和圆�
 // 四个岗位入口一律不带 ?city=（岗位列表默认全部城市），只有旅居订房照旧带着首页城市进订房列表
 test('首页 5 个入口：名字和岗位列表页签一致；岗位入口不带首页城市，旅居订房选了城市才带 ?city=', () => {
   const h = home({ activities: [], stays: [] })
-  const entries = JSON.parse(JSON.stringify(h.run('entries')))
-  assert.deepEqual(entries.map(e => e.name), ['换宿旅行', '兼职旅行', '全职驻店', '线上任务', '旅居订房'])
-  for (const e of entries) h.run(`openEntry(entries.find(x => x.name === ${JSON.stringify(e.name)}))`)
+  const entries = JSON.parse(JSON.stringify(h.run('entries.value')))
+  assert.deepEqual(entries.map(e => e.name), ['换工旅行', '兼职旅行', '全职驻店', '线上任务', '旅居订房'])
+  assert.deepEqual(entries.map(e => e.illustration), ['entry-exchange', 'entry-parttime', 'entry-staffed', 'entry-online', 'entry-stay'])
+  for (const e of entries) h.run(`openEntry(entries.value.find(x => x.name === ${JSON.stringify(e.name)}))`)
   assert.deepEqual(h.gone, ['/pages/jobs/list?type=volunteer', '/pages/jobs/list?type=parttime', '/pages/jobs/list?type=fulltime', '/pages/jobs/list?type=online', '/pages/stays/list'])
   h.gone.length = 0
   h.run("experience.cities = ['大理', '丽江']")
-  h.run('entries.forEach(openEntry)')
+  h.run('entries.value.forEach(openEntry)')
   const c = encodeURIComponent('大理')
   assert.deepEqual(h.gone, ['/pages/jobs/list?type=volunteer', '/pages/jobs/list?type=parttime', '/pages/jobs/list?type=fulltime', '/pages/jobs/list?type=online', `/pages/stays/list?city=${c}`])
   h.stop()
@@ -312,21 +453,24 @@ test('首页搜索条连点圆钮只发一次匹配', async () => {
   h.stop()
 })
 
-test('找机会屏的头像换成首页同一只袋鼠（144px 贴纸），放在奶油色圆框里', () => {
+test('找机会屏在奶油色圆框里显示确认稿的 AI 袋鼠', () => {
   const { template, styles } = home({ activities: [], stays: [] })
   const s2 = template.slice(template.indexOf('<template v-else-if="s === 2">'), template.indexOf('<template v-else-if="s === 3">'))
-  assert.ok(s2.includes('<view class="ai-avatar"><image class="ai-avatar__img" src="/static/media/brand-kangaroo-lg.png" mode="aspectFit" /></view>'))
+  assert.ok(s2.includes('<view class="ai-avatar"><image class="ai-avatar__img" src="/static/user-icons/mine-ai.png" mode="aspectFit" /></view>'))
   assert.ok(!template.includes('home-ai-avatar.jpg'), '49×50 的旧线稿放大发糊，不再用')
-  assert.match(styles, /\.ai-avatar \{[^}]*width: 56px; height: 56px; border-radius: 50%; overflow: hidden;/)
-  assert.match(styles, /\.ai-avatar__img \{[^}]*width: 49px; height: 53px; \}/)
+  // 2026-11-18 第三轮精修（纯样式数字）：第 2 轮评审说头像 + 标题 + 介绍占了约 150px，输入框太靠下；头像缩到 44、和标题放同一行，贴纸跟着等比缩小
+  assert.match(styles, /\.ai-avatar \{[^}]*width: 44px; height: 44px; border-radius: 50%; overflow: hidden;/)
+  assert.match(styles, /\.ai-avatar__img \{[^}]*width: 39px; height: 42px; \}/)
 })
 
-test('首页引用的本地图片都已存在（含 10-16 新加的袋鼠贴纸，都是 PNG，不用 WebP）', () => {
+test('首页的品牌和 AI 袋鼠图片都可从本地加载', () => {
   const src = fs.readFileSync(path.join(APP, 'pages/home/index.vue'), 'utf8')
   const used = [...new Set([...src.matchAll(/'(\/static\/[^']+)'|"(\/static\/[^"]+)"/g)].map(m => m[1] || m[2]))]
+  assert.match(src, /<text class="brand__name">袋鼠青年旅行<\/text>/)
+  assert.match(src, /publicShare\('\/pages\/home\/index', \{\}, '袋鼠青年旅行/)
   assert.ok(used.length > 0)
   for (const p of used) assert.ok(fs.existsSync(path.join(APP, p)), p)
-  for (const p of ['/static/media/brand-kangaroo-lg.png']) assert.ok(used.includes(p), p)
+  for (const p of ['/static/user-icons/travel-roo.svg', '/static/user-icons/mine-ai.png']) assert.ok(used.includes(p), p)
   assert.ok(!used.some(p => p.endsWith('.webp')), '小程序本地图片不支持 WebP')
 })
 
@@ -349,8 +493,10 @@ test('找机会屏：主人给的文案原样照抄，例句两处都换；「�
   assert.deepEqual([...sheets[0]], ['旅行 3 天', '旅行 7 天', '旅行 14 天', '旅行 30 天', '旅行 60 天'])
   assert.equal(h.run('preferences.value[0].value'), '10.20–10.26')
   // 3 行例句 + 右下角「0/200」不打架：框 128、输入区 80
-  assert.match(h.styles, /\.idea-box \{[^}]*height: 128px;/)
-  assert.match(h.styles, /\.idea-box__input \{[^}]*height: 80px;/)
+  // 2026-11-18 第三轮精修（纯样式数字）：头像和标题并成一行后输入框加高（框 160、输入区 112，仍比框矮 48，不碰「0/200」），右边「清空」留在悬浮客服钮下面
+  // 2026-11-19 第四轮精修返修（纯样式数字）：偏好改成列表后页面变长，评审要主按钮往上提：框 136、输入区 88（仍比框矮 48，不碰「0/200」）；「清空」右边让出 12，不压客服竖钮
+  assert.match(h.styles, /\.idea-box \{[^}]*height: 136px;/)
+  assert.match(h.styles, /\.idea-box__input \{[^}]*height: 88px;/)
   h.stop()
 })
 
@@ -387,7 +533,7 @@ test('其余写着品牌名「袋鼠小院」的地方（行程页、经营日�
 test('找机会屏 / 结果页 / 推荐理由页上剩下几个能点的地方也有按压反馈（清空、岗位 / 房源 / 活动、排序、编辑）', () => {
   const t = readSfc('pages/home/index.vue').template.content
   assert.ok(t.includes('<view class="preference-head__clear" hover-class="k-press" @click="clearPrefs">清空</view>'))
-  for (const i of [0, 1, 2]) assert.ok(t.includes(`<view class="result-tab" :class="{ active: rtab === ${i} }" hover-class="k-press" @click="rtab = ${i}">`))
+  for (const i of [0, 1, 2]) assert.ok(t.includes(`class="result-tab" :class="{ active: rtab === ${i} }" hover-class="k-press" @click="rtab = ${i}">`))
   assert.ok(t.includes('<view class="k-row k-gap6" hover-class="k-press" @click="pickSort"><text>排序</text>'))
   assert.ok(t.includes('<view class="k-row" hover-class="k-press" @click="s = 2"><text class="preference-head__clear">编辑</text>'))
 })
@@ -438,7 +584,8 @@ test('切换城市屏：从首页进来的多一行「全部城市」，选了�
   const c = cityPage()
   await c.load({ s: '2', from: 'home' })
   const s2 = c.template.slice(c.template.indexOf('<template v-else-if="s === 2">'), c.template.indexOf('<template v-else>'))
-  assert.ok(s2.includes('<view v-if="fromHome" class="current-city" hover-class="k-press" @click="chooseAll"><k-icon name="globe" :size="21" color="ink" /><text class="current-city__name">全部城市</text><k-icon v-if="city === ALL" name="check" :size="18" color="red" :stroke="2.2" /></view>'))
+  // 2026-11-18 第三轮精修（纯样式数字）：地球图标 21 → 18（列表行左侧图标统一 16–18）、ink → ink2，勾不再传 :stroke（k-icon 按大小自动配粗细）
+  assert.ok(s2.includes('<view v-if="fromHome" class="current-city" hover-class="k-press" @click="chooseAll"><k-icon name="globe" :size="18" color="ink2" /><text class="current-city__name">全部城市</text><k-icon v-if="city === ALL" name="check" :size="18" color="red" /></view>'))
   c.run('chooseAll()')
   assert.deepEqual(c.saved, [], '不再 savePreferences([])')
   assert.deepEqual([...c.run('experience.cities')], ['丽江', '平潭'])
@@ -466,16 +613,20 @@ test('切换城市屏标出当前城市：首页是全部城市时那一行打�
   d.run("city.value = '大理'")
   assert.deepEqual([...d.run('recentShown.value')], ['大理'])
   const s2 = d.template.slice(d.template.indexOf('<template v-else-if="s === 2">'), d.template.indexOf('<template v-else>'))
-  const mark = '<view v-if="name === city" class="city-chip__on"><k-icon name="check" :size="10" color="white" :stroke="3" /></view>'
+  // 2026-11-18 第三轮精修（纯样式数字）：勾从「凸出胶囊外的 10 号白勾棕圆」收进胶囊里，字后面一个 12 号暖棕勾（全站图标不再传 :stroke）
+  const mark = '<view v-if="name === city" class="city-chip__on"><k-icon name="check" :size="12" color="red" /></view>'
   assert.ok(s2.includes(`<view v-for="name in recentShown" :key="name" class="city-chip" :class="{ on: name === city }" @click="choose(name)"><text>{{ name }}</text>${mark}</view>`))
   assert.ok(s2.includes(`<view v-for="name in hotCities" :key="name" class="city-chip" :class="{ on: name === city }" @click="choose(name)"><text>{{ name }}</text>${mark}</view>`))
   const css = readSfc('pages/home/city.vue').styles.map(s => s.content).join('\n')
-  assert.match(css, /\.city-chip\.on \{[^}]*border-color: var\(--k-red\);/)
-  // A–Z 索引固定在右边（宽 24px）：内容右边留 30px，搜索框在索引上方照旧铺满
-  assert.match(css, /\.switch-body \{ position: relative; padding: 10px 30px [^;]+ 16px; \}/)
-  assert.match(css, /\.city-search \{ margin-right: -14px;/)
+  assert.match(css, /\.city-chip\.on \{[^}]*border-color: var\(--k-red-soft\);/)
+  // A–Z 索引固定在右边（宽 24px）：内容右边留 30px。
+  // 2026-11-18 第三轮精修（纯样式数字）：搜索框挪进吸顶顶栏，右边也停在 30px，和下面的卡、胶囊同一条右边线（评审说之前搜索框比下面宽一截）
+  // 2026-11-18 第四轮返修（纯样式数字）：右侧客服竖钮（20 宽）占住屏幕右边，A–Z 索引往左让到 right: 22px（宽 20 + 左右 2），内容右边留 46；左边距和城市首页统一 16；搜索框在顶栏里左右各 16
+  assert.match(css, /\.switch-body \{ position: relative; padding: 10px 46px [^;]+ 16px; \}/)
+  assert.match(css, /\.city-search-bar \{ padding: 2px 16px 10px; \}/)
   assert.match(css, /@media \(max-width: 340px\) \{ \.current-city__name \{ font-size: 15px; \} \}/, '320 宽「暂无法确认，请手动选择」仍是一行')
-  assert.match(css, /\.alphabet \{ position: fixed; right: 0;[^}]*\}\s*\.alphabet > text \{[^}]*min-width: 24px;/)
+  // 2026-11-19 第四轮精修返修（纯样式数字）：评审说字母条离内容太近，往右挪到 right: 20px（盒子宽 24，右沿正好贴着 20 宽的客服竖钮，不重叠）
+  assert.match(css, /\.alphabet \{ position: fixed; right: 20px;[^}]*\}\s*\.alphabet > text \{[^}]*min-width: 20px;/)
   c.stop(); d.stop()
 })
 
@@ -540,9 +691,9 @@ test('AI袋鼠（反馈 2.0）：assistant.vue 只留人工工单页，旧的 ?c
   const d = readSfc('pages/home/assistant.vue')
   const t = d.template.content
   for (const gone of ['s===1', 's===2', 's===3', 'assistant-sheet', 'profile-base', 'order-base', 'k-tabbar']) assert.ok(!t.includes(gone), gone)
-  assert.ok(t.includes('<k-topbar title="问题处理中" back custom-back @back="backFromTicket" />'))
+  assert.ok(t.includes('<k-topbar title="人工客服工单" back custom-back @back="backFromTicket" />'))
   const script = d.scriptSetup.content
-  assert.match(script, /if \(Number\(q\.ticket\)\) return openTicket\(Number\(q\.ticket\)\)/)
+  assert.match(script, /return openTicket\(String\(q\.ticket\)\)/)
   assert.match(script, /uni\.redirectTo\(\{ url: R\.support \+ '\?ctx=' \+ ctx \+ \(q\.orderNo \? '&orderNo=' \+ encodeURIComponent\(q\.orderNo\) : ''\) \}\)/)
   for (const gone of ['apiSupportAsk', 'apiStayOrder', 'useScreen']) assert.ok(!script.includes(gone), gone)
 })
@@ -574,13 +725,15 @@ test('首页四屏切换都回到顶部：之前 320x640 上找机会往下滚�
 test('320 宽结果卡：标签行右边给匹配度数字让位（之前「咖啡制作」和「95%」叠在一起），放不下时折行，技能再长就省略号', () => {
   const { styles, template } = home({ activities: [], stays: [] })
   const tag = styles.match(/\.match-card__tag \{[^}]*\}/)[0]
-  const right = Number(tag.match(/margin: 5px (\d+)px 0 0;/)[1])
-  assert.ok(right >= 64, '「100%」30px 粗体约 64px 宽，标签行右边至少让出这么多')
+  // 2026-11-18 第三轮精修（纯样式数字）：匹配度从右上角绝对定位挪到价格那一行的右边（第 2 轮评审：标签被挤成两行、卡片高低不齐），
+  // 标签行不用再给它让位，右边距归零；匹配度和标签不会再叠在一起（它们不在同一行了）
+  assert.match(tag, /margin: 6px 0 0;/)
   assert.match(tag, /flex-wrap: wrap;/)
   assert.match(tag, /min-width: 0;/)
   assert.match(styles, /\.match-card__skill \{ min-width: 0; max-width: 100%;[^}]*white-space: nowrap; overflow: hidden; text-overflow: ellipsis; \}/)
-  // 匹配度仍在右上角（结构没变，只是不再和标签抢位置）
-  assert.match(styles, /\.match-card__score \{ position: absolute; right: 10px; top: 31px;/)
+  // 匹配度在价格行右边：标题和标签行都占满整行，不会再和数字叠在一起
+  assert.match(template, /<view class="match-card__row"><view class="match-card__price">.*?<\/text><\/view><view class="match-card__score">/)
+  assert.match(styles, /\.match-card__score \{ flex: 0 0 auto;/)
   assert.ok(template.includes('<view class="match-card__tag"><view v-if="job.safe" class="safe-chip">'))
 })
 
@@ -594,13 +747,12 @@ test('推荐理由屏：「生活偏好」不再折成两行；四格偏好的�
   const prefLabel = styles.match(/\.reason-pref__label \{[^}]*\}/)[0]
   assert.ok(Number(prefLabel.match(/font-size: (\d+)px;/)[1]) >= 11, '小标题至少 11px')
   assert.ok(!/font-size: (9|10)px/.test(styles.slice(styles.indexOf('.reason-body'))), '推荐理由屏没有 11px 以下的字')
-  // 375 宽一排 4 格：内容区 343 - 3 个 4px 间距，按 1.6 : .7 : 1.4 : 1.75 分，每格减去左右 6px 内边距后放得下 11px 的小标题
-  const cols = [1.6, 0.7, 1.4, 1.75], total = cols.reduce((a, b) => a + b, 0)
+  // 2026-11-18 第三轮精修（纯样式数字）：评审说一排四格宽窄不一、和「找机会」那一屏的 2×2 偏好卡不一样，各种宽度都改成两排两格；
+  // 320 宽每格 (320 - 24 - 8) / 2 = 144，减去左右 12px 内边距后放得下「技能标签（可选）」8 个 11px 字（88px）
+  // 2026-11-18 第三轮返修（纯样式数字）：这屏的偏好卡也加了图标方块（和找机会那屏一样），320 宽是左右 10 内边距 + 28 方块 + 8 间距
   const labels = ['旅行时间段', '人数', '工作时长偏好', '技能标签（可选）']
-  cols.forEach((c, i) => assert.ok((375 - 32 - 12) * c / total - 12 >= labels[i].length * 11, labels[i]))
-  assert.match(styles, /\.reason-prefs \{ display: grid; grid-template-columns: 1\.6fr \.7fr 1\.4fr 1\.75fr;/)
-  // 更窄（320、360）放不下 4 格：两排两格
-  assert.match(styles, /@media \(max-width: 374px\) \{\s*\.reason-prefs \{ grid-template-columns: repeat\(2,minmax\(0,1fr\)\); gap: 8px; \}/)
+  labels.forEach(l => assert.ok((320 - 24 - 8) / 2 - 20 - 28 - 8 >= l.length * 11, l))
+  assert.match(styles, /\.reason-prefs \{ display: grid; grid-template-columns: repeat\(2,minmax\(0,1fr\)\); gap: 8px;/)
 })
 
 test('切换城市的 A–Z 索引按屏幕高度缩放：22 个字母在 320x640 / 568 也都露出来（之前只露 A–S）', () => {

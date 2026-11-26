@@ -14,7 +14,7 @@
           <text class="od-meta">{{ task.storeName }}</text>
           <view class="od-task__stats"><view v-for="c in onlineTaskStats(task)" :key="c.label" class="od-cell"><text class="od-cell__num" :class="{ warn: c.warn }">{{ c.value }}</text><text class="od-cell__label">{{ c.label }}</text></view></view>
         </view>
-        <view v-if="!tasks.length" class="od-empty"><k-icon name="laptop" :size="32" color="muted" /><text>本城市现在没有招募中的线上任务</text></view>
+        <view v-if="!tasks.length" class="od-empty"><k-icon name="laptop" :size="36" color="muted" /><text>本城市现在没有招募中的线上任务</text></view>
         <view v-if="data.note" class="od-note"><text>统计说明</text><text>{{ data.note }}</text></view>
       </template>
       <view v-else class="od-empty"><text>正在读取线上任务情况…</text></view>
@@ -70,28 +70,36 @@ onPullDownRefresh(() => load().finally(() => uni.stopPullDownRefresh()))
 </script>
 
 <style scoped lang="scss">
-.od-body { padding-top: 12px; }
+/* 2026-11-17 改版「小而精」：浅灰底 + 白卡（12 圆角、不描边），数字加粗做大小对比；内容不变。共用写法在 ./work-lite.scss */
+@import './work-lite.scss';
+.online-daily { @include lite-page; }
+.od-body { padding-top: 10px; }
 .od-heading,.od-section,.od-task__head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.od-city { display:block; font-size:21px; font-weight:700; margin-bottom:5px; }
-.od-meta { display:block; color:var(--k-muted); font-size:12px; line-height:1.6; }
-.od-refresh { flex-shrink:0; padding:12px 0 12px 12px; font-size:14px; color:var(--k-red); }
-.od-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:20px; }
-.od-stat { min-width:0; padding:14px 6px 12px; border:1px solid var(--k-line); border-radius:14px; background:var(--k-paper); text-align:center; font-size:13px; color:var(--k-muted); }
-.od-stat.warn { background:var(--k-red-soft); color:var(--k-red-deep); }
-.od-number { display:block; margin-top:6px; font-size:28px; font-weight:700; line-height:1.3; color:var(--k-ink); }
-.od-stat.warn .od-number { color:inherit; }
-.od-unit { font-size:12px; font-weight:400; margin-left:4px; }
-.od-section { margin:24px 0 10px; font-size:16px; font-weight:600; }
-.od-task { border:1px solid var(--k-line); border-radius:14px; background:var(--k-paper); margin-bottom:12px; padding:14px; }
-.od-task__head { align-items:flex-start; margin-bottom:4px; }
-.od-task__title { flex:1; min-width:0; font-size:16px; font-weight:700; line-height:1.4; overflow-wrap:anywhere; }
-.od-task__stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:10px; padding-top:10px; border-top:1px solid var(--k-line2); }
-.od-cell { min-width:0; display:flex; flex-direction:column; align-items:center; gap:3px; }
-.od-cell__num { font-size:17px; font-weight:700; color:var(--k-ink); }
+.od-city { display:block; font-family:var(--k-sans); font-size:17px; font-weight:700; line-height:24px; margin-bottom:2px; }
+.od-meta { display:block; color:var(--k-muted); font-size:12px; font-weight:400; line-height:1.6; }
+.od-refresh { flex-shrink:0; padding:12px 0 12px 12px; font-size:12px; color:var(--k-red-deep); }
+.od-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:10px; }
+/* 数据格（11-18）：数字在上 18 / 700 等宽，说明 11 / muted 在下，间距 2（用 order 调顺序，模板不动） */
+.od-stat { min-width:0; padding:12px 6px 10px; border:0; border-radius:12px; background:var(--k-paper); display:flex; flex-direction:column; align-items:center; gap:2px; text-align:center; font-size:11px; color:var(--k-muted); }
+/* 有待办的格子不再整块染色，只把数字换成暖棕 */
+.od-number { order:-1; display:block; margin-top:0; font-size:18px; font-weight:700; line-height:1.25; color:var(--k-ink); font-variant-numeric:tabular-nums; }
+.od-stat.warn .od-number { color:var(--k-red-deep); }
+.od-unit { font-size:11px; font-weight:400; margin-left:3px; }
+.od-section { margin:16px 0 8px; font-family:var(--k-sans); font-size:16px; font-weight:700; line-height:22px; color:var(--k-ink); }
+.od-task { border:0; border-radius:12px; background:var(--k-paper); margin-bottom:8px; padding:12px; }
+.od-task__head { align-items:flex-start; margin-bottom:2px; }
+.od-task__title { flex:1; min-width:0; font-size:14px; font-weight:600; line-height:20px; overflow-wrap:anywhere; }
+.od-task__stats { position:relative; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:10px; padding-top:10px; }
+.od-task__stats::before { content:""; position:absolute; left:0; right:0; top:0; height:1px; background:var(--k-line); transform:scaleY(.5); transform-origin:0 0; }
+.od-cell { min-width:0; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.od-cell__num { font-size:18px; font-weight:700; line-height:1.25; color:var(--k-ink); font-variant-numeric:tabular-nums; }
 .od-cell__num.warn { color:var(--k-alert); }
 .od-cell__label { font-size:11px; color:var(--k-muted); white-space:nowrap; }
-.od-note { margin-top:24px; font-size:12px; color:var(--k-muted); line-height:1.8; }
-.od-note>text { display:block; margin-bottom:6px; }
+.od-note { margin-top:16px; font-size:11px; color:var(--k-muted); line-height:1.8; }
+.od-note>text { display:block; margin-bottom:4px; }
 .od-note>text:first-child { font-weight:600; color:var(--k-ink2); }
-.od-empty { min-height:170px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; font-size:14px; color:var(--k-muted); text-align:center; }
+/* 空状态 / 读取中（11-18）：白卡里居中，14 / 500 二级墨，上下留白 28；「重新加载」是 32 高的次按钮小胶囊 */
+.od-empty { margin-top:10px; padding:28px 16px; border-radius:12px; background:var(--k-paper); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; font-size:14px; font-weight:500; line-height:1.6; color:var(--k-ink2); text-align:center; }
+.od-section + .od-empty { margin-top:0; }
+.od-empty :deep(.k-button.is-md) { height:32px; padding:0 14px; font-size:13px; border-color:var(--k-red-line); color:var(--k-red-deep); }
 </style>

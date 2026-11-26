@@ -5,7 +5,7 @@
     <view v-if="s === 1" class="k-body k-pad-tab wall-page">
       <view class="person"><image :src="avatar" mode="aspectFill" /><view class="k-flex1"><text class="person__name">{{ hw.nickname || '我' }}</text><text class="person__days">{{ daysText }}</text></view><k-chip tone="ochre" outline icon="star"><text>荣誉记录</text></k-chip></view>
       <!-- 之前荣誉墙没有去往经营成长 / 生日礼物 / 委屈奖申报的入口：从业务中心、钱包进来只能看荣誉墙，经营成长谁都打不开 -->
-      <view class="links"><view v-for="l in links" :key="l.s" class="links__item" @click="s = l.s"><text>{{ l.label }}</text><k-icon name="chevron-right" :size="14" color="ink" /></view></view>
+      <view class="links"><view v-for="l in links" :key="l.s" class="links__item" @click="s = l.s"><text>{{ l.label }}</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view>
       <view class="k-between section-line"><text class="section-title">我的荣誉</text><text class="section-count">已获得 {{ hw.count || 0 }} 项</text></view>
       <view class="honor-list">
         <view v-for="h in awarded" :key="h.name + h.date" class="honor-card"><image :src="h.badge" mode="aspectFit" /><view class="k-flex1"><text class="honor-card__title">{{ h.name }}</text><text class="honor-card__line">获得日期　{{ h.date }}</text><text class="honor-card__line k-pre">评选依据　{{ h.basis }}</text></view><k-chip tone="green"><text>已获得</text></k-chip></view>
@@ -17,7 +17,7 @@
     </view>
 
     <view v-else-if="s === 2" class="k-body k-pad-tab growth-page">
-      <view class="growth-data"><view class="k-between"><text class="section-title">门店经营数据 <text class="k-meta">{{ g.range }}</text></text><view v-if="!cityLead" class="k-row k-gap4" @click="openTrend"><text class="k-meta">查看趋势</text><k-icon name="chevron-right" :size="15" color="ink" /></view></view><view class="growth-grid"><view v-for="m in metrics" :key="m.label" class="growth-metric"><text>{{ m.label }}</text><text>{{ m.value }}</text><text>较上月 <text class="k-green" :style="m.up ? '' : 'color: var(--k-alert)'">{{ m.delta }}</text></text></view></view></view>
+      <view class="growth-data"><view class="k-between"><text class="section-title">门店经营数据 <text class="k-meta">{{ g.range }}</text></text><view v-if="!cityLead" class="k-row k-gap4" @click="openTrend"><text class="k-meta">查看趋势</text><k-icon name="chevron-right" :size="12" color="muted" /></view></view><view class="growth-grid"><view v-for="m in metrics" :key="m.label" class="growth-metric"><text>{{ m.label }}</text><text>{{ m.value }}</text><text>较上月 <text class="k-green" :style="m.up ? '' : 'color: var(--k-alert)'">{{ m.delta }}</text></text></view></view></view>
       <text class="section-title growth-section">成长里程碑</text>
       <view class="timeline"><view v-for="(item,index) in milestones" :key="item.date + item.text" class="timeline__row"><view class="timeline__track"><view class="timeline__dot" :class="{active:index===0}"><k-icon v-if="index===0" name="star" :size="10" color="white" fill="white" /></view><view v-if="index<milestones.length-1" class="timeline__line" /></view><text class="timeline__date">{{ item.date }}</text><text>{{ item.text }}</text></view></view>
       <view class="growth-cards"><view class="growth-card"><text class="section-title">好评与建议</text><text class="growth-card__big">好评率 <text class="k-green">{{ g.goodRate }}</text></text><view class="star-row"><k-icon v-for="n in fullStars" :key="n" name="star" :size="26" color="ochre" fill="ochre" /><k-icon v-if="halfStar" name="star-half" :size="26" color="ochre" fill="ochre" /></view><k-button v-if="!cityLead" block size="sm" type="secondary" :label="reviewsBtn" @click="openReviews" /></view><view class="growth-card"><text class="section-title">活动贡献</text><text class="growth-card__big">参与活动 <text class="k-indigo">{{ g.activityPeople || 0 }}</text> 人次</text><text class="growth-card__big">活动订单 <text class="k-indigo">{{ g.activityOrders || 0 }}</text> 单</text><k-button v-if="!cityLead" block size="sm" type="secondary" :label="activitiesBtn" @click="openActivities" /></view></view>
@@ -40,7 +40,7 @@
       <view class="appeal-field"><view class="appeal-label"><text>事情经过</text><text>*</text></view><view class="appeal-area" @click="editContent"><text>{{ contentPreview }}</text><text>{{ form.content.length }}/500</text></view></view>
       <view class="appeal-field"><view class="appeal-label"><text>凭证上传</text><text class="k-meta">（截图、照片等）</text></view><view class="appeal-upload" @click="addProofs"><k-icon name="plus" :size="23" color="ink" /><text>{{ proofs.length ? '已选 ' + proofs.length + ' 张' : '上传凭证' }}</text><text>最多6张</text></view></view>
       <view class="appeal-field"><view class="appeal-label"><text>希望获得的帮助</text><text>*</text></view><view class="appeal-area appeal-area--short" @click="pickHelp"><text>{{ form.help || '请选择或输入你的期望' }}</text><text>{{ form.help.length }}/200</text></view></view>
-      <view class="protection"><view><k-icon name="shield-check" :size="23" color="ink" /><view><text>隐私保护</text><text>仅处理申报内容</text></view></view><view class="protection__line"/><view><k-icon name="clock" :size="23" color="ink" /><view><text>处理时效</text><text>3个工作日内反馈</text></view></view></view>
+      <view class="protection"><view><k-icon name="shield-check" :size="18" color="muted" /><view><text>隐私保护</text><text>仅处理申报内容</text></view></view><view class="protection__line"/><view><k-icon name="clock" :size="18" color="muted" /><view><text>处理时效</text><text>3个工作日内反馈</text></view></view></view>
       <k-button block size="md" class="appeal-submit" @click="submitAppeal" label="提交申报" />
     </view>
 
@@ -295,4 +295,141 @@ async function submitAppeal() {
 .appeal-intro{height:70px;padding:0 12px 8px;border-bottom:1px solid var(--k-line);display:flex;align-items:center;justify-content:space-between}.appeal-intro text{display:block;font-family:var(--k-serif);font-size:14px;font-weight:700;margin-top:8px}.appeal-intro image{width:76px;height:55px}.appeal-field{margin-top:12px}.appeal-label{display:flex;align-items:center;font-family:var(--k-serif);font-size:15px;font-weight:700;margin-bottom:7px}.appeal-label>text+text{margin-left:5px;color:var(--k-red)}.appeal-input>text{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.appeal-input{height:36px;padding:0 10px;border:1px solid var(--k-line);border-radius:7px;background:var(--k-paper);display:flex;align-items:center;justify-content:space-between;color:var(--k-muted);font-size:12px}.appeal-area{min-height:67px;gap:6px;word-break:break-all;padding:10px;border:1px solid var(--k-line);border-radius:7px;background:var(--k-paper);display:flex;flex-direction:column;justify-content:space-between;color:var(--k-muted);font-size:12px}.appeal-area text:last-child{text-align:right}.appeal-area--short{min-height:52px}.appeal-upload{width:138px;height:58px;border:1px dashed var(--k-line2);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px}.appeal-upload text:last-child{color:var(--k-muted);font-size:10px}.protection{height:49px;margin-top:11px;padding:0 11px;border:1px solid var(--k-line);border-radius:9px;background:var(--k-paper);display:flex;align-items:center}.protection>view{flex:1;display:flex;align-items:center;gap:8px}.protection text{display:block;font-size:12px}.protection text:last-child{margin-top:3px;color:var(--k-muted);font-size:10px}.protection__line{flex:0 0 auto!important;width:1px;height:30px;background:var(--k-line)}.appeal-submit{margin-top:9px}
 .links{display:flex;gap:8px;margin-top:10px}.links__item{flex:1;height:34px;border:1px solid var(--k-line);border-radius:8px;background:var(--k-paper);display:flex;align-items:center;justify-content:center;gap:2px;font-size:13px}
 .growth-page .growth-card{height:134px;min-height:0;box-sizing:border-box;padding:10px}.growth-page .growth-card__big{margin-top:8px}.growth-page .star-row{margin:8px 0}.growth-page .growth-card .k-button{margin-top:7px}.growth-page .suggest{margin-top:9px;padding:9px}.growth-page .suggest__intro{margin-top:6px}.growth-page .suggest__item{margin:6px 0;padding:6px}.growth-page .suggest__item text:first-child{margin-bottom:3px}
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：浅灰底 + 白卡 12 圆角、不描边不加阴影；徽章、权益小图放进浅米色圆角小方块（图本身是米色底，直接摆在白卡上会露出一块方框）；
+   头像卡、生日横幅、完成提示留一层很浅的暖色，保留一点庆祝感；进度条、里程碑圆点用 --k-* 语义色。
+   只改样子：三个入口、已获得 / 待解锁、查看趋势 / 评价 / 活动 / 全部建议、设置生日、选礼物、修改地址、领取、申报各项和提交都在；较上月的颜色判断没动。
+   委屈奖申报是填写页，字不改小（输入框反而加高到 44）。下面每条都带 .honor，盖住上面的旧值。 */
+@import './manage-refine.scss';
+.honor .section-title { font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 22px; }
+.honor .section-title .k-meta { font-weight: 400; }
+.honor .person { gap: 12px; height: auto; padding: 12px; border: 0; border-radius: 12px; background: linear-gradient(120deg, #FFF8EE, var(--k-paper) 62%); }
+.honor .person image { width: 48px; height: 48px; }
+.honor .person__name { font-family: var(--k-sans); font-size: 16px; font-weight: 700; }
+.honor .person__days { margin-top: 4px; font-size: 12px; }
+.honor .section-line { margin: 16px 0 8px; }
+.honor .section-count { font-size: 12px; color: var(--k-muted); }
+.honor .honor-list { gap: 8px; }
+.honor .honor-card { gap: 12px; min-height: 0; padding: 12px; border: 0; border-radius: 12px; }
+.honor .honor-card > image { flex: 0 0 auto; width: 72px; height: 72px; border-radius: 10px; background: #FAF6EC; }
+.honor .honor-card__title { padding-right: 56px; font-family: var(--k-sans); font-size: 15px; font-weight: 700; line-height: 22px; }
+.honor .honor-card__line { margin-top: 4px; line-height: 16px; }
+.honor .honor-card > .k-chip { right: 12px; top: 14px; }
+.honor .progress { height: 4px; margin-top: 8px; border-radius: 2px; background: var(--k-line); }
+.honor .progress view { border-radius: 2px; background: var(--k-ochre); }
+.honor .more-honors { height: 44px; margin-top: 8px; padding: 0 4px; color: var(--k-ochre-deep); }
+.honor .more-honors image { right: 24px; width: 52px; height: 52px; opacity: .45; mix-blend-mode: multiply; }
+/* 上面按标签名给印章定位的那条也套到了句首的小图标上（图标也是 image），它一直被甩到右边压在印章上：放回句首 */
+.honor .more-honors :deep(.k-icon) { position: static; opacity: 1; mix-blend-mode: normal; }
+/* 经营成长 */
+.honor .growth-data { border: 0; border-radius: 12px; }
+.honor .growth-data :deep(.k-icon) { width: 12px !important; height: 12px !important; }
+.honor .growth-grid { gap: 6px; }
+.honor .growth-metric { gap: 2px; height: auto; padding: 10px 2px; border: 0; border-radius: 8px; background: var(--k-bg); color: var(--k-muted); line-height: 16px; }
+.honor .growth-metric > text:nth-child(2) { color: var(--k-ink); font-size: 16px; font-weight: 700; line-height: 22px; }
+.honor .growth-section { margin-top: 16px; }
+.honor .timeline { margin-top: 8px; padding: 6px 12px 6px 4px; border-radius: 12px; background: var(--k-paper); }
+.honor .timeline__row { font-size: 12px; color: var(--k-ink2); }
+.honor .timeline__date { color: var(--k-muted); }
+.honor .timeline__dot { background: var(--k-line2); }
+.honor .timeline__dot.active { background: var(--k-ochre); }
+.honor .timeline__line { background: var(--k-line); }
+/* 两列按 minmax(0,1fr) 平分：之前窄屏（320）被「查看当前门店活动」这颗按钮撑宽，整页能左右晃 */
+.honor .growth-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.honor .growth-card :deep(.k-button) { padding: 0 4px; }
+@media (max-width: 340px) { .honor .growth-metric > text:nth-child(2) { font-size: 13px; } }
+.honor .growth-page .growth-card { height: auto; min-height: 120px; padding: 12px; border: 0; border-radius: 12px; }
+.honor .growth-card__big { font-size: 13px; color: var(--k-ink2); }
+.honor .growth-card__big .k-green, .honor .growth-card__big .k-indigo { font-size: 16px; font-weight: 700; }
+.honor .star-row { gap: 2px; }
+.honor .star-row :deep(.k-icon) { width: 18px !important; height: 18px !important; }
+.honor .growth-page .suggest { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; }
+.honor .growth-page .suggest__item { margin: 8px 0; padding: 10px; border: 0; border-radius: 8px; background: var(--k-bg); }
+.honor .suggest__item :deep(.k-icon) { flex: 0 0 auto; width: 18px !important; height: 18px !important; }
+.honor .suggest__item text { color: var(--k-muted); line-height: 16px; }
+.honor .suggest__item text:first-child { color: var(--k-ink); font-size: 13px; font-weight: 600; line-height: 19px; }
+/* 生日礼物 */
+.honor .birthday { height: auto; min-height: 100px; padding: 12px 8px 12px 14px; border: 0; border-radius: 12px; background: linear-gradient(100deg, #FFF8EE, #FAF2E5); }
+.honor .birthday__title { color: var(--k-ochre-deep); font-family: var(--k-sans); font-size: 16px; font-weight: 700; }
+.honor .birthday__desc { margin-top: 4px; color: var(--k-ink2); }
+.honor .birthday__date { width: auto; min-width: 96px; height: 28px; margin-top: 10px; padding: 0 12px; display: inline-flex; border-color: var(--k-red-line); background: var(--k-paper); color: var(--k-red-deep); }
+.honor .birthday image { flex: 0 0 auto; width: 104px; height: 84px; border-radius: 8px; }
+.honor .benefits { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; }
+.honor .benefit { padding: 0 4px; border-left: 0; color: var(--k-ink2); line-height: 16px; }
+.honor .benefit image { border-radius: 12px; background: #FAF6EC; }
+.honor .check-row { margin-top: 8px; color: var(--k-ink2); }
+.honor .check-row > view { flex: 0 0 auto; border-radius: 50%; }
+.honor .gift-section { margin-top: 16px; }
+/* 礼物原来图左字右、三个一排：名字一长就把第三个挤出屏幕、整页能左右晃。改成图上字下的小卡，三列平分，名字最多两行，一个都不出屏。
+   选中的礼物由脚本加 2px 棕框：没选中的也留 2px 透明框，选来选去卡片不会跳 */
+.honor .gift-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.honor .gift { flex-direction: column; justify-content: flex-start; gap: 6px; height: auto; padding: 10px 6px 8px; border: 2px solid transparent; border-radius: 12px; text-align: center; }
+.honor .gift image { width: 56px; height: 56px; border-radius: 8px; }
+.honor .gift > view { width: 100%; }
+.honor .gift text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; font-size: 12px; line-height: 17px; }
+.honor .gift text:last-child { display: block; margin-top: 2px; white-space: nowrap; font-size: 11px; line-height: 15px; }
+.honor .address { margin-top: 8px; padding: 12px; border: 0; border-radius: 12px; }
+.honor .address > text { font-size: 12px; line-height: 18px; color: var(--k-ink2); }
+.honor .gift-submit { margin-top: 12px; }
+/* 委屈奖申报（填写页） */
+/* 右边渐到白：爱心小图自带的浅底就并进卡片了，不露方框 */
+.honor .appeal-intro { height: auto; padding: 12px 12px 12px 14px; border-bottom: 0; border-radius: 12px; background: linear-gradient(100deg, #FFF8EE, var(--k-paper) 68%); }
+.honor .appeal-intro text { margin-top: 0; font-family: var(--k-sans); font-size: 14px; font-weight: 700; line-height: 22px; }
+.honor .appeal-intro text + text { color: var(--k-ink2); font-weight: 400; }
+.honor .appeal-intro image { filter: brightness(1.03); }
+.honor .appeal-field { margin-top: 14px; }
+.honor .appeal-label { font-family: var(--k-sans); font-size: 15px; font-weight: 600; }
+/* 「（截图、照片等）」是说明不是必填星号：用灰色细字（之前被星号那条规则染成了棕色粗字） */
+.honor .appeal-label .k-meta { color: var(--k-muted); font-weight: 400; }
+.honor .appeal-input { height: 44px; padding: 0 12px; border: 0; border-radius: 10px; font-size: 14px; }
+.honor .appeal-area { padding: 12px; border: 0; border-radius: 10px; font-size: 14px; line-height: 20px; }
+.honor .appeal-area text:last-child { font-size: 12px; }
+.honor .appeal-upload { height: 60px; border-radius: 10px; background: var(--k-paper); font-size: 13px; }
+.honor .appeal-upload text:last-child { font-size: 11px; }
+.honor .protection { height: auto; margin-top: 14px; padding: 12px; border: 0; border-radius: 12px; }
+.honor .protection text { font-size: 13px; }
+.honor .protection text:last-child { margin-top: 2px; font-size: 11px; }
+.honor .appeal-submit { margin-top: 14px; }
+/* 2026-11-18 复查 */
+/* 1) 「我的生日」胶囊、「查看趋势」看着小，手指能点的范围补到 36：上下各补一截透明的可点区 */
+.honor .birthday__date, .honor .growth-data .k-between > .k-row { position: relative; }
+.honor .birthday__date::after { content: ""; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
+.honor .growth-data .k-between > .k-row::after { content: ""; position: absolute; left: -8px; right: -8px; top: -9px; bottom: -9px; }
+/* 2) 四个指标格：「较上月 +12.5%」有的格一行放得下、有的折行，四格的字高高低低对不齐。格子放宽一点、内容一律从上往下排；
+   涨跌值整段不拆；窄屏统一成「较上月」一行、涨跌一行 */
+.honor .growth-grid { gap: 4px; }
+.honor .growth-metric { justify-content: flex-start; padding-left: 0; padding-right: 0; }
+.honor .growth-metric > text:nth-child(3) text { white-space: nowrap; }
+@media (max-width: 359px) { .honor .growth-metric > text:nth-child(3) text { display: block; } }
+/* 2026-11-18 第二轮精修（精修词典：同一种东西全站一个样子；只改样子，三个入口、荣誉、查看趋势 / 评价 / 活动 / 建议、生日、礼物、地址、申报都在） */
+/* 1) 区块标题统一 16 / 700（我的荣誉、成长里程碑、可选礼物）；白卡里面的标题按卡内小标题 14 / 600 */
+.honor .section-title { font-size: 16px; line-height: 22px; color: var(--k-ink); }
+.honor .growth-data .section-title, .honor .growth-card .section-title, .honor .suggest .section-title, .honor .benefits .section-title, .honor .address .section-title { font-size: 14px; font-weight: 600; line-height: 20px; }
+/* 2) 头像卡「荣誉记录」点不了，却是描边款、像一颗按钮：改成浅黄底小标签（和钱包「城市负责人」一样），挪到右上角，不再挤占「加入…第 N 天」那一行的宽度 */
+.honor .person { position: relative; }
+.honor .person :deep(.k-chip) { position: absolute; right: 12px; top: 14px; }
+.honor .person :deep(.k-chip.is-outline) { border-color: transparent; background: var(--k-ochre-soft); }
+.honor .person__name { padding-right: 76px; }
+/* 3) 荣誉卡：标题只降字重（荣誉名是这张卡的主角，字号留 15）；窄屏徽章收小，把宽度让给文字 */
+.honor .honor-card__title { font-weight: 600; }
+@media (max-width: 359px) { .honor .honor-card > image { width: 56px; height: 56px; } }
+/* 4) 底部印章图自带一层米灰底，摆在灰底上像一块污渍：纯装饰，去掉（句首的小图标是第一个，不受影响） */
+.honor .more-honors > image:last-child { display: none; }
+/* 5) 经营数据四格：去掉卡里套的灰块，改成发丝竖线隔开（同看板的合计卡） */
+.honor .growth-metric { position: relative; border-radius: 0; background: transparent; }
+.honor .growth-metric + .growth-metric::before { content: ""; position: absolute; left: -2px; top: 10px; bottom: 10px; width: 1px; background: var(--k-line); transform: scaleX(.5); }
+/* 6) 「好评与建议」「活动贡献」两张卡一样高，按钮却一高一低：卡片改成竖排、各段间距 8，按钮贴卡底对齐 */
+.honor .growth-page .growth-card { display: flex; flex-direction: column; gap: 8px; }
+.honor .growth-page .growth-card__big, .honor .growth-page .star-row { margin: 0; }
+.honor .growth-page .growth-card :deep(.k-button) { margin-top: auto; }
+/* 7) 生日权益三格：去掉左右内边距、字距收一点，375 以上不再把「倍」字单独挤到第二行 */
+.honor .benefit-grid { column-gap: 0; }
+.honor .benefit { padding: 0; }
+.honor .benefit text { letter-spacing: -0.2px; }
+/* 8) 收货信息右边的「修改」是能点的：用深棕文字链的颜色（同「全部结算」），四周补透明内边距把可点范围撑到 36 以上（负外边距抵掉，位置不变） */
+.honor .address .k-between > .k-meta { padding: 10px 0 10px 16px; margin: -10px 0 -10px -16px; color: var(--k-red-deep); }
+/* 9) 委屈奖申报（填写页，字号不动）：两个图标在模板里从 23 号墨色改成 18 号灰色；中间竖线改发丝线 */
+.honor .protection__line { transform: scaleX(.5); }
+/* 10) 生日权益卡和领取条件之间那条 1px 通栏线改成发丝线 */
+.honor .benefits__line { height: 1px; border-top: 0; background: var(--k-line); transform: scaleY(.5); }
 </style>

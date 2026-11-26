@@ -215,7 +215,7 @@ test('验收是一个底部面板：人、工时、5 颗星、评语、凭证一
   assert.doesNotMatch(script, /仍然继续验收吗/)
   assert.match(script, /有 \$\{failed\} 张照片没传上去/)
   // 发布人菜单里点「验收执行人」直接开面板
-  assert.match(script, /\n  openCheck\(d\)\n\}/)
+  assert.match(script, /\r?\n  openCheck\(d\)\r?\n\}/)
   // 面板里点「添加」最多补到 6 张
   assert.match(script, /chooseImages\(CHECK_PROOF_MAX - c\.proofs\.length\)/)
 })

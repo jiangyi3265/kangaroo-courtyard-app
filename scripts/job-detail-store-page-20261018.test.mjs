@@ -94,10 +94,12 @@ const VOLUNTEER = {
 function harness(platform = 'MP-WEIXIN') {
   const log = { previews: [], toasts: [], opened: [], copied: [], gone: [], mapUrls: [], selectors: [] }
   const data = { detail: plain(VOLUNTEER), reviewArgs: [], reviews: { count: 5, avg: 4.5, filteredTotal: 2, filteredAvg: 4.7, jobReviewCount: 2, jobDims: [{ label: '住宿条件', avg: 5 }, { label: '工作强度', avg: 3 }], list: [{ reviewId: 1, content: '真实小院，店长很照顾新人' }, { reviewId: 2, content: '' }, { reviewId: 3, content: '伙食稳定，同事友好' }, { reviewId: 4, content: '第三条不显示' }] } }
-  let onLoad = null, onShow = null
+  let onLoad = null
+  const showHooks = []
   const s = vue.ref(1)
   const h = runSetup({
-    onShow: fn => { onShow = fn },
+    setTimeout, clearTimeout,
+    onShow: fn => { showHooks.push(fn) },
     useScreen: (n, opts) => { onLoad = opts && opts.onLoad; return s },
     experience: vue.reactive({ account: { userId: 1 } }),
     getSessionRevision: () => 0, ensureSession: async () => {},
@@ -118,8 +120,8 @@ function harness(platform = 'MP-WEIXIN') {
     uni: { previewImage: (o) => log.previews.push(o), openLocation: (o) => log.opened.push(o), chooseLocation: o => log.selectors.push(o), setClipboardData: (o) => log.copied.push(o), pageScrollTo() {} }
   }, platform)
   return { ...h, s, log, data,
-    show: async () => { onShow && onShow(); await flush(); await flush() },
-    open: async () => { onLoad && onLoad({ jobId: '7' }); await flush(); await flush() } }
+    show: async () => { showHooks.forEach(fn => fn()); await flush(); await flush() },
+    open: async () => { onLoad?.({ jobId: '7' }); showHooks.forEach(fn => fn()); await flush(); await flush() } }
 }
 const get = (h, expr) => plain(h.run(expr))
 

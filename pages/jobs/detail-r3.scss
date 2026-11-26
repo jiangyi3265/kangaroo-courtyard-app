@@ -1,0 +1,297 @@
+/* 2026-11-18 第三轮「逐页精修」（r3jobsa）：岗位详情（换宿 / 线上任务；兼职、全职在 components/parttime-detail.vue 末尾）。
+   只改样子，模板里的每一块内容、每一个能点的地方都还在。只被 detail.vue 引用。 */
+
+/* ① 紧急招募：原来是顶栏和照片之间一整条粉色色带（像系统报错条），改成压在照片左上角的白色小胶囊，截止时间写在同一枚胶囊里（灰字） */
+.detail-page .overview { position: relative; }
+.detail-page :deep(.job-urgency--detail) { position: absolute; left: 12px; top: 12px; z-index: 3; display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 6px; max-width: calc(100% - 24px); height: 24px; padding: 0 10px 0 8px; border-radius: 12px; background: rgba(255, 255, 255, .94); font-size: 11px; font-weight: 600; line-height: 24px; white-space: nowrap; box-sizing: border-box; }
+.detail-page :deep(.job-urgency--detail.job-urgency--4) { background: var(--k-alert); }
+
+.detail-page :deep(.job-urgency--detail .job-urgency__label) { gap: 4px; }
+.detail-page :deep(.job-urgency--detail .job-urgency__deadline) { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 400; line-height: 24px; color: var(--k-muted); }
+.detail-page :deep(.job-urgency--detail.job-urgency--4 .job-urgency__deadline) { color: rgba(255, 255, 255, .86); }
+/* 换宿头图左上角已经有「袋鼠实地探访」：紧急招募排在它下面一行 */
+.detail-page--volunteer :deep(.job-urgency--detail) { top: 42px; }
+
+/* ② 线上任务没有真实照片：一条 120 高的浅暖渐变 + 56 的浅棕方块里放 32 号电脑图标（原来是 200 高米色块 + 巨大的图片线框，像图片坏了） */
+.hero-wrap--empty .hero { display: none; }
+.hero-empty { height: 120px; padding-bottom: 12px; box-sizing: border-box; background: linear-gradient(180deg, var(--k-red-soft) 0%, var(--k-paper2) 100%); display: flex; align-items: center; justify-content: center; }
+.hero-empty__icon { width: 56px; height: 56px; border-radius: 16px; background: var(--k-paper); box-shadow: 0 1px 2px rgba(58, 50, 43, .06); display: flex; align-items: center; justify-content: center; }
+
+/* ③ 线上任务正文：标题 20 / 700 是第一屏唯一的焦点；关键信息不再是一大块灰底，改成白底上的四行（左灰字标签、右深字取值、行间发丝线）；
+   「线上任务须知」是一条浅棕底的入口；区块之间 20 的留白 + 一道发丝线 */
+.overview-body { padding: 20px 16px 24px; }
+.overview-title { font-size: 20px; line-height: 28px; }
+.overview-title :deep(.k-chip) { margin-top: 6px; }
+.overview-kind { margin-top: 6px; }
+.overview-flags { margin-top: 6px; }
+.info-card { margin-top: 12px; padding: 0; border-radius: 0; background: transparent; }
+.info-row { position: relative; min-height: 44px; gap: 8px; }
+.info-row + .info-row { background-image: none; }
+.info-row + .info-row::before { content: ''; position: absolute; left: 24px; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.info-row__label { width: 64px; font-size: 13px; color: var(--k-muted); }
+.info-row__value { padding: 11px 0; font-size: 14px; line-height: 22px; font-weight: 500; color: var(--k-ink); }
+.guide-link { margin-top: 12px; min-height: 52px; padding: 8px 12px; border-radius: 12px; background: var(--k-red-soft); gap: 10px; }
+
+.guide-link__title { font-size: 14px; color: var(--k-red-deep); }
+.guide-link__sub { font-size: 12px; line-height: 18px; color: var(--k-ink2); }
+.section-card, .plain-card { position: relative; margin-top: 20px; padding-top: 20px; border-top: 0; }
+.section-card::before, .plain-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.section-card__title, .plain-card__title { margin-bottom: 10px; font-size: 16px; line-height: 22px; }
+.plain-card__list { font-size: 14px; line-height: 24px; }
+.store-card { margin-top: 20px; padding: 12px; border-radius: 12px; }
+.store-card__cover { width: 48px; height: 48px; }
+
+/* ④ 换宿：标签行去掉前面的绿色对勾，只有换工类型是浅棕底，其余同一种浅米底；收藏是 28 高「☆ 收藏」浅色胶囊（和兼职 / 全职、线上任务一个样子） */
+.sp-tags__icon { display: none; }
+.sp-tagline { margin-top: 10px; }
+.sp-heading__favorite { flex: 0 0 auto; width: auto; min-width: 72px; height: 36px; margin: -4px -4px -4px auto; padding: 0 10px; border: 4px solid transparent; border-radius: 18px; background: var(--k-paper) padding-box; gap: 4px; box-sizing: border-box; }
+.sp-heading__favorite::before { display: none; }
+.sp-heading__favorite.on { background: var(--k-red-soft) padding-box; }
+.sp-heading__favorite .sp-favorite-art { display: none; }
+.sp-favorite-text { font-size: 12px; font-weight: 500; line-height: 16px; color: var(--k-ink2); white-space: nowrap; }
+.sp-heading__favorite.on .sp-favorite-text { color: var(--k-red-deep); }
+
+/* ⑤ 采访视频下面孤零零的核验小标签：挪进视频右上角，白色小胶囊、豆绿字（没有视频时照旧在下面） */
+.sp-video { position: relative; }
+.sp-video:not(.sp-video--pending) .sp-video__chiprow { position: absolute; right: 8px; top: 24px; z-index: 2; margin: 0; }
+.sp-video:not(.sp-video--pending) .sp-video__chip { height: 22px; padding: 0 8px; border-radius: 11px; background: rgba(255, 255, 255, .94); font-size: 11px; font-weight: 600; line-height: 22px; }
+
+/* ⑥ 换工要求：原来两列里有的带标签、有的不带，左右高低不齐，右列还被客服钮压住——改成一行一条，标签固定宽度对齐 */
+.sp-reqs { grid-template-columns: minmax(0, 1fr); gap: 6px; padding-right: 20px; }
+.sp-reqs .sp-req-k { display: inline-block; min-width: 36px; padding-right: 8px; color: var(--k-ink); }
+
+/* ⑦ 区块：标题 16 / 700，区块间 20 留白 + 发丝线 */
+.sp-h, .sp-tab { font-size: 16px; line-height: 22px; }
+.sp-pair .sp-h { font-size: 14px; line-height: 20px; }
+.sp-card, .sp-video, .sp-pair { border-top: 0; }
+.sp-card::after, .sp-video::after, .sp-pair::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.sp-pair { position: relative; }
+.sp-stats::after, .sp-pair > .sp-card::after { display: none; }
+.sp-reqs + .sp-stats, .sp-requirements + .sp-stats { margin-top: 12px; }
+/* 福利小标签里不再带圆点 */
+.sp-welfare__column .sp-bullet__dot { display: none; }
+.sp-welfare__column .sp-bullet { padding: 2px 8px; }
+
+@media (max-width: 359px) {
+  .overview-body { padding-left: 12px; padding-right: 12px; }
+  .overview-title { font-size: 18px; line-height: 26px; }
+  .detail-page :deep(.job-urgency--detail) { left: 10px; max-width: calc(100% - 20px); }
+}
+
+/* ===================== 2026-11-18 第三轮返修（r3jobsa 评审第 1 轮） =====================
+   ① 紧急招募不再压在头图上（换宿那张照片上原来压了 4 枚胶囊；兼职、全职还正好盖住「袋鼠线下实地探访」）：
+      模板里挪到标题下面，「旗子 + 紧急招募」是一枚 22 高浅色小胶囊，截止时间跟在后面 12 号灰字；上面 ① 的浮层写法被这里盖掉。
+   ② 兼职 / 全职标题下面一行薪资（20 / 700 深棕等宽），线上任务标题下面一行报酬（18 / 700），第一屏一眼看到「挣多少」。
+   ③ 换宿：「订阅」「收藏」两颗并排放在标签行右边，不再上下叠成一列。
+   ④ 线上任务：「还招 N 人」挪到安心商家那一行；没封面时头图收到 96 高，方块用浅棕底。
+   ⑤ 小地图、招募三格右边让出客服浮钮的位置（根本办法见报告：公共层收窄浮钮）。 */
+.detail-page :deep(.job-urgency--detail) { position: static; left: auto; top: auto; z-index: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 100%; height: auto; margin-top: 8px; padding: 0; border-radius: 0; background: transparent; line-height: 18px; white-space: normal; }
+.detail-page--volunteer :deep(.job-urgency--detail) { top: auto; }
+.detail-page :deep(.job-urgency--detail .job-urgency__label) { flex: 0 0 auto; height: 22px; padding: 0 8px 0 6px; border-radius: 11px; background: var(--k-alert-soft); font-size: 12px; font-weight: 600; line-height: 22px; }
+.detail-page :deep(.job-urgency--detail.job-urgency--1 .job-urgency__label) { background: var(--k-green-soft); }
+.detail-page :deep(.job-urgency--detail.job-urgency--2 .job-urgency__label) { background: var(--k-ochre-soft); }
+.detail-page :deep(.job-urgency--detail.job-urgency--4) { background: transparent; }
+.detail-page :deep(.job-urgency--detail.job-urgency--4 .job-urgency__label) { background: var(--k-alert); }
+.detail-page :deep(.job-urgency--detail .job-urgency__deadline), .detail-page :deep(.job-urgency--detail.job-urgency--4 .job-urgency__deadline) { min-width: 0; overflow: visible; font-size: 12px; font-weight: 400; line-height: 18px; color: var(--k-muted); white-space: normal; }
+/* 薪资 / 报酬 */
+.pt-lead__pay { display: block; margin-top: 8px; font-size: 20px; font-weight: 700; line-height: 28px; color: var(--k-red-deep); font-variant-numeric: tabular-nums; }
+.overview-reward { display: block; margin-top: 6px; font-size: 18px; font-weight: 700; line-height: 26px; color: var(--k-red-deep); font-variant-numeric: tabular-nums; }
+.overview-flags { display: flex; align-items: center; gap: 6px; }
+.overview-flags :deep(.k-chip) { margin: 0; }
+.overview-flags .favorite { margin-left: auto; }
+/* 换宿：订阅、收藏并排 */
+.sp-tagline { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; }
+.sp-tagline .sp-tags { flex: 1 1 auto; min-width: 0; }
+.sp-tagline .sp-heading__favorite { margin: -4px 0 -4px auto; }
+.sp-tagline .sp-heading__subscribe { flex: 0 0 auto; margin: -9px -8px -9px -4px; }
+/* 没封面的线上任务头图 */
+.hero-empty { height: 96px; padding-bottom: 8px; }
+.hero-empty__icon { background: var(--k-red-soft); box-shadow: none; }
+.guide-link__sub { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 店长头像占位：56 正圆浅棕底 + 用户图标；「头像待上传」小字挪到头像下面 */
+.sp-mgr__avatar--empty { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 50%; background: var(--k-red-soft); position: relative; }
+
+.sp-mgr__avatar--empty > text { display: block; position: absolute; left: -8px; right: -8px; top: 60px; text-align: center; font-size: 11px; line-height: 16px; color: var(--k-muted); white-space: nowrap; }
+.sp-mgr { padding-bottom: 8px; }
+@media (max-width: 359px) {
+  .sp-tagline { flex-wrap: wrap; }
+}
+
+/* ===================== 2026-11-18 第三轮返修第 2 轮（r3jobsa 评审第 2 轮） =====================
+   ① 线上任务没封面：不放头图，56 的浅棕方块 + 32 号电脑图标放在标题左边，内容面板从顶栏下 12 开始（不再像空状态）；
+      标题下那行重复的报酬大字去掉，改成关键信息里「任务报酬」一行加大加深（同一个数只出现一次）；「还招 N 人」改成浅米底；
+   ② 收藏、订阅：同一种 28 高白底细边胶囊（外面透明边留 36 / 44 的可点范围）；窄屏标签单独一行、两颗胶囊排到下一行右边；
+   ③ 标题、地址用均衡换行（「· 平潭」「工」不再单独掉一行）；窄屏标题 18；小地图收到 64 宽；
+   ④ 店长介绍文字列右边让出客服浮钮 28；「头像待上传」降成 11 号浅灰；
+   ⑤ 「做满一个月福利」一行一条：绿字小标题 · 说明，不再是四颗散标签；
+   ⑥ 「平潭袋鼠工作人员」前面的 8px 灰带换成发丝线 + 20 留白（样式在 components/city-coordinator.vue）。 */
+.hero-wrap--empty { position: relative; height: 0; }
+.hero-wrap--empty .hero-empty { position: absolute; left: 16px; top: 12px; z-index: 2; width: 56px; height: 56px; padding: 0; background: transparent; }
+.hero-wrap--empty .hero-empty__icon { width: 56px; height: 56px; border-radius: 16px; background: var(--k-red-soft); box-shadow: none; }
+.hero-wrap--empty + .overview-body { margin-top: 0; padding-top: 12px; border-radius: 0; }
+.hero-wrap--empty + .overview-body .overview-title { min-height: 56px; padding-left: 68px; align-items: center; box-sizing: border-box; }
+.overview-title { text-wrap: balance; }
+.info-card .info-row:nth-child(2) .info-row__value { font-size: 16px; font-weight: 700; color: var(--k-red-deep); font-variant-numeric: tabular-nums; }
+/* 收藏 / 订阅胶囊 */
+.favorite, .sp-heading__favorite { min-width: 0; height: 36px; padding: 0 10px; gap: 4px; border: 4px solid transparent; border-radius: 18px; background: var(--k-paper) padding-box; box-shadow: inset 0 0 0 1px var(--k-line2); font-size: 12px; font-weight: 500; color: var(--k-ink2); }
+.sp-heading__favorite.on, .favorite[aria-pressed="true"] { background: var(--k-red-soft) padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); }
+
+.detail-page :deep(.job-city-subscribe) { min-width: 0; padding: 0 10px; gap: 4px; background: var(--k-paper) padding-box; box-shadow: inset 0 0 0 1px var(--k-line2); color: var(--k-ink2); font-size: 12px; font-weight: 500; }
+.detail-page :deep(.job-city-subscribe.is-on) { background: var(--k-red-soft) padding-box; box-shadow: inset 0 0 0 1px var(--k-red-line); color: var(--k-red-deep); }
+
+.sp-tagline .sp-heading__subscribe { margin: -8px -8px -8px -4px; }
+/* 标题、地址 */
+.sp-title__text { text-wrap: balance; }
+.sp-loc__addr { text-wrap: balance; }
+.sp-map { width: 64px; flex-basis: 64px; }
+/* 店长 */
+.sp-mgr__avatar--empty > text { font-size: 11px; color: var(--k-light); }
+/* 做满一个月福利：一行一条 */
+.sp-welfare__columns { gap: 8px; }
+.sp-welfare__column { display: block; line-height: 22px; }
+.sp-welfare__column-title { display: inline; height: auto; padding: 0; border-radius: 0; background: transparent; color: var(--k-green); font-size: 12px; font-weight: 600; line-height: 22px; }
+.sp-welfare__column .sp-bullet { display: inline; min-height: 0; padding: 0; border-radius: 0; background: transparent; font-size: 14px; line-height: 22px; color: var(--k-ink2); }
+.sp-welfare__column .sp-bullet::before { content: '·'; margin: 0 6px; color: var(--k-light); font-weight: 400; }
+.sp-welfare__column .sp-bullet__text { display: inline; }
+@media (max-width: 359px) {
+  .sp-title__text { font-size: 18px; line-height: 26px; }
+  .sp-tagline { flex-wrap: wrap; row-gap: 8px; }
+  .sp-tagline .sp-tags { flex: 0 0 100%; }
+  .sp-tagline .sp-heading__favorite { margin-left: auto; }
+  .hero-wrap--empty .hero-empty { left: 12px; }
+}
+
+/* ===================== 2026-11-18 第三轮返修第 3 轮（r3jobsa 评审第 3 轮）：三类详情同一套版式 =====================
+   紧急招募统一在标题正下方；标签 22 高、「还招 N 人」浅绿（三类一样）；收藏 / 订阅贴右边线，320 宽换到下一行时靠左；
+   店长评分挪到文字列最下面（和文字左对齐，带 12 号星）；用户反馈 / 店里日常的箭头 14 号放标题行最右；
+   安心保障改成浅米底，绿色只留给「保险保障」那行字；图标尺寸只由模板 :size 决定（紧急招募的小旗来自公共组件，没有尺寸参数，只能在这里定 14）。 */
+.sp-heading + :deep(.job-urgency--detail) { margin-top: 8px; }
+.sp-tagline { margin-top: 8px; align-items: center; }
+.sp-tags { align-items: center; }
+.sp-tags__item, .sp-tags .sp-tags__item--sep { height: 22px; min-height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; line-height: 22px; }
+.sp-tags__item--sep::before { display: none; }
+.sp-tags .sp-tags__item:last-child:not(.sp-tags__item--muted) { background: var(--k-green-soft); color: var(--k-green); }
+.sp-tagline .sp-heading__subscribe { margin-right: -8px; }
+.sp-mgr__copy { padding-right: 0; }
+.sp-mgr__copy .sp-mgr__rating { align-self: flex-start; margin: 8px 0 0; height: 22px; min-height: 22px; padding: 0 8px; gap: 4px; border-radius: 11px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 12px; font-weight: 500; line-height: 22px; }
+.sp-mgr__copy .sp-mgr__score { font-weight: 600; }
+.sp-fbk__head, .sp-section-link { justify-content: flex-start; }
+.sp-fbk__head > :deep(.k-icon), .sp-section-link > :deep(.k-icon) { margin-left: auto; }
+.sp-fbk__head .sp-fbk__score { margin-left: auto; }
+.sp-fbk__head .sp-fbk__score ~ :deep(.k-icon) { margin-left: 0; }
+.sp-assure__panel { padding: 8px 12px; border-radius: 8px; background: var(--k-paper2); }
+.sp-assure__panel .sp-bullet__dot { background: var(--k-light); }
+.sp-video__title { gap: 4px; }
+.sp-fac__item { gap: 6px; }
+.sp-work__rest { gap: 6px; }
+@media (max-width: 359px) {
+  .sp-tagline { flex-wrap: wrap; row-gap: 8px; }
+  .sp-tagline .sp-tags { flex: 0 0 100%; }
+  .sp-tagline .sp-heading__favorite { margin-left: -4px; }
+  .sp-mgr__line { font-size: 12px; }
+}
+.sp-title__text { text-wrap: pretty; } /* balance 会把「沙 / 滩」从词中间断开、右边空一截 */
+
+/* ===================== 2026-11-18 第三轮返修第 4 轮（r3jobsa 评审第 4 轮） =====================
+   ① 删掉给旧客服钮让位的 28px（小地图、招募三格、信息行、店长文字列都回到内容右线）；
+   ② 标签行改用 gap 间距，折到第二行时也贴左线；③ 线上任务标题下「安心商家」「还招 N 人」和另三类同规格 22 高 12 号，「还招 N 人」恢复浅绿；
+   ④ 收藏和订阅看上去间隔 8；⑤「用户反馈」空状态竖向居中；⑥ 线上任务「具体工作内容」圆点贴左线。 */
+.sp-tags { gap: 4px; }
+.sp-tags > .sp-tags__item, .sp-tags > .sp-tags__icon { margin-left: 0; margin-right: 0; }
+.overview-flags { gap: 8px; }
+.overview-flags .safe, .overview-flags :deep(.k-chip) { height: 22px; margin: 0; padding: 0 8px; gap: 4px; border-radius: 4px; font-size: 12px; font-weight: 500; line-height: 22px; }
+.sp-tagline .sp-heading__subscribe { margin-left: -12px; }
+/* 小地图：浅米底 + 20 号暖棕定位图标 + 11 号灰字，和兼职 / 全职详情同一种（原来是灰底手绘路网 + 黑色水滴针） */
+.sp-map { width: 64px; height: 56px; flex: 0 0 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 8px; background: var(--k-paper2); }
+.sp-location .sp-map { flex: 0 0 64px; width: 64px; height: 56px; }
+.sp-map .sp-map__tag { position: static; padding: 0; border-radius: 0; background: transparent; color: var(--k-muted); font-size: 11px; line-height: 16px; }
+
+/* ===================== 2026-11-18 第三轮返修第 5 轮（r3jobsa 评审第 5 轮） =====================
+   ① 换宿标题下：标签可以折行，收藏 / 订阅始终钉在第一行右边（不再夹在两行中间）；
+   ② 「做满一个月福利」两行：左列标签固定 64 宽，说明从同一条线起；
+   ③ 交通参考、安心保障等浅色信息框统一一种浅灰底；④ 小地图 56×56，浅灰底 + 发丝线网格 + 暖棕定位 + 「地图」，和兼职 / 全职同一种；
+   ⑤ 线上任务：「暂未填写」这类占位一律 13 号灰字（不带圆点），页面底色和内容同白，底栏上面不再露一条灰。 */
+.sp-tagline { align-items: flex-start; }
+.sp-tagline .sp-tags { flex: 1 1 auto; min-width: 0; }
+.sp-tagline .sp-heading__favorite { align-self: flex-start; margin-top: -7px; margin-bottom: 0; }
+.sp-tagline .sp-heading__subscribe { align-self: flex-start; margin-top: -12px; margin-bottom: 0; }
+.sp-welfare__column { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: start; column-gap: 0; row-gap: 0; line-height: 22px; }
+.sp-welfare__column-title { grid-column: 1; grid-row: 1; display: block; }
+.sp-welfare__column .sp-bullet { grid-column: 2; display: block; }
+.sp-welfare__column .sp-bullet::before { content: none; display: none; }
+.sp-welfare__column .sp-bullet__dot { display: none; }
+.sp-assure__panel { background: var(--k-page); }
+.sp-map, .sp-location .sp-map { flex: 0 0 56px; width: 56px; height: 56px; background-color: var(--k-page); background-image: linear-gradient(var(--k-line) 1px, transparent 1px), linear-gradient(90deg, var(--k-line) 1px, transparent 1px); background-size: 14px 14px; background-position: -1px -1px; box-shadow: inset 0 0 0 1px var(--k-line); }
+.sp-map .sp-map__tag { color: var(--k-red-deep); font-weight: 500; }
+.plain-card__list--empty { font-size: 13px; line-height: 20px; color: var(--k-muted); }
+.detail-page--online { background: var(--k-paper); }
+@media (max-width: 359px) {
+  .sp-tagline .sp-heading__favorite { margin-top: 0; }
+  .sp-tagline .sp-heading__subscribe { margin-top: -5px; }
+}
+
+/* ===================== 2026-11-18 第四轮「高级感」（r3jobsa） =====================
+   ① 换宿标题块：「直播换工 | 包吃包住+奖金 | 还招 1 人」改回一行纯文字（13/500 墨灰、1×10 发丝竖线隔开，人数只用绿字），
+      这一屏只剩「紧急招募」一颗带底色的胶囊；「收藏」「已订阅」两颗小按钮另起一行、靠左；
+   ② 交通参考去掉灰框，正文和页面左线对齐（宽出来的 24px 让「钟」不再单字成行）；
+   ③ 采访视频：播放钮是唯一主角（48 白圆 + 墨色三角）；核验胶囊去掉白底；三栏数据去掉灰底，上下发丝线；
+   ④ 线上任务：须知入口退成白底列表行（上下发丝线），门店卡白底 + 上发丝线，「关注」用 soft 小按钮；底部主按钮 44 高。 */
+.detail-page .sp-tagline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.detail-page .sp-tagline .sp-tags { flex: 0 0 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 0; min-width: 0; }
+.detail-page .sp-tags > .sp-tags__item, .detail-page .sp-tags > .sp-tags__item--sep { position: relative; height: auto; min-height: 0; margin: 0; padding: 0; border-radius: 0; background: transparent; font-size: 13px; font-weight: 500; line-height: 20px; color: var(--k-ink2); }
+.detail-page .sp-tags > .sp-tags__item--sep { margin-left: 8px; padding-left: 9px; }
+.detail-page .sp-tags > .sp-tags__item--sep::before { content: ''; display: block; position: absolute; left: 0; top: 5px; width: 1px; height: 10px; background: var(--k-line2); }
+.detail-page .sp-tags > .sp-tags__item:last-child:not(.sp-tags__item--muted) { background: transparent; color: var(--k-green); }
+.detail-page .sp-tagline .sp-heading__favorite { align-self: center; margin: -4px 0 -4px -4px; }
+.detail-page .sp-tagline .sp-heading__subscribe { align-self: center; margin-top: -8px; margin-bottom: -8px; }
+.detail-page .sp-trip { margin-top: 8px; padding: 0; border-radius: 0; background: transparent; }
+.detail-page .sp-video:not(.sp-video--pending) .sp-video__play { width: 48px; height: 48px; margin: -24px 0 0 -24px; padding-left: 2px; background: rgba(255, 255, 255, .9); }
+.detail-page .sp-card.sp-stats { padding: 12px 0; border-radius: 0; background: transparent; position: relative; }
+.detail-page .sp-stats::before, .detail-page .sp-stats::after { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.detail-page .sp-stats::before { top: 0; }
+.detail-page .sp-stats::after { bottom: 0; }
+.detail-page .sp-stat__v { font-size: 17px; font-weight: 700; line-height: 24px; font-variant-numeric: tabular-nums; }
+.detail-page .sp-stat__k { font-size: 12px; color: var(--k-muted); }
+.detail-page--online .guide-link { position: relative; min-height: 48px; margin-top: 16px; padding: 0; border-radius: 0; background: transparent; gap: 10px; }
+.detail-page--online .guide-link::before, .detail-page--online .guide-link::after { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.detail-page--online .guide-link::before { top: 0; }
+.detail-page--online .guide-link::after { bottom: 0; }
+.detail-page--online .guide-link__title { font-size: 15px; font-weight: 600; color: var(--k-ink); }
+.detail-page--online .guide-link__sub { font-size: 12px; color: var(--k-muted); }
+.detail-page--online .store-card { position: relative; margin-top: 24px; padding: 16px 0 0; border-radius: 0; background: transparent; }
+.detail-page--online .store-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
+.detail-page--online .store-card__name { font-size: 15px; font-weight: 600; }
+.detail-page--online .store-card :deep(.k-button.is-secondary) { height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: var(--k-red-soft); color: var(--k-red-deep); font-size: 12px; font-weight: 500; box-shadow: none; }
+.detail-page--online .store-card :deep(.k-button.is-outline) { height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: var(--k-fill); color: var(--k-muted); font-size: 12px; font-weight: 500; box-shadow: none; }
+.detail-page--online .k-bottom :deep(.k-button) { height: 44px; border-radius: 22px; font-size: 16px; font-weight: 600; }
+.detail-page--online .guide-link::after { content: none; display: none; } /* 下面的区块自带上发丝线，这里不再画第二条 */
+
+/* ===================== 2026-11-19 第四轮返修（r3jobsa 复评遗留） =====================
+   ① 三栏数据真正去掉灰底（灰底在里面的 __row 上），下发丝线落到底边；工作时间同样不要灰底，两列中间一条 0.5px 竖线；
+   ② 交通参考正文 13/20、圆点缩进 12，给微信更宽的字留余量；③ 袋鼠安心保障去掉灰底，上发丝线 + 列表；
+   ④「紧急招募」胶囊 20 高 11/500，和别处标签同一档；⑤ 线上任务：须知行上下各 12、右边让开客服竖条；
+      「安心商家」「还招 N 人」退成无底色的绿字，中间 1×10 发丝竖线（和兼职详情一样）。 */
+.detail-page .sp-stats .sp-stats__row { padding: 0; border-radius: 0; background: transparent; }
+.detail-page .sp-stats::after { top: auto; bottom: 0; }
+.detail-page .sp-work__hours, .detail-page .sp-work__rest, .detail-page .sp-work__hours + .sp-work__rest { padding-top: 4px; padding-bottom: 4px; border-radius: 0; background: transparent; }
+.detail-page .sp-work__hours + .sp-work__rest::before { top: 4px; bottom: 4px; width: 1px; background: var(--k-line2); transform: scaleX(.5); }
+.detail-page .sp-trip .sp-bullet { font-size: 13px; line-height: 20px; }
+.detail-page .sp-trip .sp-bullet__text { font-size: 13px; line-height: 20px; text-wrap: balance; } /* 微信字更宽，均分折行免得「钟」单字成行 */
+.detail-page .sp-assure { position: relative; }
+.detail-page .sp-assure__panel { margin-top: 8px; padding: 0; border-radius: 0; background: transparent; }
+.detail-page .sp-assure__panel .sp-bullet { padding: 2px 0; font-size: 13px; line-height: 20px; }
+.detail-page :deep(.job-urgency--detail .job-urgency__label) { height: 20px; padding-top: 0; padding-bottom: 0; font-size: 11px; font-weight: 500; line-height: 20px; }
+.detail-page--online .guide-link { min-height: 48px; padding: 12px 28px 12px 0; box-sizing: border-box; }
+.detail-page--online .overview-flags .safe, .detail-page--online .overview-flags :deep(.k-chip) { height: auto; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 13px; font-weight: 500; line-height: 20px; color: var(--k-green); }
+.detail-page--online .overview-flags .safe { position: relative; margin-right: 0; padding-right: 9px; }
+.detail-page--online .overview-flags :deep(.k-chip.is-neutral) { color: var(--k-ink2); } /* 11-19 核对：已结束 / 暂停 / 截止 / 满员仍是灰字，和「还招 N 人」的绿字分开 */
+.detail-page--online .guide-link + .plain-card { margin-top: 0; } /* 须知行的字落在上下两条发丝线正中 */
+.detail-page--online .overview-flags .safe::after { content: ''; position: absolute; right: 0; top: 5px; width: 1px; height: 10px; background: var(--k-line2); }
+
+/* ===================== 2026-11-19 微信实拍返修（r3jobsa） =====================
+   ① 交通参考、地址不再均分折行（balance 让「高铁」第一行右边空出 1/3、把「137-140 / 号」拆开），改 pretty 只防末行单字；
+   ② 采访视频封面只留左上一个白底胶囊：右上「已完成线下实地核验」退成白字 + 12 号勾，靠封面顶部一层淡渐变托底。 */
+.detail-page .sp-trip .sp-bullet__text { text-wrap: pretty; }
+.detail-page .sp-loc__addr { text-wrap: pretty; }
+.detail-page .sp-video:not(.sp-video--pending) .sp-video__shade { top: 0; height: auto; background: linear-gradient(180deg, rgba(20, 14, 10, .36), rgba(20, 14, 10, 0) 32%, rgba(20, 14, 10, 0) 44%, rgba(20, 14, 10, .6)); }
+.detail-page .sp-video:not(.sp-video--pending) .sp-video__chip { gap: 4px; height: 22px; padding: 0; border-radius: 0; background: transparent; color: var(--k-paper); font-size: 11px; font-weight: 600; line-height: 22px; text-shadow: 0 1px 2px rgba(20, 14, 10, .4); }

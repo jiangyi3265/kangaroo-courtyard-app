@@ -122,8 +122,8 @@ function ok() {
 .rp-day.today { box-shadow: inset 0 0 0 1px var(--k-red); }
 .rp-day.today .rp-day__tag { color: var(--k-red); }
 .rp-day.pick { background: var(--k-red); }
-.rp-day.pick .rp-day__num { color: #fff; font-weight: 700; }
-.rp-day.pick .rp-day__tag { color: #fff; }
+.rp-day.pick .rp-day__num { color: var(--k-paper); font-weight: 700; }
+.rp-day.pick .rp-day__tag { color: var(--k-paper); }
 .rp-cell.off .rp-day__num { color: var(--k-light); }
 .rp-cell.off .rp-day__tag { color: var(--k-light); }
 .rp-foot-note { display: block; padding: 6px 16px 14px; font-size: 12px; color: var(--k-muted); text-align: center; }
@@ -133,4 +133,29 @@ function ok() {
 .rp-sum__col:last-child { align-items: flex-end; }
 .rp-sum__label { font-size: 12px; color: var(--k-muted); }
 .rp-sum__val { font-size: 15px; font-weight: 700; white-space: nowrap; }
+
+/* 2026-11-17 改版「小而精」（主人按样张第三版拍板）：弹层 16 圆角，入住 / 离店两格是 8 圆角的浅灰块（当前那格浅棕底 + 细棕边），字收小一档，
+   底部「确定」是 44 高的暖棕胶囊。日历的点选、区间、起订规则都没动。 */
+.rp-overlay .rp-panel { border-radius: 16px 16px 0 0; }
+.rp-overlay .rp-head { padding: 10px 12px 2px; }
+.rp-overlay .rp-title { font-size: 16px; }
+.rp-overlay .rp-hint { font-size: 12px; }
+.rp-overlay .rp-hint.on { color: var(--k-red-deep); font-size: 13px; font-weight: 600; }
+.rp-overlay .rp-cancel { height: 44px; font-size: 14px; }
+.rp-overlay .rp-fields { gap: 8px; padding: 6px 12px 10px; }
+.rp-overlay .rp-field { min-height: 52px; padding: 7px 10px; gap: 1px; border-radius: 8px; background: var(--k-fill); }
+.rp-overlay .rp-field.active { border-color: var(--k-red-line); background: var(--k-red-soft); }
+.rp-overlay .rp-sum__label { font-size: 11px; }
+.rp-overlay .rp-sum__val { font-size: 15px; font-weight: 600; }
+.rp-overlay .rp-rule { padding: 0 12px 8px; font-size: 12px; font-weight: 500; }
+.rp-overlay .rp-week text { line-height: 28px; font-size: 12px; }
+.rp-overlay .rp-month__title { font-size: 14px; font-weight: 600; }
+.rp-overlay .rp-day__num { font-size: 15px; }
+.rp-overlay .rp-day.pick { background: var(--k-red-deep); }
+.rp-overlay .rp-foot-note { font-size: 11px; }
+.rp-overlay .rp-foot { padding: 8px 12px 12px; }
+.rp-overlay .rp-foot :deep(.k-button) { height: 44px; background: linear-gradient(135deg,#B5814D,#8E5E33); box-shadow: none; font-size: 15px; }
+/* 2026-11-18 第二轮精修：没选完日期时「确定」交给公共按钮的不可点样式（原配色整体变淡，不再是冷灰底，页面里不再另写）；星期行下面改发丝线 */
+.rp-overlay .rp-week { position: relative; border-bottom: 0; }
+.rp-overlay .rp-week::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--k-line); transform: scaleY(.5); }
 </style>

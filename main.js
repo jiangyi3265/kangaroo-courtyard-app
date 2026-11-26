@@ -17,8 +17,9 @@ app.$mount()
 
 // #ifdef VUE3
 import {
-	createSSRApp
+	createSSRApp, computed
 } from 'vue'
+import { isUserIconPage, userIconScope } from './common/user-icons/scope.js'
 // tabbar 红点取自服务端未读数，但只有消息中心和个人中心会拉全量消息列表。
 // 每次页面显示时补一次轻量刷新，用户才可能在首页或岗位列表上看到
 // 「报名审核通过、24 小时内选面试时间」这类有时限的通知。
@@ -41,7 +42,17 @@ function refreshUnreadQuietly() {
 
 export function createApp() {
 	const app = createSSRApp(App)
+	// 用户页面在自己的最外层绑定此类；同一页面切到员工身份时恢复原主题。
+	Object.defineProperty(app.config.globalProperties, '$userSurface', {
+		get: () => experience.mode === 'staff' ? '' : 'user-surface'
+	})
 	app.mixin({
+		provide() {
+			if (this.$mpType !== 'page') return {}
+			// Bind to the owning page so an overlay or a page underneath it keeps its own icons.
+			const route = this.$scope?.route || this.route || this.$scope?.is
+			return { [userIconScope]: computed(() => isUserIconPage(route) && experience.mode !== 'staff') }
+		},
 		onShow() {
 			refreshFeatures()
 			refreshUnreadQuietly()
