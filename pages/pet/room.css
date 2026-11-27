@@ -1,31 +1,15 @@
 .pet-screen{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden;background:#c49a68;color:#fff7e7;font-family:-apple-system,"PingFang SC",sans-serif}
 .room,.shade{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.room{transition:filter 1.2s}.night .room{filter:brightness(.75) saturate(.88)}
+.night .shade{background:linear-gradient(180deg,#39394b55,transparent 46%,#352c463b)}
 .sea-view{position:absolute;left:68.8%;top:37.5%;width:17%;height:22.8%;border-radius:70% 20% 0 0}
-.hatch-light{animation:hatch .65s ease-out}.room-awake{animation:nest 4s ease-in-out infinite alternate}
-.pet-hit,.egg-hit{position:absolute;z-index:1;background:transparent;border:0;padding:0;margin:0}.pet-hit{left:20%;top:65%;width:24%;height:16%}.egg-hit{left:30%;top:59%;width:38%;height:26%}
-.lifting-pack{position:absolute;left:37%;bottom:20%;width:9%;height:5%;animation:lift .75s ease-in both}
-.clover-drop{position:absolute;left:32%;top:54%;color:#6d963e;font-size:26px;animation:fall 1.5s infinite}.sulking{transform:rotate(-8deg)}.tired{filter:saturate(.55) brightness(.86);transform:translateY(5%) scaleY(.91)}
-@keyframes hatch{0%{filter:brightness(1.45);transform:scale(1.025)}100%{filter:brightness(1);transform:scale(1)}}
-@keyframes nest{to{filter:brightness(1.035)}}
-@keyframes lift{0%{opacity:1;transform:translateY(0)}80%{opacity:1}100%{opacity:0;transform:translate(-95%,-80%) rotate(22deg)}}
-@keyframes fall{0%{opacity:0}20%{opacity:1}100%{opacity:0;transform:translate(24px,90px) rotate(35deg)}}
 .shade{background:linear-gradient(to bottom,#38271155,transparent 23%,transparent 78%,#35221462)}
 .header{position:absolute;top:calc(var(--status-bar-height, 22px) + 10px);left:16px;display:flex;align-items:center;gap:12px;text-shadow:0 1px 5px #34211599}
 .header text,.dock text{display:block}.eyebrow{font-size:11px;letter-spacing:2px}.heading{font-size:23px;font-weight:650;margin-top:2px}
 .pet-screen button{border:none;cursor:pointer}.pet-screen button::after{border:none}
 .header .back,.actions button,.dock>button,.poster button,.name-input{color:#533c27;background:#fff3def0;border-radius:22px;border:0;margin:0;padding:8px 15px;font-size:14px;line-height:1.45;box-sizing:border-box}
 .header .back{width:36px;height:36px;border-radius:50%;padding:0;line-height:33px;font-size:30px}
-.actor-track{position:absolute;left:32%;top:80%;width:21%;height:12%;transform:translate(-50%,-100%);pointer-events:none}
-.actor-bob,.actor{width:100%;height:100%;position:relative}.actor-bob{transform-origin:65% 95%}
-.actor.newborn{width:73%;height:73%;margin-top:26%;margin-left:13%}
-.breathing{animation:breathe 2.2s ease-in-out infinite}.hopping{animation:hop .43s linear infinite}.shaking{animation:shake .28s ease-in-out infinite alternate}
-.outbound{animation:leave 2.72s ease-in-out both}.inbound{animation:arrive 2.3s ease-in-out both}
-.bag-object{position:absolute;left:40%;top:75%;background:transparent;width:14%;height:8%;padding:0;animation:breathe 2s infinite}.bag-object image{width:100%;height:100%}
+.bag-object{position:absolute;left:40%;top:75%;background:transparent;width:14%;height:8%;padding:0}.bag-object image{width:100%;height:100%;animation:breathe 2s infinite}
 .plaque{position:absolute;top:47%;left:46%;font-size:10px;letter-spacing:1px;padding:3px 6px;color:#4e341d;background:#cba275;border:1px solid #916f46;border-radius:3px}
-.accessory{position:absolute;font-size:22px;line-height:1}.wear-hat{left:43%;top:11%}.wear-scarf{left:44%;top:44%}.wear-flower{right:0;bottom:26%}.heart,.crumb{color:#f48a79;animation:float 1.5s infinite}.heart{position:absolute;right:12%;top:0}.crumb{position:absolute;left:55%;top:49%;font-size:30px}
-.stars,.drops{position:absolute;top:26%;left:18%;color:#fff2ad;font-size:30px;pointer-events:none}.drops{top:62%;left:55%;color:#aedcec;animation:float .8s reverse infinite}
-.bubble{position:absolute;top:66%;width:18px;height:18px;border-radius:100%;background:#b8e8ff90;box-shadow:inset 2px 2px 4px white;animation:float 1.2s infinite}
 .dock,.poster{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));box-sizing:border-box}
 .caption{font-size:13px;font-weight:550;color:white;text-shadow:0 1px 4px #33200b,0 0 8px #493018}
 .actions,.pet-nav,.poster-head{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
@@ -37,9 +21,6 @@
 .poster-head{align-self:stretch;justify-content:flex-start;font-size:22px;font-weight:bold}.preview{width:100%;height:60%;min-height:0}.hint{font-size:13px}
 .floor-finds{bottom:15%;gap:5px}.floor-finds button{background:transparent;min-width:44px;padding:3px}.floor-finds image{width:44px;height:36px;display:block}.floor-finds text{color:#fff5d9;text-shadow:0 1px 4px #3c260b}
 @keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.015,1.035) rotate(-1.5deg)}}
-@keyframes leave{from{left:32%;top:80%;transform:translate(-50%,-100%) scale(1);opacity:1}84%{opacity:1}to{left:79%;top:59%;transform:translate(-50%,-100%) scale(.46);opacity:0}}
-@keyframes arrive{from{left:79%;top:59%;transform:translate(-50%,-100%) scale(.46);opacity:0}15%{opacity:1}to{left:32%;top:80%;transform:translate(-50%,-100%) scale(1);opacity:1}}
-@keyframes hop{0%,100%{transform:translateY(0) scale(1,.96)}50%{transform:translateY(-13%) rotate(-4deg)}}
-@keyframes shake{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
 @keyframes float{from{opacity:0;transform:translateY(0)}35%{opacity:1}to{opacity:0;transform:translateY(-50px)}}
-@media(prefers-reduced-motion:reduce){.breathing,.hopping,.shaking,.bubble,.heart,.crumb,.drops,.bag-object{animation:none}}
+.dock{pointer-events:none}.dock button,.dock input,.dock .name-input{pointer-events:auto}.bag-object{top:69%;left:48%;height:8%;min-height:44px}.plaque,.sea-view{pointer-events:none}
+@media(prefers-reduced-motion:reduce){.bag-object image{animation:none}}

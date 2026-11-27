@@ -29,6 +29,7 @@ const wechatArt = {
   'postcard': '/pages/pet/static/mp-weixin/postcard.jpg',
   'reach': '/pages/pet/static/mp-weixin/reach.png',
   'return': '/pages/pet/static/mp-weixin/return.png',
+  'shell': '/pages/pet/static/mp-weixin/shell.png',
   'room': '/pages/pet/static/mp-weixin/room.jpg',
   'tree': '/pages/pet/static/mp-weixin/tree.jpg',
   'visit': '/pages/pet/static/mp-weixin/visit.jpg',
