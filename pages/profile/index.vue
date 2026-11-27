@@ -36,6 +36,10 @@
         </view>
         <view class="me__edit" hover-class="k-press" :hover-stop-propagation="true" @click.stop="s = 2"><view class="me__edit-pill"><text>编辑资料</text></view></view>
       </view>
+      <view v-if="signedIn && travelPetEnabled" class="mrow pet-entry" hover-class="k-press" @click="go('/pages/pet/index')">
+        <k-icon name="house" :size="20" color="ochre" />
+        <text class="mrow__label">旅行袋鼠</text><text class="k-meta">去小窝</text><k-icon name="chevron-right" :size="14" color="muted" />
+      </view>
 
       <!-- 会员等级、可用积分和升级进度使用账号真实数据，0 积分时进度条不填充。 -->
       <view v-if="signedIn" class="card member-card" :hover-class="membershipReady ? 'k-press-s' : 'none'" @click="openMember">
@@ -321,7 +325,7 @@
 
 <script setup>
 import { wishEnabled, privateChatEnabled, recruitmentEnabled } from '@/common/features.js'
-import { communityEnabled } from "@/common/features.js"
+import { communityEnabled, travelPetEnabled } from "@/common/features.js"
 import { selectCity } from '@/common/city-picker.js'
 import { computed, getCurrentInstance, reactive, ref, watch } from 'vue'
 import { onShow, onUnload, onPageScroll } from '@dcloudio/uni-app'
@@ -1131,6 +1135,7 @@ const levelReach = computed(() => {
 </script>
 
 <style scoped lang="scss">
+.pet-entry { background:#fbf2dd; border-radius:14px; margin:0 0 12px; padding:7px 14px; }
 .member-actions { display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
 .member-actions .member-cta { min-height:44px; gap:4px; justify-content:flex-end; }
 @import '../../styles/look.scss';

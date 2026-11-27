@@ -4,6 +4,7 @@ import { API_BASE } from './config.js'
 // Never restore an enabled switch from device storage. Unknown/network failure is closed.
 export const featureState = reactive({ communityEnabled: false, wishEnabled: false, groupChatEnabled: false, privateChatEnabled: false, stayBookingEnabled: false, recruitmentEnabled: false, loaded: false })
 export const recruitmentEnabled = computed(() => featureState.recruitmentEnabled)
+export const travelPetEnabled = computed(() => featureState.travelPetEnabled === true)
 export const stayBookingEnabled = computed(() => featureState.stayBookingEnabled)
 export const communityEnabled = computed(() => featureState.communityEnabled)
 export const wishEnabled = computed(() => featureState.wishEnabled)
@@ -15,7 +16,7 @@ export function refreshFeatures(force = false) {
   if (!force && featureState.loaded && Date.now() - fetchedAt < 3000) return Promise.resolve(featureState)
   pending = new Promise(resolve => {
     const finish = data => {
-      for (const key of ['communityEnabled','wishEnabled','groupChatEnabled','privateChatEnabled','stayBookingEnabled','recruitmentEnabled']) featureState[key] = data?.[key] === true
+      for (const key of ['communityEnabled','wishEnabled','groupChatEnabled','privateChatEnabled','stayBookingEnabled','recruitmentEnabled','travelPetEnabled']) featureState[key] = data?.[key] === true
       featureState.loaded = true
       fetchedAt = Date.now()
       resolve(featureState)

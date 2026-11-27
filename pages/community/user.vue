@@ -8,7 +8,7 @@
       <view v-else-if="u.userId" class="profile-info">
         <view class="profile-head">
           <image class="avatar" :class="{'member-frame':u.member?.frame}" :src="avatar" mode="aspectFill" @click="previewAvatar" @error="failedImages.avatar = true" />
-          <view class="profile-heading"><view class="k-row k-gap6"><text class="profile-name">{{ u.name }}</text><k-chip v-if="u.honoraryTitle" tone="ochre">{{ u.honoraryTitle }}</k-chip></view><button class="profile-number" @click="copyNumber"><text>袋鼠号：{{ u.userId }}</text><k-icon name="copy" :size="12" color="white" /></button><member-mark :member="u.member" /></view>
+          <view class="profile-heading"><view class="k-row k-gap6"><text class="profile-name">{{ u.name }}</text><k-chip v-if="u.petTitle || u.honoraryTitle" tone="ochre">{{ u.petTitle || u.honoraryTitle }}</k-chip></view><button class="profile-number" @click="copyNumber"><text>袋鼠号：{{ u.userId }}</text><k-icon name="copy" :size="12" color="white" /></button><member-mark :member="u.member" /></view>
           <button v-if="!u.isMe" class="profile-more" aria-label="更多操作" @click="moreActions"><k-icon name="ellipsis" :size="24" color="white" /></button>
         </view>
         <view class="profile-stats">

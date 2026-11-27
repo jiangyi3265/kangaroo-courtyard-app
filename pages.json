@@ -49,6 +49,9 @@
     }
   ],
   "subPackages": [
+    { "root": "pages/pet", "pages": [
+      { "path": "index", "style": { "navigationStyle": "custom", "disableScroll": true } }
+    ] },
     {
       "root": "pages/auth",
       "pages": [
