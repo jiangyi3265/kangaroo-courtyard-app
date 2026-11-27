@@ -31,12 +31,12 @@ import R from '@/common/routes.js'
 loadPreferences()
 const selected = ref([...experience.cities])
 const cities = [
-  { name: '大理', icon: '/static/media/onb-city-dali.jpg' },
-  { name: '丽江', icon: '/static/media/onb-city-lijiang.jpg' },
-  { name: '成都', icon: '/static/media/onb-city-chengdu.jpg' },
-  { name: '杭州', icon: '/static/media/onb-city-hangzhou.jpg' },
-  { name: '厦门', icon: '/static/media/onb-city-xiamen.jpg' },
-  { name: '景德镇', icon: '/static/media/onb-city-jingdezhen.jpg' }
+  { name: '大理', icon: '/pages/auth/static/onb-city-dali.jpg' },
+  { name: '丽江', icon: '/pages/auth/static/onb-city-lijiang.jpg' },
+  { name: '成都', icon: '/pages/auth/static/onb-city-chengdu.jpg' },
+  { name: '杭州', icon: '/pages/auth/static/onb-city-hangzhou.jpg' },
+  { name: '厦门', icon: '/pages/auth/static/onb-city-xiamen.jpg' },
+  { name: '景德镇', icon: '/pages/auth/static/onb-city-jingdezhen.jpg' }
 ]
 // Preserve old identity links without making identity an onboarding step.
 onLoad(q => { if (q?.s === '4') replace(R.identity) })
