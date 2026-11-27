@@ -1,4 +1,47 @@
-export const asset = name => '/pages/pet/static/' + name + '.webp'
+// #ifdef MP-WEIXIN
+// 微信编译器通过完整的文件路径识别分包内需要保留的场景和角色素材。
+const wechatArt = {
+  'bag': '/pages/pet/static/mp-weixin/bag.png',
+  'bath': '/pages/pet/static/mp-weixin/bath.jpg',
+  'book': '/pages/pet/static/mp-weixin/book.png',
+  'cake': '/pages/pet/static/mp-weixin/cake.png',
+  'camera': '/pages/pet/static/mp-weixin/camera.jpg',
+  'card': '/pages/pet/static/mp-weixin/card.png',
+  'clovers': '/pages/pet/static/mp-weixin/clovers.png',
+  'egg': '/pages/pet/static/mp-weixin/egg.jpg',
+  'envelope': '/pages/pet/static/mp-weixin/envelope.png',
+  'feed': '/pages/pet/static/mp-weixin/feed.jpg',
+  'grass': '/pages/pet/static/mp-weixin/grass.jpg',
+  'hatch': '/pages/pet/static/mp-weixin/hatch.jpg',
+  'hop': '/pages/pet/static/mp-weixin/hop.png',
+  'idle': '/pages/pet/static/mp-weixin/idle.png',
+  'letter': '/pages/pet/static/mp-weixin/letter.jpg',
+  'level-0': '/pages/pet/static/mp-weixin/level-0.png',
+  'level-1': '/pages/pet/static/mp-weixin/level-1.png',
+  'level-2': '/pages/pet/static/mp-weixin/level-2.png',
+  'level-3': '/pages/pet/static/mp-weixin/level-3.png',
+  'level-4': '/pages/pet/static/mp-weixin/level-4.png',
+  'level-5': '/pages/pet/static/mp-weixin/level-5.png',
+  'mailbox': '/pages/pet/static/mp-weixin/mailbox.jpg',
+  'pack': '/pages/pet/static/mp-weixin/pack.png',
+  'pastry': '/pages/pet/static/mp-weixin/pastry.jpg',
+  'photos': '/pages/pet/static/mp-weixin/photos.png',
+  'postcard': '/pages/pet/static/mp-weixin/postcard.jpg',
+  'reach': '/pages/pet/static/mp-weixin/reach.png',
+  'return': '/pages/pet/static/mp-weixin/return.png',
+  'room': '/pages/pet/static/mp-weixin/room.jpg',
+  'tree': '/pages/pet/static/mp-weixin/tree.jpg',
+  'visit': '/pages/pet/static/mp-weixin/visit.jpg',
+}
+// #endif
+export function asset(name) {
+  // #ifdef MP-WEIXIN
+  return wechatArt[name]
+  // #endif
+  // #ifndef MP-WEIXIN
+  return '/pages/pet/static/h5/' + name + '.webp'
+  // #endif
+}
 export const supplies = [
   ['map','万能地图',20,'随机小院'],['satchel','兼职小书包',30,'必带换工线索'],
   ['camera','相机',25,'必带明信片'],['horn','社交喇叭',15,'更容易偶遇'],
